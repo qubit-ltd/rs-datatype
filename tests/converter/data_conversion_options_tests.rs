@@ -119,3 +119,25 @@ fn test_data_conversion_options_duration_builders() {
     );
     assert_eq!(DurationUnit::from_suffix("fortnights"), None);
 }
+
+/// Test all duration unit suffixes and rounding conversions.
+#[test]
+fn test_duration_unit_suffixes_and_rounding_cover_all_units() {
+    let cases = [
+        (DurationUnit::Nanoseconds, "ns", 1),
+        (DurationUnit::Microseconds, "us", 1_000),
+        (DurationUnit::Milliseconds, "ms", 1_000_000),
+        (DurationUnit::Seconds, "s", 1_000_000_000),
+        (DurationUnit::Minutes, "m", 60_000_000_000),
+        (DurationUnit::Hours, "h", 3_600_000_000_000),
+        (DurationUnit::Days, "d", 86_400_000_000_000),
+    ];
+
+    for (unit, suffix, nanos) in cases {
+        assert_eq!(unit.suffix(), suffix);
+        assert_eq!(
+            unit.rounded_units(std::time::Duration::from_nanos(nanos)),
+            1
+        );
+    }
+}

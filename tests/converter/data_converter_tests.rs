@@ -869,9 +869,22 @@ fn test_data_converter_duration_string_conversion() {
         DataConverter::from("badns").to::<Duration>(),
         Err(DataConversionError::ConversionError(_))
     ));
+    assert!(matches!(
+        DataConverter::from("").to::<Duration>(),
+        Err(DataConversionError::ConversionError(_))
+    ));
+    assert!(matches!(
+        DataConverter::from("10fortnights").to::<Duration>(),
+        Err(DataConversionError::ConversionError(_))
+    ));
     let overflowing_duration = format!("{}ns", (u64::MAX as u128 + 1) * 1_000_000_000);
     assert!(matches!(
         DataConverter::from(overflowing_duration).to::<Duration>(),
+        Err(DataConversionError::ConversionError(_))
+    ));
+    let overflowing_days = format!("{}d", u64::MAX / (24 * 60 * 60) + 1);
+    assert!(matches!(
+        DataConverter::from(overflowing_days).to::<Duration>(),
         Err(DataConversionError::ConversionError(_))
     ));
     assert!(matches!(
@@ -900,6 +913,31 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
         .expect("integer duration should use configured seconds");
     assert_eq!(duration, Duration::from_secs(2));
 
+    let integer_sources = [
+        DataConverter::from(1i8),
+        DataConverter::from(1i16),
+        DataConverter::from(1i64),
+        DataConverter::from(1i128),
+        DataConverter::from(1isize),
+        DataConverter::from(1u8),
+        DataConverter::from(1u16),
+        DataConverter::from(1u32),
+        DataConverter::from(1u128),
+        DataConverter::from(1usize),
+    ];
+    for source in integer_sources {
+        let duration: Duration = source
+            .to_with(&options)
+            .expect("integer source should convert with configured seconds");
+        assert_eq!(duration, Duration::from_secs(1));
+    }
+
+    let big_integer = BigInt::from(3u8);
+    let duration: Duration = DataConverter::from(&big_integer)
+        .to_with(&options)
+        .expect("BigInteger should convert to Duration");
+    assert_eq!(duration, Duration::from_secs(3));
+
     let units: u64 = DataConverter::from(Duration::from_millis(1499))
         .to_with(&options)
         .expect("Duration should round to configured integer unit");
@@ -910,9 +948,45 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
         .expect("Duration should round half up to configured integer unit");
     assert_eq!(units, 2);
 
+    let signed_units: i64 = DataConverter::from(Duration::from_millis(1500))
+        .to_with(&options)
+        .expect("Duration should convert to signed integer units");
+    assert_eq!(signed_units, 2);
+
     assert!(matches!(
         DataConverter::from(-1i32).to::<Duration>(),
         Err(DataConversionError::ConversionError(_))
+    ));
+    assert!(matches!(
+        DataConverter::from(u128::from(u64::MAX) + 1).to::<Duration>(),
+        Err(DataConversionError::ConversionError(_))
+    ));
+
+    let overflowing_options = DataConversionOptions::default()
+        .with_duration_options(DurationConversionOptions::default().with_unit(DurationUnit::Days));
+    assert!(matches!(
+        DataConverter::from(u64::MAX).to_with::<Duration>(&overflowing_options),
+        Err(DataConversionError::ConversionError(_))
+    ));
+    assert!(matches!(
+        DataConverter::from(i128::from(u64::MAX)).to_with::<Duration>(&overflowing_options),
+        Err(DataConversionError::ConversionError(_))
+    ));
+
+    let negative_big_integer = BigInt::from(-1);
+    assert!(matches!(
+        DataConverter::from(&negative_big_integer).to::<Duration>(),
+        Err(DataConversionError::ConversionError(_))
+    ));
+    let overflowing_big_integer = BigInt::from(u64::MAX);
+    assert!(matches!(
+        DataConverter::from(&overflowing_big_integer).to_with::<Duration>(&overflowing_options),
+        Err(DataConversionError::ConversionError(_))
+    ));
+    assert!(matches!(
+        DataConverter::from(NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date"))
+            .to::<Duration>(),
+        Err(DataConversionError::ConversionFailed { .. })
     ));
 }
 
