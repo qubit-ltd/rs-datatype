@@ -15,8 +15,15 @@
 //! Haixing Hu
 
 use qubit_datatype::converter::{
-    BlankStringPolicy, BooleanConversionOptions, DataConversionError, DataConversionOptions,
-    DataConverter, EmptyItemPolicy, StringConversionOptions,
+    BlankStringPolicy,
+    BooleanConversionOptions,
+    DataConversionError,
+    DataConversionOptions,
+    DataConverter,
+    DurationConversionOptions,
+    DurationUnit,
+    EmptyItemPolicy,
+    StringConversionOptions,
 };
 
 /// Test configurable string normalization and boolean literal parsing.
@@ -83,4 +90,32 @@ fn test_data_conversion_options_convenience_builders() {
         blank,
         Err(DataConversionError::ConversionError(_))
     ));
+}
+
+/// Test duration conversion options default values and builders.
+#[test]
+fn test_data_conversion_options_duration_builders() {
+    let defaults = DataConversionOptions::default();
+    assert_eq!(defaults.duration.unit, DurationUnit::Milliseconds);
+    assert!(defaults.duration.append_unit_suffix);
+    assert_eq!(defaults.duration.unit.suffix(), "ms");
+
+    let options = DataConversionOptions::default().with_duration_options(
+        DurationConversionOptions::default()
+            .with_unit(DurationUnit::Seconds)
+            .with_append_unit_suffix(false),
+    );
+
+    assert_eq!(options.duration.unit, DurationUnit::Seconds);
+    assert!(!options.duration.append_unit_suffix);
+    assert_eq!(DurationUnit::from_suffix("s"), Some(DurationUnit::Seconds));
+    assert_eq!(
+        DurationUnit::from_suffix("µs"),
+        Some(DurationUnit::Microseconds)
+    );
+    assert_eq!(
+        DurationUnit::from_suffix("μs"),
+        Some(DurationUnit::Microseconds)
+    );
+    assert_eq!(DurationUnit::from_suffix("fortnights"), None);
 }

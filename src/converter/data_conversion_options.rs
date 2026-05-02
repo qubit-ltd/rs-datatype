@@ -17,6 +17,7 @@
 use super::blank_string_policy::BlankStringPolicy;
 use super::boolean_conversion_options::BooleanConversionOptions;
 use super::collection_conversion_options::CollectionConversionOptions;
+use super::duration_conversion_options::DurationConversionOptions;
 use super::empty_item_policy::EmptyItemPolicy;
 use super::string_conversion_options::StringConversionOptions;
 
@@ -29,6 +30,8 @@ pub struct DataConversionOptions {
     pub boolean: BooleanConversionOptions,
     /// Scalar string collection conversion behavior.
     pub collection: CollectionConversionOptions,
+    /// Duration conversion behavior.
+    pub duration: DurationConversionOptions,
 }
 
 impl DataConversionOptions {
@@ -52,6 +55,7 @@ impl DataConversionOptions {
                 trim_items: true,
                 empty_item_policy: EmptyItemPolicy::Skip,
             },
+            duration: DurationConversionOptions::default(),
         }
     }
 
@@ -127,6 +131,21 @@ impl DataConversionOptions {
     #[must_use]
     pub fn with_collection_options(mut self, collection: CollectionConversionOptions) -> Self {
         self.collection = collection;
+        self
+    }
+
+    /// Returns a copy with different duration conversion options.
+    ///
+    /// # Parameters
+    ///
+    /// * `duration` - New duration conversion options.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[must_use]
+    pub fn with_duration_options(mut self, duration: DurationConversionOptions) -> Self {
+        self.duration = duration;
         self
     }
 }

@@ -15,8 +15,13 @@
 //! Haixing Hu
 
 use qubit_datatype::converter::{
-    BlankStringPolicy, CollectionConversionOptions, DataConversionError, DataConversionOptions,
-    EmptyItemPolicy, ScalarStringDataConverters, StringConversionOptions,
+    BlankStringPolicy,
+    CollectionConversionOptions,
+    DataConversionError,
+    DataConversionOptions,
+    EmptyItemPolicy,
+    ScalarStringDataConverters,
+    StringConversionOptions,
 };
 
 /// Test default scalar string conversion without splitting.

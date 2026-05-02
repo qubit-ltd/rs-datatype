@@ -19,10 +19,22 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{
+    DateTime,
+    NaiveDate,
+    NaiveDateTime,
+    NaiveTime,
+    Utc,
+};
 use num_bigint::BigInt;
 use qubit_datatype::DataType;
-use qubit_datatype::converter::{DataConversionError, DataConverter};
+use qubit_datatype::converter::{
+    DataConversionError,
+    DataConversionOptions,
+    DataConverter,
+    DurationConversionOptions,
+    DurationUnit,
+};
 use url::Url;
 
 /// Asserts that a converter reports the expected data type.
@@ -786,7 +798,7 @@ fn test_data_converter_duration_string_conversion() {
     let text: String = DataConverter::from(duration)
         .to()
         .expect("Duration should convert to string");
-    assert_eq!(text, "1000000500ns");
+    assert_eq!(text, "1000ms");
 
     let direct: Duration = DataConverter::from(duration)
         .to()
@@ -798,10 +810,61 @@ fn test_data_converter_duration_string_conversion() {
         .expect("duration string should parse");
     assert_eq!(parsed, duration);
 
-    assert!(matches!(
-        DataConverter::from("10ms").to::<Duration>(),
-        Err(DataConversionError::ConversionError(_))
-    ));
+    let millis: Duration = DataConverter::from("10ms")
+        .to()
+        .expect("duration string with milliseconds should parse");
+    assert_eq!(millis, Duration::from_millis(10));
+
+    let seconds: Duration = DataConverter::from("2s")
+        .to()
+        .expect("duration string with seconds should parse");
+    assert_eq!(seconds, Duration::from_secs(2));
+
+    let minutes: Duration = DataConverter::from("2m")
+        .to()
+        .expect("duration string with minutes should parse");
+    assert_eq!(minutes, Duration::from_secs(120));
+
+    let hours: Duration = DataConverter::from("2h")
+        .to()
+        .expect("duration string with hours should parse");
+    assert_eq!(hours, Duration::from_secs(7200));
+
+    let days: Duration = DataConverter::from("2d")
+        .to()
+        .expect("duration string with days should parse");
+    assert_eq!(days, Duration::from_secs(172800));
+
+    for text in ["10us", "10µs", "10μs"] {
+        let parsed: Duration = DataConverter::from(text)
+            .to()
+            .expect("duration string with microseconds should parse");
+        assert_eq!(parsed, Duration::from_micros(10));
+    }
+
+    let bare_default: Duration = DataConverter::from("10")
+        .to()
+        .expect("bare duration string should use default milliseconds");
+    assert_eq!(bare_default, Duration::from_millis(10));
+
+    let options = DataConversionOptions::default().with_duration_options(
+        DurationConversionOptions::default().with_unit(DurationUnit::Seconds),
+    );
+    let bare_seconds: Duration = DataConverter::from("10")
+        .to_with(&options)
+        .expect("bare duration string should use configured seconds");
+    assert_eq!(bare_seconds, Duration::from_secs(10));
+
+    let no_suffix = DataConversionOptions::default().with_duration_options(
+        DurationConversionOptions::default()
+            .with_unit(DurationUnit::Seconds)
+            .with_append_unit_suffix(false),
+    );
+    let text: String = DataConverter::from(Duration::from_millis(1500))
+        .to_with(&no_suffix)
+        .expect("Duration should convert to suffixless rounded seconds");
+    assert_eq!(text, "2");
+
     assert!(matches!(
         DataConverter::from("badns").to::<Duration>(),
         Err(DataConversionError::ConversionError(_))
@@ -817,7 +880,39 @@ fn test_data_converter_duration_string_conversion() {
     ));
     assert!(matches!(
         DataConverter::from(1i32).to::<Duration>(),
-        Err(DataConversionError::ConversionFailed { .. })
+        Ok(duration) if duration == Duration::from_millis(1)
+    ));
+}
+
+/// Test Duration conversions with integer sources and targets.
+#[test]
+fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
+    let duration: Duration = DataConverter::from(1500u64)
+        .to()
+        .expect("integer duration should use default milliseconds");
+    assert_eq!(duration, Duration::from_millis(1500));
+
+    let options = DataConversionOptions::default().with_duration_options(
+        DurationConversionOptions::default().with_unit(DurationUnit::Seconds),
+    );
+    let duration: Duration = DataConverter::from(2u64)
+        .to_with(&options)
+        .expect("integer duration should use configured seconds");
+    assert_eq!(duration, Duration::from_secs(2));
+
+    let units: u64 = DataConverter::from(Duration::from_millis(1499))
+        .to_with(&options)
+        .expect("Duration should round to configured integer unit");
+    assert_eq!(units, 1);
+
+    let units: u64 = DataConverter::from(Duration::from_millis(1500))
+        .to_with(&options)
+        .expect("Duration should round half up to configured integer unit");
+    assert_eq!(units, 2);
+
+    assert!(matches!(
+        DataConverter::from(-1i32).to::<Duration>(),
+        Err(DataConversionError::ConversionError(_))
     ));
 }
 

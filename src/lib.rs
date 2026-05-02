@@ -22,9 +22,25 @@ pub mod datatype;
 pub mod converter;
 
 pub use converter::{
-    BlankStringPolicy, BooleanConversionOptions, CollectionConversionOptions, DataConversionError,
-    DataConversionOptions, DataConversionResult, DataConvertTo, DataConverter, DataConverters,
-    DataListConversionError, DataListConversionResult, EmptyItemPolicy, ScalarStringDataConverters,
+    BlankStringPolicy,
+    BooleanConversionOptions,
+    CollectionConversionOptions,
+    DataConversionError,
+    DataConversionOptions,
+    DataConversionResult,
+    DataConvertTo,
+    DataConverter,
+    DataConverters,
+    DataListConversionError,
+    DataListConversionResult,
+    DurationConversionOptions,
+    DurationUnit,
+    EmptyItemPolicy,
+    ScalarStringDataConverters,
     StringConversionOptions,
 };
-pub use datatype::{DataType, DataTypeOf, DataTypeParseError};
+pub use datatype::{
+    DataType,
+    DataTypeOf,
+    DataTypeParseError,
+};

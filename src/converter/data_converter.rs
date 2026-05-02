@@ -21,7 +21,13 @@ use std::fmt;
 use std::time::Duration;
 
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{
+    DateTime,
+    NaiveDate,
+    NaiveDateTime,
+    NaiveTime,
+    Utc,
+};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use url::Url;
@@ -30,6 +36,7 @@ use super::data_conversion_error::DataConversionError;
 use super::data_conversion_options::DataConversionOptions;
 use super::data_conversion_result::DataConversionResult;
 use super::data_convert_to::DataConvertTo;
+use super::duration_unit::DurationUnit;
 use crate::datatype::DataType;
 
 /// A lightweight wrapper for converting common data values.
@@ -329,31 +336,170 @@ fn parse_bool_string(value: &str, options: &DataConversionOptions) -> DataConver
     }
 }
 
-/// Parses a string using the duration conversion rules.
+/// Parses a string using the configured duration conversion rules.
+///
+/// # Parameters
+///
+/// * `value` - Source string to parse.
+/// * `options` - Conversion options providing string normalization and the
+///   default unit for suffixless duration strings.
+///
+/// # Returns
+///
+/// The parsed [`Duration`].
+///
+/// # Errors
+///
+/// Returns [`DataConversionError::NoValue`] when string normalization treats
+/// the value as missing, or [`DataConversionError::ConversionError`] when the
+/// value is empty, has an invalid integer, uses an unsupported suffix, or
+/// overflows [`Duration`].
 fn parse_duration_string(
     value: &str,
     options: &DataConversionOptions,
 ) -> DataConversionResult<Duration> {
     let value = options.string.normalize(value)?;
     let trimmed = value.trim();
-    let nanos_text = trimmed.strip_suffix("ns").ok_or_else(|| {
+    if trimmed.is_empty() {
+        return Err(DataConversionError::ConversionError(
+            "Cannot convert empty string to Duration".to_string(),
+        ));
+    }
+    let (number, unit) = split_duration_number_and_unit(trimmed)?;
+    let value = number.parse::<u64>().map_err(|_| {
         DataConversionError::ConversionError(format!(
-            "Cannot convert '{value}' to Duration: expected '<nanoseconds>ns'"
+            "Cannot convert '{trimmed}' to Duration: invalid duration value"
         ))
     })?;
-    let total_nanos = nanos_text.parse::<u128>().map_err(|_| {
+    let unit = match unit {
+        Some(unit) => DurationUnit::from_suffix(unit).ok_or_else(|| {
+            DataConversionError::ConversionError(format!(
+                "Cannot convert '{trimmed}' to Duration: unsupported duration unit '{unit}'"
+            ))
+        })?,
+        None => options.duration.unit,
+    };
+    unit.duration_from_u64(value).map_err(|message| {
         DataConversionError::ConversionError(format!(
-            "Cannot convert '{value}' to Duration: invalid nanoseconds value"
+            "Cannot convert '{trimmed}' to Duration: {message}"
         ))
-    })?;
-    let secs = total_nanos / 1_000_000_000;
-    if secs > u64::MAX as u128 {
+    })
+}
+
+/// Splits duration text into number and optional unit suffix.
+///
+/// # Parameters
+///
+/// * `text` - Non-empty duration text.
+///
+/// # Returns
+///
+/// The number text and optional unit suffix.
+///
+/// # Errors
+///
+/// Returns [`DataConversionError::ConversionError`] when the numeric value is
+/// missing.
+fn split_duration_number_and_unit(text: &str) -> DataConversionResult<(&str, Option<&str>)> {
+    let Some(split_at) = text.find(|ch: char| !ch.is_ascii_digit()) else {
+        return Ok((text, None));
+    };
+    let (number, unit) = text.split_at(split_at);
+    if number.is_empty() {
+        return Err(DataConversionError::ConversionError(
+            "Cannot convert duration string: duration value is missing".to_string(),
+        ));
+    }
+    Ok((number, Some(unit)))
+}
+
+/// Converts a signed integer to [`Duration`] using configured duration options.
+///
+/// # Parameters
+///
+/// * `value` - Signed integer value to convert.
+/// * `options` - Conversion options providing the source integer unit.
+///
+/// # Returns
+///
+/// The corresponding [`Duration`].
+///
+/// # Errors
+///
+/// Returns [`DataConversionError::ConversionError`] when the value is negative,
+/// larger than `u64::MAX`, or overflows while applying the configured unit.
+fn signed_integer_to_duration(
+    value: i128,
+    options: &DataConversionOptions,
+) -> DataConversionResult<Duration> {
+    if value < 0 {
         return Err(DataConversionError::ConversionError(format!(
-            "Cannot convert '{value}' to Duration: value out of range"
+            "Cannot convert {value} to Duration: duration value must be non-negative"
         )));
     }
-    let nanos = (total_nanos % 1_000_000_000) as u32;
-    Ok(Duration::new(secs as u64, nanos))
+    let value = range_check(value, 0i128, u64::MAX as i128, "Duration")?;
+    options
+        .duration
+        .unit
+        .duration_from_u64(value as u64)
+        .map_err(|message| {
+            DataConversionError::ConversionError(format!(
+                "Cannot convert {value} to Duration: {message}"
+            ))
+        })
+}
+
+/// Converts an unsigned integer to [`Duration`] using configured duration options.
+///
+/// # Parameters
+///
+/// * `value` - Unsigned integer value to convert.
+/// * `options` - Conversion options providing the source integer unit.
+///
+/// # Returns
+///
+/// The corresponding [`Duration`].
+///
+/// # Errors
+///
+/// Returns [`DataConversionError::ConversionError`] when the value is larger
+/// than `u64::MAX` or overflows while applying the configured unit.
+fn unsigned_integer_to_duration(
+    value: u128,
+    options: &DataConversionOptions,
+) -> DataConversionResult<Duration> {
+    let value = range_check(value, 0u128, u64::MAX as u128, "Duration")?;
+    options
+        .duration
+        .unit
+        .duration_from_u64(value as u64)
+        .map_err(|message| {
+            DataConversionError::ConversionError(format!(
+                "Cannot convert {value} to Duration: {message}"
+            ))
+        })
+}
+
+/// Formats a [`Duration`] using configured duration options.
+///
+/// # Parameters
+///
+/// * `duration` - Duration to format.
+/// * `options` - Conversion options providing the target unit and suffix
+///   behavior.
+///
+/// # Returns
+///
+/// The formatted duration string. The numeric value is rounded half-up in the
+/// configured unit.
+fn format_duration(duration: Duration, options: &DataConversionOptions) -> String {
+    let unit = options.duration.unit;
+    let value = unit.rounded_units(duration);
+    if options.duration.append_unit_suffix {
+        format!("{}{}", value, unit.suffix())
+    } else {
+        value.to_string()
+    }
 }
 
 /// Checks that a value is inside a closed range.
@@ -479,6 +625,11 @@ fn convert_to_signed_integer(
                     value.as_ref()
                 ))
             }),
+        DataConverter::Duration(value) => {
+            let units = options.duration.unit.rounded_units(*value);
+            let checked = range_check(units, 0u128, i128::MAX as u128, target)?;
+            Ok(checked as i128)
+        }
         DataConverter::BigInteger(value) => value.as_ref().to_i128().ok_or_else(|| {
             DataConversionError::ConversionError(format!("BigInteger value out of {target} range"))
         }),
@@ -542,6 +693,7 @@ fn convert_to_unsigned_integer(
                     value.as_ref()
                 ))
             }),
+        DataConverter::Duration(value) => Ok(options.duration.unit.rounded_units(*value)),
         DataConverter::Empty(_) => Err(DataConversionError::NoValue),
         _ => Err(source.unsupported(target_type)),
     }
@@ -574,7 +726,7 @@ impl DataConvertTo<String> for DataConverter<'_> {
             DataConverter::Time(value) => Ok(value.to_string()),
             DataConverter::DateTime(value) => Ok(value.to_string()),
             DataConverter::Instant(value) => Ok(value.to_rfc3339()),
-            DataConverter::Duration(value) => Ok(format!("{}ns", value.as_nanos())),
+            DataConverter::Duration(value) => Ok(format_duration(*value, options)),
             DataConverter::Url(value) => Ok(value.to_string()),
             DataConverter::StringMap(value) => match serde_json::to_string(value.as_ref()) {
                 Ok(value) => Ok(value),
@@ -823,6 +975,37 @@ impl DataConvertTo<Duration> for DataConverter<'_> {
     fn convert(&self, options: &DataConversionOptions) -> DataConversionResult<Duration> {
         match self {
             DataConverter::Duration(value) => Ok(*value),
+            DataConverter::Int8(value) => signed_integer_to_duration((*value).into(), options),
+            DataConverter::Int16(value) => signed_integer_to_duration((*value).into(), options),
+            DataConverter::Int32(value) => signed_integer_to_duration((*value).into(), options),
+            DataConverter::Int64(value) => signed_integer_to_duration((*value).into(), options),
+            DataConverter::Int128(value) => signed_integer_to_duration(*value, options),
+            DataConverter::IntSize(value) => signed_integer_to_duration(*value as i128, options),
+            DataConverter::UInt8(value) => unsigned_integer_to_duration((*value).into(), options),
+            DataConverter::UInt16(value) => unsigned_integer_to_duration((*value).into(), options),
+            DataConverter::UInt32(value) => unsigned_integer_to_duration((*value).into(), options),
+            DataConverter::UInt64(value) => unsigned_integer_to_duration((*value).into(), options),
+            DataConverter::UInt128(value) => unsigned_integer_to_duration(*value, options),
+            DataConverter::UIntSize(value) => unsigned_integer_to_duration(*value as u128, options),
+            DataConverter::BigInteger(value) => value.as_ref().to_u64().map_or_else(
+                || {
+                    Err(DataConversionError::ConversionError(
+                        "Cannot convert BigInteger to Duration: value must be a non-negative u64"
+                            .to_string(),
+                    ))
+                },
+                |value| {
+                    options
+                        .duration
+                        .unit
+                        .duration_from_u64(value)
+                        .map_err(|message| {
+                            DataConversionError::ConversionError(format!(
+                                "Cannot convert BigInteger to Duration: {message}"
+                            ))
+                        })
+                },
+            ),
             DataConverter::String(value) => parse_duration_string(value.as_ref(), options),
             DataConverter::Empty(_) => Err(DataConversionError::NoValue),
             _ => Err(self.unsupported(DataType::Duration)),

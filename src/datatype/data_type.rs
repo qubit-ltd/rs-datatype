@@ -19,7 +19,10 @@ use std::str::FromStr;
 
 use super::data_type_parse_error::DataTypeParseError;
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 /// Universal data type enumeration for cross-module type representation
 ///
