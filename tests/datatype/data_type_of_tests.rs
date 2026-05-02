@@ -11,7 +11,7 @@
 //! Tests for compile-time Rust type to `DataType` mapping.
 
 use qubit_datatype::DataType;
-use qubit_datatype::lang::DataTypeOf;
+use qubit_datatype::DataTypeOf;
 
 /// Test DataTypeOf for v0.4.0 new types
 #[test]

@@ -16,11 +16,8 @@
 
 use std::error::Error;
 
-use qubit_datatype::lang::converter::{
-    BlankStringPolicy,
-    DataConversionError,
-    DataConversionOptions,
-    DataConverters,
+use qubit_datatype::converter::{
+    BlankStringPolicy, DataConversionError, DataConversionOptions, DataConverters,
     StringConversionOptions,
 };
 

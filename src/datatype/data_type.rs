@@ -19,10 +19,7 @@ use std::str::FromStr;
 
 use super::data_type_parse_error::DataTypeParseError;
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 /// Universal data type enumeration for cross-module type representation
 ///
@@ -54,7 +51,7 @@ use serde::{
 /// ## Basic Usage
 ///
 /// ```rust
-/// use qubit_datatype::lang::DataType;
+/// use qubit_datatype::DataType;
 ///
 /// let data_type = DataType::Int32;
 /// assert_eq!(data_type.to_string(), "int32");
@@ -64,7 +61,7 @@ use serde::{
 /// ## Type Checking
 ///
 /// ```rust
-/// use qubit_datatype::lang::DataType;
+/// use qubit_datatype::DataType;
 ///
 /// fn is_numeric(data_type: DataType) -> bool {
 ///     matches!(data_type,
@@ -81,7 +78,7 @@ use serde::{
 /// ## Serialization
 ///
 /// ```rust
-/// use qubit_datatype::lang::DataType;
+/// use qubit_datatype::DataType;
 /// use serde_json;
 ///
 /// let data_type = DataType::Float64;

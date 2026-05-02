@@ -14,10 +14,7 @@
 //!
 //! Haixing Hu
 
-use qubit_datatype::lang::converter::{
-    CollectionConversionOptions,
-    EmptyItemPolicy,
-};
+use qubit_datatype::converter::{CollectionConversionOptions, EmptyItemPolicy};
 
 /// Test collection option split and empty-item branches.
 #[test]

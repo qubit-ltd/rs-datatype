@@ -8,7 +8,7 @@
  ******************************************************************************/
 //! # Reusable Data Conversion
 //!
-//! Provides language-level data conversion utilities based on [`crate::lang::DataType`].
+//! Provides data conversion utilities based on [`crate::datatype::DataType`].
 //!
 //! # Author
 //!

@@ -11,7 +11,7 @@
 //! Tests for reusable data conversion errors.
 
 use qubit_datatype::DataType;
-use qubit_datatype::lang::converter::DataConversionError;
+use qubit_datatype::converter::DataConversionError;
 
 /// Test the conversion error display strings.
 #[test]

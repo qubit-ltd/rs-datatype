@@ -14,11 +14,7 @@
 //!
 //! Haixing Hu
 
-use qubit_datatype::lang::converter::{
-    BlankStringPolicy,
-    DataConversionError,
-    StringConversionOptions,
-};
+use qubit_datatype::converter::{BlankStringPolicy, DataConversionError, StringConversionOptions};
 
 /// Test string option policy branches.
 #[test]

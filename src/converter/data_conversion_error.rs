@@ -17,7 +17,7 @@
 use std::error::Error;
 use std::fmt;
 
-use crate::lang::DataType;
+use crate::datatype::DataType;
 
 /// Error type returned by reusable data conversions.
 #[derive(Debug, Clone, PartialEq, Eq)]

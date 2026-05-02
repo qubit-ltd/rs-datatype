@@ -16,13 +16,7 @@
 
 use super::data_type::DataType;
 use bigdecimal::BigDecimal;
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use num_bigint::BigInt;
 use std::collections::HashMap;
 use std::time::Duration;

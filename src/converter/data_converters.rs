@@ -35,7 +35,7 @@ use super::data_list_conversion_result::DataListConversionResult;
 /// # Examples
 ///
 /// ```
-/// use qubit_datatype::lang::converter::{
+/// use qubit_datatype::converter::{
 ///     DataConverters,
 ///     DataListConversionResult,
 /// };
@@ -110,7 +110,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use qubit_datatype::lang::converter::DataConverters;
+    /// use qubit_datatype::converter::DataConverters;
     ///
     /// let values = ["1", "0", "true", "FALSE"];
     /// let flags: Vec<bool> = DataConverters::from_iterator(values.iter().copied())
@@ -183,7 +183,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use qubit_datatype::lang::converter::DataConverters;
+    /// use qubit_datatype::converter::DataConverters;
     ///
     /// let values = vec![String::from("42"), String::from("100")];
     /// let first: i32 = DataConverters::from(&values)

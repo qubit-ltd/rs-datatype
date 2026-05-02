@@ -19,19 +19,10 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use bigdecimal::BigDecimal;
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use num_bigint::BigInt;
 use qubit_datatype::DataType;
-use qubit_datatype::lang::converter::{
-    DataConversionError,
-    DataConverter,
-};
+use qubit_datatype::converter::{DataConversionError, DataConverter};
 use url::Url;
 
 /// Asserts that a converter reports the expected data type.

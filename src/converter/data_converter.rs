@@ -21,13 +21,7 @@ use std::fmt;
 use std::time::Duration;
 
 use bigdecimal::BigDecimal;
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use url::Url;
@@ -36,7 +30,7 @@ use super::data_conversion_error::DataConversionError;
 use super::data_conversion_options::DataConversionOptions;
 use super::data_conversion_result::DataConversionResult;
 use super::data_convert_to::DataConvertTo;
-use crate::lang::DataType;
+use crate::datatype::DataType;
 
 /// A lightweight wrapper for converting common data values.
 ///
@@ -49,7 +43,7 @@ use crate::lang::DataType;
 /// ```
 /// use std::time::Duration;
 ///
-/// use qubit_datatype::lang::converter::{
+/// use qubit_datatype::converter::{
 ///     DataConversionResult,
 ///     DataConverter,
 /// };

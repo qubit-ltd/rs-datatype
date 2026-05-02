@@ -14,14 +14,9 @@
 //!
 //! Haixing Hu
 
-use qubit_datatype::lang::converter::{
-    BlankStringPolicy,
-    BooleanConversionOptions,
-    DataConversionError,
-    DataConversionOptions,
-    DataConverter,
-    EmptyItemPolicy,
-    StringConversionOptions,
+use qubit_datatype::converter::{
+    BlankStringPolicy, BooleanConversionOptions, DataConversionError, DataConversionOptions,
+    DataConverter, EmptyItemPolicy, StringConversionOptions,
 };
 
 /// Test configurable string normalization and boolean literal parsing.

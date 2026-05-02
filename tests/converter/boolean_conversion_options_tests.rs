@@ -14,7 +14,7 @@
 //!
 //! Haixing Hu
 
-use qubit_datatype::lang::converter::BooleanConversionOptions;
+use qubit_datatype::converter::BooleanConversionOptions;
 
 /// Test boolean option literals and case-sensitive parsing.
 #[test]

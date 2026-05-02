@@ -6,8 +6,9 @@
  *    All rights reserved.
  *
  ******************************************************************************/
-//! # Language Module Test Entry
+//! # Datatype Crate Test Entry
 //!
-//! Tests for language-related utility functions.
+//! Tests for data type descriptors and conversion utilities.
 
-mod lang;
+mod converter;
+mod datatype;
