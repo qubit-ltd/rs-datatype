@@ -1,18 +1,16 @@
 /*******************************************************************************
  *
- *    Copyright (c) 2025 - 2026.
- *    Haixing Hu, Qubit Co. Ltd.
+ *    Copyright (c) 2025 - 2026 Haixing Hu.
  *
- *    All rights reserved.
+ *    SPDX-License-Identifier: Apache-2.0
+ *
+ *    Licensed under the Apache License, Version 2.0.
  *
  ******************************************************************************/
 //! # Scalar String Data Conversion
 //!
 //! Provides conversion of a single scalar string into collection values.
 //!
-//! # Author
-//!
-//! Haixing Hu
 
 use super::data_conversion_error::DataConversionError;
 use super::data_conversion_options::DataConversionOptions;
@@ -30,9 +28,6 @@ use super::data_list_conversion_result::DataListConversionResult;
 /// `"1,2,3"` distinct from already-materialized string collections such as
 /// `["1", "2", "3"]`.
 ///
-/// # Author
-///
-/// Haixing Hu
 #[derive(Debug, Clone, Copy)]
 pub struct ScalarStringDataConverters<'a> {
     /// The scalar string source.

@@ -1,18 +1,16 @@
 /*******************************************************************************
  *
- *    Copyright (c) 2025 - 2026.
- *    Haixing Hu, Qubit Co. Ltd.
+ *    Copyright (c) 2025 - 2026 Haixing Hu.
  *
- *    All rights reserved.
+ *    SPDX-License-Identifier: Apache-2.0
+ *
+ *    Licensed under the Apache License, Version 2.0.
  *
  ******************************************************************************/
 //! # Boolean Conversion Options
 //!
 //! Defines options that control string-to-boolean conversion.
 //!
-//! # Author
-//!
-//! Haixing Hu
 
 /// Options that control string-to-boolean conversion.
 #[derive(Debug, Clone, PartialEq, Eq)]

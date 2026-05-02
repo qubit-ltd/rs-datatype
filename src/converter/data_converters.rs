@@ -1,9 +1,10 @@
 /*******************************************************************************
  *
- *    Copyright (c) 2025 - 2026.
- *    Haixing Hu, Qubit Co. Ltd.
+ *    Copyright (c) 2025 - 2026 Haixing Hu.
  *
- *    All rights reserved.
+ *    SPDX-License-Identifier: Apache-2.0
+ *
+ *    Licensed under the Apache License, Version 2.0.
  *
  ******************************************************************************/
 //! # Reusable Batch Data Conversion
@@ -12,9 +13,6 @@
 //! batches of common runtime values with the single-value [`DataConverter`]
 //! rules.
 //!
-//! # Author
-//!
-//! Haixing Hu
 
 use std::marker::PhantomData;
 
@@ -51,9 +49,6 @@ use super::data_list_conversion_result::DataListConversionResult;
 /// assert_eq!(values, vec![String::from("8080"), String::from("9090")]);
 /// ```
 ///
-/// # Author
-///
-/// Haixing Hu
 #[derive(Debug, Clone)]
 pub struct DataConverters<'a, I> {
     /// The iterator of source values.

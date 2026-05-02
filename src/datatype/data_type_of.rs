@@ -1,18 +1,16 @@
 /*******************************************************************************
  *
- *    Copyright (c) 2025 - 2026.
- *    Haixing Hu, Qubit Co. Ltd.
+ *    Copyright (c) 2025 - 2026 Haixing Hu.
  *
- *    All rights reserved.
+ *    SPDX-License-Identifier: Apache-2.0
+ *
+ *    Licensed under the Apache License, Version 2.0.
  *
  ******************************************************************************/
 //! # Compile-time Data Type Mapping
 //!
 //! Provides the `DataTypeOf` trait and implementations to map Rust types to `DataType`.
 //!
-//! # Author
-//!
-//! Haixing Hu
 
 use super::data_type::DataType;
 use bigdecimal::BigDecimal;

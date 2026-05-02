@@ -1,18 +1,16 @@
 /*******************************************************************************
  *
- *    Copyright (c) 2025 - 2026.
- *    Haixing Hu, Qubit Co. Ltd.
+ *    Copyright (c) 2025 - 2026 Haixing Hu.
  *
- *    All rights reserved.
+ *    SPDX-License-Identifier: Apache-2.0
+ *
+ *    Licensed under the Apache License, Version 2.0.
  *
  ******************************************************************************/
 //! # Data Conversion Options
 //!
 //! Defines grouped options for common data conversion behavior.
 //!
-//! # Author
-//!
-//! Haixing Hu
 
 use super::blank_string_policy::BlankStringPolicy;
 use super::boolean_conversion_options::BooleanConversionOptions;

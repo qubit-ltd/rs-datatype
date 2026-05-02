@@ -1,9 +1,10 @@
 /*******************************************************************************
  *
- *    Copyright (c) 2025 - 2026.
- *    Haixing Hu, Qubit Co. Ltd.
+ *    Copyright (c) 2025 - 2026 Haixing Hu.
  *
- *    All rights reserved.
+ *    SPDX-License-Identifier: Apache-2.0
+ *
+ *    Licensed under the Apache License, Version 2.0.
  *
  ******************************************************************************/
 //! # Qubit Datatype
@@ -11,9 +12,6 @@
 //! Provides runtime data type descriptors and conversion utilities for supported
 //! Rust data types.
 //!
-//! # Author
-//!
-//! Haixing Hu
 
 /// Data type descriptors and compile-time type mappings.
 pub mod datatype;
