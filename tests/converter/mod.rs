@@ -11,11 +11,17 @@
 //!
 //! Tests for the reusable data conversion module.
 
+mod blank_string_policy_tests;
 mod boolean_conversion_options_tests;
 mod collection_conversion_options_tests;
 mod data_conversion_error_tests;
 mod data_conversion_options_tests;
+mod data_convert_to_tests;
 mod data_converter_tests;
 mod data_converters_tests;
+mod data_list_conversion_error_tests;
+mod duration_conversion_options_tests;
+mod duration_unit_tests;
+mod empty_item_policy_tests;
 mod scalar_string_data_converters_tests;
 mod string_conversion_options_tests;
