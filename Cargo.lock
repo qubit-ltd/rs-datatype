@@ -363,7 +363,7 @@ dependencies = [
 
 [[package]]
 name = "qubit-datatype"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "bigdecimal",
  "chrono",
