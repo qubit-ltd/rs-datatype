@@ -1,7 +1,7 @@
 # Qubit Datatype
 
 [![Rust CI](https://github.com/qubit-ltd/rs-datatype/actions/workflows/ci.yml/badge.svg)](https://github.com/qubit-ltd/rs-datatype/actions/workflows/ci.yml)
-[![Coverage Status](https://coveralls.io/repos/github/qubit-ltd/rs-datatype/badge.svg?branch=main)](https://coveralls.io/github/qubit-ltd/rs-datatype?branch=main)
+[![Coverage](https://img.shields.io/endpoint?url=https://qubit-ltd.github.io/rs-datatype/coverage-badge.json)](https://qubit-ltd.github.io/rs-datatype/coverage/)
 [![Crates.io](https://img.shields.io/crates/v/qubit-datatype.svg?color=blue)](https://crates.io/crates/qubit-datatype)
 [![Rust](https://img.shields.io/badge/rust-1.94+-blue.svg?logo=rust)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
@@ -44,7 +44,7 @@ Qubit Datatype 提供统一的 `DataType` 枚举、通过 `DataTypeOf` 实现的
 
 ```toml
 [dependencies]
-qubit-datatype = "0.2.0"
+qubit-datatype = "0.2.3"
 ```
 
 ## 快速开始
