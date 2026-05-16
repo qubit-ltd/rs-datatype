@@ -48,7 +48,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-qubit-datatype = "0.2.3"
+qubit-datatype = "0.2"
 ```
 
 ## Quick Start
