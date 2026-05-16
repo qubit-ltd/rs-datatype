@@ -44,7 +44,7 @@ Qubit Datatype 提供统一的 `DataType` 枚举、通过 `DataTypeOf` 实现的
 
 ```toml
 [dependencies]
-qubit-datatype = "0.2.3"
+qubit-datatype = "0.2"
 ```
 
 ## 快速开始
