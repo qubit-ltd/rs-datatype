@@ -1,6 +1,6 @@
 [package]
 name = "qubit-datatype"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2024"
 rust-version = "1.94"
 authors = ["Haixing Hu <starfish.hu@gmail.com>"]
@@ -12,15 +12,15 @@ documentation = "https://docs.rs/qubit-datatype"
 readme = "README.md"
 keywords = ["datatype", "conversion", "utility", "qubit"]
 categories = ["data-structures", "development-tools", "rust-patterns"]
-exclude = [
-    "align-ci.sh",
-    "ci-check.sh",
-    "coverage.sh",
-    "style-check.sh",
-    "update-submodule.sh",
-    ".github/*",
-    ".llvm-cov.toml",
-    ".cargo-audit.toml.example",
+include = [
+    "/Cargo.toml",
+    "/LICENSE",
+    "/README.md",
+    "/README.zh_CN.md",
+    "/doc/**/user_guide*.md",
+    "/examples/**",
+    "/src/**",
+    "/tests/**",
 ]
 
 [lib]
