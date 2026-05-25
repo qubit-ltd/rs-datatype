@@ -14,14 +14,8 @@ use qubit_datatype::converter::DurationUnit;
 /// Test suffix parsing and duration conversion for duration units.
 #[test]
 fn test_duration_unit_parses_suffixes_and_converts_values() {
-    assert_eq!(
-        DurationUnit::from_suffix("ms"),
-        Some(DurationUnit::Milliseconds)
-    );
-    assert_eq!(
-        DurationUnit::from_suffix("µs"),
-        Some(DurationUnit::Microseconds)
-    );
+    assert_eq!(DurationUnit::from_suffix("ms"), Some(DurationUnit::Milliseconds));
+    assert_eq!(DurationUnit::from_suffix("µs"), Some(DurationUnit::Microseconds));
     assert_eq!(DurationUnit::from_suffix("unknown"), None);
 
     assert_eq!(

@@ -31,10 +31,7 @@ fn test_string_conversion_options_cover_policy_branches() {
     let rejected = StringConversionOptions::default()
         .with_blank_string_policy(BlankStringPolicy::Reject)
         .normalize("   ");
-    assert!(matches!(
-        rejected,
-        Err(DataConversionError::ConversionError(_)),
-    ));
+    assert!(matches!(rejected, Err(DataConversionError::ConversionError(_)),));
 
     let missing = StringConversionOptions::default()
         .with_trim(true)

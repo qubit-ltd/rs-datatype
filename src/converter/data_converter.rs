@@ -352,10 +352,7 @@ fn parse_bool_string(value: &str, options: &DataConversionOptions) -> DataConver
 /// the value as missing, or [`DataConversionError::ConversionError`] when the
 /// value is empty, has an invalid integer, uses an unsupported suffix, or
 /// overflows [`Duration`].
-fn parse_duration_string(
-    value: &str,
-    options: &DataConversionOptions,
-) -> DataConversionResult<Duration> {
+fn parse_duration_string(value: &str, options: &DataConversionOptions) -> DataConversionResult<Duration> {
     let value = options.string.normalize(value)?;
     let trimmed = value.trim();
     if trimmed.is_empty() {
@@ -378,9 +375,7 @@ fn parse_duration_string(
         None => options.duration.unit,
     };
     unit.duration_from_u64(value).map_err(|message| {
-        DataConversionError::ConversionError(format!(
-            "Cannot convert '{trimmed}' to Duration: {message}"
-        ))
+        DataConversionError::ConversionError(format!("Cannot convert '{trimmed}' to Duration: {message}"))
     })
 }
 
@@ -426,10 +421,7 @@ fn split_duration_number_and_unit(text: &str) -> DataConversionResult<(&str, Opt
 ///
 /// Returns [`DataConversionError::ConversionError`] when the value is negative,
 /// larger than `u64::MAX`, or overflows while applying the configured unit.
-fn signed_integer_to_duration(
-    value: i128,
-    options: &DataConversionOptions,
-) -> DataConversionResult<Duration> {
+fn signed_integer_to_duration(value: i128, options: &DataConversionOptions) -> DataConversionResult<Duration> {
     if value < 0 {
         return Err(DataConversionError::ConversionError(format!(
             "Cannot convert {value} to Duration: duration value must be non-negative"
@@ -441,9 +433,7 @@ fn signed_integer_to_duration(
         .unit
         .duration_from_u64(value as u64)
         .map_err(|message| {
-            DataConversionError::ConversionError(format!(
-                "Cannot convert {value} to Duration: {message}"
-            ))
+            DataConversionError::ConversionError(format!("Cannot convert {value} to Duration: {message}"))
         })
 }
 
@@ -462,19 +452,14 @@ fn signed_integer_to_duration(
 ///
 /// Returns [`DataConversionError::ConversionError`] when the value is larger
 /// than `u64::MAX` or overflows while applying the configured unit.
-fn unsigned_integer_to_duration(
-    value: u128,
-    options: &DataConversionOptions,
-) -> DataConversionResult<Duration> {
+fn unsigned_integer_to_duration(value: u128, options: &DataConversionOptions) -> DataConversionResult<Duration> {
     let value = range_check(value, 0u128, u64::MAX as u128, "Duration")?;
     options
         .duration
         .unit
         .duration_from_u64(value as u64)
         .map_err(|message| {
-            DataConversionError::ConversionError(format!(
-                "Cannot convert {value} to Duration: {message}"
-            ))
+            DataConversionError::ConversionError(format!("Cannot convert {value} to Duration: {message}"))
         })
 }
 
@@ -521,9 +506,9 @@ fn checked_float_to_i128(value: f64, source: &str, target: &str) -> DataConversi
             "Cannot convert non-finite {source} value to {target}"
         )));
     }
-    value.to_i128().ok_or_else(|| {
-        DataConversionError::ConversionError(format!("{source} value out of {target} range"))
-    })
+    value
+        .to_i128()
+        .ok_or_else(|| DataConversionError::ConversionError(format!("{source} value out of {target} range")))
 }
 
 /// Converts a `BigInt` to `f32` and rejects infinite conversion results.
@@ -613,28 +598,20 @@ fn convert_to_signed_integer(
         DataConverter::UIntSize(value) => Ok(*value as i128),
         DataConverter::Float32(value) => checked_float_to_i128(*value as f64, "f32", target),
         DataConverter::Float64(value) => checked_float_to_i128(*value, "f64", target),
-        DataConverter::String(value) => options
-            .string
-            .normalize(value.as_ref())?
-            .parse::<i128>()
-            .map_err(|_| {
-                DataConversionError::ConversionError(format!(
-                    "Cannot convert '{}' to {target}",
-                    value.as_ref()
-                ))
-            }),
+        DataConverter::String(value) => options.string.normalize(value.as_ref())?.parse::<i128>().map_err(|_| {
+            DataConversionError::ConversionError(format!("Cannot convert '{}' to {target}", value.as_ref()))
+        }),
         DataConverter::Duration(value) => {
             let units = options.duration.unit.rounded_units(*value);
             let checked = range_check(units, 0u128, i128::MAX as u128, target)?;
             Ok(checked as i128)
         }
-        DataConverter::BigInteger(value) => value.as_ref().to_i128().ok_or_else(|| {
-            DataConversionError::ConversionError(format!("BigInteger value out of {target} range"))
-        }),
+        DataConverter::BigInteger(value) => value
+            .as_ref()
+            .to_i128()
+            .ok_or_else(|| DataConversionError::ConversionError(format!("BigInteger value out of {target} range"))),
         DataConverter::BigDecimal(value) => value.as_ref().to_i128().ok_or_else(|| {
-            DataConversionError::ConversionError(format!(
-                "BigDecimal value cannot be converted to {target}"
-            ))
+            DataConversionError::ConversionError(format!("BigDecimal value cannot be converted to {target}"))
         }),
         DataConverter::Empty(_) => Err(DataConversionError::NoValue),
         _ => Err(source.unsupported(target_type)),
@@ -681,16 +658,9 @@ fn convert_to_unsigned_integer(
         DataConverter::UInt64(value) => Ok((*value).into()),
         DataConverter::UInt128(value) => Ok(*value),
         DataConverter::UIntSize(value) => Ok(*value as u128),
-        DataConverter::String(value) => options
-            .string
-            .normalize(value.as_ref())?
-            .parse::<u128>()
-            .map_err(|_| {
-                DataConversionError::ConversionError(format!(
-                    "Cannot convert '{}' to {target}",
-                    value.as_ref()
-                ))
-            }),
+        DataConverter::String(value) => options.string.normalize(value.as_ref())?.parse::<u128>().map_err(|_| {
+            DataConversionError::ConversionError(format!("Cannot convert '{}' to {target}", value.as_ref()))
+        }),
         DataConverter::Duration(value) => Ok(options.duration.unit.rounded_units(*value)),
         DataConverter::Empty(_) => Err(DataConversionError::NoValue),
         _ => Err(source.unsupported(target_type)),
@@ -728,15 +698,11 @@ impl DataConvertTo<String> for DataConverter<'_> {
             DataConverter::Url(value) => Ok(value.to_string()),
             DataConverter::StringMap(value) => match serde_json::to_string(value.as_ref()) {
                 Ok(value) => Ok(value),
-                Err(error) => Err(DataConversionError::JsonSerializationError(
-                    error.to_string(),
-                )),
+                Err(error) => Err(DataConversionError::JsonSerializationError(error.to_string())),
             },
             DataConverter::Json(value) => match serde_json::to_string(value.as_ref()) {
                 Ok(value) => Ok(value),
-                Err(error) => Err(DataConversionError::JsonSerializationError(
-                    error.to_string(),
-                )),
+                Err(error) => Err(DataConversionError::JsonSerializationError(error.to_string())),
             },
             DataConverter::Empty(_) => Err(DataConversionError::NoValue),
         }
@@ -780,10 +746,7 @@ macro_rules! impl_signed_integer_converter {
     ($target_type:ty, $data_type:expr, $target_name:expr, $min:expr, $max:expr) => {
         impl DataConvertTo<$target_type> for DataConverter<'_> {
             #[inline]
-            fn convert(
-                &self,
-                options: &DataConversionOptions,
-            ) -> DataConversionResult<$target_type> {
+            fn convert(&self, options: &DataConversionOptions) -> DataConversionResult<$target_type> {
                 let value = convert_to_signed_integer(self, options, $data_type, $target_name)?;
                 let checked = range_check(value, $min as i128, $max as i128, $target_name)?;
                 Ok(checked as $target_type)
@@ -810,17 +773,9 @@ macro_rules! impl_unsigned_integer_converter {
     ($target_type:ty, $data_type:expr, $target_name:expr, $max:expr) => {
         impl DataConvertTo<$target_type> for DataConverter<'_> {
             #[inline]
-            fn convert(
-                &self,
-                options: &DataConversionOptions,
-            ) -> DataConversionResult<$target_type> {
+            fn convert(&self, options: &DataConversionOptions) -> DataConversionResult<$target_type> {
                 let value = convert_to_unsigned_integer(self, options, $data_type, $target_name)?;
-                let checked = range_check(
-                    value,
-                    <$target_type>::MIN as u128,
-                    $max as u128,
-                    $target_name,
-                )?;
+                let checked = range_check(value, <$target_type>::MIN as u128, $max as u128, $target_name)?;
                 Ok(checked as $target_type)
             }
         }
@@ -868,16 +823,9 @@ impl DataConvertTo<f32> for DataConverter<'_> {
             DataConverter::UInt64(value) => Ok(*value as f32),
             DataConverter::UInt128(value) => checked_u128_to_f32(*value),
             DataConverter::UIntSize(value) => Ok(*value as f32),
-            DataConverter::String(value) => options
-                .string
-                .normalize(value.as_ref())?
-                .parse::<f32>()
-                .map_err(|_| {
-                    DataConversionError::ConversionError(format!(
-                        "Cannot convert '{}' to f32",
-                        value.as_ref()
-                    ))
-                }),
+            DataConverter::String(value) => options.string.normalize(value.as_ref())?.parse::<f32>().map_err(|_| {
+                DataConversionError::ConversionError(format!("Cannot convert '{}' to f32", value.as_ref()))
+            }),
             DataConverter::BigInteger(value) => checked_bigint_to_f32(value.as_ref()),
             DataConverter::BigDecimal(value) => checked_bigdecimal_to_f32(value.as_ref()),
             DataConverter::Empty(_) => Err(DataConversionError::NoValue),
@@ -906,16 +854,9 @@ impl DataConvertTo<f64> for DataConverter<'_> {
             DataConverter::UInt64(value) => Ok(*value as f64),
             DataConverter::UInt128(value) => Ok(*value as f64),
             DataConverter::UIntSize(value) => Ok(*value as f64),
-            DataConverter::String(value) => options
-                .string
-                .normalize(value.as_ref())?
-                .parse::<f64>()
-                .map_err(|_| {
-                    DataConversionError::ConversionError(format!(
-                        "Cannot convert '{}' to f64",
-                        value.as_ref()
-                    ))
-                }),
+            DataConverter::String(value) => options.string.normalize(value.as_ref())?.parse::<f64>().map_err(|_| {
+                DataConversionError::ConversionError(format!("Cannot convert '{}' to f64", value.as_ref()))
+            }),
             DataConverter::BigInteger(value) => checked_bigint_to_f64(value.as_ref()),
             DataConverter::BigDecimal(value) => checked_bigdecimal_to_f64(value.as_ref()),
             DataConverter::Empty(_) => Err(DataConversionError::NoValue),
@@ -928,10 +869,7 @@ macro_rules! impl_strict_copy_converter {
     ($target_type:ty, $variant:ident, $data_type:expr) => {
         impl DataConvertTo<$target_type> for DataConverter<'_> {
             #[inline]
-            fn convert(
-                &self,
-                _options: &DataConversionOptions,
-            ) -> DataConversionResult<$target_type> {
+            fn convert(&self, _options: &DataConversionOptions) -> DataConversionResult<$target_type> {
                 match self {
                     DataConverter::$variant(value) => Ok(*value),
                     DataConverter::Empty(_) => Err(DataConversionError::NoValue),
@@ -946,10 +884,7 @@ macro_rules! impl_strict_cow_converter {
     ($target_type:ty, $variant:ident, $data_type:expr) => {
         impl DataConvertTo<$target_type> for DataConverter<'_> {
             #[inline]
-            fn convert(
-                &self,
-                _options: &DataConversionOptions,
-            ) -> DataConversionResult<$target_type> {
+            fn convert(&self, _options: &DataConversionOptions) -> DataConversionResult<$target_type> {
                 match self {
                     DataConverter::$variant(value) => Ok(value.as_ref().clone()),
                     DataConverter::Empty(_) => Err(DataConversionError::NoValue),
@@ -988,20 +923,15 @@ impl DataConvertTo<Duration> for DataConverter<'_> {
             DataConverter::BigInteger(value) => value.as_ref().to_u64().map_or_else(
                 || {
                     Err(DataConversionError::ConversionError(
-                        "Cannot convert BigInteger to Duration: value must be a non-negative u64"
-                            .to_string(),
+                        "Cannot convert BigInteger to Duration: value must be a non-negative u64".to_string(),
                     ))
                 },
                 |value| {
-                    options
-                        .duration
-                        .unit
-                        .duration_from_u64(value)
-                        .map_err(|message| {
-                            DataConversionError::ConversionError(format!(
-                                "Cannot convert BigInteger to Duration: {message}"
-                            ))
-                        })
+                    options.duration.unit.duration_from_u64(value).map_err(|message| {
+                        DataConversionError::ConversionError(format!(
+                            "Cannot convert BigInteger to Duration: {message}"
+                        ))
+                    })
                 },
             ),
             DataConverter::String(value) => parse_duration_string(value.as_ref(), options),
@@ -1019,9 +949,7 @@ impl DataConvertTo<Url> for DataConverter<'_> {
             DataConverter::String(value) => {
                 let value = options.string.normalize(value.as_ref())?;
                 Url::parse(&value).map_err(|error| {
-                    DataConversionError::ConversionError(format!(
-                        "Cannot convert '{value}' to Url: {error}"
-                    ))
+                    DataConversionError::ConversionError(format!("Cannot convert '{value}' to Url: {error}"))
                 })
             }
             DataConverter::Empty(_) => Err(DataConversionError::NoValue),
@@ -1037,15 +965,12 @@ impl DataConvertTo<serde_json::Value> for DataConverter<'_> {
             DataConverter::Json(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = options.string.normalize(value.as_ref())?;
-                serde_json::from_str(&value).map_err(|error| {
-                    DataConversionError::JsonDeserializationError(error.to_string())
-                })
+                serde_json::from_str(&value)
+                    .map_err(|error| DataConversionError::JsonDeserializationError(error.to_string()))
             }
             DataConverter::StringMap(value) => match serde_json::to_value(value.as_ref()) {
                 Ok(value) => Ok(value),
-                Err(error) => Err(DataConversionError::JsonSerializationError(
-                    error.to_string(),
-                )),
+                Err(error) => Err(DataConversionError::JsonSerializationError(error.to_string())),
             },
             DataConverter::Empty(_) => Err(DataConversionError::NoValue),
             _ => Err(self.unsupported(DataType::Json)),

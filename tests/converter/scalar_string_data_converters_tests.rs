@@ -120,10 +120,7 @@ fn test_scalar_string_data_converters_to_vec_with_rejects_empty_item() {
         .expect_err("empty scalar item should be rejected");
 
     assert_eq!(error.index, 1);
-    assert!(matches!(
-        error.source,
-        DataConversionError::ConversionError(_),
-    ));
+    assert!(matches!(error.source, DataConversionError::ConversionError(_),));
 }
 
 /// Test scalar string first-value empty item rejection.

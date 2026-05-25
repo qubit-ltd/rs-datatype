@@ -32,12 +32,7 @@ fn test_collection_conversion_options_cover_policy_branches() {
         .expect("empty items should be kept by default");
     assert_eq!(
         kept_items,
-        vec![
-            "a".to_string(),
-            "".to_string(),
-            "".to_string(),
-            "b".to_string(),
-        ],
+        vec!["a".to_string(), "".to_string(), "".to_string(), "b".to_string(),],
     );
 
     let skipped_items = CollectionConversionOptions::default()
