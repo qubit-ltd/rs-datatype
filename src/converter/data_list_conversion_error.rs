@@ -29,11 +29,7 @@ pub struct DataListConversionError {
 impl fmt::Display for DataListConversionError {
     /// Formats the list conversion error with the failing element index.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Data conversion failed at index {}: {}",
-            self.index, self.source
-        )
+        write!(f, "Data conversion failed at index {}: {}", self.index, self.source)
     }
 }
 

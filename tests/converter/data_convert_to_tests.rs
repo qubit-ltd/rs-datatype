@@ -17,11 +17,8 @@ use qubit_datatype::converter::{
 #[test]
 fn test_data_convert_to_trait_converts_supported_value() {
     let converter = DataConverter::from("42");
-    let converted = <DataConverter<'_> as DataConvertTo<u16>>::convert(
-        &converter,
-        &DataConversionOptions::default(),
-    )
-    .expect("string value should convert through the trait");
+    let converted = <DataConverter<'_> as DataConvertTo<u16>>::convert(&converter, &DataConversionOptions::default())
+        .expect("string value should convert through the trait");
 
     assert_eq!(converted, 42);
 }

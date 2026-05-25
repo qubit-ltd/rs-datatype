@@ -125,10 +125,7 @@ fn test_data_converters_error_contains_failing_index() {
         .expect_err("invalid second element should fail conversion");
 
     assert_eq!(error.index, 1);
-    assert!(matches!(
-        error.source,
-        DataConversionError::ConversionError(_)
-    ));
+    assert!(matches!(error.source, DataConversionError::ConversionError(_)));
     assert!(
         error.to_string().contains("index 1"),
         "display should include failing index: {error}"

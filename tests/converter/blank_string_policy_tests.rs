@@ -13,10 +13,7 @@ use qubit_datatype::converter::BlankStringPolicy;
 #[test]
 fn test_blank_string_policy_variants_are_distinct() {
     assert_eq!(BlankStringPolicy::Preserve, BlankStringPolicy::Preserve);
-    assert_eq!(
-        BlankStringPolicy::TreatAsMissing,
-        BlankStringPolicy::TreatAsMissing,
-    );
+    assert_eq!(BlankStringPolicy::TreatAsMissing, BlankStringPolicy::TreatAsMissing,);
     assert_eq!(BlankStringPolicy::Reject, BlankStringPolicy::Reject);
     assert_ne!(BlankStringPolicy::Preserve, BlankStringPolicy::Reject);
 }

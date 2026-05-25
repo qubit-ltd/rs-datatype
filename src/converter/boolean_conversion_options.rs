@@ -44,12 +44,7 @@ impl BooleanConversionOptions {
     /// Options accepting `true/false`, `1/0`, `yes/no`, and `on/off`.
     pub fn env_friendly() -> Self {
         Self {
-            true_literals: vec![
-                "true".to_string(),
-                "1".to_string(),
-                "yes".to_string(),
-                "on".to_string(),
-            ],
+            true_literals: vec!["true".to_string(), "1".to_string(), "yes".to_string(), "on".to_string()],
             false_literals: vec![
                 "false".to_string(),
                 "0".to_string(),

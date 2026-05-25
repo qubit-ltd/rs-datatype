@@ -19,9 +19,7 @@ fn test_duration_conversion_options_builders_update_fields() {
     assert_eq!(defaults.unit, DurationUnit::Milliseconds);
     assert!(defaults.append_unit_suffix);
 
-    let options = defaults
-        .with_unit(DurationUnit::Seconds)
-        .with_append_unit_suffix(false);
+    let options = defaults.with_unit(DurationUnit::Seconds).with_append_unit_suffix(false);
 
     assert_eq!(options.unit, DurationUnit::Seconds);
     assert!(!options.append_unit_suffix);

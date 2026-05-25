@@ -22,9 +22,6 @@ fn test_data_list_conversion_error_exposes_index_and_source() {
         source: DataConversionError::NoValue,
     };
 
-    assert_eq!(
-        error.to_string(),
-        "Data conversion failed at index 3: No value",
-    );
+    assert_eq!(error.to_string(), "Data conversion failed at index 3: No value",);
     assert_eq!(Error::source(&error).unwrap().to_string(), "No value");
 }
