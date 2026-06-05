@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # Data List Conversion Error
 //!
 //! Defines errors returned by reusable batch data conversions.
-//!
 
 use std::error::Error;
 use std::fmt;
@@ -29,7 +26,11 @@ pub struct DataListConversionError {
 impl fmt::Display for DataListConversionError {
     /// Formats the list conversion error with the failing element index.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Data conversion failed at index {}: {}", self.index, self.source)
+        write!(
+            f,
+            "Data conversion failed at index {}: {}",
+            self.index, self.source
+        )
     }
 }
 

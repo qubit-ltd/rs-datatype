@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # String Conversion Options
 //!
 //! Defines options that control string-source normalization.
-//!
 
 use super::blank_string_policy::BlankStringPolicy;
 use super::data_conversion_error::DataConversionError;
@@ -61,7 +58,10 @@ impl StringConversionOptions {
     ///
     /// Updated options.
     #[must_use]
-    pub fn with_blank_string_policy(mut self, policy: BlankStringPolicy) -> Self {
+    pub fn with_blank_string_policy(
+        mut self,
+        policy: BlankStringPolicy,
+    ) -> Self {
         self.blank_string_policy = policy;
         self
     }
@@ -86,10 +86,14 @@ impl StringConversionOptions {
         if value.trim().is_empty() {
             match self.blank_string_policy {
                 BlankStringPolicy::Preserve => Ok(value.to_string()),
-                BlankStringPolicy::TreatAsMissing => Err(DataConversionError::NoValue),
-                BlankStringPolicy::Reject => Err(DataConversionError::ConversionError(
-                    "blank string is not allowed".to_string(),
-                )),
+                BlankStringPolicy::TreatAsMissing => {
+                    Err(DataConversionError::NoValue)
+                }
+                BlankStringPolicy::Reject => {
+                    Err(DataConversionError::ConversionError(
+                        "blank string is not allowed".to_string(),
+                    ))
+                }
             }
         } else {
             Ok(value.to_string())

@@ -1,16 +1,14 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # Data Type Definitions (Language Layer)
 //!
-//! Provides cross-module reusable common data type enum `DataType` and type mapping `DataTypeOf`.
-//!
+//! Provides cross-module reusable common data type enum `DataType` and type
+//! mapping `DataTypeOf`.
 
 use std::fmt;
 use std::str::FromStr;
@@ -25,8 +23,8 @@ use serde::{
 /// Universal data type enumeration for cross-module type representation
 ///
 /// Defines all basic data types and composite types supported by the system.
-/// This enum provides a unified way to represent and work with different data types
-/// across various modules and components.
+/// This enum provides a unified way to represent and work with different data
+/// types across various modules and components.
 ///
 /// `DataType` serves as a bridge between Rust's type system and runtime type
 /// information, enabling dynamic type handling, serialization, validation,
@@ -34,10 +32,14 @@ use serde::{
 ///
 /// # Features
 ///
-/// - **Comprehensive Coverage**: Supports all basic Rust types plus common third-party types
-/// - **String Representation**: Each variant has a consistent string representation
-/// - **Serialization Support**: Implements `Serialize` and `Deserialize` for JSON/YAML support
-/// - **Type Mapping**: Works with `DataTypeOf` trait for compile-time type mapping
+/// - **Comprehensive Coverage**: Supports all basic Rust types plus common
+///   third-party types
+/// - **String Representation**: Each variant has a consistent string
+///   representation
+/// - **Serialization Support**: Implements `Serialize` and `Deserialize` for
+///   JSON/YAML support
+/// - **Type Mapping**: Works with `DataTypeOf` trait for compile-time type
+///   mapping
 ///
 /// # Use Cases
 ///
@@ -89,7 +91,6 @@ use serde::{
 /// let deserialized: DataType = serde_json::from_str(&json).unwrap();
 /// assert_eq!(deserialized, DataType::Float64);
 /// ```
-///
 ///
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -194,8 +195,8 @@ impl FromStr for DataType {
 }
 
 impl DataType {
-    // Keep explicit conversion helper for existing call-sites and API parity with
-    // current serialized/configuration text values.
+    // Keep explicit conversion helper for existing call-sites and API parity
+    // with current serialized/configuration text values.
     /// Get the string representation of the data type.
     ///
     /// # Returns

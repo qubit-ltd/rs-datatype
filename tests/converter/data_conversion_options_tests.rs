@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # DataConversionOptions Unit Tests
 //!
 //! Tests for grouped data conversion options.
-//!
 
 use qubit_datatype::converter::{
     BlankStringPolicy,
@@ -67,13 +64,27 @@ fn test_data_conversion_options_convenience_builders() {
 
     assert!(options.string.trim);
     assert!(options.boolean.true_literals().contains(&"yes".to_string()));
-    assert!(options.boolean.false_literals().contains(&"off".to_string()));
+    assert!(
+        options
+            .boolean
+            .false_literals()
+            .contains(&"off".to_string())
+    );
     assert!(options.collection.split_scalar_strings);
-    assert_eq!(options.string.blank_string_policy, BlankStringPolicy::Reject);
-    assert_eq!(options.collection.empty_item_policy, EmptyItemPolicy::Reject,);
+    assert_eq!(
+        options.string.blank_string_policy,
+        BlankStringPolicy::Reject
+    );
+    assert_eq!(
+        options.collection.empty_item_policy,
+        EmptyItemPolicy::Reject,
+    );
 
     let blank = DataConverter::from("   ").to_with::<String>(&options);
-    assert!(matches!(blank, Err(DataConversionError::ConversionError(_))));
+    assert!(matches!(
+        blank,
+        Err(DataConversionError::ConversionError(_))
+    ));
 }
 
 /// Test duration conversion options default values and builders.
@@ -93,8 +104,14 @@ fn test_data_conversion_options_duration_builders() {
     assert_eq!(options.duration.unit, DurationUnit::Seconds);
     assert!(!options.duration.append_unit_suffix);
     assert_eq!(DurationUnit::from_suffix("s"), Some(DurationUnit::Seconds));
-    assert_eq!(DurationUnit::from_suffix("µs"), Some(DurationUnit::Microseconds));
-    assert_eq!(DurationUnit::from_suffix("μs"), Some(DurationUnit::Microseconds));
+    assert_eq!(
+        DurationUnit::from_suffix("µs"),
+        Some(DurationUnit::Microseconds)
+    );
+    assert_eq!(
+        DurationUnit::from_suffix("μs"),
+        Some(DurationUnit::Microseconds)
+    );
     assert_eq!(DurationUnit::from_suffix("fortnights"), None);
 }
 
@@ -113,6 +130,9 @@ fn test_duration_unit_suffixes_and_rounding_cover_all_units() {
 
     for (unit, suffix, nanos) in cases {
         assert_eq!(unit.suffix(), suffix);
-        assert_eq!(unit.rounded_units(std::time::Duration::from_nanos(nanos)), 1);
+        assert_eq!(
+            unit.rounded_units(std::time::Duration::from_nanos(nanos)),
+            1
+        );
     }
 }

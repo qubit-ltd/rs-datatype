@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # CollectionConversionOptions Unit Tests
 //!
 //! Tests for scalar string collection conversion options.
-//!
 
 use qubit_datatype::converter::{
     CollectionConversionOptions,
@@ -32,7 +29,12 @@ fn test_collection_conversion_options_cover_policy_branches() {
         .expect("empty items should be kept by default");
     assert_eq!(
         kept_items,
-        vec!["a".to_string(), "".to_string(), "".to_string(), "b".to_string(),],
+        vec![
+            "a".to_string(),
+            "".to_string(),
+            "".to_string(),
+            "b".to_string(),
+        ],
     );
 
     let skipped_items = CollectionConversionOptions::default()

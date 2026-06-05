@@ -1,18 +1,15 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # Reusable Batch Data Conversion
 //!
 //! Provides `DataConverters`, a lightweight iterator adapter used to convert
 //! batches of common runtime values with the single-value [`DataConverter`]
 //! rules.
-//!
 
 use std::marker::PhantomData;
 
@@ -27,8 +24,8 @@ use super::data_list_conversion_result::DataListConversionResult;
 /// A lightweight adapter for converting batches of source values.
 ///
 /// `DataConverters` stores an iterator and converts each item through
-/// [`DataConverter`]. Borrowed inputs such as `&Vec<T>` and `&[T]` are converted
-/// by reference and do not clone the source collection.
+/// [`DataConverter`]. Borrowed inputs such as `&Vec<T>` and `&[T]` are
+/// converted by reference and do not clone the source collection.
 ///
 /// # Examples
 ///
@@ -48,7 +45,6 @@ use super::data_list_conversion_result::DataListConversionResult;
 /// assert_eq!(ports, vec![8080, 9090]);
 /// assert_eq!(values, vec![String::from("8080"), String::from("9090")]);
 /// ```
-///
 #[derive(Debug, Clone)]
 pub struct DataConverters<'a, I> {
     /// The iterator of source values.
@@ -99,8 +95,9 @@ where
     ///
     /// # Errors
     ///
-    /// Returns [`DataListConversionError`] with the zero-based failing index and
-    /// the original [`DataConversionError`] when any element fails conversion.
+    /// Returns [`DataListConversionError`] with the zero-based failing index
+    /// and the original [`DataConversionError`] when any element fails
+    /// conversion.
     ///
     /// # Examples
     ///
@@ -138,9 +135,13 @@ where
     ///
     /// # Errors
     ///
-    /// Returns [`DataListConversionError`] with the zero-based failing index and
-    /// the original [`DataConversionError`] when any element fails conversion.
-    pub fn to_vec_with<T>(self, options: &DataConversionOptions) -> DataListConversionResult<Vec<T>>
+    /// Returns [`DataListConversionError`] with the zero-based failing index
+    /// and the original [`DataConversionError`] when any element fails
+    /// conversion.
+    pub fn to_vec_with<T>(
+        self,
+        options: &DataConversionOptions,
+    ) -> DataListConversionResult<Vec<T>>
     where
         DataConverter<'a>: DataConvertTo<T>,
     {
@@ -194,7 +195,8 @@ where
         self.to_first_with(&DataConversionOptions::default())
     }
 
-    /// Converts the first source item to the requested target type using options.
+    /// Converts the first source item to the requested target type using
+    /// options.
     ///
     /// # Type Parameters
     ///
@@ -213,7 +215,10 @@ where
     /// Returns [`DataConversionError::NoValue`] when the source iterator is
     /// empty, or the original conversion error when the first element cannot be
     /// converted.
-    pub fn to_first_with<T>(self, options: &DataConversionOptions) -> DataConversionResult<T>
+    pub fn to_first_with<T>(
+        self,
+        options: &DataConversionOptions,
+    ) -> DataConversionResult<T>
     where
         DataConverter<'a>: DataConvertTo<T>,
     {

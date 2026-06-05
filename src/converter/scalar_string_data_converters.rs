@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # Scalar String Data Conversion
 //!
 //! Provides conversion of a single scalar string into collection values.
-//!
 
 use super::data_conversion_error::DataConversionError;
 use super::data_conversion_options::DataConversionOptions;
@@ -27,7 +24,6 @@ use super::data_list_conversion_result::DataListConversionResult;
 /// scalar string to a vector or first value. It keeps scalar strings such as
 /// `"1,2,3"` distinct from already-materialized string collections such as
 /// `["1", "2", "3"]`.
-///
 #[derive(Debug, Clone, Copy)]
 pub struct ScalarStringDataConverters<'a> {
     /// The scalar string source.
@@ -90,16 +86,20 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// Returns [`DataListConversionError`] when the scalar string cannot be
     /// normalized, split, or converted to the requested element type.
-    pub fn to_vec_with<T>(self, options: &DataConversionOptions) -> DataListConversionResult<Vec<T>>
+    pub fn to_vec_with<T>(
+        self,
+        options: &DataConversionOptions,
+    ) -> DataListConversionResult<Vec<T>>
     where
         DataConverter<'a>: DataConvertTo<T>,
     {
-        let text = match DataConverter::from(self.source).to_with::<String>(options) {
-            Ok(text) => text,
-            Err(source) => {
-                return Err(DataListConversionError { index: 0, source });
-            }
-        };
+        let text =
+            match DataConverter::from(self.source).to_with::<String>(options) {
+                Ok(text) => text,
+                Err(source) => {
+                    return Err(DataListConversionError { index: 0, source });
+                }
+            };
         let items = options.collection.scalar_items(&text)?;
         DataConverters::from(items).to_vec_with(options)
     }
@@ -143,16 +143,21 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// Returns [`DataConversionError::NoValue`] when splitting yields no items,
     /// or the underlying conversion error.
-    pub fn to_first_with<T>(self, options: &DataConversionOptions) -> DataConversionResult<T>
+    pub fn to_first_with<T>(
+        self,
+        options: &DataConversionOptions,
+    ) -> DataConversionResult<T>
     where
         DataConverter<'a>: DataConvertTo<T>,
     {
-        let text = DataConverter::from(self.source).to_with::<String>(options)?;
+        let text =
+            DataConverter::from(self.source).to_with::<String>(options)?;
         let mut items = match options.collection.scalar_items(&text) {
             Ok(items) => items,
             Err(error) => return Err(error.source),
         };
-        let first = items.drain(..).next().ok_or(DataConversionError::NoValue)?;
+        let first =
+            items.drain(..).next().ok_or(DataConversionError::NoValue)?;
         DataConverter::from(first).to_with::<T>(options)
     }
 }
