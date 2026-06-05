@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # DataType Unit Tests
 //!
 //! Tests for data type enum functionality.
-//!
 
 use qubit_datatype::DataType;
 use std::collections::HashSet;
@@ -49,13 +46,18 @@ fn all_data_types() -> [DataType; 27] {
     ]
 }
 
-/// Ensure `as_str()` mapping is exhaustive, unique, and consistent with Display.
+/// Ensure `as_str()` mapping is exhaustive, unique, and consistent with
+/// Display.
 #[test]
 fn test_data_type_as_str_display_consistency_and_uniqueness() {
     let mut names = HashSet::new();
     for data_type in all_data_types() {
         let name = data_type.as_str();
-        assert!(names.insert(name), "Duplicate as_str() value found: {}", name);
+        assert!(
+            names.insert(name),
+            "Duplicate as_str() value found: {}",
+            name
+        );
         assert_eq!(data_type.to_string(), name);
     }
     assert_eq!(names.len(), 27);
@@ -211,14 +213,20 @@ fn test_data_type_from_str_all_types() {
     assert_eq!(DataType::from_str("bool").unwrap(), DataType::Bool);
     assert_eq!(DataType::from_str("char").unwrap(), DataType::Char);
     assert_eq!(DataType::from_str("Int32").unwrap(), DataType::Int32);
-    assert_eq!(DataType::from_str("stringmap").unwrap(), DataType::StringMap);
+    assert_eq!(
+        DataType::from_str("stringmap").unwrap(),
+        DataType::StringMap
+    );
     assert_eq!(DataType::from_str("json").unwrap(), DataType::Json);
 }
 
 #[test]
 fn test_data_type_from_str_with_case_insensitive_match() {
     assert_eq!(DataType::from_str("UINT64").unwrap(), DataType::UInt64);
-    assert_eq!(DataType::from_str("BigDecimal").unwrap(), DataType::BigDecimal);
+    assert_eq!(
+        DataType::from_str("BigDecimal").unwrap(),
+        DataType::BigDecimal
+    );
 }
 
 #[test]
@@ -295,7 +303,11 @@ fn test_data_type_serde_v040_types() {
 
     for (dt, expected_json) in cases {
         let serialized = serde_json::to_string(&dt).unwrap();
-        assert_eq!(serialized, expected_json, "Serialization mismatch for {:?}", dt);
+        assert_eq!(
+            serialized, expected_json,
+            "Serialization mismatch for {:?}",
+            dt
+        );
 
         let deserialized: DataType = serde_json::from_str(&serialized).unwrap();
         assert_eq!(deserialized, dt, "Deserialization mismatch for {:?}", dt);
@@ -330,6 +342,9 @@ fn test_data_type_deserialize_rejects_non_lowercase_values() {
 
     for raw in cases {
         let deserialized: Result<DataType, _> = serde_json::from_str(raw);
-        assert!(deserialized.is_err(), "Should reject non-lowercase JSON: {raw}");
+        assert!(
+            deserialized.is_err(),
+            "Should reject non-lowercase JSON: {raw}"
+        );
     }
 }

@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # ScalarStringDataConverters Unit Tests
 //!
 //! Tests for scalar string collection conversion behavior.
-//!
 
 use qubit_datatype::converter::{
     BlankStringPolicy,
@@ -55,9 +52,10 @@ fn test_scalar_string_data_converters_to_vec_with_splits_items() {
                 .with_empty_item_policy(EmptyItemPolicy::Skip),
         );
 
-    let ports: Vec<u16> = ScalarStringDataConverters::from(" 8080, 8081;; 8082 ")
-        .to_vec_with(&options)
-        .expect("scalar string should split and parse into ports");
+    let ports: Vec<u16> =
+        ScalarStringDataConverters::from(" 8080, 8081;; 8082 ")
+            .to_vec_with(&options)
+            .expect("scalar string should split and parse into ports");
 
     assert_eq!(ports, vec![8080, 8081, 8082]);
 }
@@ -120,7 +118,10 @@ fn test_scalar_string_data_converters_to_vec_with_rejects_empty_item() {
         .expect_err("empty scalar item should be rejected");
 
     assert_eq!(error.index, 1);
-    assert!(matches!(error.source, DataConversionError::ConversionError(_),));
+    assert!(matches!(
+        error.source,
+        DataConversionError::ConversionError(_),
+    ));
 }
 
 /// Test scalar string first-value empty item rejection.
@@ -140,7 +141,8 @@ fn test_scalar_string_data_converters_to_first_with_rejects_empty_item() {
 
 /// Test scalar string first-value behavior when all items are skipped.
 #[test]
-fn test_scalar_string_data_converters_to_first_with_reports_no_value_after_skip() {
+fn test_scalar_string_data_converters_to_first_with_reports_no_value_after_skip()
+ {
     let options = DataConversionOptions::default().with_collection_options(
         CollectionConversionOptions::default()
             .with_split_scalar_strings(true)

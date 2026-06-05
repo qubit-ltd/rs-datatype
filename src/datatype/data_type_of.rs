@@ -1,16 +1,14 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # Compile-time Data Type Mapping
 //!
-//! Provides the `DataTypeOf` trait and implementations to map Rust types to `DataType`.
-//!
+//! Provides the `DataTypeOf` trait and implementations to map Rust types to
+//! `DataType`.
 
 use super::data_type::DataType;
 use bigdecimal::BigDecimal;

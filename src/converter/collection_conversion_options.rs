@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # Collection Conversion Options
 //!
 //! Defines options that control scalar-string-to-collection conversion.
-//!
 
 use super::data_conversion_error::DataConversionError;
 use super::data_list_conversion_error::DataListConversionError;
@@ -53,7 +50,10 @@ impl CollectionConversionOptions {
     ///
     /// Updated options.
     #[must_use]
-    pub fn with_split_scalar_strings(mut self, split_scalar_strings: bool) -> Self {
+    pub fn with_split_scalar_strings(
+        mut self,
+        split_scalar_strings: bool,
+    ) -> Self {
         self.split_scalar_strings = split_scalar_strings;
         self
     }
@@ -68,7 +68,10 @@ impl CollectionConversionOptions {
     ///
     /// Updated options.
     #[must_use]
-    pub fn with_delimiters(mut self, delimiters: impl IntoIterator<Item = char>) -> Self {
+    pub fn with_delimiters(
+        mut self,
+        delimiters: impl IntoIterator<Item = char>,
+    ) -> Self {
         self.delimiters = delimiters.into_iter().collect();
         self
     }
@@ -117,7 +120,10 @@ impl CollectionConversionOptions {
     /// # Errors
     ///
     /// Returns [`DataListConversionError`] when an empty item is rejected.
-    pub fn scalar_items(&self, value: &str) -> DataListConversionResult<Vec<String>> {
+    pub fn scalar_items(
+        &self,
+        value: &str,
+    ) -> DataListConversionResult<Vec<String>> {
         let raw_items: Vec<&str> = if self.split_scalar_strings {
             value.split(|c| self.delimiters.contains(&c)).collect()
         } else {
@@ -134,7 +140,8 @@ impl CollectionConversionOptions {
                         return Err(DataListConversionError {
                             index,
                             source: DataConversionError::ConversionError(
-                                "empty collection item is not allowed".to_string(),
+                                "empty collection item is not allowed"
+                                    .to_string(),
                             ),
                         });
                     }

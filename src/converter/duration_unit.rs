@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # Duration Unit
 //!
 //! Defines supported units for duration conversion.
-//!
 
 use std::time::Duration;
 
@@ -163,7 +160,11 @@ impl Default for DurationUnit {
 /// # Errors
 ///
 /// Returns an error message when the multiplication overflows `u64` seconds.
-fn checked_secs(value: u64, seconds_per_unit: u64, unit_name: &str) -> Result<Duration, String> {
+fn checked_secs(
+    value: u64,
+    seconds_per_unit: u64,
+    unit_name: &str,
+) -> Result<Duration, String> {
     value
         .checked_mul(seconds_per_unit)
         .map(Duration::from_secs)

@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # Boolean Conversion Options
 //!
 //! Defines options that control string-to-boolean conversion.
-//!
 
 /// Options that control string-to-boolean conversion.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -44,7 +41,12 @@ impl BooleanConversionOptions {
     /// Options accepting `true/false`, `1/0`, `yes/no`, and `on/off`.
     pub fn env_friendly() -> Self {
         Self {
-            true_literals: vec!["true".to_string(), "1".to_string(), "yes".to_string(), "on".to_string()],
+            true_literals: vec![
+                "true".to_string(),
+                "1".to_string(),
+                "yes".to_string(),
+                "on".to_string(),
+            ],
             false_literals: vec![
                 "false".to_string(),
                 "0".to_string(),
@@ -135,7 +137,8 @@ impl BooleanConversionOptions {
         if self.case_sensitive {
             if self.true_literals.iter().any(|literal| literal == value) {
                 Some(true)
-            } else if self.false_literals.iter().any(|literal| literal == value) {
+            } else if self.false_literals.iter().any(|literal| literal == value)
+            {
                 Some(false)
             } else {
                 None

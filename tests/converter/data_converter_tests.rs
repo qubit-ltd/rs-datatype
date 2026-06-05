@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # DataConverter Unit Tests
 //!
 //! Tests for reusable data conversion behavior.
-//!
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -102,8 +99,10 @@ fn test_data_converter_from_impls_cover_all_sources() {
     assert_data_type(DataConverter::from(float64_value), DataType::Float64);
     assert_data_type(DataConverter::from(&float64_value), DataType::Float64);
 
-    let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
-    let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
+    let date =
+        NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
+    let time =
+        NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
     let duration = Duration::new(1, 2);
@@ -124,9 +123,15 @@ fn test_data_converter_from_impls_cover_all_sources() {
     let mut map = HashMap::new();
     map.insert("k".to_string(), "v".to_string());
     let json = serde_json::json!({"k": "v"});
-    assert_data_type(DataConverter::from(big_int.clone()), DataType::BigInteger);
+    assert_data_type(
+        DataConverter::from(big_int.clone()),
+        DataType::BigInteger,
+    );
     assert_data_type(DataConverter::from(&big_int), DataType::BigInteger);
-    assert_data_type(DataConverter::from(big_decimal.clone()), DataType::BigDecimal);
+    assert_data_type(
+        DataConverter::from(big_decimal.clone()),
+        DataType::BigDecimal,
+    );
     assert_data_type(DataConverter::from(&big_decimal), DataType::BigDecimal);
     assert_data_type(DataConverter::from(url.clone()), DataType::Url);
     assert_data_type(DataConverter::from(&url), DataType::Url);
@@ -297,7 +302,10 @@ fn test_data_converter_signed_integer_targets_accept_supported_sources() {
         (DataConverter::from(&big_decimal), 21),
     ];
     for (source, expected) in cases {
-        assert_eq!(source.to::<i128>().expect("source should convert to i128"), expected);
+        assert_eq!(
+            source.to::<i128>().expect("source should convert to i128"),
+            expected
+        );
     }
 
     assert_eq!(
@@ -348,7 +356,10 @@ fn test_data_converter_signed_integer_targets_accept_supported_sources() {
         Err(DataConversionError::ConversionError(_))
     ));
     assert!(matches!(
-        DataConverter::from(NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date")).to::<i128>(),
+        DataConverter::from(
+            NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date")
+        )
+        .to::<i128>(),
         Err(DataConversionError::ConversionFailed { .. })
     ));
 }
@@ -374,7 +385,10 @@ fn test_data_converter_unsigned_integer_targets_accept_supported_sources() {
         (DataConverter::from("13"), 13),
     ];
     for (source, expected) in cases {
-        assert_eq!(source.to::<u128>().expect("source should convert to u128"), expected);
+        assert_eq!(
+            source.to::<u128>().expect("source should convert to u128"),
+            expected
+        );
     }
 
     assert_eq!(
@@ -425,12 +439,15 @@ fn test_data_converter_unsigned_integer_targets_accept_supported_sources() {
 /// Test string target conversion for every supported source variant.
 #[test]
 fn test_data_converter_string_target_accepts_all_value_sources() {
-    let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
-    let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
+    let date =
+        NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
+    let time =
+        NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
     let big_int = BigInt::from(18);
-    let big_decimal = BigDecimal::from_str("19.5").expect("test BigDecimal should parse");
+    let big_decimal =
+        BigDecimal::from_str("19.5").expect("test BigDecimal should parse");
     let url = Url::parse("https://example.com").expect("test URL should parse");
     let mut map = HashMap::new();
     map.insert("k".to_string(), "v".to_string());
@@ -485,7 +502,8 @@ fn test_data_converter_string_target_accepts_all_value_sources() {
 #[test]
 fn test_data_converter_float_targets_accept_supported_sources() {
     let big_int = BigInt::from(20);
-    let big_decimal = BigDecimal::from_str("21.5").expect("test BigDecimal should parse");
+    let big_decimal =
+        BigDecimal::from_str("21.5").expect("test BigDecimal should parse");
 
     let f32_sources = [
         DataConverter::from(1.0f32),
@@ -509,7 +527,12 @@ fn test_data_converter_float_targets_accept_supported_sources() {
         DataConverter::from(&big_decimal),
     ];
     for source in f32_sources {
-        assert!(source.to::<f32>().expect("source should convert to f32").is_finite());
+        assert!(
+            source
+                .to::<f32>()
+                .expect("source should convert to f32")
+                .is_finite()
+        );
     }
 
     let f64_sources = [
@@ -534,7 +557,12 @@ fn test_data_converter_float_targets_accept_supported_sources() {
         DataConverter::from(&big_decimal),
     ];
     for source in f64_sources {
-        assert!(source.to::<f64>().expect("source should convert to f64").is_finite());
+        assert!(
+            source
+                .to::<f64>()
+                .expect("source should convert to f64")
+                .is_finite()
+        );
     }
 
     assert!(
@@ -579,8 +607,10 @@ fn test_data_converter_float_targets_accept_supported_sources() {
 /// Test direct strict conversions for non-numeric target types.
 #[test]
 fn test_data_converter_strict_targets_cover_success_and_errors() {
-    let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
-    let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
+    let date =
+        NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
+    let time =
+        NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
     let big_int = BigInt::from(18);
@@ -590,14 +620,30 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
 
     assert_eq!(DataConverter::from(date).to::<NaiveDate>().unwrap(), date);
     assert_eq!(DataConverter::from(time).to::<NaiveTime>().unwrap(), time);
-    assert_eq!(DataConverter::from(datetime).to::<NaiveDateTime>().unwrap(), datetime);
-    assert_eq!(DataConverter::from(instant).to::<DateTime<Utc>>().unwrap(), instant);
-    assert_eq!(DataConverter::from(&big_int).to::<BigInt>().unwrap(), big_int);
     assert_eq!(
-        DataConverter::from(&big_decimal).to::<BigDecimal>().unwrap(),
+        DataConverter::from(datetime).to::<NaiveDateTime>().unwrap(),
+        datetime
+    );
+    assert_eq!(
+        DataConverter::from(instant).to::<DateTime<Utc>>().unwrap(),
+        instant
+    );
+    assert_eq!(
+        DataConverter::from(&big_int).to::<BigInt>().unwrap(),
+        big_int
+    );
+    assert_eq!(
+        DataConverter::from(&big_decimal)
+            .to::<BigDecimal>()
+            .unwrap(),
         big_decimal
     );
-    assert_eq!(DataConverter::from(&map).to::<HashMap<String, String>>().unwrap(), map);
+    assert_eq!(
+        DataConverter::from(&map)
+            .to::<HashMap<String, String>>()
+            .unwrap(),
+        map
+    );
 
     assert!(matches!(
         DataConverter::Empty(DataType::Date).to::<NaiveDate>(),
@@ -648,7 +694,8 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
         Err(DataConversionError::ConversionFailed { .. })
     ));
     assert!(matches!(
-        DataConverter::Empty(DataType::StringMap).to::<HashMap<String, String>>(),
+        DataConverter::Empty(DataType::StringMap)
+            .to::<HashMap<String, String>>(),
         Err(DataConversionError::NoValue)
     ));
     assert!(matches!(
@@ -662,18 +709,28 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
 fn test_data_converter_string_sources_report_string_data_type() {
     let owned = DataConverter::from(String::from("15"));
     assert_eq!(owned.data_type(), DataType::String);
-    assert_eq!(owned.to::<u8>().expect("owned string should convert to u8"), 15);
+    assert_eq!(
+        owned.to::<u8>().expect("owned string should convert to u8"),
+        15
+    );
 
     let borrowed_source = String::from("16");
     let borrowed = DataConverter::from(&borrowed_source);
     assert_eq!(borrowed.data_type(), DataType::String);
-    assert_eq!(borrowed.to::<u8>().expect("borrowed String should convert to u8"), 16);
+    assert_eq!(
+        borrowed
+            .to::<u8>()
+            .expect("borrowed String should convert to u8"),
+        16
+    );
 }
 
 /// Test integer conversion range checks across signed and unsigned targets.
 #[test]
 fn test_data_converter_numeric_conversions_check_integer_bounds() {
-    let signed: i16 = DataConverter::from(255u8).to().expect("u8 should convert to i16");
+    let signed: i16 = DataConverter::from(255u8)
+        .to()
+        .expect("u8 should convert to i16");
     assert_eq!(signed, 255);
 
     assert!(matches!(
@@ -731,13 +788,15 @@ fn test_data_converter_big_number_conversions_check_range() {
     assert_eq!(converted, i64::MAX);
 
     let huge_int =
-        BigInt::parse_bytes(b"999999999999999999999999999999999999", 10).expect("test BigInt literal should parse");
+        BigInt::parse_bytes(b"999999999999999999999999999999999999", 10)
+            .expect("test BigInt literal should parse");
     assert!(matches!(
         DataConverter::from(&huge_int).to::<i64>(),
         Err(DataConversionError::ConversionError(_))
     ));
 
-    let decimal = BigDecimal::from_str("123.75").expect("test BigDecimal should parse");
+    let decimal =
+        BigDecimal::from_str("123.75").expect("test BigDecimal should parse");
     let converted: f64 = DataConverter::from(&decimal)
         .to()
         .expect("BigDecimal should convert to f64");
@@ -800,8 +859,9 @@ fn test_data_converter_duration_string_conversion() {
         .expect("bare duration string should use default milliseconds");
     assert_eq!(bare_default, Duration::from_millis(10));
 
-    let options = DataConversionOptions::default()
-        .with_duration_options(DurationConversionOptions::default().with_unit(DurationUnit::Seconds));
+    let options = DataConversionOptions::default().with_duration_options(
+        DurationConversionOptions::default().with_unit(DurationUnit::Seconds),
+    );
     let bare_seconds: Duration = DataConverter::from("10")
         .to_with(&options)
         .expect("bare duration string should use configured seconds");
@@ -829,7 +889,8 @@ fn test_data_converter_duration_string_conversion() {
         DataConverter::from("10fortnights").to::<Duration>(),
         Err(DataConversionError::ConversionError(_))
     ));
-    let overflowing_duration = format!("{}ns", (u64::MAX as u128 + 1) * 1_000_000_000);
+    let overflowing_duration =
+        format!("{}ns", (u64::MAX as u128 + 1) * 1_000_000_000);
     assert!(matches!(
         DataConverter::from(overflowing_duration).to::<Duration>(),
         Err(DataConversionError::ConversionError(_))
@@ -857,8 +918,9 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
         .expect("integer duration should use default milliseconds");
     assert_eq!(duration, Duration::from_millis(1500));
 
-    let options = DataConversionOptions::default()
-        .with_duration_options(DurationConversionOptions::default().with_unit(DurationUnit::Seconds));
+    let options = DataConversionOptions::default().with_duration_options(
+        DurationConversionOptions::default().with_unit(DurationUnit::Seconds),
+    );
     let duration: Duration = DataConverter::from(2u64)
         .to_with(&options)
         .expect("integer duration should use configured seconds");
@@ -914,13 +976,16 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
     ));
 
     let overflowing_options = DataConversionOptions::default()
-        .with_duration_options(DurationConversionOptions::default().with_unit(DurationUnit::Days));
+        .with_duration_options(
+            DurationConversionOptions::default().with_unit(DurationUnit::Days),
+        );
     assert!(matches!(
         DataConverter::from(u64::MAX).to_with::<Duration>(&overflowing_options),
         Err(DataConversionError::ConversionError(_))
     ));
     assert!(matches!(
-        DataConverter::from(i128::from(u64::MAX)).to_with::<Duration>(&overflowing_options),
+        DataConverter::from(i128::from(u64::MAX))
+            .to_with::<Duration>(&overflowing_options),
         Err(DataConversionError::ConversionError(_))
     ));
 
@@ -931,11 +996,15 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
     ));
     let overflowing_big_integer = BigInt::from(u64::MAX);
     assert!(matches!(
-        DataConverter::from(&overflowing_big_integer).to_with::<Duration>(&overflowing_options),
+        DataConverter::from(&overflowing_big_integer)
+            .to_with::<Duration>(&overflowing_options),
         Err(DataConversionError::ConversionError(_))
     ));
     assert!(matches!(
-        DataConverter::from(NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date")).to::<Duration>(),
+        DataConverter::from(
+            NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date")
+        )
+        .to::<Duration>(),
         Err(DataConversionError::ConversionFailed { .. })
     ));
 }
@@ -948,7 +1017,9 @@ fn test_data_converter_url_and_json_conversions() {
         .expect("URL string should parse");
     assert_eq!(url.as_str(), "https://example.com/path");
 
-    let direct_url: Url = DataConverter::from(&url).to().expect("URL should convert to URL");
+    let direct_url: Url = DataConverter::from(&url)
+        .to()
+        .expect("URL should convert to URL");
     assert_eq!(direct_url, url);
 
     assert!(matches!(
@@ -969,7 +1040,9 @@ fn test_data_converter_url_and_json_conversions() {
         .expect("JSON string should parse");
     assert_eq!(json["answer"], 42);
 
-    let direct_json: serde_json::Value = DataConverter::from(&json).to().expect("JSON should convert to JSON");
+    let direct_json: serde_json::Value = DataConverter::from(&json)
+        .to()
+        .expect("JSON should convert to JSON");
     assert_eq!(direct_json["answer"], 42);
 
     let mut map = HashMap::new();
@@ -1011,15 +1084,19 @@ fn test_data_converter_empty_and_unsupported_errors_include_types() {
             assert_eq!(from, DataType::Char);
             assert_eq!(to, DataType::Bool);
         }
-        other => panic!("expected char to bool conversion failure, got {other:?}"),
+        other => {
+            panic!("expected char to bool conversion failure, got {other:?}")
+        }
     }
 }
 
 /// Test temporal and complex conversions with strict target behavior.
 #[test]
 fn test_data_converter_temporal_and_complex_conversions() {
-    let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
-    let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
+    let date =
+        NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
+    let time =
+        NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
 

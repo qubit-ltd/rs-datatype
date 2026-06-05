@@ -1,12 +1,10 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # DataConversionError Unit Tests
 //!
 //! Tests for reusable data conversion errors.
@@ -31,15 +29,18 @@ fn test_data_conversion_error_display() {
         "Type conversion failed: from string to int32"
     );
     assert_eq!(
-        DataConversionError::ConversionError("bad input".to_string()).to_string(),
+        DataConversionError::ConversionError("bad input".to_string())
+            .to_string(),
         "Conversion error: bad input"
     );
     assert_eq!(
-        DataConversionError::JsonSerializationError("bad json".to_string()).to_string(),
+        DataConversionError::JsonSerializationError("bad json".to_string())
+            .to_string(),
         "JSON serialization error: bad json"
     );
     assert_eq!(
-        DataConversionError::JsonDeserializationError("bad json".to_string()).to_string(),
+        DataConversionError::JsonDeserializationError("bad json".to_string())
+            .to_string(),
         "JSON deserialization error: bad json"
     );
 }

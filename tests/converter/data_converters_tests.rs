@@ -1,16 +1,13 @@
-/*******************************************************************************
- *
- *    Copyright (c) 2025 - 2026 Haixing Hu.
- *
- *    SPDX-License-Identifier: Apache-2.0
- *
- *    Licensed under the Apache License, Version 2.0.
- *
- ******************************************************************************/
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
 //! # DataConverters Unit Tests
 //!
 //! Tests for reusable batch data conversion behavior.
-//!
 
 use std::error::Error;
 
@@ -64,9 +61,10 @@ fn test_data_converters_from_owned_vec_converts_all_values() {
 fn test_data_converters_from_iterator_converts_all_values() {
     let values = ["1", "2", "3"];
 
-    let converted: Vec<u16> = DataConverters::from_iterator(values.iter().copied())
-        .to_vec()
-        .expect("string iterator should convert to u16 vector");
+    let converted: Vec<u16> =
+        DataConverters::from_iterator(values.iter().copied())
+            .to_vec()
+            .expect("string iterator should convert to u16 vector");
 
     assert_eq!(converted, vec![1, 2, 3]);
 }
@@ -80,9 +78,10 @@ fn test_data_converters_to_vec_with_applies_options() {
             .with_blank_string_policy(BlankStringPolicy::Reject),
     );
 
-    let ports: Vec<u16> = DataConverters::from(vec![" 8080 ".to_string(), " 8081 ".to_string()])
-        .to_vec_with(&options)
-        .expect("trimmed string values should parse into ports");
+    let ports: Vec<u16> =
+        DataConverters::from(vec![" 8080 ".to_string(), " 8081 ".to_string()])
+            .to_vec_with(&options)
+            .expect("trimmed string values should parse into ports");
 
     assert_eq!(ports, vec![8080, 8081]);
 }
@@ -125,7 +124,10 @@ fn test_data_converters_error_contains_failing_index() {
         .expect_err("invalid second element should fail conversion");
 
     assert_eq!(error.index, 1);
-    assert!(matches!(error.source, DataConversionError::ConversionError(_)));
+    assert!(matches!(
+        error.source,
+        DataConversionError::ConversionError(_)
+    ));
     assert!(
         error.to_string().contains("index 1"),
         "display should include failing index: {error}"
