@@ -15,14 +15,14 @@
 
 ```toml
 [dependencies]
-qubit-datatype = "0.4"
+qubit-datatype = "0.5"
 ```
 
 需要完整转换引擎时：
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.4", features = ["converter"] }
+qubit-datatype = { version = "0.5", features = ["converter"] }
 ```
 
 ## Features
@@ -64,7 +64,7 @@ assert_eq!(DataType::ALL.len(), 27);
 # {
 use qubit_datatype::{
     DataConversionError, InvalidValueReason, DataConversionOptions,
-    DataConverter, NumericConversionPolicy,
+    DataConverter,
 };
 
 assert!(matches!(
@@ -75,9 +75,8 @@ assert!(matches!(
     }),
 ));
 
-let lossy = DataConversionOptions::default()
-    .with_numeric_policy(NumericConversionPolicy::Lossy);
-assert_eq!(DataConverter::from("3.9").to_with::<i32>(&lossy), Ok(3));
+let lossy = DataConversionOptions::lossy();
+assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 # }
 ```
 
@@ -124,11 +123,11 @@ assert_eq!(DataConverter::from(" true ").to_with::<bool>(&options), Ok(true));
 
 ### Duration
 
-Duration 文本格式为 `[0-9]+(ns|us|ms|s|m|h|d)?`，无后缀时使用配置单位；
-拒绝空白、符号、小数和非 ASCII 后缀。大整数先拆成秒和纳秒，再判断最终
-`Duration` 是否越界。
+Duration 文本格式为 `[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`。数值输入、
+无后缀字符串和输出格式分别配置单位；默认 profile 三者均使用毫秒。拒绝空白、
+符号和小数。大整数先拆成秒和纳秒，再判断最终 `Duration` 是否越界。
 
-Duration 转整数和字符串同样遵循数值策略：Exact 要求按配置单位整除，Lossy
+Duration 转整数和字符串同样遵循数值策略：Exact 要求按输出单位整除，Lossy
 采用 half-up 舍入。
 
 ### Rich text 格式
