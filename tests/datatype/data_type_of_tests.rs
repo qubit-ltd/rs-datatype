@@ -17,6 +17,7 @@ use qubit_datatype::{
 /// Test primitive and standard-library mappings without optional features.
 #[test]
 fn test_data_type_of_primitive_and_standard_types() {
+    use std::collections::HashMap;
     use std::time::Duration;
 
     assert_eq!(bool::DATA_TYPE, DataType::Bool);
@@ -37,6 +38,10 @@ fn test_data_type_of_primitive_and_standard_types() {
     assert_eq!(f64::DATA_TYPE, DataType::Float64);
     assert_eq!(String::DATA_TYPE, DataType::String);
     assert_eq!(Duration::DATA_TYPE, DataType::Duration);
+    assert_eq!(
+        HashMap::<String, String>::DATA_TYPE,
+        DataType::StringMap,
+    );
 }
 
 /// Test chrono mappings when the feature is enabled.
@@ -76,7 +81,6 @@ fn test_data_type_of_v040_types() {
     assert_eq!(usize::DATA_TYPE, DataType::UIntSize);
     assert_eq!(Duration::DATA_TYPE, DataType::Duration);
     assert_eq!(url::Url::DATA_TYPE, DataType::Url);
-    assert_eq!(HashMap::<String, String>::DATA_TYPE, DataType::StringMap);
     assert_eq!(serde_json::Value::DATA_TYPE, DataType::Json);
 }
 
