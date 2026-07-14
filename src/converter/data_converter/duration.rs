@@ -13,24 +13,26 @@ use num_traits::{
     Zero,
 };
 
+use super::DataConverter;
 use super::numeric::{
     duration_to_bigint,
     source_to_bigint,
 };
-use super::{
-    DataConverter,
-    normalize,
-};
+use super::string_source::normalize;
 use crate::converter::{
-    InvalidValueReason,
-    DataConversionOptions,
     DataConversionError,
+    DataConversionOptions,
     DataConvertTo,
     DurationUnit,
+    InvalidValueReason,
 };
 use crate::datatype::DataType;
 
 /// Converts a duration unit count to a duration.
+///
+/// `value` is interpreted using the configured duration unit and `from` is
+/// retained as error context. Returns the exact duration, or an invalid-value
+/// error for negative or out-of-range counts.
 fn integer_to_duration(
     value: &BigInt,
     from: DataType,
@@ -61,6 +63,11 @@ fn integer_to_duration(
 }
 
 /// Parses the canonical duration grammar.
+///
+/// `value` is normalized using `options`, then parsed as a non-negative integer
+/// with an optional supported unit suffix. A missing suffix uses the configured
+/// unit. Returns contextual conversion errors for normalization, syntax, unit,
+/// and range failures.
 fn parse_duration(
     value: &str,
     options: &DataConversionOptions,
@@ -156,6 +163,10 @@ impl DataConvertTo<Duration> for DataConverter<'_> {
 }
 
 /// Formats a duration using the configured unit and suffix policy.
+///
+/// Returns an exact unit count under [`NumericConversionPolicy::Exact`], or a
+/// half-up rounded count under the lossy policy. A precision-losing exact
+/// conversion returns [`DataConversionError::InvalidValue`].
 pub(super) fn format_duration(
     value: Duration,
     options: &DataConversionOptions,

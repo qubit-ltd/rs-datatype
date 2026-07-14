@@ -14,9 +14,9 @@ use qubit_datatype::converter::{
     BlankStringPolicy,
     CollectionConversionOptions,
     DataConversionError,
-    InvalidValueReason,
     DataConversionOptions,
     EmptyItemPolicy,
+    InvalidValueReason,
     ScalarStringDataConverters,
     StringConversionOptions,
 };

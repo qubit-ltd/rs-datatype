@@ -20,10 +20,10 @@ use chrono::{
 use num_bigint::BigInt;
 use qubit_datatype::{
     DataConversionError,
-    InvalidValueReason,
     DataConversionOptions,
     DataConverter,
     DataType,
+    InvalidValueReason,
     NumericConversionPolicy,
 };
 use url::Url;

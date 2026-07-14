@@ -16,10 +16,28 @@ use serde::{
     Serialize,
 };
 
-use super::boolean_literal_conflict_error::BooleanLiteralConflictError;
+use super::super::error::BooleanLiteralConflictError;
 use super::boolean_numeric_policy::BooleanNumericPolicy;
 
-/// Options that control string-to-boolean conversion.
+/// Validated rules for textual and numeric boolean conversion.
+///
+/// True and false literal sets must remain disjoint under the selected
+/// case-sensitivity rule. Constructors and fallible builder methods validate
+/// that invariant, and deserialization validates it before returning a value.
+/// Numeric handling is independent from textual literal matching.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{BooleanConversionOptions, BooleanNumericPolicy};
+///
+/// let options = BooleanConversionOptions::strict()
+///     .with_true_literal("enabled")
+///     .expect("literal sets are disjoint")
+///     .with_numeric_policy(BooleanNumericPolicy::Reject);
+/// assert_eq!(options.parse("ENABLED"), Some(true));
+/// assert_eq!(options.parse("unknown"), None);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct BooleanConversionOptions {
     /// String literals accepted as `true`.
@@ -40,6 +58,17 @@ impl BooleanConversionOptions {
     pub const DEFAULT_FALSE_LITERALS: &'static [&'static str] = &["false"];
 
     /// Creates validated boolean conversion options.
+    ///
+    /// # Parameters
+    ///
+    /// * `true_literals` - Text values recognized as `true`.
+    /// * `false_literals` - Text values recognized as `false`.
+    /// * `case_sensitive` - Whether literal comparison observes ASCII case.
+    /// * `numeric_policy` - Rule for integer-to-boolean conversion.
+    ///
+    /// # Returns
+    ///
+    /// Returns validated options containing the supplied values.
     ///
     /// # Errors
     ///
@@ -162,6 +191,14 @@ impl BooleanConversionOptions {
     }
 
     /// Returns a copy with a different integer-to-boolean policy.
+    ///
+    /// # Parameters
+    ///
+    /// * `numeric_policy` - New policy for integer sources.
+    ///
+    /// # Returns
+    ///
+    /// Returns the updated options value.
     #[inline]
     #[must_use]
     pub fn with_numeric_policy(
@@ -181,6 +218,11 @@ impl BooleanConversionOptions {
     /// # Returns
     ///
     /// Updated options.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
+    /// false literal under the configured case-sensitivity rule.
     pub fn with_true_literal(
         mut self,
         literal: &str,
@@ -199,6 +241,11 @@ impl BooleanConversionOptions {
     /// # Returns
     ///
     /// Updated options.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
+    /// true literal under the configured case-sensitivity rule.
     #[inline]
     pub fn with_false_literal(
         mut self,

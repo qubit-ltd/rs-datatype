@@ -28,9 +28,34 @@ use std::time::Duration;
 #[cfg(feature = "url")]
 use url::Url;
 
-/// Marker trait for mapping concrete Rust types to `DataType`.
+/// Maps a concrete Rust type to its runtime [`DataType`] descriptor.
+///
+/// This trait carries type metadata only; it does not convert values. Generic
+/// APIs use it when they need a stable target descriptor without receiving a
+/// value of that type. Implementations for third-party types are enabled by
+/// their corresponding crate features. The standard-library mapping for
+/// `HashMap<String, String>` is always available because it does not depend on
+/// JSON support.
+///
+/// # Examples
+///
+/// ```
+/// use std::collections::HashMap;
+///
+/// use qubit_datatype::{DataType, DataTypeOf};
+///
+/// fn declared_type<T: DataTypeOf>() -> DataType {
+///     T::DATA_TYPE
+/// }
+///
+/// assert_eq!(declared_type::<u64>(), DataType::UInt64);
+/// assert_eq!(
+///     declared_type::<HashMap<String, String>>(),
+///     DataType::StringMap,
+/// );
+/// ```
 pub trait DataTypeOf {
-    /// The `DataType` corresponding to this Rust type.
+    /// The stable [`DataType`] corresponding to `Self`.
     const DATA_TYPE: DataType;
 }
 

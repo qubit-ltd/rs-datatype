@@ -57,6 +57,8 @@
 //! # }
 //! ```
 
+#![deny(missing_docs)]
+
 /// Data type descriptors and compile-time type mappings.
 pub mod datatype;
 
@@ -72,7 +74,6 @@ pub use converter::{
     BooleanNumericPolicy,
     CollectionConversionOptions,
     DataConversionError,
-    InvalidValueReason,
     DataConversionOptions,
     DataConvertTo,
     DataConverter,
@@ -82,6 +83,7 @@ pub use converter::{
     DurationConversionOptions,
     DurationUnit,
     EmptyItemPolicy,
+    InvalidValueReason,
     NumericConversionPolicy,
     ScalarItem,
     ScalarItemError,

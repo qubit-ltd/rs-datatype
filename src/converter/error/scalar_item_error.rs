@@ -5,25 +5,10 @@
 // =============================================================================
 //! Scalar item iteration error.
 
-use std::error::Error;
-use std::fmt;
-
 /// Target-independent error discovered while iterating scalar items.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[error("blank scalar item rejected at source index {source_index}")]
 pub struct ScalarItemError {
     /// Zero-based index before empty-item filtering.
     pub source_index: usize,
 }
-
-impl fmt::Display for ScalarItemError {
-    /// Formats the item rejection without assuming a conversion target.
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            formatter,
-            "blank scalar item rejected at source index {}",
-            self.source_index
-        )
-    }
-}
-
-impl Error for ScalarItemError {}

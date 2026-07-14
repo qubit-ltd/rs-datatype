@@ -102,6 +102,14 @@ impl DurationUnit {
 
     /// Converts an integer value in this unit to a [`Duration`].
     ///
+    /// # Parameters
+    ///
+    /// * `value` - Non-negative integer value expressed in this unit.
+    ///
+    /// # Returns
+    ///
+    /// Returns the exactly represented [`Duration`].
+    ///
     /// # Errors
     ///
     /// Returns an error when the final seconds component exceeds `u64::MAX`.
@@ -192,6 +200,12 @@ fn checked_secs(
 }
 
 /// Decomposes subsecond unit counts without multiplying the full value.
+///
+/// `value` is divided by `units_per_second`; the remainder is multiplied by
+/// `nanos_per_unit` to form the subsecond component. Returns the exact
+/// duration, or an error when the whole-second component exceeds `u64::MAX`.
+/// Callers must provide mutually consistent factors whose remainder product
+/// fits `u32` and remains below one billion nanoseconds.
 #[inline]
 fn duration_from_subseconds(
     value: u128,

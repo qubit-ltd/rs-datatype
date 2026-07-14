@@ -5,16 +5,19 @@
 // =============================================================================
 //! Lazy scalar collection item iterator.
 
-use super::collection_conversion_options::CollectionConversionOptions;
-use super::empty_item_policy::EmptyItemPolicy;
+use super::error::ScalarItemError;
+use super::options::{
+    CollectionConversionOptions,
+    EmptyItemPolicy,
+};
 use super::scalar_item::ScalarItem;
-use super::scalar_item_error::ScalarItemError;
 
 /// A lazy iterator over scalar collection items.
 ///
 /// Delimiters are scanned only as items are requested. Consequently, callers
 /// that need only the first retained item do not validate or allocate the
-/// unconsumed tail.
+/// unconsumed tail. Each item borrows the original source string; iteration
+/// allocates no item strings.
 #[derive(Debug, Clone)]
 pub struct ScalarItems<'a> {
     /// Original scalar source.
@@ -35,6 +38,9 @@ pub struct ScalarItems<'a> {
 
 impl<'a> ScalarItems<'a> {
     /// Creates a lazy scalar-item iterator.
+    ///
+    /// The iterator borrows both `options` and `value` for its lifetime and
+    /// defers splitting, trimming, and empty-item handling until iteration.
     pub(super) fn new(
         options: &'a CollectionConversionOptions,
         value: &'a str,
@@ -52,7 +58,8 @@ impl<'a> ScalarItems<'a> {
 
     /// Returns the next unfiltered source slice and advances iterator state.
     ///
-    /// `None` means the final raw item has already been returned.
+    /// Returns `Some` with the next raw item and its original index. `None`
+    /// means the final raw item has already been returned.
     fn next_raw(&mut self) -> Option<ScalarItem<'a>> {
         let start = self.next_start?;
         let source_index = self.next_source_index;

@@ -9,14 +9,29 @@
 //!
 //! Defines options that control string-source normalization.
 
+use super::super::error::StringNormalizationError;
 use super::blank_string_policy::BlankStringPolicy;
-use super::string_normalization_error::StringNormalizationError;
 use serde::{
     Deserialize,
     Serialize,
 };
 
-/// Options that control string-source normalization.
+/// Controls normalization applied once before parsing a string source.
+///
+/// Trimming happens before blank detection. A value is considered blank when
+/// it consists only of Unicode whitespace, even when `trim` is disabled;
+/// [`BlankStringPolicy::Preserve`] returns the original untrimmed slice in that
+/// case.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::StringConversionOptions;
+///
+/// let options = StringConversionOptions::env_friendly();
+/// assert_eq!(options.normalize("  value  "), Ok("value"));
+/// assert!(options.normalize("   ").is_err());
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct StringConversionOptions {

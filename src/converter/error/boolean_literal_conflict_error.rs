@@ -5,18 +5,7 @@
 // =============================================================================
 //! Boolean literal conflict error.
 
-use std::error::Error;
-use std::fmt;
-
 /// Error returned when true and false literal sets overlap.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[error("boolean true and false literals overlap")]
 pub struct BooleanLiteralConflictError;
-
-impl fmt::Display for BooleanLiteralConflictError {
-    /// Formats a value-free conflict diagnostic.
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str("boolean true and false literals overlap")
-    }
-}
-
-impl Error for BooleanLiteralConflictError {}

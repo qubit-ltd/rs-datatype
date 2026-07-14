@@ -18,6 +18,10 @@ pub struct DataTypeParseError {
 }
 
 impl DataTypeParseError {
+    /// Creates a parse error that retains the rejected type name.
+    ///
+    /// The private constructor copies `input` so the error can outlive the
+    /// parsed string.
     pub(crate) fn new(input: &str) -> Self {
         Self {
             input: input.to_string(),

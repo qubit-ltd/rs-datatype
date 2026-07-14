@@ -13,6 +13,9 @@ use serde::{
 };
 
 /// Controls conversion from integer values to booleans.
+///
+/// This policy applies both to integer source variants and to integer-shaped
+/// strings that did not match a configured boolean literal.
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
 )]

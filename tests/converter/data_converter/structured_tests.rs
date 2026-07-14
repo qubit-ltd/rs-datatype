@@ -19,10 +19,10 @@ use chrono::{
 use num_bigint::BigInt;
 use qubit_datatype::{
     DataConversionError,
-    InvalidValueReason,
     DataConverter,
     DataFormat,
     DataType,
+    InvalidValueReason,
 };
 use url::Url;
 
@@ -45,19 +45,19 @@ fn assert_invalid_syntax<T>(
     assert!(matches_expected, "unexpected result: {:?}", result.err());
 }
 
-/// Assert an invalid error with exact source type, target type, and kind.
-fn assert_invalid_kind<T>(
+/// Assert an invalid error with exact source type, target type, and reason.
+fn assert_invalid_reason<T>(
     result: Result<T, DataConversionError>,
     to: DataType,
-    expected_kind: InvalidValueReason,
+    expected_reason: InvalidValueReason,
 ) {
     assert!(matches!(
         result,
         Err(DataConversionError::InvalidValue {
             from: DataType::String,
             to: actual_to,
-            kind,
-        }) if actual_to == to && kind == expected_kind,
+            reason,
+        }) if actual_to == to && reason == expected_reason,
     ));
 }
 
@@ -106,7 +106,7 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
         DataType::Url,
         "absolute URL",
     );
-    assert_invalid_kind(
+    assert_invalid_reason(
         DataConverter::from("{").to::<serde_json::Value>(),
         DataType::Json,
         InvalidValueReason::Deserialization {
@@ -114,7 +114,7 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
         },
     );
     for value in [r#"{"key":1}"#, r#"{"key":"one","key":"two"}"#] {
-        assert_invalid_kind(
+        assert_invalid_reason(
             DataConverter::from(value).to::<HashMap<String, String>>(),
             DataType::StringMap,
             InvalidValueReason::Deserialization {
@@ -122,14 +122,14 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
             },
         );
     }
-    assert_invalid_kind(
+    assert_invalid_reason(
         DataConverter::from("[]").to::<HashMap<String, String>>(),
         DataType::StringMap,
         InvalidValueReason::Deserialization {
             format: DataFormat::Json,
         },
     );
-    assert_invalid_kind(
+    assert_invalid_reason(
         DataConverter::from(r#"{"key":"value"} []"#)
             .to::<HashMap<String, String>>(),
         DataType::StringMap,
@@ -144,7 +144,7 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
             "[0-9]+(ns|us|ms|s|m|h|d)?",
         );
     }
-    assert_invalid_kind(
+    assert_invalid_reason(
         DataConverter::from("1fortnight").to::<Duration>(),
         DataType::Duration,
         InvalidValueReason::UnsupportedDurationUnit,
