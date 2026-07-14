@@ -36,6 +36,36 @@
       "commands": ["check", "test", "doc", "clippy"],
       "defaultFeatures": false,
       "features": ["converter"]
+    },
+    {
+      "name": "converter-chrono",
+      "commands": ["check", "doc"],
+      "defaultFeatures": false,
+      "features": ["converter", "chrono"]
+    },
+    {
+      "name": "converter-big-number",
+      "commands": ["check", "doc"],
+      "defaultFeatures": false,
+      "features": ["converter", "big-number"]
+    },
+    {
+      "name": "converter-url",
+      "commands": ["check", "doc"],
+      "defaultFeatures": false,
+      "features": ["converter", "url"]
+    },
+    {
+      "name": "converter-json",
+      "commands": ["check", "doc"],
+      "defaultFeatures": false,
+      "features": ["converter", "json"]
+    },
+    {
+      "name": "all",
+      "commands": ["check", "test", "doc", "clippy"],
+      "defaultFeatures": false,
+      "features": ["all"]
     }
   ]
 }

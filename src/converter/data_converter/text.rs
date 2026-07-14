@@ -5,6 +5,7 @@
 // =============================================================================
 //! Textual and temporal conversion implementations.
 
+#[cfg(feature = "chrono")]
 use chrono::{
     DateTime,
     NaiveDate,
@@ -12,6 +13,7 @@ use chrono::{
     NaiveTime,
     Utc,
 };
+#[cfg(feature = "url")]
 use url::Url;
 
 use super::DataConverter;
@@ -73,20 +75,26 @@ impl DataConvertTo<String> for DataConverter<'_> {
             Self::UInt32(value) => Ok(value.to_string()),
             Self::UInt64(value) => Ok(value.to_string()),
             Self::UInt128(value) => Ok(value.to_string()),
-            Self::IntSize(value) => Ok(value.to_string()),
-            Self::UIntSize(value) => Ok(value.to_string()),
             Self::Float32(value) => Ok(value.to_string()),
             Self::Float64(value) => Ok(value.to_string()),
+            #[cfg(feature = "big-number")]
             Self::BigInteger(value) => Ok(value.to_string()),
+            #[cfg(feature = "big-number")]
             Self::BigDecimal(value) => Ok(value.to_string()),
+            #[cfg(feature = "chrono")]
             Self::Date(value) => Ok(value.format("%Y-%m-%d").to_string()),
+            #[cfg(feature = "chrono")]
             Self::Time(value) => Ok(value.to_string()),
+            #[cfg(feature = "chrono")]
             Self::DateTime(value) => {
                 Ok(value.format("%Y-%m-%dT%H:%M:%S%.f").to_string())
             }
+            #[cfg(feature = "chrono")]
             Self::Instant(value) => Ok(value.to_rfc3339()),
             Self::Duration(value) => format_duration(*value, options),
+            #[cfg(feature = "url")]
             Self::Url(value) => Ok(value.to_string()),
+            #[cfg(feature = "json")]
             Self::StringMap(value) => Ok(serde_json::Value::Object(
                 value
                     .iter()
@@ -96,11 +104,15 @@ impl DataConvertTo<String> for DataConverter<'_> {
                     .collect(),
             )
             .to_string()),
+            #[cfg(not(feature = "json"))]
+            Self::StringMap(_) => Err(self.unsupported(DataType::String)),
+            #[cfg(feature = "json")]
             Self::Json(value) => Ok(value.to_string()),
         }
     }
 }
 
+#[cfg(feature = "chrono")]
 macro_rules! impl_text_or_copy_target {
     ($target:ty, $variant:ident, $data_type:expr, $format:literal, $parser:expr) => {
         impl DataConvertTo<$target> for DataConverter<'_> {
@@ -134,6 +146,7 @@ macro_rules! impl_text_or_copy_target {
 ///
 /// Returns `Some` only for a valid `YYYY-MM-DD` value of exactly ten bytes;
 /// otherwise returns `None`.
+#[cfg(feature = "chrono")]
 fn parse_date(value: &str) -> Option<NaiveDate> {
     if value.len() == 10 {
         NaiveDate::parse_from_str(value, "%Y-%m-%d").ok()
@@ -146,6 +159,7 @@ fn parse_date(value: &str) -> Option<NaiveDate> {
 ///
 /// Returns `Some` for `HH:MM:SS` with an optional non-empty decimal fraction,
 /// and `None` for invalid syntax, invalid clock values, or excess precision.
+#[cfg(feature = "chrono")]
 fn parse_time(value: &str) -> Option<NaiveTime> {
     let (whole, fraction) = value
         .split_once('.')
@@ -166,6 +180,7 @@ fn parse_time(value: &str) -> Option<NaiveTime> {
 ///
 /// Returns `Some` when both the date and time components use their canonical
 /// grammars and form a valid local date-time; otherwise returns `None`.
+#[cfg(feature = "chrono")]
 fn parse_datetime(value: &str) -> Option<NaiveDateTime> {
     let (date, time) = value.split_once('T')?;
     parse_date(date)?;
@@ -173,6 +188,7 @@ fn parse_datetime(value: &str) -> Option<NaiveDateTime> {
     NaiveDateTime::parse_from_str(value, "%Y-%m-%dT%H:%M:%S%.f").ok()
 }
 
+#[cfg(feature = "chrono")]
 impl_text_or_copy_target!(
     NaiveDate,
     Date,
@@ -180,6 +196,7 @@ impl_text_or_copy_target!(
     "YYYY-MM-DD",
     parse_date
 );
+#[cfg(feature = "chrono")]
 impl_text_or_copy_target!(
     NaiveTime,
     Time,
@@ -187,6 +204,7 @@ impl_text_or_copy_target!(
     "HH:MM:SS[.fraction]",
     parse_time
 );
+#[cfg(feature = "chrono")]
 impl_text_or_copy_target!(
     NaiveDateTime,
     DateTime,
@@ -195,6 +213,7 @@ impl_text_or_copy_target!(
     parse_datetime
 );
 
+#[cfg(feature = "chrono")]
 impl DataConvertTo<DateTime<Utc>> for DataConverter<'_> {
     fn convert(
         &self,
@@ -220,6 +239,7 @@ impl DataConvertTo<DateTime<Utc>> for DataConverter<'_> {
     }
 }
 
+#[cfg(feature = "url")]
 impl DataConvertTo<Url> for DataConverter<'_> {
     fn convert(
         &self,

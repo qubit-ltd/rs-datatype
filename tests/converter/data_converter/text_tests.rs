@@ -220,8 +220,6 @@ fn test_data_converter_string_target_accepts_all_value_sources() {
         DataConverter::from(8u32),
         DataConverter::from(9u64),
         DataConverter::from(10u128),
-        DataConverter::from(11isize),
-        DataConverter::from(12usize),
         DataConverter::from(13.5f32),
         DataConverter::from(14.5f64),
         DataConverter::from(&big_int),

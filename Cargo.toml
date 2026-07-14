@@ -1,6 +1,6 @@
 [package]
 name = "qubit-datatype"
-version = "0.5.0"
+version = "0.6.0"
 edition = "2024"
 rust-version = "1.94"
 authors = ["Haixing Hu <starfish.hu@gmail.com>"]
@@ -40,7 +40,8 @@ chrono = ["dep:chrono"]
 big-number = ["dep:bigdecimal", "dep:num-bigint", "dep:num-traits"]
 url = ["dep:url"]
 json = ["dep:serde_json"]
-converter = ["chrono", "big-number", "url", "json", "dep:thiserror"]
+converter = ["dep:thiserror"]
+all = ["converter", "chrono", "big-number", "url", "json"]
 
 [dependencies]
 bigdecimal = { version = "0.4", optional = true }

@@ -5,6 +5,7 @@
 // =============================================================================
 //! Boolean conversion tests.
 
+#[cfg(feature = "big-number")]
 use num_bigint::BigInt;
 use proptest::proptest;
 use qubit_datatype::{
@@ -93,10 +94,11 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
             to: DataType::Bool,
         })
     ));
-    assert_eq!(DataConverter::from(1isize).to::<bool>(), Ok(true));
-    assert_eq!(DataConverter::from(0usize).to::<bool>(), Ok(false));
-    let one = BigInt::from(1u8);
-    assert_eq!(DataConverter::from(&one).to::<bool>(), Ok(true));
+    #[cfg(feature = "big-number")]
+    {
+        let one = BigInt::from(1u8);
+        assert_eq!(DataConverter::from(&one).to::<bool>(), Ok(true));
+    }
     assert!(matches!(
         DataConverter::from('x').to::<bool>(),
         Err(DataConversionError::Unsupported { .. })
