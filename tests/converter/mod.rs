@@ -11,6 +11,7 @@
 
 mod data_convert_to_tests;
 mod data_converter;
+#[cfg(feature = "chrono")]
 mod data_converter_tests;
 mod data_converters_tests;
 mod error;

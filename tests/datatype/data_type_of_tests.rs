@@ -27,13 +27,11 @@ fn test_data_type_of_primitive_and_standard_types() {
     assert_eq!(i32::DATA_TYPE, DataType::Int32);
     assert_eq!(i64::DATA_TYPE, DataType::Int64);
     assert_eq!(i128::DATA_TYPE, DataType::Int128);
-    assert_eq!(isize::DATA_TYPE, DataType::IntSize);
     assert_eq!(u8::DATA_TYPE, DataType::UInt8);
     assert_eq!(u16::DATA_TYPE, DataType::UInt16);
     assert_eq!(u32::DATA_TYPE, DataType::UInt32);
     assert_eq!(u64::DATA_TYPE, DataType::UInt64);
     assert_eq!(u128::DATA_TYPE, DataType::UInt128);
-    assert_eq!(usize::DATA_TYPE, DataType::UIntSize);
     assert_eq!(f32::DATA_TYPE, DataType::Float32);
     assert_eq!(f64::DATA_TYPE, DataType::Float64);
     assert_eq!(String::DATA_TYPE, DataType::String);
@@ -73,8 +71,6 @@ fn test_data_type_of_big_number_types() {
 fn test_data_type_of_v040_types() {
     use std::time::Duration;
 
-    assert_eq!(isize::DATA_TYPE, DataType::IntSize);
-    assert_eq!(usize::DATA_TYPE, DataType::UIntSize);
     assert_eq!(Duration::DATA_TYPE, DataType::Duration);
     assert_eq!(url::Url::DATA_TYPE, DataType::Url);
     assert_eq!(serde_json::Value::DATA_TYPE, DataType::Json);

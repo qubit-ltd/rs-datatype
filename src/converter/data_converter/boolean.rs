@@ -5,9 +5,9 @@
 // =============================================================================
 //! Boolean conversion implementations.
 
-use std::str::FromStr;
-
+#[cfg(feature = "big-number")]
 use num_bigint::BigInt;
+#[cfg(feature = "big-number")]
 use num_traits::Zero;
 
 use super::DataConverter;
@@ -24,16 +24,16 @@ use crate::datatype::DataType;
 
 /// Applies the configured integer-to-boolean policy.
 ///
-/// `value` is the already parsed integer, `policy` selects the accepted numeric
-/// domain, and `from` is retained in any error. Returns the mapped boolean, or
-/// [`DataConversionError::InvalidValue`] when the policy rejects the value.
+/// `zero` and `one` classify the already parsed integer, `policy` selects the
+/// accepted numeric domain, and `from` is retained in any error. Returns the
+/// mapped boolean, or [`DataConversionError::InvalidValue`] when the policy
+/// rejects the value.
 fn integer_to_bool(
-    value: &BigInt,
+    zero: bool,
+    one: bool,
     policy: BooleanNumericPolicy,
     from: DataType,
 ) -> Result<bool, DataConversionError> {
-    let zero = value.is_zero();
-    let one = value == &BigInt::from(1u8);
     match policy {
         BooleanNumericPolicy::ZeroOrOne if zero => Ok(false),
         BooleanNumericPolicy::ZeroOrOne if one => Ok(true),
@@ -61,17 +61,14 @@ impl DataConvertTo<bool> for DataConverter<'_> {
                     return Ok(value);
                 }
                 if is_integer_syntax(value) {
-                    let integer = match BigInt::from_str(value) {
-                        Ok(integer) => integer,
-                        Err(_) => {
-                            return Err(self.invalid(
-                                DataType::Bool,
-                                InvalidValueReason::InvalidBoolean,
-                            ));
-                        }
-                    };
+                    let digits =
+                        value.strip_prefix(['+', '-']).unwrap_or(value);
+                    let zero = digits.bytes().all(|byte| byte == b'0');
+                    let one = !value.starts_with('-')
+                        && digits.trim_start_matches('0') == "1";
                     integer_to_bool(
-                        &integer,
+                        zero,
+                        one,
                         options.boolean.numeric_policy(),
                         DataType::String,
                     )
@@ -83,67 +80,69 @@ impl DataConvertTo<bool> for DataConverter<'_> {
                 }
             }
             Self::Int8(value) => integer_to_bool(
-                &BigInt::from(*value),
+                *value == 0,
+                *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::Int8,
             ),
             Self::Int16(value) => integer_to_bool(
-                &BigInt::from(*value),
+                *value == 0,
+                *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::Int16,
             ),
             Self::Int32(value) => integer_to_bool(
-                &BigInt::from(*value),
+                *value == 0,
+                *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::Int32,
             ),
             Self::Int64(value) => integer_to_bool(
-                &BigInt::from(*value),
+                *value == 0,
+                *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::Int64,
             ),
             Self::Int128(value) => integer_to_bool(
-                &BigInt::from(*value),
+                *value == 0,
+                *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::Int128,
             ),
-            Self::IntSize(value) => integer_to_bool(
-                &BigInt::from(*value),
-                options.boolean.numeric_policy(),
-                DataType::IntSize,
-            ),
             Self::UInt8(value) => integer_to_bool(
-                &BigInt::from(*value),
+                *value == 0,
+                *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::UInt8,
             ),
             Self::UInt16(value) => integer_to_bool(
-                &BigInt::from(*value),
+                *value == 0,
+                *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::UInt16,
             ),
             Self::UInt32(value) => integer_to_bool(
-                &BigInt::from(*value),
+                *value == 0,
+                *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::UInt32,
             ),
             Self::UInt64(value) => integer_to_bool(
-                &BigInt::from(*value),
+                *value == 0,
+                *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::UInt64,
             ),
             Self::UInt128(value) => integer_to_bool(
-                &BigInt::from(*value),
+                *value == 0,
+                *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::UInt128,
             ),
-            Self::UIntSize(value) => integer_to_bool(
-                &BigInt::from(*value),
-                options.boolean.numeric_policy(),
-                DataType::UIntSize,
-            ),
+            #[cfg(feature = "big-number")]
             Self::BigInteger(value) => integer_to_bool(
-                value,
+                value.is_zero(),
+                value.as_ref() == &BigInt::from(1u8),
                 options.boolean.numeric_policy(),
                 DataType::BigInteger,
             ),
