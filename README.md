@@ -86,7 +86,7 @@ assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 ### Conversion matrix
 
 “Numeric” below includes primitive integers/floats and arbitrary-precision
-numbers. Invalid values return `Invalid`; type pairs outside this matrix return
+numbers. Invalid values return `InvalidValue`; type pairs outside this matrix return
 `Unsupported`; typed empty values return `Missing`.
 
 | Source family | Supported targets |
@@ -152,9 +152,10 @@ requires divisibility by the configured output unit; Lossy rounds half-up.
 
 ## Structured errors and collections
 
-`DataConversionError` has exactly three categories: `Missing`,
-`Unsupported`, and `InvalidValue { reason }`. Errors store source and target
-`DataType` but never retain or display the original value.
+`DataConversionError` has exactly four variants: `Missing`, `EmptyCollection`,
+`Unsupported`, and `InvalidValue { reason }`. `Missing`, `Unsupported`, and
+`InvalidValue` store source and target `DataType`; `EmptyCollection` stores only
+the target type. Errors never retain or display the original value.
 
 List failures use `DataListConversionError::source_index`. Empty-item
 `Skip` does not renumber later items, and `to_first` stops after the first
@@ -169,8 +170,6 @@ cargo +1.94.0 test --all-features
 ./align-ci.sh
 ./ci-check.sh
 ```
-
-See [COVERAGE.md](COVERAGE.md) for coverage commands and thresholds.
 
 ## License
 
