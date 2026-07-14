@@ -162,7 +162,7 @@ fn test_data_converter_default_does_not_trim_any_text_parser() {
     assert_invalid_syntax(
         DataConverter::from(" 1s ").to::<Duration>(),
         DataType::Duration,
-        "[0-9]+(ns|us|ms|s|m|h|d)?",
+        "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?",
     );
 }
 

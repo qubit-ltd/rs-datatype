@@ -26,6 +26,7 @@ pub use error::{
     DataConversionError,
     DataFormat,
     DataListConversionError,
+    DurationOverflowError,
     InvalidValueReason,
     ScalarItemError,
     StringNormalizationError,
@@ -41,6 +42,7 @@ pub use options::{
     EmptyItemPolicy,
     NumericConversionPolicy,
     StringConversionOptions,
+    SuffixlessDurationPolicy,
 };
 pub use scalar_item::ScalarItem;
 pub use scalar_items::ScalarItems;

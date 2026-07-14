@@ -25,6 +25,7 @@ use crate::converter::{
     DataConvertTo,
     DurationUnit,
     InvalidValueReason,
+    SuffixlessDurationPolicy,
 };
 use crate::datatype::DataType;
 
@@ -52,7 +53,11 @@ fn integer_to_duration(
             reason: InvalidValueReason::OutOfRange,
         });
     };
-    match options.duration.unit.duration_from_u128(value) {
+    match options
+        .duration
+        .numeric_input_unit
+        .duration_from_u128(value)
+    {
         Ok(duration) => Ok(duration),
         Err(_) => Err(DataConversionError::InvalidValue {
             from,
@@ -65,9 +70,10 @@ fn integer_to_duration(
 /// Parses the canonical duration grammar.
 ///
 /// `value` is normalized using `options`, then parsed as a non-negative integer
-/// with an optional supported unit suffix. A missing suffix uses the configured
-/// unit. Returns contextual conversion errors for normalization, syntax, unit,
-/// and range failures.
+/// with an optional supported unit suffix. For a missing suffix, the configured
+/// policy either rejects the input or supplies an assumed unit. Returns
+/// contextual conversion errors for normalization, syntax, unit, and range
+/// failures.
 fn parse_duration(
     value: &str,
     options: &DataConversionOptions,
@@ -84,27 +90,38 @@ fn parse_duration(
             from: DataType::String,
             to,
             reason: InvalidValueReason::InvalidSyntax {
-                expected: "[0-9]+(ns|us|ms|s|m|h|d)?",
+                expected: "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?",
             },
         });
     }
     let unit = if suffix.is_empty() {
-        options.duration.unit
+        match options.duration.suffixless_string_policy {
+            SuffixlessDurationPolicy::Reject => {
+                return Err(DataConversionError::InvalidValue {
+                    from: DataType::String,
+                    to,
+                    reason: InvalidValueReason::InvalidSyntax {
+                        expected: "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)",
+                    },
+                });
+            }
+            SuffixlessDurationPolicy::Assume(unit) => unit,
+        }
     } else {
-        if !suffix.bytes().all(|byte| byte.is_ascii_alphabetic()) {
+        let Some(unit) = DurationUnit::from_suffix(suffix) else {
+            if suffix.chars().all(char::is_alphabetic) {
+                return Err(DataConversionError::InvalidValue {
+                    from: DataType::String,
+                    to,
+                    reason: InvalidValueReason::UnsupportedDurationUnit,
+                });
+            }
             return Err(DataConversionError::InvalidValue {
                 from: DataType::String,
                 to,
                 reason: InvalidValueReason::InvalidSyntax {
-                    expected: "[0-9]+(ns|us|ms|s|m|h|d)?",
+                    expected: "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?",
                 },
-            });
-        }
-        let Some(unit) = DurationUnit::from_suffix(suffix) else {
-            return Err(DataConversionError::InvalidValue {
-                from: DataType::String,
-                to,
-                reason: InvalidValueReason::UnsupportedDurationUnit,
             });
         };
         unit
@@ -173,7 +190,7 @@ pub(super) fn format_duration(
 ) -> Result<String, DataConversionError> {
     let units = duration_to_bigint(value, options, DataType::String)?;
     if options.duration.append_unit_suffix {
-        Ok(format!("{units}{}", options.duration.unit.suffix()))
+        Ok(format!("{units}{}", options.duration.output_unit.suffix()))
     } else {
         Ok(units.to_string())
     }

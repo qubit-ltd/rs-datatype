@@ -23,7 +23,29 @@ use qubit_datatype::converter::{
     InvalidValueReason,
     NumericConversionPolicy,
     StringConversionOptions,
+    SuffixlessDurationPolicy,
 };
+
+/// Test the complete strict and lossy profile contracts.
+#[test]
+fn test_data_conversion_options_profiles() {
+    let defaults = DataConversionOptions::default();
+    let strict = DataConversionOptions::strict();
+    assert_eq!(strict, defaults);
+
+    let lossy = DataConversionOptions::lossy();
+    assert_eq!(lossy.numeric_policy, NumericConversionPolicy::Lossy);
+    assert!(lossy.string.trim);
+    assert_eq!(
+        lossy.string.blank_string_policy,
+        defaults.string.blank_string_policy,
+    );
+    assert_eq!(lossy.boolean, defaults.boolean);
+    assert_eq!(lossy.collection, defaults.collection);
+    assert_eq!(lossy.duration, defaults.duration);
+
+    assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3),);
+}
 
 /// Test configurable string normalization and boolean literal parsing.
 #[test]
@@ -107,17 +129,32 @@ fn test_data_conversion_options_convenience_builders() {
 #[test]
 fn test_data_conversion_options_duration_builders() {
     let defaults = DataConversionOptions::default();
-    assert_eq!(defaults.duration.unit, DurationUnit::Milliseconds);
+    assert_eq!(
+        defaults.duration.numeric_input_unit,
+        DurationUnit::Milliseconds,
+    );
+    assert_eq!(
+        defaults.duration.suffixless_string_policy,
+        SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds),
+    );
+    assert_eq!(defaults.duration.output_unit, DurationUnit::Milliseconds);
     assert!(defaults.duration.append_unit_suffix);
-    assert_eq!(defaults.duration.unit.suffix(), "ms");
+    assert_eq!(defaults.duration.output_unit.suffix(), "ms");
 
     let options = DataConversionOptions::default().with_duration_options(
         DurationConversionOptions::default()
-            .with_unit(DurationUnit::Seconds)
+            .with_numeric_input_unit(DurationUnit::Seconds)
+            .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject)
+            .with_output_unit(DurationUnit::Minutes)
             .with_append_unit_suffix(false),
     );
 
-    assert_eq!(options.duration.unit, DurationUnit::Seconds);
+    assert_eq!(options.duration.numeric_input_unit, DurationUnit::Seconds,);
+    assert_eq!(
+        options.duration.suffixless_string_policy,
+        SuffixlessDurationPolicy::Reject,
+    );
+    assert_eq!(options.duration.output_unit, DurationUnit::Minutes);
     assert!(!options.duration.append_unit_suffix);
     assert_eq!(DurationUnit::from_suffix("s"), Some(DurationUnit::Seconds));
     assert_eq!(
@@ -172,8 +209,7 @@ fn test_data_conversion_options_numeric_policy_is_source_independent() {
         ));
     }
 
-    let lossy = DataConversionOptions::default()
-        .with_numeric_policy(NumericConversionPolicy::Lossy);
+    let lossy = DataConversionOptions::lossy();
     for converter in [DataConverter::from(3.9f64), DataConverter::from("3.9")] {
         assert_eq!(
             converter

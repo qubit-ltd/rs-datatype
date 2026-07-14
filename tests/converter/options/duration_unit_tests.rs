@@ -7,7 +7,10 @@
 // =============================================================================
 use std::time::Duration;
 
-use qubit_datatype::converter::DurationUnit;
+use qubit_datatype::converter::{
+    DurationOverflowError,
+    DurationUnit,
+};
 
 /// Test suffix parsing and duration conversion for duration units.
 #[test]
@@ -31,5 +34,9 @@ fn test_duration_unit_parses_suffixes_and_converts_values() {
     assert_eq!(
         DurationUnit::Milliseconds.rounded_units(Duration::from_micros(1_500)),
         2,
+    );
+    assert_eq!(
+        DurationUnit::Days.duration_from_u128(u128::MAX),
+        Err(DurationOverflowError),
     );
 }

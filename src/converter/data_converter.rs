@@ -59,14 +59,12 @@ mod text;
 /// use qubit_datatype::{
 ///     DataConversionOptions,
 ///     DataConverter,
-///     NumericConversionPolicy,
 /// };
 ///
 /// let source = DataConverter::from("42");
 /// assert_eq!(source.to::<u16>(), Ok(42));
 ///
-/// let lossy = DataConversionOptions::default()
-///     .with_numeric_policy(NumericConversionPolicy::Lossy);
+/// let lossy = DataConversionOptions::lossy();
 /// let value: u16 = DataConverter::from("3.9").to_with(&lossy).unwrap();
 /// assert_eq!(value, 3);
 /// ```

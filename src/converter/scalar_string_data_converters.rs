@@ -170,8 +170,9 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// # Errors
     ///
-    /// Returns [`DataConversionError::Missing`] when normalization or splitting
-    /// yields no item, or the underlying conversion error.
+    /// Returns [`DataConversionError::Missing`] when normalization treats the
+    /// scalar as missing, [`DataConversionError::EmptyCollection`] when
+    /// splitting yields no retained item, or the underlying conversion error.
     pub fn to_first<T>(self) -> Result<T, DataConversionError>
     where
         T: DataTypeOf,
@@ -196,8 +197,9 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// # Errors
     ///
-    /// Returns [`DataConversionError::Missing`] when normalization or splitting
-    /// yields no item, or the underlying conversion error.
+    /// Returns [`DataConversionError::Missing`] when normalization treats the
+    /// scalar as missing, [`DataConversionError::EmptyCollection`] when
+    /// splitting yields no retained item, or the underlying conversion error.
     pub fn to_first_with<'b, T>(
         self,
         options: &'b DataConversionOptions,
@@ -215,10 +217,7 @@ impl<'a> ScalarStringDataConverters<'a> {
             .collection
             .scalar_items(text)
             .next()
-            .ok_or(DataConversionError::Missing {
-                from: DataType::String,
-                to: T::DATA_TYPE,
-            })?
+            .ok_or(DataConversionError::EmptyCollection { to: T::DATA_TYPE })?
             .map_err(|_| DataConversionError::InvalidValue {
                 from: DataType::String,
                 to: T::DATA_TYPE,

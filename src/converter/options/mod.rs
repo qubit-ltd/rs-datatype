@@ -15,6 +15,7 @@ mod duration_unit;
 mod empty_item_policy;
 mod numeric_conversion_policy;
 mod string_conversion_options;
+mod suffixless_duration_policy;
 
 pub use blank_string_policy::BlankStringPolicy;
 pub use boolean_conversion_options::BooleanConversionOptions;
@@ -26,3 +27,4 @@ pub use duration_unit::DurationUnit;
 pub use empty_item_policy::EmptyItemPolicy;
 pub use numeric_conversion_policy::NumericConversionPolicy;
 pub use string_conversion_options::StringConversionOptions;
+pub use suffixless_duration_policy::SuffixlessDurationPolicy;

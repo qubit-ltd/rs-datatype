@@ -6,6 +6,7 @@
 //! Boolean conversion tests.
 
 use num_bigint::BigInt;
+use proptest::proptest;
 use qubit_datatype::{
     DataConversionError,
     DataConverter,
@@ -100,4 +101,12 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
         DataConverter::from('x').to::<bool>(),
         Err(DataConversionError::Unsupported { .. })
     ));
+}
+
+proptest! {
+    /// Test that arbitrary UTF-8 strings never panic in Boolean parsing.
+    #[test]
+    fn test_data_converter_boolean_arbitrary_string_never_panics(value in ".*") {
+        let _ = DataConverter::from(value).to::<bool>();
+    }
 }

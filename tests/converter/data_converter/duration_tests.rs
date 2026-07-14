@@ -9,6 +9,15 @@ use std::time::Duration;
 
 use chrono::NaiveDate;
 use num_bigint::BigInt;
+use proptest::strategy::{
+    Just,
+    Strategy,
+};
+use proptest::{
+    prop_assert_eq,
+    prop_oneof,
+    proptest,
+};
 use qubit_datatype::{
     DataConversionError,
     DataConversionOptions,
@@ -18,14 +27,14 @@ use qubit_datatype::{
     DurationUnit,
     InvalidValueReason,
     NumericConversionPolicy,
+    SuffixlessDurationPolicy,
 };
 
 /// Test Duration string formatting and parsing.
 #[test]
 fn test_data_converter_duration_string_conversion() {
     let duration = Duration::new(1, 500);
-    let lossy = DataConversionOptions::default()
-        .with_numeric_policy(NumericConversionPolicy::Lossy);
+    let lossy = DataConversionOptions::lossy();
     let text: String = DataConverter::from(duration)
         .to_with(&lossy)
         .expect("Duration should convert to string");
@@ -66,10 +75,12 @@ fn test_data_converter_duration_string_conversion() {
         .expect("duration string with days should parse");
     assert_eq!(days, Duration::from_secs(172800));
 
-    let micros: Duration = DataConverter::from("10us")
-        .to()
-        .expect("duration string with microseconds should parse");
-    assert_eq!(micros, Duration::from_micros(10));
+    for source in ["10us", "10µs", "10μs"] {
+        let micros: Duration = DataConverter::from(source)
+            .to()
+            .expect("every supported microsecond suffix should parse");
+        assert_eq!(micros, Duration::from_micros(10));
+    }
 
     let bare_default: Duration = DataConverter::from("10")
         .to()
@@ -77,20 +88,32 @@ fn test_data_converter_duration_string_conversion() {
     assert_eq!(bare_default, Duration::from_millis(10));
 
     let options = DataConversionOptions::default().with_duration_options(
-        DurationConversionOptions::default().with_unit(DurationUnit::Seconds),
+        DurationConversionOptions::default().with_suffixless_string_policy(
+            SuffixlessDurationPolicy::Assume(DurationUnit::Seconds),
+        ),
     );
     let bare_seconds: Duration = DataConverter::from("10")
         .to_with(&options)
         .expect("bare duration string should use configured seconds");
     assert_eq!(bare_seconds, Duration::from_secs(10));
 
-    let no_suffix = DataConversionOptions::default()
-        .with_numeric_policy(NumericConversionPolicy::Lossy)
-        .with_duration_options(
-            DurationConversionOptions::default()
-                .with_unit(DurationUnit::Seconds)
-                .with_append_unit_suffix(false),
-        );
+    let reject_bare = DataConversionOptions::default().with_duration_options(
+        DurationConversionOptions::default()
+            .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject),
+    );
+    assert!(matches!(
+        DataConverter::from("10").to_with::<Duration>(&reject_bare),
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::InvalidSyntax { .. },
+            ..
+        }),
+    ));
+
+    let no_suffix = DataConversionOptions::lossy().with_duration_options(
+        DurationConversionOptions::default()
+            .with_output_unit(DurationUnit::Seconds)
+            .with_append_unit_suffix(false),
+    );
     let text: String = DataConverter::from(Duration::from_millis(1500))
         .to_with(&no_suffix)
         .expect("Duration should convert to suffixless rounded seconds");
@@ -132,6 +155,34 @@ fn test_data_converter_duration_string_conversion() {
     ));
 }
 
+/// Test that numeric input, suffixless strings, and output use independent
+/// Duration units.
+#[test]
+fn test_data_converter_duration_uses_independent_unit_policies() {
+    let options = DataConversionOptions::strict().with_duration_options(
+        DurationConversionOptions::default()
+            .with_numeric_input_unit(DurationUnit::Seconds)
+            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(
+                DurationUnit::Minutes,
+            ))
+            .with_output_unit(DurationUnit::Hours),
+    );
+
+    assert_eq!(
+        DataConverter::from(2u64).to_with::<Duration>(&options),
+        Ok(Duration::from_secs(2)),
+    );
+    assert_eq!(
+        DataConverter::from("2").to_with::<Duration>(&options),
+        Ok(Duration::from_secs(120)),
+    );
+    assert_eq!(
+        DataConverter::from(Duration::from_secs(7_200))
+            .to_with::<String>(&options),
+        Ok("2h".to_string()),
+    );
+}
+
 /// Test Duration conversions with integer sources and targets.
 #[test]
 fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
@@ -141,7 +192,9 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
     assert_eq!(duration, Duration::from_millis(1500));
 
     let options = DataConversionOptions::default().with_duration_options(
-        DurationConversionOptions::default().with_unit(DurationUnit::Seconds),
+        DurationConversionOptions::default()
+            .with_numeric_input_unit(DurationUnit::Seconds)
+            .with_output_unit(DurationUnit::Seconds),
     );
     let duration: Duration = DataConverter::from(2u64)
         .to_with(&options)
@@ -206,7 +259,8 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
 
     let overflowing_options = DataConversionOptions::default()
         .with_duration_options(
-            DurationConversionOptions::default().with_unit(DurationUnit::Days),
+            DurationConversionOptions::default()
+                .with_numeric_input_unit(DurationUnit::Days),
         );
     assert!(matches!(
         DataConverter::from(u64::MAX).to_with::<Duration>(&overflowing_options),
@@ -254,7 +308,8 @@ fn test_data_converter_duration_text() {
 #[test]
 fn test_data_converter_duration_targets_honor_numeric_policy() {
     let exact = DataConversionOptions::default().with_duration_options(
-        DurationConversionOptions::default().with_unit(DurationUnit::Seconds),
+        DurationConversionOptions::default()
+            .with_output_unit(DurationUnit::Seconds),
     );
     let duration = Duration::from_millis(1_500);
     assert!(matches!(
@@ -302,7 +357,7 @@ fn test_data_converter_duration_accepts_large_representable_unit_counts() {
         ),
     ] {
         let options = DataConversionOptions::default().with_duration_options(
-            DurationConversionOptions::default().with_unit(unit),
+            DurationConversionOptions::default().with_numeric_input_unit(unit),
         );
         assert_eq!(
             DataConverter::from(count).to_with::<Duration>(&options),
@@ -319,7 +374,11 @@ fn test_data_converter_duration_accepts_large_representable_unit_counts() {
 #[test]
 fn test_data_converter_duration_rejects_unrepresentable_counts() {
     let seconds = DataConversionOptions::default().with_duration_options(
-        DurationConversionOptions::default().with_unit(DurationUnit::Seconds),
+        DurationConversionOptions::default()
+            .with_numeric_input_unit(DurationUnit::Seconds)
+            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(
+                DurationUnit::Seconds,
+            )),
     );
     let above_u128 = BigInt::from(u128::MAX) + BigInt::from(1u8);
     for result in [
@@ -335,5 +394,53 @@ fn test_data_converter_duration_rejects_unrepresentable_counts() {
                 ..
             }),
         ));
+    }
+}
+
+/// Creates arbitrary supported Duration units for property tests.
+fn duration_unit_strategy() -> impl Strategy<Value = DurationUnit> {
+    prop_oneof![
+        Just(DurationUnit::Nanoseconds),
+        Just(DurationUnit::Microseconds),
+        Just(DurationUnit::Milliseconds),
+        Just(DurationUnit::Seconds),
+        Just(DurationUnit::Minutes),
+        Just(DurationUnit::Hours),
+        Just(DurationUnit::Days),
+    ]
+}
+
+proptest! {
+    /// Test that exact integer Duration values survive formatting and parsing.
+    #[test]
+    fn test_data_converter_duration_exact_round_trip_property(
+        unit in duration_unit_strategy(),
+        value in 0u64..=1_000_000,
+    ) {
+        let options = DataConversionOptions::strict().with_duration_options(
+            DurationConversionOptions::default()
+                .with_numeric_input_unit(unit)
+                .with_suffixless_string_policy(
+                    SuffixlessDurationPolicy::Assume(unit),
+                )
+                .with_output_unit(unit),
+        );
+        let duration = DataConverter::from(value)
+            .to_with::<Duration>(&options)
+            .expect("bounded unit count should fit Duration");
+        let text = DataConverter::from(duration)
+            .to_with::<String>(&options)
+            .expect("exactly represented Duration should format");
+        let restored = DataConverter::from(text)
+            .to_with::<Duration>(&options)
+            .expect("formatted Duration should parse");
+
+        prop_assert_eq!(restored, duration);
+    }
+
+    /// Test that arbitrary UTF-8 strings never panic in Duration parsing.
+    #[test]
+    fn test_data_converter_duration_arbitrary_string_never_panics(value in ".*") {
+        let _ = DataConverter::from(value).to::<Duration>();
     }
 }

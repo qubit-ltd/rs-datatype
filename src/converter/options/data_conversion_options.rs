@@ -41,7 +41,7 @@ use super::string_conversion_options::StringConversionOptions;
 /// let options = DataConversionOptions::env_friendly();
 /// assert_eq!(DataConverter::from(" yes ").to_with::<bool>(&options), Ok(true));
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct DataConversionOptions {
     /// Numeric precision and rounding behavior.
@@ -57,6 +57,68 @@ pub struct DataConversionOptions {
 }
 
 impl DataConversionOptions {
+    /// Creates the strict conversion profile used by [`Default`].
+    ///
+    /// The profile requires exact numeric and duration conversions, preserves
+    /// string whitespace and blank strings, accepts the default Boolean
+    /// literals and numeric Boolean policy, does not split scalar strings into
+    /// collections, and uses the default millisecond Duration representation.
+    /// Use this profile for generic library conversions where changing or
+    /// discarding source information would be surprising.
+    ///
+    /// # Returns
+    ///
+    /// Strict options equal to [`Self::default`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use qubit_datatype::{DataConversionOptions, DataConverter};
+    ///
+    /// let options = DataConversionOptions::strict();
+    /// assert!(DataConverter::from("3.9").to_with::<i32>(&options).is_err());
+    /// ```
+    #[must_use]
+    pub fn strict() -> Self {
+        Self {
+            numeric_policy: NumericConversionPolicy::Exact,
+            string: StringConversionOptions::default(),
+            boolean: BooleanConversionOptions::strict(),
+            collection: CollectionConversionOptions::default(),
+            duration: DurationConversionOptions::default(),
+        }
+    }
+
+    /// Creates a profile that permits precision loss and trims string input.
+    ///
+    /// Compared with [`Self::strict`], this profile changes exactly two rules:
+    /// [`Self::numeric_policy`] becomes [`NumericConversionPolicy::Lossy`], and
+    /// [`StringConversionOptions::trim`] becomes `true`. Blank strings remain
+    /// preserved, Boolean and collection rules remain strict, and Duration
+    /// units and suffix formatting retain their defaults. The lossy numeric
+    /// policy permits documented numeric truncation, floating-point rounding,
+    /// and Duration unit rounding.
+    ///
+    /// # Returns
+    ///
+    /// Lossy, whitespace-trimming conversion options.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use qubit_datatype::{DataConversionOptions, DataConverter};
+    ///
+    /// let options = DataConversionOptions::lossy();
+    /// assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&options), Ok(3));
+    /// ```
+    #[must_use]
+    pub fn lossy() -> Self {
+        let mut options = Self::strict();
+        options.numeric_policy = NumericConversionPolicy::Lossy;
+        options.string.trim = true;
+        options
+    }
+
     /// Returns a shared reference to the default options.
     ///
     /// # Returns
@@ -206,5 +268,12 @@ impl DataConversionOptions {
     ) -> Self {
         self.duration = duration;
         self
+    }
+}
+
+impl Default for DataConversionOptions {
+    /// Creates the strict default conversion profile.
+    fn default() -> Self {
+        Self::strict()
     }
 }

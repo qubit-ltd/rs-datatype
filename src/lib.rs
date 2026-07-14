@@ -30,7 +30,7 @@
 //! Strings are not trimmed by default and are normalized exactly once.
 //! Boolean text defaults to `true` and `false`; numeric 0/1 handling is
 //! controlled independently by `BooleanNumericPolicy`. Duration text uses
-//! `[0-9]+(ns|us|ms|s|m|h|d)?`.
+//! `[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`.
 //!
 //! # Example
 //!
@@ -39,7 +39,7 @@
 //! # {
 //! use qubit_datatype::{
 //!     DataConversionError, InvalidValueReason, DataConversionOptions,
-//!     DataConverter, NumericConversionPolicy, StringConversionOptions,
+//!     DataConverter,
 //! };
 //!
 //! assert!(matches!(
@@ -50,9 +50,7 @@
 //!     }),
 //! ));
 //!
-//! let lossy = DataConversionOptions::default()
-//!     .with_numeric_policy(NumericConversionPolicy::Lossy)
-//!     .with_string_options(StringConversionOptions::default().with_trim(true));
+//! let lossy = DataConversionOptions::lossy();
 //! assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 //! # }
 //! ```
@@ -81,6 +79,7 @@ pub use converter::{
     DataFormat,
     DataListConversionError,
     DurationConversionOptions,
+    DurationOverflowError,
     DurationUnit,
     EmptyItemPolicy,
     InvalidValueReason,
@@ -91,6 +90,7 @@ pub use converter::{
     ScalarStringDataConverters,
     StringConversionOptions,
     StringNormalizationError,
+    SuffixlessDurationPolicy,
 };
 pub use datatype::{
     DataType,
