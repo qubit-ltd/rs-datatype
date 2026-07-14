@@ -23,66 +23,123 @@ use chrono::{
 use num_bigint::BigInt;
 use url::Url;
 
-use super::data_conversion_error::DataConversionError;
-use super::data_conversion_error_kind::InvalidValueReason;
-use super::data_conversion_options::DataConversionOptions;
 use super::data_convert_to::DataConvertTo;
-use super::string_normalization_error::StringNormalizationError;
+use super::error::{
+    DataConversionError,
+    InvalidValueReason,
+};
+use super::options::DataConversionOptions;
 use crate::datatype::DataType;
 
 mod boolean;
 mod duration;
 mod numeric;
 mod source;
+mod string_source;
 mod structured;
 mod text;
 
-/// A lightweight wrapper around every supported source value.
+/// A borrowed-or-owned runtime source value for policy-driven conversion.
+///
+/// `DataConverter` erases the concrete Rust source type while preserving its
+/// [`DataType`]. Construct one with a standard [`From`] conversion, then call
+/// [`Self::to`] for the default profile or [`Self::to_with`] for an explicit
+/// [`DataConversionOptions`] profile. `Cow`-backed variants borrow large values
+/// when possible, so wrapping a string, big number, URL, map, or JSON value
+/// does not require cloning it.
+///
+/// Use this type when the source type is known at run time, such as values read
+/// from configuration, command-line arguments, or heterogeneous metadata. For
+/// homogeneous collections, [`super::DataConverters`] provides indexed batch
+/// errors on top of the same conversion rules.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{
+///     DataConversionOptions,
+///     DataConverter,
+///     NumericConversionPolicy,
+/// };
+///
+/// let source = DataConverter::from("42");
+/// assert_eq!(source.to::<u16>(), Ok(42));
+///
+/// let lossy = DataConversionOptions::default()
+///     .with_numeric_policy(NumericConversionPolicy::Lossy);
+/// assert_eq!(DataConverter::from("3.9").to_with::<u16>(&lossy), Ok(3));
+/// ```
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataConverter<'a> {
-    /// Empty source with a known type.
+    /// Missing source whose declared type remains known.
     Empty(DataType),
-    /// Boolean source.
+    /// Boolean source value.
     Bool(bool),
-    /// Character source.
+    /// Unicode scalar source value.
     Char(char),
-    /// Signed integer sources.
+    /// 8-bit signed integer source value.
     Int8(i8),
+    /// 16-bit signed integer source value.
     Int16(i16),
+    /// 32-bit signed integer source value.
     Int32(i32),
+    /// 64-bit signed integer source value.
     Int64(i64),
+    /// 128-bit signed integer source value.
     Int128(i128),
-    /// Unsigned integer sources.
+    /// 8-bit unsigned integer source value.
     UInt8(u8),
+    /// 16-bit unsigned integer source value.
     UInt16(u16),
+    /// 32-bit unsigned integer source value.
     UInt32(u32),
+    /// 64-bit unsigned integer source value.
     UInt64(u64),
+    /// 128-bit unsigned integer source value.
     UInt128(u128),
-    /// Platform-width integer sources.
+    /// Pointer-width signed integer source value.
     IntSize(isize),
+    /// Pointer-width unsigned integer source value.
     UIntSize(usize),
-    /// Floating-point sources.
+    /// 32-bit floating-point source value.
     Float32(f32),
+    /// 64-bit floating-point source value.
     Float64(f64),
-    /// Arbitrary-precision numeric sources.
+    /// Borrowed or owned arbitrary-precision integer source value.
     BigInteger(Cow<'a, BigInt>),
+    /// Borrowed or owned arbitrary-precision decimal source value.
     BigDecimal(Cow<'a, BigDecimal>),
-    /// Text source.
+    /// Borrowed or owned UTF-8 text source value.
     String(Cow<'a, str>),
-    /// Temporal sources.
+    /// Calendar date without a time zone.
     Date(NaiveDate),
+    /// Clock time without a date or time zone.
     Time(NaiveTime),
+    /// Local date and time without a time zone.
     DateTime(NaiveDateTime),
+    /// UTC instant.
     Instant(DateTime<Utc>),
+    /// Non-negative span represented by [`Duration`].
     Duration(Duration),
-    /// Structured sources.
+    /// Borrowed or owned absolute URL source value.
     Url(Cow<'a, Url>),
+    /// Borrowed or owned string-to-string map source value.
     StringMap(Cow<'a, HashMap<String, String>>),
+    /// Borrowed or owned JSON source value.
     Json(Cow<'a, serde_json::Value>),
 }
 
 impl DataConverter<'_> {
     /// Converts this source using the shared default options.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Requested target type. A conversion implementation must exist
+    ///   for the source wrapper and `T`.
+    ///
+    /// # Returns
+    ///
+    /// Returns the converted target value.
     ///
     /// # Errors
     ///
@@ -97,6 +154,19 @@ impl DataConverter<'_> {
     }
 
     /// Converts this source using explicit options.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Requested target type.
+    ///
+    /// # Parameters
+    ///
+    /// * `options` - Policies for string normalization, numeric precision,
+    ///   booleans, collections, and durations.
+    ///
+    /// # Returns
+    ///
+    /// Returns the converted target value.
     ///
     /// # Errors
     ///
@@ -114,6 +184,13 @@ impl DataConverter<'_> {
     }
 
     /// Returns the runtime type of the wrapped source.
+    ///
+    /// For [`Self::Empty`], this returns the declared type stored in the
+    /// variant rather than a generic missing-value type.
+    ///
+    /// # Returns
+    ///
+    /// Returns the [`DataType`] corresponding to this enum variant.
     #[inline]
     pub const fn data_type(&self) -> DataType {
         match self {
@@ -149,6 +226,9 @@ impl DataConverter<'_> {
     }
 
     /// Builds a missing-value error for this source and target.
+    ///
+    /// `to` is the requested target type. The returned error derives its
+    /// source type from [`Self::data_type`].
     #[inline(always)]
     fn missing(&self, to: DataType) -> DataConversionError {
         DataConversionError::Missing {
@@ -158,6 +238,9 @@ impl DataConverter<'_> {
     }
 
     /// Builds an unsupported-pair error for this source and target.
+    ///
+    /// `to` is the requested target type. The returned error derives its
+    /// source type from [`Self::data_type`].
     #[inline(always)]
     fn unsupported(&self, to: DataType) -> DataConversionError {
         DataConversionError::Unsupported {
@@ -167,6 +250,10 @@ impl DataConverter<'_> {
     }
 
     /// Builds an invalid-value error for this source and target.
+    ///
+    /// `to` identifies the requested target, while `reason` explains the
+    /// value-independent rejection. The returned error records this source's
+    /// runtime type.
     #[inline(always)]
     fn invalid(
         &self,
@@ -179,28 +266,4 @@ impl DataConverter<'_> {
             reason,
         }
     }
-}
-
-/// Normalizes a textual source and attaches target context to policy errors.
-fn normalize<'a>(
-    value: &'a str,
-    options: &DataConversionOptions,
-    to: DataType,
-) -> Result<&'a str, DataConversionError> {
-    options
-        .string
-        .normalize(value)
-        .map_err(|error| match error {
-            StringNormalizationError::Missing => DataConversionError::Missing {
-                from: DataType::String,
-                to,
-            },
-            StringNormalizationError::BlankRejected => {
-                DataConversionError::InvalidValue {
-                    from: DataType::String,
-                    to,
-                    reason: InvalidValueReason::BlankRejected,
-                }
-            }
-        })
 }

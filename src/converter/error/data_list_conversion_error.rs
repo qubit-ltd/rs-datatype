@@ -9,34 +9,20 @@
 //!
 //! Defines errors returned by reusable batch data conversions.
 
-use std::error::Error;
-use std::fmt;
-
 use super::data_conversion_error::DataConversionError;
 
-/// Error type returned by reusable batch data conversions.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Reports the first failed item in an ordered batch conversion.
+///
+/// [`Self::source_index`] refers to the original, zero-based source position,
+/// including positions skipped by collection policies. [`Self::source`] keeps
+/// the complete single-value conversion error and is exposed as the standard
+/// error source.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("Data conversion failed at source index {source_index}: {source}")]
 pub struct DataListConversionError {
     /// Zero-based index in the original source, before any items were skipped.
     pub source_index: usize,
     /// Original single-value conversion error.
+    #[source]
     pub source: DataConversionError,
-}
-
-impl fmt::Display for DataListConversionError {
-    /// Formats the list conversion error with the original source index.
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Data conversion failed at source index {}: {}",
-            self.source_index, self.source
-        )
-    }
-}
-
-impl Error for DataListConversionError {
-    /// Returns the underlying single-value conversion error.
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(&self.source)
-    }
 }

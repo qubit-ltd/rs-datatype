@@ -38,10 +38,7 @@ fn test_data_type_of_primitive_and_standard_types() {
     assert_eq!(f64::DATA_TYPE, DataType::Float64);
     assert_eq!(String::DATA_TYPE, DataType::String);
     assert_eq!(Duration::DATA_TYPE, DataType::Duration);
-    assert_eq!(
-        HashMap::<String, String>::DATA_TYPE,
-        DataType::StringMap,
-    );
+    assert_eq!(HashMap::<String, String>::DATA_TYPE, DataType::StringMap,);
 }
 
 /// Test chrono mappings when the feature is enabled.
@@ -74,7 +71,6 @@ fn test_data_type_of_big_number_types() {
 #[test]
 #[cfg(all(feature = "url", feature = "json"))]
 fn test_data_type_of_v040_types() {
-    use std::collections::HashMap;
     use std::time::Duration;
 
     assert_eq!(isize::DATA_TYPE, DataType::IntSize);

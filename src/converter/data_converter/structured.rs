@@ -14,16 +14,14 @@ use serde::de::{
     Visitor,
 };
 
-use super::{
-    DataConverter,
-    normalize,
-};
+use super::DataConverter;
+use super::string_source::normalize;
 use crate::converter::{
-    InvalidValueReason,
-    DataConversionOptions,
     DataConversionError,
+    DataConversionOptions,
     DataConvertTo,
     DataFormat,
+    InvalidValueReason,
 };
 use crate::datatype::DataType;
 
@@ -88,6 +86,10 @@ impl<'de> Visitor<'de> for StringMapVisitor {
 }
 
 /// Deserializes a string map through the duplicate-aware visitor.
+///
+/// `value` must contain exactly one JSON object with unique keys and string
+/// values. The returned map owns all keys and values. Syntax errors, trailing
+/// data, duplicate keys, and non-string values return `serde_json::Error`.
 fn deserialize_string_map(
     value: &str,
 ) -> Result<HashMap<String, String>, serde_json::Error> {

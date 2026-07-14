@@ -9,13 +9,15 @@
 //!
 //! Provides conversion of a single scalar string into collection values.
 
-use super::data_conversion_error::DataConversionError;
-use super::data_conversion_error_kind::InvalidValueReason;
-use super::data_conversion_options::DataConversionOptions;
 use super::data_convert_to::DataConvertTo;
 use super::data_converter::DataConverter;
-use super::data_list_conversion_error::DataListConversionError;
-use super::string_normalization_error::StringNormalizationError;
+use super::error::{
+    DataConversionError,
+    DataListConversionError,
+    InvalidValueReason,
+    StringNormalizationError,
+};
+use super::options::DataConversionOptions;
 use crate::datatype::{
     DataType,
     DataTypeOf,

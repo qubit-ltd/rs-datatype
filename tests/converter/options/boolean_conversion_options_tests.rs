@@ -37,6 +37,30 @@ fn test_boolean_conversion_options_cover_literal_branches() {
     assert_eq!(case_sensitive.parse("disabled"), None);
 }
 
+/// Test every field in the environment-friendly boolean profile.
+#[test]
+fn test_boolean_conversion_options_env_friendly_profile() {
+    let options = BooleanConversionOptions::env_friendly();
+    assert_eq!(
+        options
+            .true_literals()
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        ["true", "yes", "on"],
+    );
+    assert_eq!(
+        options
+            .false_literals()
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        ["false", "no", "off"],
+    );
+    assert!(!options.case_sensitive());
+    assert_eq!(options.numeric_policy(), BooleanNumericPolicy::ZeroOrOne);
+}
+
 /// Test every public mutation preserves disjoint literal sets.
 #[test]
 fn test_boolean_conversion_options_builders_preserve_literal_invariant() {
@@ -82,14 +106,8 @@ fn test_boolean_conversion_options_reject_literal_conflicts() {
 #[test]
 fn test_boolean_conversion_options_serde_and_defaults() {
     let defaults = BooleanConversionOptions::default();
-    assert_eq!(
-        BooleanConversionOptions::DEFAULT_TRUE_LITERALS,
-        &["true"],
-    );
-    assert_eq!(
-        BooleanConversionOptions::DEFAULT_FALSE_LITERALS,
-        &["false"],
-    );
+    assert_eq!(BooleanConversionOptions::DEFAULT_TRUE_LITERALS, &["true"],);
+    assert_eq!(BooleanConversionOptions::DEFAULT_FALSE_LITERALS, &["false"],);
     assert_eq!(defaults.true_literals(), &["true".to_string()]);
     assert_eq!(defaults.false_literals(), &["false".to_string()]);
     let wire = serde_json::to_string(&defaults)

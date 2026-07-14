@@ -10,15 +10,12 @@ use qubit_datatype::converter::{
     InvalidValueReason,
 };
 
-/// Test stable, value-free error-kind formatting.
+/// Test stable, value-free invalid-value reason formatting.
 #[test]
-fn test_data_conversion_error_kind_display_is_value_free() {
+fn test_invalid_value_reason_display_is_value_free() {
     let secret = "secret-marker-9271";
     let cases = [
-        (
-            InvalidValueReason::BlankRejected,
-            "blank string rejected",
-        ),
+        (InvalidValueReason::BlankRejected, "blank string rejected"),
         (
             InvalidValueReason::InvalidSyntax {
                 expected: "integer",
@@ -29,10 +26,7 @@ fn test_data_conversion_error_kind_display_is_value_free() {
         (InvalidValueReason::PrecisionLoss, "precision loss"),
         (InvalidValueReason::NonFinite, "non-finite value"),
         (InvalidValueReason::InvalidBoolean, "invalid boolean"),
-        (
-            InvalidValueReason::NegativeDuration,
-            "negative duration",
-        ),
+        (InvalidValueReason::NegativeDuration, "negative duration"),
         (
             InvalidValueReason::UnsupportedDurationUnit,
             "unsupported duration unit",
@@ -50,8 +44,8 @@ fn test_data_conversion_error_kind_display_is_value_free() {
             "json deserialization failed",
         ),
     ];
-    for (kind, expected) in cases {
-        let display = kind.to_string();
+    for (reason, expected) in cases {
+        let display = reason.to_string();
         assert_eq!(display, expected);
         assert!(!display.contains(secret));
     }

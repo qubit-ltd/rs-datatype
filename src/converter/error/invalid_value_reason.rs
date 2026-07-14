@@ -3,13 +3,17 @@
 //
 //    SPDX-License-Identifier: Apache-2.0
 // =============================================================================
-//! # Data Conversion Error Kind
+//! # Invalid Value Reason
 //!
 //! Defines stable, value-free reasons for invalid conversions.
 
 use super::data_format::DataFormat;
 
-/// Reason an otherwise supported conversion rejected its source value.
+/// Stable reason an otherwise supported conversion rejected its source value.
+///
+/// Reasons contain only structural context such as an expected grammar or data
+/// format. They never contain the original source value. This keeps matching
+/// predictable for callers and avoids accidental disclosure in logs.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum InvalidValueReason {
     /// A blank string is forbidden by the active policy.

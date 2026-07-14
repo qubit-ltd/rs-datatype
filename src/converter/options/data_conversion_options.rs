@@ -24,7 +24,23 @@ use super::empty_item_policy::EmptyItemPolicy;
 use super::numeric_conversion_policy::NumericConversionPolicy;
 use super::string_conversion_options::StringConversionOptions;
 
-/// Options that control common data conversion behavior.
+/// Aggregates all policies used by the conversion engine.
+///
+/// Pass this value to [`crate::DataConverter::to_with`] when conversion rules
+/// need to differ from the strict defaults. The nested option groups keep
+/// string normalization, boolean literals, collection splitting, duration
+/// units, and numeric precision independently configurable. The type is
+/// serializable with Serde and missing serialized fields receive their group
+/// defaults.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{DataConversionOptions, DataConverter};
+///
+/// let options = DataConversionOptions::env_friendly();
+/// assert_eq!(DataConverter::from(" yes ").to_with::<bool>(&options), Ok(true));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct DataConversionOptions {
@@ -70,6 +86,14 @@ impl DataConversionOptions {
     }
 
     /// Returns a copy with a different numeric conversion policy.
+    ///
+    /// # Parameters
+    ///
+    /// * `numeric_policy` - Precision policy used for every numeric target.
+    ///
+    /// # Returns
+    ///
+    /// Returns the updated options value.
     #[must_use]
     pub fn with_numeric_policy(
         mut self,

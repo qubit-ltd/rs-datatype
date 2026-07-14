@@ -9,14 +9,35 @@
 //!
 //! Defines options that control scalar-string-to-collection conversion.
 
+use super::super::scalar_items::ScalarItems;
 use super::empty_item_policy::EmptyItemPolicy;
-use super::scalar_items::ScalarItems;
 use serde::{
     Deserialize,
     Serialize,
 };
 
-/// Options that control scalar-string-to-collection conversion.
+/// Controls how one scalar string is exposed as collection items.
+///
+/// These options are consumed by [`crate::ScalarStringDataConverters`], not by
+/// [`crate::DataConverters`] over an already-materialized collection. Splitting
+/// is lazy, preserves each raw item's original index, and applies trimming
+/// before [`EmptyItemPolicy`].
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{CollectionConversionOptions, EmptyItemPolicy};
+///
+/// let options = CollectionConversionOptions::default()
+///     .with_split_scalar_strings(true)
+///     .with_trim_items(true)
+///     .with_empty_item_policy(EmptyItemPolicy::Skip);
+/// let items: Vec<_> = options
+///     .scalar_items("1, ,3")
+///     .map(|item| item.expect("empty items are skipped").value)
+///     .collect();
+/// assert_eq!(items, ["1", "3"]);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CollectionConversionOptions {
@@ -84,7 +105,9 @@ impl CollectionConversionOptions {
     ///
     /// # Parameters
     ///
-    /// * `delimiters` - Delimiters used when splitting is enabled.
+    /// * `delimiters` - Delimiters used when splitting is enabled. An empty
+    ///   iterator disables delimiter matches even if splitting is enabled, so
+    ///   the source is yielded as one item.
     ///
     /// # Returns
     ///

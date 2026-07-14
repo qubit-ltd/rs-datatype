@@ -10,21 +10,23 @@ use std::str::FromStr;
 use num_bigint::BigInt;
 use num_traits::Zero;
 
+use super::DataConverter;
 use super::numeric::is_integer_syntax;
-use super::{
-    DataConverter,
-    normalize,
-};
+use super::string_source::normalize;
 use crate::converter::{
     BooleanNumericPolicy,
-    InvalidValueReason,
-    DataConversionOptions,
     DataConversionError,
+    DataConversionOptions,
     DataConvertTo,
+    InvalidValueReason,
 };
 use crate::datatype::DataType;
 
 /// Applies the configured integer-to-boolean policy.
+///
+/// `value` is the already parsed integer, `policy` selects the accepted numeric
+/// domain, and `from` is retained in any error. Returns the mapped boolean, or
+/// [`DataConversionError::InvalidValue`] when the policy rejects the value.
 fn integer_to_bool(
     value: &BigInt,
     policy: BooleanNumericPolicy,

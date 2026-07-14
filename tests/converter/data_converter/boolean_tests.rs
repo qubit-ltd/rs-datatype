@@ -8,9 +8,9 @@
 use num_bigint::BigInt;
 use qubit_datatype::{
     DataConversionError,
-    InvalidValueReason,
     DataConverter,
     DataType,
+    InvalidValueReason,
 };
 
 /// Test bool target conversions for all supported source variants.

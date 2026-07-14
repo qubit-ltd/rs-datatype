@@ -9,5 +9,6 @@ mod boolean_tests;
 mod duration_tests;
 mod numeric_tests;
 mod source_tests;
+mod string_source_tests;
 mod structured_tests;
 mod text_tests;

@@ -11,11 +11,13 @@
 //! batches of common runtime values with the single-value [`DataConverter`]
 //! rules.
 
-use super::data_conversion_error::DataConversionError;
-use super::data_conversion_options::DataConversionOptions;
 use super::data_convert_to::DataConvertTo;
 use super::data_converter::DataConverter;
-use super::data_list_conversion_error::DataListConversionError;
+use super::error::{
+    DataConversionError,
+    DataListConversionError,
+};
+use super::options::DataConversionOptions;
 use crate::datatype::DataTypeOf;
 
 /// A lightweight adapter for converting batches of source values.

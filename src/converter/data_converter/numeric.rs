@@ -15,15 +15,13 @@ use num_traits::{
     ToPrimitive,
 };
 
-use super::{
-    DataConverter,
-    normalize,
-};
+use super::DataConverter;
+use super::string_source::normalize;
 use crate::converter::{
-    InvalidValueReason,
-    DataConversionOptions,
     DataConversionError,
+    DataConversionOptions,
     DataConvertTo,
+    InvalidValueReason,
     NumericConversionPolicy,
 };
 use crate::datatype::DataType;
@@ -38,6 +36,11 @@ enum ParsedNumber {
 }
 
 /// Parses a normalized number without selecting a target primitive first.
+///
+/// `value` must already have passed string normalization; `to` supplies target
+/// context and selects the expected syntax label on failure. Returns an exact
+/// integer/decimal representation or a non-finite marker. Invalid decimal text
+/// returns [`DataConversionError::InvalidValue`].
 fn parse_number(
     value: &str,
     to: DataType,
@@ -76,12 +79,18 @@ fn parse_number(
 }
 
 /// Tests whether text uses the canonical integer grammar.
+///
+/// Returns `true` for one or more ASCII digits with an optional leading sign,
+/// and `false` for empty, whitespace-containing, or otherwise invalid text.
 pub(super) fn is_integer_syntax(value: &str) -> bool {
     let digits = value.strip_prefix(['+', '-']).unwrap_or(value);
     !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())
 }
 
 /// Returns the stable syntax label for a numeric target.
+///
+/// `to` selects the label embedded in invalid-syntax errors. The return value
+/// is static and contains no source data.
 fn numeric_syntax(to: DataType) -> &'static str {
     match to {
         DataType::BigDecimal => "decimal number with optional exponent",
@@ -91,6 +100,10 @@ fn numeric_syntax(to: DataType) -> &'static str {
 }
 
 /// Converts parsed text to an integer, applying the numeric policy.
+///
+/// Decimal input is exact only when it has no fractional remainder. Lossy mode
+/// truncates toward zero. Non-finite markers always return an invalid-value
+/// error whose source type is [`DataType::String`].
 fn parsed_to_bigint(
     parsed: ParsedNumber,
     policy: NumericConversionPolicy,
@@ -114,6 +127,11 @@ fn parsed_to_bigint(
 }
 
 /// Converts a decimal to an integer with exactness checks.
+///
+/// `from` and `to` are used only as error context. Returns the integral value;
+/// exact mode rejects any fractional remainder, while lossy mode truncates
+/// toward zero. Values that cannot reasonably fit a primitive target are
+/// rejected before constructing an impractically large power of ten.
 fn decimal_to_bigint(
     value: &BigDecimal,
     policy: NumericConversionPolicy,
@@ -172,6 +190,10 @@ fn decimal_to_bigint(
 }
 
 /// Converts a finite float to an integer with exactness checks.
+///
+/// Returns a `BigInt` after truncation toward zero. Exact mode rejects a
+/// fractional source, and every policy rejects non-finite values. `from` and
+/// `to` are retained in those errors.
 fn float_to_bigint(
     value: f64,
     policy: NumericConversionPolicy,
@@ -199,6 +221,10 @@ fn float_to_bigint(
 }
 
 /// Extracts an arbitrary-precision integer from a supported source.
+///
+/// `options` controls decimal/float exactness and duration units; `to` supplies
+/// the final target context. Returns missing, unsupported, syntax, range, or
+/// precision errors with the original source type when extraction fails.
 pub(super) fn source_to_bigint(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
@@ -264,6 +290,9 @@ pub(super) fn source_to_bigint(
 }
 
 /// Converts a duration to integer units under the numeric policy.
+///
+/// The duration unit comes from `options`. Exact mode rejects a remainder;
+/// lossy mode uses half-up rounding. `to` is retained as target context.
 pub(super) fn duration_to_bigint(
     duration: Duration,
     options: &DataConversionOptions,
@@ -290,6 +319,9 @@ pub(super) fn duration_to_bigint(
 }
 
 /// Converts a supported source to a signed primitive range.
+///
+/// Returns an `i128` intermediate or an out-of-range error associated with
+/// `to`. Source parsing and policy errors are propagated unchanged.
 fn to_i128(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
@@ -306,6 +338,9 @@ fn to_i128(
 }
 
 /// Converts a supported source to an unsigned primitive range.
+///
+/// Returns a `u128` intermediate or an out-of-range error associated with
+/// `to`. Negative and otherwise unrepresentable values are rejected.
 fn to_u128(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
@@ -322,6 +357,9 @@ fn to_u128(
 }
 
 /// Checks a signed target range.
+///
+/// `T` must support checked conversion from `i128`. Returns the converted value
+/// or an out-of-range error containing `source` and `to` type context.
 fn checked_signed<T>(
     value: i128,
     source: &DataConverter<'_>,
@@ -341,6 +379,9 @@ where
 }
 
 /// Checks an unsigned target range.
+///
+/// `T` must support checked conversion from `u128`. Returns the converted value
+/// or an out-of-range error containing `source` and `to` type context.
 fn checked_unsigned<T>(
     value: u128,
     source: &DataConverter<'_>,
@@ -407,6 +448,10 @@ impl_unsigned_target!(u128, DataType::UInt128);
 impl_unsigned_target!(usize, DataType::UIntSize);
 
 /// Converts an integer exactly or lossily to a float.
+///
+/// Lossy mode accepts finite IEEE rounding. Exact mode additionally requires
+/// converting the result back to reproduce `value`. Non-finite results are
+/// reported as out of range using `from` and `to`.
 fn bigint_to_f64(
     value: &BigInt,
     policy: NumericConversionPolicy,
@@ -435,6 +480,10 @@ fn bigint_to_f64(
 }
 
 /// Converts a decimal exactly or lossily to a float.
+///
+/// Lossy mode accepts finite IEEE rounding. Exact mode additionally requires
+/// converting the result back to reproduce `value`. Non-finite results are
+/// reported as out of range using `from` and `to`.
 fn decimal_to_f64(
     value: &BigDecimal,
     policy: NumericConversionPolicy,
@@ -463,6 +512,10 @@ fn decimal_to_f64(
 }
 
 /// Converts a source to f64 before target-width validation.
+///
+/// `options` controls exactness and `to` identifies the eventual float target.
+/// Returns contextual missing, unsupported, syntax, range, non-finite, or
+/// precision errors when an `f64` intermediate cannot be produced.
 fn source_to_f64(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
@@ -611,18 +664,15 @@ impl DataConvertTo<f32> for DataConverter<'_> {
         }
         let converted = value as f32;
         if !converted.is_finite() {
-            return Err(self.invalid(
-                DataType::Float32,
-                InvalidValueReason::OutOfRange,
-            ));
+            return Err(
+                self.invalid(DataType::Float32, InvalidValueReason::OutOfRange)
+            );
         }
         if options.numeric_policy == NumericConversionPolicy::Exact
             && f64::from(converted) != value
         {
-            Err(self.invalid(
-                DataType::Float32,
-                InvalidValueReason::PrecisionLoss,
-            ))
+            Err(self
+                .invalid(DataType::Float32, InvalidValueReason::PrecisionLoss))
         } else {
             Ok(converted)
         }

@@ -15,7 +15,11 @@ use serde::{
     Serialize,
 };
 
-/// Options that control [`std::time::Duration`] conversion.
+/// Controls scalar conversions to and from [`std::time::Duration`].
+///
+/// [`Self::unit`] is used for integers and for duration strings without a
+/// suffix. [`Self::append_unit_suffix`] affects duration-to-string formatting;
+/// it does not change accepted input suffixes.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct DurationConversionOptions {
