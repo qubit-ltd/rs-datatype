@@ -9,10 +9,19 @@
 //!
 //! Defines how empty collection items are interpreted after splitting.
 
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
 /// Controls how empty collection items are interpreted after splitting.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
+)]
+#[serde(rename_all = "snake_case")]
 pub enum EmptyItemPolicy {
     /// Keep empty items and pass them to the element converter.
+    #[default]
     Keep,
     /// Drop empty items before element conversion.
     Skip,

@@ -9,16 +9,27 @@
 //!
 //! Defines grouped options for common data conversion behavior.
 
+use std::sync::LazyLock;
+
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
 use super::blank_string_policy::BlankStringPolicy;
 use super::boolean_conversion_options::BooleanConversionOptions;
 use super::collection_conversion_options::CollectionConversionOptions;
 use super::duration_conversion_options::DurationConversionOptions;
 use super::empty_item_policy::EmptyItemPolicy;
+use super::numeric_conversion_policy::NumericConversionPolicy;
 use super::string_conversion_options::StringConversionOptions;
 
 /// Options that control common data conversion behavior.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct DataConversionOptions {
+    /// Numeric precision and rounding behavior.
+    pub numeric_policy: NumericConversionPolicy,
     /// String source conversion behavior.
     pub string: StringConversionOptions,
     /// Boolean string literal conversion behavior.
@@ -30,6 +41,17 @@ pub struct DataConversionOptions {
 }
 
 impl DataConversionOptions {
+    /// Returns a shared reference to the default options.
+    ///
+    /// # Returns
+    ///
+    /// A process-wide lazily initialized default value.
+    pub fn default_ref() -> &'static Self {
+        static DEFAULT: LazyLock<DataConversionOptions> =
+            LazyLock::new(DataConversionOptions::default);
+        &DEFAULT
+    }
+
     /// Creates options suitable for environment variable style values.
     ///
     /// # Returns
@@ -39,6 +61,7 @@ impl DataConversionOptions {
     /// skipping empty collection items.
     pub fn env_friendly() -> Self {
         Self {
+            numeric_policy: NumericConversionPolicy::default(),
             string: StringConversionOptions {
                 trim: true,
                 blank_string_policy: BlankStringPolicy::TreatAsMissing,
@@ -52,6 +75,16 @@ impl DataConversionOptions {
             },
             duration: DurationConversionOptions::default(),
         }
+    }
+
+    /// Returns a copy with a different numeric conversion policy.
+    #[must_use]
+    pub fn with_numeric_policy(
+        mut self,
+        numeric_policy: NumericConversionPolicy,
+    ) -> Self {
+        self.numeric_policy = numeric_policy;
+        self
     }
 
     /// Returns a copy with a different blank string policy.

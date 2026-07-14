@@ -9,13 +9,16 @@
 //!
 //! Defines options that control scalar-string-to-collection conversion.
 
-use super::data_conversion_error::DataConversionError;
-use super::data_list_conversion_error::DataListConversionError;
-use super::data_list_conversion_result::DataListConversionResult;
 use super::empty_item_policy::EmptyItemPolicy;
+use super::scalar_items::ScalarItems;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 /// Options that control scalar-string-to-collection conversion.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct CollectionConversionOptions {
     /// Whether a scalar string can be split into collection items.
     pub split_scalar_strings: bool,
@@ -114,41 +117,10 @@ impl CollectionConversionOptions {
     ///
     /// # Returns
     ///
-    /// Returns collection items after optional splitting, per-item trimming,
-    /// and empty item handling.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`DataListConversionError`] when an empty item is rejected.
-    pub fn scalar_items(
-        &self,
-        value: &str,
-    ) -> DataListConversionResult<Vec<String>> {
-        let raw_items: Vec<&str> = if self.split_scalar_strings {
-            value.split(|c| self.delimiters.contains(&c)).collect()
-        } else {
-            vec![value]
-        };
-        let mut items = Vec::with_capacity(raw_items.len());
-        for (index, item) in raw_items.into_iter().enumerate() {
-            let item = if self.trim_items { item.trim() } else { item };
-            if item.is_empty() {
-                match self.empty_item_policy {
-                    EmptyItemPolicy::Keep => {}
-                    EmptyItemPolicy::Skip => continue,
-                    EmptyItemPolicy::Reject => {
-                        return Err(DataListConversionError {
-                            index,
-                            source: DataConversionError::ConversionError(
-                                "empty collection item is not allowed"
-                                    .to_string(),
-                            ),
-                        });
-                    }
-                }
-            }
-            items.push(item.to_string());
-        }
-        Ok(items)
+    /// Returns a lazy iterator that borrows `value` and these options. Each
+    /// yielded item retains its index in the unsuppressed split sequence.
+    /// Rejected empty items are reported only when iteration reaches them.
+    pub fn scalar_items<'a>(&'a self, value: &'a str) -> ScalarItems<'a> {
+        ScalarItems::new(self, value)
     }
 }

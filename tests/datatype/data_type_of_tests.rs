@@ -9,11 +9,65 @@
 //!
 //! Tests for compile-time Rust type to `DataType` mapping.
 
-use qubit_datatype::DataType;
-use qubit_datatype::DataTypeOf;
+use qubit_datatype::{
+    DataType,
+    DataTypeOf,
+};
+
+/// Test primitive and standard-library mappings without optional features.
+#[test]
+fn test_data_type_of_primitive_and_standard_types() {
+    use std::time::Duration;
+
+    assert_eq!(bool::DATA_TYPE, DataType::Bool);
+    assert_eq!(char::DATA_TYPE, DataType::Char);
+    assert_eq!(i8::DATA_TYPE, DataType::Int8);
+    assert_eq!(i16::DATA_TYPE, DataType::Int16);
+    assert_eq!(i32::DATA_TYPE, DataType::Int32);
+    assert_eq!(i64::DATA_TYPE, DataType::Int64);
+    assert_eq!(i128::DATA_TYPE, DataType::Int128);
+    assert_eq!(isize::DATA_TYPE, DataType::IntSize);
+    assert_eq!(u8::DATA_TYPE, DataType::UInt8);
+    assert_eq!(u16::DATA_TYPE, DataType::UInt16);
+    assert_eq!(u32::DATA_TYPE, DataType::UInt32);
+    assert_eq!(u64::DATA_TYPE, DataType::UInt64);
+    assert_eq!(u128::DATA_TYPE, DataType::UInt128);
+    assert_eq!(usize::DATA_TYPE, DataType::UIntSize);
+    assert_eq!(f32::DATA_TYPE, DataType::Float32);
+    assert_eq!(f64::DATA_TYPE, DataType::Float64);
+    assert_eq!(String::DATA_TYPE, DataType::String);
+    assert_eq!(Duration::DATA_TYPE, DataType::Duration);
+}
+
+/// Test chrono mappings when the feature is enabled.
+#[test]
+#[cfg(feature = "chrono")]
+fn test_data_type_of_chrono_types() {
+    use chrono::{
+        DateTime,
+        NaiveDate,
+        NaiveDateTime,
+        NaiveTime,
+        Utc,
+    };
+
+    assert_eq!(NaiveDate::DATA_TYPE, DataType::Date);
+    assert_eq!(NaiveTime::DATA_TYPE, DataType::Time);
+    assert_eq!(NaiveDateTime::DATA_TYPE, DataType::DateTime);
+    assert_eq!(DateTime::<Utc>::DATA_TYPE, DataType::Instant);
+}
+
+/// Test arbitrary-precision mappings when the feature is enabled.
+#[test]
+#[cfg(feature = "big-number")]
+fn test_data_type_of_big_number_types() {
+    assert_eq!(num_bigint::BigInt::DATA_TYPE, DataType::BigInteger);
+    assert_eq!(bigdecimal::BigDecimal::DATA_TYPE, DataType::BigDecimal);
+}
 
 /// Test DataTypeOf for v0.4.0 new types
 #[test]
+#[cfg(all(feature = "url", feature = "json"))]
 fn test_data_type_of_v040_types() {
     use std::collections::HashMap;
     use std::time::Duration;
@@ -31,6 +85,7 @@ fn test_data_type_of_v040_types() {
 // ============================================================================
 
 #[test]
+#[cfg(feature = "url")]
 fn test_data_type_of_url_generic() {
     fn data_type_of<T: DataTypeOf>() -> DataType {
         T::DATA_TYPE
@@ -40,12 +95,14 @@ fn test_data_type_of_url_generic() {
 }
 
 #[test]
+#[cfg(feature = "url")]
 fn test_data_type_of_url_distinct_from_string() {
     assert_ne!(url::Url::DATA_TYPE, String::DATA_TYPE);
     assert_eq!(String::DATA_TYPE, DataType::String);
 }
 
 #[test]
+#[cfg(feature = "url")]
 fn test_data_type_of_url_inferred_from_value() {
     fn mapping_for<T: DataTypeOf>(_sample: &T) -> DataType {
         T::DATA_TYPE

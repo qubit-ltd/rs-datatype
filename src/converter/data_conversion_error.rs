@@ -14,48 +14,50 @@ use std::fmt;
 
 use crate::datatype::DataType;
 
+use super::data_conversion_error_kind::DataConversionErrorKind;
+
 /// Error type returned by reusable data conversions.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DataConversionError {
-    /// No concrete source value is available.
-    NoValue,
-
-    /// The source value type cannot be converted to the requested target type.
-    ConversionFailed {
+    /// The source has no concrete value.
+    Missing {
         /// Source data type.
         from: DataType,
-        /// Target data type.
+        /// Requested target data type.
         to: DataType,
     },
 
-    /// Conversion failed because the source value content is invalid or out of
-    /// range for the target type.
-    ConversionError(String),
+    /// The source and target type pair is unsupported.
+    Unsupported {
+        /// Source data type.
+        from: DataType,
+        /// Requested target data type.
+        to: DataType,
+    },
 
-    /// JSON serialization failed while converting a value to JSON text or a
-    /// JSON value.
-    JsonSerializationError(String),
-
-    /// JSON deserialization failed while parsing JSON text.
-    JsonDeserializationError(String),
+    /// The type pair is supported but the source value is invalid.
+    Invalid {
+        /// Source data type.
+        from: DataType,
+        /// Requested target data type.
+        to: DataType,
+        /// Value-free reason for rejection.
+        kind: DataConversionErrorKind,
+    },
 }
 
 impl fmt::Display for DataConversionError {
     /// Formats the conversion error for user-facing diagnostics.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DataConversionError::NoValue => write!(f, "No value"),
-            DataConversionError::ConversionFailed { from, to } => {
-                write!(f, "Type conversion failed: from {from} to {to}")
+            DataConversionError::Missing { from, to } => {
+                write!(f, "Missing value for conversion from {from} to {to}")
             }
-            DataConversionError::ConversionError(message) => {
-                write!(f, "Conversion error: {message}")
+            DataConversionError::Unsupported { from, to } => {
+                write!(f, "Unsupported conversion from {from} to {to}")
             }
-            DataConversionError::JsonSerializationError(message) => {
-                write!(f, "JSON serialization error: {message}")
-            }
-            DataConversionError::JsonDeserializationError(message) => {
-                write!(f, "JSON deserialization error: {message}")
+            DataConversionError::Invalid { from, to, kind } => {
+                write!(f, "Invalid conversion from {from} to {to}: {kind}")
             }
         }
     }

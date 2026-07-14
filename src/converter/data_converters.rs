@@ -11,8 +11,6 @@
 //! batches of common runtime values with the single-value [`DataConverter`]
 //! rules.
 
-use std::marker::PhantomData;
-
 use super::data_conversion_error::DataConversionError;
 use super::data_conversion_options::DataConversionOptions;
 use super::data_conversion_result::DataConversionResult;
@@ -20,6 +18,7 @@ use super::data_convert_to::DataConvertTo;
 use super::data_converter::DataConverter;
 use super::data_list_conversion_error::DataListConversionError;
 use super::data_list_conversion_result::DataListConversionResult;
+use crate::datatype::DataTypeOf;
 
 /// A lightweight adapter for converting batches of source values.
 ///
@@ -46,14 +45,12 @@ use super::data_list_conversion_result::DataListConversionResult;
 /// assert_eq!(values, vec![String::from("8080"), String::from("9090")]);
 /// ```
 #[derive(Debug, Clone)]
-pub struct DataConverters<'a, I> {
+pub struct DataConverters<I> {
     /// The iterator of source values.
     sources: I,
-    /// The marker for the lifetime of the iterator.
-    marker: PhantomData<&'a ()>,
 }
 
-impl<'a, I> DataConverters<'a, I>
+impl<I> DataConverters<I>
 where
     I: Iterator,
 {
@@ -70,17 +67,13 @@ where
     /// requested.
     #[inline]
     pub fn from_iterator(sources: I) -> Self {
-        Self {
-            sources,
-            marker: PhantomData,
-        }
+        Self { sources }
     }
 }
 
-impl<'a, I> DataConverters<'a, I>
+impl<I> DataConverters<I>
 where
     I: Iterator,
-    I::Item: Into<DataConverter<'a>>,
 {
     /// Converts every source item to the requested target type.
     ///
@@ -111,11 +104,12 @@ where
     ///
     /// assert_eq!(flags, vec![true, false, true, false]);
     /// ```
-    pub fn to_vec<T>(self) -> DataListConversionResult<Vec<T>>
+    pub fn to_vec<'a, T>(self) -> DataListConversionResult<Vec<T>>
     where
+        I::Item: Into<DataConverter<'a>>,
         DataConverter<'a>: DataConvertTo<T>,
     {
-        self.to_vec_with(&DataConversionOptions::default())
+        self.to_vec_with(DataConversionOptions::default_ref())
     }
 
     /// Converts every source item to the requested target type using options.
@@ -138,11 +132,12 @@ where
     /// Returns [`DataListConversionError`] with the zero-based failing index
     /// and the original [`DataConversionError`] when any element fails
     /// conversion.
-    pub fn to_vec_with<T>(
+    pub fn to_vec_with<'a, T>(
         self,
         options: &DataConversionOptions,
     ) -> DataListConversionResult<Vec<T>>
     where
+        I::Item: Into<DataConverter<'a>>,
         DataConverter<'a>: DataConvertTo<T>,
     {
         let sources = self.sources;
@@ -152,7 +147,10 @@ where
             let value = match source.into().to_with::<T>(options) {
                 Ok(value) => value,
                 Err(source) => {
-                    return Err(DataListConversionError { index, source });
+                    return Err(DataListConversionError {
+                        source_index: index,
+                        source,
+                    });
                 }
             };
             converted.push(value);
@@ -172,9 +170,11 @@ where
     ///
     /// # Errors
     ///
-    /// Returns [`DataConversionError::NoValue`] when the source iterator is
-    /// empty, or the original single-value conversion error when the first
-    /// element cannot be converted.
+    /// Returns [`DataConversionError::Missing`] when the source iterator is
+    /// empty. Because an empty generic iterator has no source value whose type
+    /// can be inferred, that error uses the requested target type for both its
+    /// `from` and `to` fields. Returns the original single-value conversion
+    /// error when the first element cannot be converted.
     ///
     /// # Examples
     ///
@@ -188,11 +188,13 @@ where
     ///
     /// assert_eq!(first, 42);
     /// ```
-    pub fn to_first<T>(self) -> DataConversionResult<T>
+    pub fn to_first<'a, T>(self) -> DataConversionResult<T>
     where
+        T: DataTypeOf,
+        I::Item: Into<DataConverter<'a>>,
         DataConverter<'a>: DataConvertTo<T>,
     {
-        self.to_first_with(&DataConversionOptions::default())
+        self.to_first_with(DataConversionOptions::default_ref())
     }
 
     /// Converts the first source item to the requested target type using
@@ -212,25 +214,35 @@ where
     ///
     /// # Errors
     ///
-    /// Returns [`DataConversionError::NoValue`] when the source iterator is
-    /// empty, or the original conversion error when the first element cannot be
-    /// converted.
-    pub fn to_first_with<T>(
+    /// Returns [`DataConversionError::Missing`] when the source iterator is
+    /// empty. Because an empty generic iterator has no source value whose type
+    /// can be inferred, that error uses the requested target type for both its
+    /// `from` and `to` fields. Returns the original conversion error when the
+    /// first element cannot be converted.
+    pub fn to_first_with<'a, T>(
         self,
         options: &DataConversionOptions,
     ) -> DataConversionResult<T>
     where
+        T: DataTypeOf,
+        I::Item: Into<DataConverter<'a>>,
         DataConverter<'a>: DataConvertTo<T>,
     {
         let mut sources = self.sources;
         match sources.next() {
             Some(source) => source.into().to_with::<T>(options),
-            None => Err(DataConversionError::NoValue),
+            None => Err(DataConversionError::Missing {
+                // An empty generic collection has no source value whose type
+                // could be inferred, so the requested type is used for both
+                // sides of the missing-value relation.
+                from: T::DATA_TYPE,
+                to: T::DATA_TYPE,
+            }),
         }
     }
 }
 
-impl<'a, I> DataConverters<'a, I>
+impl<I> DataConverters<I>
 where
     I: ExactSizeIterator,
 {
@@ -255,10 +267,7 @@ where
     }
 }
 
-impl<'a, V> From<&'a [V]> for DataConverters<'a, std::slice::Iter<'a, V>>
-where
-    &'a V: Into<DataConverter<'a>>,
-{
+impl<'a, V> From<&'a [V]> for DataConverters<std::slice::Iter<'a, V>> {
     /// Creates a batch converter from a borrowed slice.
     #[inline]
     fn from(values: &'a [V]) -> Self {
@@ -266,10 +275,7 @@ where
     }
 }
 
-impl<'a, V> From<&'a Vec<V>> for DataConverters<'a, std::slice::Iter<'a, V>>
-where
-    &'a V: Into<DataConverter<'a>>,
-{
+impl<'a, V> From<&'a Vec<V>> for DataConverters<std::slice::Iter<'a, V>> {
     /// Creates a batch converter from a borrowed vector.
     #[inline]
     fn from(values: &'a Vec<V>) -> Self {
@@ -277,10 +283,7 @@ where
     }
 }
 
-impl<V> From<Vec<V>> for DataConverters<'static, std::vec::IntoIter<V>>
-where
-    V: Into<DataConverter<'static>>,
-{
+impl<V> From<Vec<V>> for DataConverters<std::vec::IntoIter<V>> {
     /// Creates a batch converter from an owned vector.
     #[inline]
     fn from(values: Vec<V>) -> Self {

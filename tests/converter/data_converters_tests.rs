@@ -11,9 +11,11 @@
 
 use std::error::Error;
 
+use qubit_datatype::DataType;
 use qubit_datatype::converter::{
     BlankStringPolicy,
     DataConversionError,
+    DataConversionErrorKind,
     DataConversionOptions,
     DataConverters,
     StringConversionOptions,
@@ -54,6 +56,20 @@ fn test_data_converters_from_owned_vec_converts_all_values() {
         .expect("owned string vector should convert to u16 vector");
 
     assert_eq!(converted, vec![1, 2, 3]);
+}
+
+/// Test conversion from an owned vector containing borrowed string slices.
+#[test]
+fn test_data_converters_from_owned_vec_of_borrowed_values() {
+    let first = String::from("1");
+    let second = String::from("2");
+    let values = vec![first.as_str(), second.as_str()];
+
+    let converted: Vec<u16> = DataConverters::from(values)
+        .to_vec()
+        .expect("owned iterator of borrowed values should retain its lifetime");
+
+    assert_eq!(converted, vec![1, 2]);
 }
 
 /// Test batch conversion from an iterator.
@@ -110,7 +126,10 @@ fn test_data_converters_empty_sources() {
 
     assert!(matches!(
         DataConverters::from(&values).to_first::<u16>(),
-        Err(DataConversionError::NoValue)
+        Err(DataConversionError::Missing {
+            from: DataType::UInt16,
+            to: DataType::UInt16,
+        })
     ));
 }
 
@@ -123,13 +142,19 @@ fn test_data_converters_error_contains_failing_index() {
         .to_vec::<u16>()
         .expect_err("invalid second element should fail conversion");
 
-    assert_eq!(error.index, 1);
-    assert!(matches!(
+    assert_eq!(error.source_index, 1);
+    assert_eq!(
         error.source,
-        DataConversionError::ConversionError(_)
-    ));
+        DataConversionError::Invalid {
+            from: DataType::String,
+            to: DataType::UInt16,
+            kind: DataConversionErrorKind::InvalidSyntax {
+                expected: "integer",
+            },
+        },
+    );
     assert!(
-        error.to_string().contains("index 1"),
+        error.to_string().contains("source index 1"),
         "display should include failing index: {error}"
     );
     assert!(

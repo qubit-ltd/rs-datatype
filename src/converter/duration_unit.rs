@@ -11,14 +11,23 @@
 
 use std::time::Duration;
 
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
 /// Unit used when converting [`Duration`] values to and from scalar values.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
+)]
+#[serde(rename_all = "snake_case")]
 pub enum DurationUnit {
     /// Nanoseconds.
     Nanoseconds,
     /// Microseconds.
     Microseconds,
     /// Milliseconds.
+    #[default]
     Milliseconds,
     /// Seconds.
     Seconds,
@@ -87,11 +96,26 @@ impl DurationUnit {
     /// Returns an error message when converting the value to seconds would
     /// overflow the range supported by [`Duration`].
     pub fn duration_from_u64(self, value: u64) -> Result<Duration, String> {
+        self.duration_from_u128(u128::from(value))
+    }
+
+    /// Converts an integer value in this unit to a [`Duration`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the final seconds component exceeds `u64::MAX`.
+    pub fn duration_from_u128(self, value: u128) -> Result<Duration, String> {
         match self {
-            DurationUnit::Nanoseconds => Ok(Duration::from_nanos(value)),
-            DurationUnit::Microseconds => Ok(Duration::from_micros(value)),
-            DurationUnit::Milliseconds => Ok(Duration::from_millis(value)),
-            DurationUnit::Seconds => Ok(Duration::from_secs(value)),
+            DurationUnit::Nanoseconds => {
+                duration_from_subseconds(value, 1_000_000_000, 1)
+            }
+            DurationUnit::Microseconds => {
+                duration_from_subseconds(value, 1_000_000, 1_000)
+            }
+            DurationUnit::Milliseconds => {
+                duration_from_subseconds(value, 1_000, 1_000_000)
+            }
+            DurationUnit::Seconds => checked_secs(value, 1, "seconds"),
             DurationUnit::Minutes => checked_secs(value, 60, "minutes"),
             DurationUnit::Hours => checked_secs(value, 60 * 60, "hours"),
             DurationUnit::Days => checked_secs(value, 24 * 60 * 60, "days"),
@@ -125,7 +149,7 @@ impl DurationUnit {
     /// # Returns
     ///
     /// Nanoseconds per unit.
-    const fn nanos_per_unit(self) -> u128 {
+    pub(crate) const fn nanos_per_unit(self) -> u128 {
         match self {
             DurationUnit::Nanoseconds => 1,
             DurationUnit::Microseconds => 1_000,
@@ -135,13 +159,6 @@ impl DurationUnit {
             DurationUnit::Hours => 60 * 60 * 1_000_000_000,
             DurationUnit::Days => 24 * 60 * 60 * 1_000_000_000,
         }
-    }
-}
-
-impl Default for DurationUnit {
-    /// Creates the default duration unit.
-    fn default() -> Self {
-        DurationUnit::Milliseconds
     }
 }
 
@@ -161,12 +178,27 @@ impl Default for DurationUnit {
 ///
 /// Returns an error message when the multiplication overflows `u64` seconds.
 fn checked_secs(
-    value: u64,
-    seconds_per_unit: u64,
+    value: u128,
+    seconds_per_unit: u128,
     unit_name: &str,
 ) -> Result<Duration, String> {
-    value
+    let seconds = value
         .checked_mul(seconds_per_unit)
-        .map(Duration::from_secs)
-        .ok_or_else(|| format!("duration {unit_name} overflow u64 seconds"))
+        .filter(|seconds| *seconds <= u128::from(u64::MAX))
+        .ok_or_else(|| format!("duration {unit_name} overflow u64 seconds"))?;
+    Ok(Duration::from_secs(seconds as u64))
+}
+
+/// Decomposes subsecond unit counts without multiplying the full value.
+fn duration_from_subseconds(
+    value: u128,
+    units_per_second: u128,
+    nanos_per_unit: u32,
+) -> Result<Duration, String> {
+    let seconds = value / units_per_second;
+    if seconds > u128::from(u64::MAX) {
+        return Err("duration overflow u64 seconds".to_string());
+    }
+    let nanos = (value % units_per_second) as u32 * nanos_per_unit;
+    Ok(Duration::new(seconds as u64, nanos))
 }
