@@ -53,7 +53,7 @@ use serde::{
 /// assert!(DataConverter::from("2").to_with::<Duration>(&options).is_err());
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct DurationConversionOptions {
     /// Unit assigned to integer sources converted to [`std::time::Duration`].
     pub numeric_input_unit: DurationUnit,
