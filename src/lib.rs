@@ -38,14 +38,14 @@
 //! # #[cfg(feature = "converter")]
 //! # {
 //! use qubit_datatype::{
-//!     DataConversionError, DataConversionErrorKind, DataConversionOptions,
+//!     DataConversionError, InvalidValueReason, DataConversionOptions,
 //!     DataConverter, NumericConversionPolicy, StringConversionOptions,
 //! };
 //!
 //! assert!(matches!(
 //!     DataConverter::from("3.9").to::<i32>(),
-//!     Err(DataConversionError::Invalid {
-//!         kind: DataConversionErrorKind::PrecisionLoss,
+//!     Err(DataConversionError::InvalidValue {
+//!         reason: InvalidValueReason::PrecisionLoss,
 //!         ..
 //!     }),
 //! ));
@@ -72,15 +72,13 @@ pub use converter::{
     BooleanNumericPolicy,
     CollectionConversionOptions,
     DataConversionError,
-    DataConversionErrorKind,
+    InvalidValueReason,
     DataConversionOptions,
-    DataConversionResult,
     DataConvertTo,
     DataConverter,
     DataConverters,
     DataFormat,
     DataListConversionError,
-    DataListConversionResult,
     DurationConversionOptions,
     DurationUnit,
     EmptyItemPolicy,

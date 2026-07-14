@@ -25,3 +25,12 @@ fn test_numeric_conversion_policy_serde_and_default() {
         NumericConversionPolicy::Lossy,
     );
 }
+
+/// Test that the environment-variable numeric profile is exact.
+#[test]
+fn test_numeric_conversion_policy_env_friendly_is_exact() {
+    assert_eq!(
+        NumericConversionPolicy::env_friendly(),
+        NumericConversionPolicy::Exact,
+    );
+}

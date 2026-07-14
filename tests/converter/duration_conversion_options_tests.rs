@@ -24,3 +24,12 @@ fn test_duration_conversion_options_builders_update_fields() {
     assert_eq!(options.unit, DurationUnit::Seconds);
     assert!(!options.append_unit_suffix);
 }
+
+/// Test that the environment-variable duration profile owns its defaults.
+#[test]
+fn test_duration_conversion_options_env_friendly_profile() {
+    assert_eq!(
+        DurationConversionOptions::env_friendly(),
+        DurationConversionOptions::default(),
+    );
+}

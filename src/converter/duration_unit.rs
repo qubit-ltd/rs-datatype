@@ -95,6 +95,7 @@ impl DurationUnit {
     ///
     /// Returns an error message when converting the value to seconds would
     /// overflow the range supported by [`Duration`].
+    #[inline(always)]
     pub fn duration_from_u64(self, value: u64) -> Result<Duration, String> {
         self.duration_from_u128(u128::from(value))
     }
@@ -177,6 +178,7 @@ impl DurationUnit {
 /// # Errors
 ///
 /// Returns an error message when the multiplication overflows `u64` seconds.
+#[inline]
 fn checked_secs(
     value: u128,
     seconds_per_unit: u128,
@@ -190,6 +192,7 @@ fn checked_secs(
 }
 
 /// Decomposes subsecond unit counts without multiplying the full value.
+#[inline]
 fn duration_from_subseconds(
     value: u128,
     units_per_second: u128,

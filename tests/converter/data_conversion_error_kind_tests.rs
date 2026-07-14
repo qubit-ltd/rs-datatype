@@ -6,8 +6,8 @@
 //! Tests for structured conversion error reasons.
 
 use qubit_datatype::converter::{
-    DataConversionErrorKind,
     DataFormat,
+    InvalidValueReason,
 };
 
 /// Test stable, value-free error-kind formatting.
@@ -16,35 +16,35 @@ fn test_data_conversion_error_kind_display_is_value_free() {
     let secret = "secret-marker-9271";
     let cases = [
         (
-            DataConversionErrorKind::BlankRejected,
+            InvalidValueReason::BlankRejected,
             "blank string rejected",
         ),
         (
-            DataConversionErrorKind::InvalidSyntax {
+            InvalidValueReason::InvalidSyntax {
                 expected: "integer",
             },
             "invalid syntax; expected integer",
         ),
-        (DataConversionErrorKind::OutOfRange, "value out of range"),
-        (DataConversionErrorKind::PrecisionLoss, "precision loss"),
-        (DataConversionErrorKind::NonFinite, "non-finite value"),
-        (DataConversionErrorKind::InvalidBoolean, "invalid boolean"),
+        (InvalidValueReason::OutOfRange, "value out of range"),
+        (InvalidValueReason::PrecisionLoss, "precision loss"),
+        (InvalidValueReason::NonFinite, "non-finite value"),
+        (InvalidValueReason::InvalidBoolean, "invalid boolean"),
         (
-            DataConversionErrorKind::NegativeDuration,
+            InvalidValueReason::NegativeDuration,
             "negative duration",
         ),
         (
-            DataConversionErrorKind::UnsupportedDurationUnit,
+            InvalidValueReason::UnsupportedDurationUnit,
             "unsupported duration unit",
         ),
         (
-            DataConversionErrorKind::Serialization {
+            InvalidValueReason::Serialization {
                 format: DataFormat::Json,
             },
             "json serialization failed",
         ),
         (
-            DataConversionErrorKind::Deserialization {
+            InvalidValueReason::Deserialization {
                 format: DataFormat::Json,
             },
             "json deserialization failed",

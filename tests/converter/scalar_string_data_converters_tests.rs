@@ -14,7 +14,7 @@ use qubit_datatype::converter::{
     BlankStringPolicy,
     CollectionConversionOptions,
     DataConversionError,
-    DataConversionErrorKind,
+    InvalidValueReason,
     DataConversionOptions,
     EmptyItemPolicy,
     ScalarStringDataConverters,
@@ -131,10 +131,10 @@ fn test_scalar_string_data_converters_to_vec_with_rejects_empty_item() {
     assert_eq!(error.source_index, 1);
     assert_eq!(
         error.source,
-        DataConversionError::Invalid {
+        DataConversionError::InvalidValue {
             from: DataType::String,
             to: DataType::UInt16,
-            kind: DataConversionErrorKind::BlankRejected,
+            reason: InvalidValueReason::BlankRejected,
         },
     );
 }
@@ -150,10 +150,10 @@ fn test_scalar_string_data_converters_to_first_with_rejects_empty_item() {
 
     assert_eq!(
         ScalarStringDataConverters::from(",1,2").to_first_with::<u16>(&options),
-        Err(DataConversionError::Invalid {
+        Err(DataConversionError::InvalidValue {
             from: DataType::String,
             to: DataType::UInt16,
-            kind: DataConversionErrorKind::BlankRejected,
+            reason: InvalidValueReason::BlankRejected,
         }),
     );
 }
@@ -224,8 +224,8 @@ fn test_scalar_string_data_converters_rejects_blank_scalar() {
     assert_eq!(error.source_index, 0);
     assert!(matches!(
         error.source,
-        DataConversionError::Invalid {
-            kind: DataConversionErrorKind::BlankRejected,
+        DataConversionError::InvalidValue {
+            reason: InvalidValueReason::BlankRejected,
             ..
         },
     ));

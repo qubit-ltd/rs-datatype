@@ -13,11 +13,9 @@
 
 use super::data_conversion_error::DataConversionError;
 use super::data_conversion_options::DataConversionOptions;
-use super::data_conversion_result::DataConversionResult;
 use super::data_convert_to::DataConvertTo;
 use super::data_converter::DataConverter;
 use super::data_list_conversion_error::DataListConversionError;
-use super::data_list_conversion_result::DataListConversionResult;
 use crate::datatype::DataTypeOf;
 
 /// A lightweight adapter for converting batches of source values.
@@ -31,10 +29,12 @@ use crate::datatype::DataTypeOf;
 /// ```
 /// use qubit_datatype::converter::{
 ///     DataConverters,
-///     DataListConversionResult,
+///     DataListConversionError,
 /// };
 ///
-/// fn parse_ports(values: &[String]) -> DataListConversionResult<Vec<u16>> {
+/// fn parse_ports(
+///     values: &[String],
+/// ) -> Result<Vec<u16>, DataListConversionError> {
 ///     DataConverters::from(values).to_vec()
 /// }
 ///
@@ -104,7 +104,7 @@ where
     ///
     /// assert_eq!(flags, vec![true, false, true, false]);
     /// ```
-    pub fn to_vec<'a, T>(self) -> DataListConversionResult<Vec<T>>
+    pub fn to_vec<'a, T>(self) -> Result<Vec<T>, DataListConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
         DataConverter<'a>: DataConvertTo<T>,
@@ -135,7 +135,7 @@ where
     pub fn to_vec_with<'a, T>(
         self,
         options: &DataConversionOptions,
-    ) -> DataListConversionResult<Vec<T>>
+    ) -> Result<Vec<T>, DataListConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
         DataConverter<'a>: DataConvertTo<T>,
@@ -188,7 +188,7 @@ where
     ///
     /// assert_eq!(first, 42);
     /// ```
-    pub fn to_first<'a, T>(self) -> DataConversionResult<T>
+    pub fn to_first<'a, T>(self) -> Result<T, DataConversionError>
     where
         T: DataTypeOf,
         I::Item: Into<DataConverter<'a>>,
@@ -222,7 +222,7 @@ where
     pub fn to_first_with<'a, T>(
         self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<T>
+    ) -> Result<T, DataConversionError>
     where
         T: DataTypeOf,
         I::Item: Into<DataConverter<'a>>,

@@ -37,6 +37,22 @@ impl Default for StringConversionOptions {
 }
 
 impl StringConversionOptions {
+    /// Creates options suitable for environment-variable input.
+    ///
+    /// The profile trims surrounding whitespace and treats a blank value as
+    /// missing, matching common environment configuration conventions.
+    ///
+    /// # Returns
+    ///
+    /// Environment-friendly string normalization options.
+    #[inline]
+    pub const fn env_friendly() -> Self {
+        Self {
+            trim: true,
+            blank_string_policy: BlankStringPolicy::TreatAsMissing,
+        }
+    }
+
     /// Returns a copy with string trimming enabled or disabled.
     ///
     /// # Parameters

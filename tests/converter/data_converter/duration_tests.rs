@@ -11,7 +11,7 @@ use chrono::NaiveDate;
 use num_bigint::BigInt;
 use qubit_datatype::{
     DataConversionError,
-    DataConversionErrorKind,
+    InvalidValueReason,
     DataConversionOptions,
     DataConverter,
     DataType,
@@ -98,16 +98,16 @@ fn test_data_converter_duration_string_conversion() {
 
     assert!(matches!(
         DataConverter::from("badns").to::<Duration>(),
-        Err(DataConversionError::Invalid { .. })
+        Err(DataConversionError::InvalidValue { .. })
     ));
     assert!(matches!(
         DataConverter::from("").to::<Duration>(),
-        Err(DataConversionError::Invalid { .. })
+        Err(DataConversionError::InvalidValue { .. })
     ));
     assert!(matches!(
         DataConverter::from("10fortnights").to::<Duration>(),
-        Err(DataConversionError::Invalid {
-            kind: DataConversionErrorKind::UnsupportedDurationUnit,
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::UnsupportedDurationUnit,
             ..
         })
     ));
@@ -115,12 +115,12 @@ fn test_data_converter_duration_string_conversion() {
         format!("{}ns", (u64::MAX as u128 + 1) * 1_000_000_000);
     assert!(matches!(
         DataConverter::from(overflowing_duration).to::<Duration>(),
-        Err(DataConversionError::Invalid { .. })
+        Err(DataConversionError::InvalidValue { .. })
     ));
     let overflowing_days = format!("{}d", u64::MAX / (24 * 60 * 60) + 1);
     assert!(matches!(
         DataConverter::from(overflowing_days).to::<Duration>(),
-        Err(DataConversionError::Invalid { .. })
+        Err(DataConversionError::InvalidValue { .. })
     ));
     assert!(matches!(
         DataConverter::Empty(DataType::Duration).to::<Duration>(),
@@ -193,8 +193,8 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
 
     assert!(matches!(
         DataConverter::from(-1i32).to::<Duration>(),
-        Err(DataConversionError::Invalid {
-            kind: DataConversionErrorKind::NegativeDuration,
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::NegativeDuration,
             ..
         })
     ));
@@ -210,19 +210,19 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
         );
     assert!(matches!(
         DataConverter::from(u64::MAX).to_with::<Duration>(&overflowing_options),
-        Err(DataConversionError::Invalid { .. })
+        Err(DataConversionError::InvalidValue { .. })
     ));
     assert!(matches!(
         DataConverter::from(i128::from(u64::MAX))
             .to_with::<Duration>(&overflowing_options),
-        Err(DataConversionError::Invalid { .. })
+        Err(DataConversionError::InvalidValue { .. })
     ));
 
     let negative_big_integer = BigInt::from(-1);
     assert!(matches!(
         DataConverter::from(&negative_big_integer).to::<Duration>(),
-        Err(DataConversionError::Invalid {
-            kind: DataConversionErrorKind::NegativeDuration,
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::NegativeDuration,
             ..
         })
     ));
@@ -230,7 +230,7 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
     assert!(matches!(
         DataConverter::from(&overflowing_big_integer)
             .to_with::<Duration>(&overflowing_options),
-        Err(DataConversionError::Invalid { .. })
+        Err(DataConversionError::InvalidValue { .. })
     ));
     assert!(matches!(
         DataConverter::from(
@@ -259,15 +259,15 @@ fn test_data_converter_duration_targets_honor_numeric_policy() {
     let duration = Duration::from_millis(1_500);
     assert!(matches!(
         DataConverter::from(duration).to_with::<String>(&exact),
-        Err(DataConversionError::Invalid {
-            kind: DataConversionErrorKind::PrecisionLoss,
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::PrecisionLoss,
             ..
         }),
     ));
     assert!(matches!(
         DataConverter::from(duration).to_with::<u64>(&exact),
-        Err(DataConversionError::Invalid {
-            kind: DataConversionErrorKind::PrecisionLoss,
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::PrecisionLoss,
             ..
         }),
     ));
@@ -330,8 +330,8 @@ fn test_data_converter_duration_rejects_unrepresentable_counts() {
     ] {
         assert!(matches!(
             result,
-            Err(DataConversionError::Invalid {
-                kind: DataConversionErrorKind::OutOfRange,
+            Err(DataConversionError::InvalidValue {
+                reason: InvalidValueReason::OutOfRange,
                 ..
             }),
         ));

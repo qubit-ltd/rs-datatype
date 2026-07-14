@@ -8,7 +8,7 @@
 use num_bigint::BigInt;
 use qubit_datatype::{
     DataConversionError,
-    DataConversionErrorKind,
+    InvalidValueReason,
     DataConverter,
     DataType,
 };
@@ -79,10 +79,10 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
 
     assert!(matches!(
         DataConverter::from("maybe").to::<bool>(),
-        Err(DataConversionError::Invalid {
+        Err(DataConversionError::InvalidValue {
             from: DataType::String,
             to: DataType::Bool,
-            kind: DataConversionErrorKind::InvalidBoolean,
+            reason: InvalidValueReason::InvalidBoolean,
         })
     ));
     assert!(matches!(

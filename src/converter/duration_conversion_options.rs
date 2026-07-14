@@ -26,6 +26,20 @@ pub struct DurationConversionOptions {
 }
 
 impl DurationConversionOptions {
+    /// Creates duration options for environment-variable input.
+    ///
+    /// The current environment profile intentionally matches the default
+    /// millisecond representation. Keeping the constructor here allows the
+    /// profile to evolve without changing composite option builders.
+    ///
+    /// # Returns
+    ///
+    /// Environment-friendly duration conversion options.
+    #[inline]
+    pub fn env_friendly() -> Self {
+        Self::default()
+    }
+
     /// Returns a copy with a different duration unit.
     ///
     /// # Parameters

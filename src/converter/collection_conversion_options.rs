@@ -43,6 +43,25 @@ impl Default for CollectionConversionOptions {
 }
 
 impl CollectionConversionOptions {
+    /// Creates options suitable for environment-variable lists.
+    ///
+    /// The profile splits comma-separated scalar strings, trims each item,
+    /// and skips empty items while preserving the original source indices of
+    /// retained items.
+    ///
+    /// # Returns
+    ///
+    /// Environment-friendly scalar-to-collection options.
+    #[inline]
+    pub fn env_friendly() -> Self {
+        Self {
+            split_scalar_strings: true,
+            delimiters: vec![','],
+            trim_items: true,
+            empty_item_policy: EmptyItemPolicy::Skip,
+        }
+    }
+
     /// Returns a copy with scalar string splitting enabled or disabled.
     ///
     /// # Parameters

@@ -8,9 +8,9 @@
 use chrono::NaiveDate;
 use qubit_datatype::{
     DataConversionError,
-    DataConversionErrorKind,
     DataConverter,
     DataType,
+    InvalidValueReason,
 };
 
 enum MatrixOutcome {
@@ -39,10 +39,10 @@ fn assert_i32_matrix_outcome(
         )),
         MatrixOutcome::InvalidSyntax => assert!(matches!(
             actual,
-            Err(DataConversionError::Invalid {
+            Err(DataConversionError::InvalidValue {
                 from: DataType::String,
                 to: DataType::Int32,
-                kind: DataConversionErrorKind::InvalidSyntax {
+                reason: InvalidValueReason::InvalidSyntax {
                     expected: "integer",
                 },
             }),

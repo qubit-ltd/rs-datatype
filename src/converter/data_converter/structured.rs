@@ -19,9 +19,9 @@ use super::{
     normalize,
 };
 use crate::converter::{
-    DataConversionErrorKind,
+    InvalidValueReason,
     DataConversionOptions,
-    DataConversionResult,
+    DataConversionError,
     DataConvertTo,
     DataFormat,
 };
@@ -31,7 +31,7 @@ impl DataConvertTo<serde_json::Value> for DataConverter<'_> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<serde_json::Value> {
+    ) -> Result<serde_json::Value, DataConversionError> {
         match self {
             Self::Json(value) => Ok(value.as_ref().clone()),
             Self::String(value) => {
@@ -40,7 +40,7 @@ impl DataConvertTo<serde_json::Value> for DataConverter<'_> {
                     Ok(value) => Ok(value),
                     Err(_) => Err(self.invalid(
                         DataType::Json,
-                        DataConversionErrorKind::Deserialization {
+                        InvalidValueReason::Deserialization {
                             format: DataFormat::Json,
                         },
                     )),
@@ -101,7 +101,7 @@ impl DataConvertTo<HashMap<String, String>> for DataConverter<'_> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<HashMap<String, String>> {
+    ) -> Result<HashMap<String, String>, DataConversionError> {
         match self {
             Self::StringMap(value) => Ok(value.as_ref().clone()),
             Self::String(value) => {
@@ -110,7 +110,7 @@ impl DataConvertTo<HashMap<String, String>> for DataConverter<'_> {
                     Ok(value) => Ok(value),
                     Err(_) => Err(self.invalid(
                         DataType::StringMap,
-                        DataConversionErrorKind::Deserialization {
+                        InvalidValueReason::Deserialization {
                             format: DataFormat::Json,
                         },
                     )),

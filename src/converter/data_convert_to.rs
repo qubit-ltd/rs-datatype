@@ -9,8 +9,8 @@
 //!
 //! Defines the target-type conversion trait implemented by `DataConverter`.
 
+use super::data_conversion_error::DataConversionError;
 use super::data_conversion_options::DataConversionOptions;
-use super::data_conversion_result::DataConversionResult;
 
 /// Trait implemented by `DataConverter` for each supported target type.
 pub trait DataConvertTo<T> {
@@ -32,5 +32,5 @@ pub trait DataConvertTo<T> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<T>;
+    ) -> Result<T, DataConversionError>;
 }

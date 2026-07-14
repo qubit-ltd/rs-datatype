@@ -20,9 +20,9 @@ use super::{
     normalize,
 };
 use crate::converter::{
-    DataConversionErrorKind,
+    InvalidValueReason,
     DataConversionOptions,
-    DataConversionResult,
+    DataConversionError,
     DataConvertTo,
 };
 use crate::datatype::DataType;
@@ -31,7 +31,7 @@ impl DataConvertTo<char> for DataConverter<'_> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<char> {
+    ) -> Result<char, DataConversionError> {
         match self {
             Self::Char(value) => Ok(*value),
             Self::String(value) => {
@@ -41,7 +41,7 @@ impl DataConvertTo<char> for DataConverter<'_> {
                     (Some(value), None) => Ok(value),
                     _ => Err(self.invalid(
                         DataType::Char,
-                        DataConversionErrorKind::InvalidSyntax {
+                        InvalidValueReason::InvalidSyntax {
                             expected: "one Unicode scalar value",
                         },
                     )),
@@ -57,7 +57,7 @@ impl DataConvertTo<String> for DataConverter<'_> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<String> {
+    ) -> Result<String, DataConversionError> {
         match self {
             Self::Empty(_) => Err(self.missing(DataType::String)),
             Self::String(value) => {
@@ -109,7 +109,7 @@ macro_rules! impl_text_or_copy_target {
             fn convert(
                 &self,
                 options: &DataConversionOptions,
-            ) -> DataConversionResult<$target> {
+            ) -> Result<$target, DataConversionError> {
                 match self {
                     Self::$variant(value) => Ok(*value),
                     Self::String(value) => {
@@ -118,7 +118,7 @@ macro_rules! impl_text_or_copy_target {
                             Some(value) => Ok(value),
                             None => Err(self.invalid(
                                 $data_type,
-                                DataConversionErrorKind::InvalidSyntax {
+                                InvalidValueReason::InvalidSyntax {
                                     expected: $format,
                                 },
                             )),
@@ -192,7 +192,7 @@ impl DataConvertTo<DateTime<Utc>> for DataConverter<'_> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<DateTime<Utc>> {
+    ) -> Result<DateTime<Utc>, DataConversionError> {
         match self {
             Self::Instant(value) => Ok(*value),
             Self::String(value) => {
@@ -201,7 +201,7 @@ impl DataConvertTo<DateTime<Utc>> for DataConverter<'_> {
                     Ok(value) => Ok(value.with_timezone(&Utc)),
                     Err(_) => Err(self.invalid(
                         DataType::Instant,
-                        DataConversionErrorKind::InvalidSyntax {
+                        InvalidValueReason::InvalidSyntax {
                             expected: "RFC 3339 timestamp with offset",
                         },
                     )),
@@ -217,7 +217,7 @@ impl DataConvertTo<Url> for DataConverter<'_> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<Url> {
+    ) -> Result<Url, DataConversionError> {
         match self {
             Self::Url(value) => Ok(value.as_ref().clone()),
             Self::String(value) => {
@@ -226,7 +226,7 @@ impl DataConvertTo<Url> for DataConverter<'_> {
                     Ok(value) => Ok(value),
                     Err(_) => Err(self.invalid(
                         DataType::Url,
-                        DataConversionErrorKind::InvalidSyntax {
+                        InvalidValueReason::InvalidSyntax {
                             expected: "absolute URL",
                         },
                     )),

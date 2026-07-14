@@ -61,19 +61,11 @@ impl DataConversionOptions {
     /// skipping empty collection items.
     pub fn env_friendly() -> Self {
         Self {
-            numeric_policy: NumericConversionPolicy::default(),
-            string: StringConversionOptions {
-                trim: true,
-                blank_string_policy: BlankStringPolicy::TreatAsMissing,
-            },
+            numeric_policy: NumericConversionPolicy::env_friendly(),
+            string: StringConversionOptions::env_friendly(),
             boolean: BooleanConversionOptions::env_friendly(),
-            collection: CollectionConversionOptions {
-                split_scalar_strings: true,
-                delimiters: vec![','],
-                trim_items: true,
-                empty_item_policy: EmptyItemPolicy::Skip,
-            },
-            duration: DurationConversionOptions::default(),
+            collection: CollectionConversionOptions::env_friendly(),
+            duration: DurationConversionOptions::env_friendly(),
         }
     }
 

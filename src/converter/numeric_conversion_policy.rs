@@ -25,3 +25,19 @@ pub enum NumericConversionPolicy {
     /// Permit the explicitly documented lossy conversion behavior.
     Lossy,
 }
+
+impl NumericConversionPolicy {
+    /// Returns the numeric policy used for environment-variable input.
+    ///
+    /// Environment variables are textual, but that does not imply permission
+    /// to truncate or round their numeric values. The profile therefore uses
+    /// exact conversion today while keeping that decision local to this type.
+    ///
+    /// # Returns
+    ///
+    /// The numeric conversion policy for environment-variable values.
+    #[inline(always)]
+    pub const fn env_friendly() -> Self {
+        Self::Exact
+    }
+}

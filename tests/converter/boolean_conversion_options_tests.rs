@@ -82,6 +82,14 @@ fn test_boolean_conversion_options_reject_literal_conflicts() {
 #[test]
 fn test_boolean_conversion_options_serde_and_defaults() {
     let defaults = BooleanConversionOptions::default();
+    assert_eq!(
+        BooleanConversionOptions::DEFAULT_TRUE_LITERALS,
+        &["true"],
+    );
+    assert_eq!(
+        BooleanConversionOptions::DEFAULT_FALSE_LITERALS,
+        &["false"],
+    );
     assert_eq!(defaults.true_literals(), &["true".to_string()]);
     assert_eq!(defaults.false_literals(), &["false".to_string()]);
     let wire = serde_json::to_string(&defaults)
