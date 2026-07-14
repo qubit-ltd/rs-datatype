@@ -14,7 +14,7 @@ use std::collections::HashSet;
 use std::str::FromStr;
 
 /// Returns all DataType variants for exhaustive tests.
-fn all_data_types() -> [DataType; 27] {
+fn all_data_types() -> [DataType; 25] {
     [
         DataType::Bool,
         DataType::Char,
@@ -37,8 +37,6 @@ fn all_data_types() -> [DataType; 27] {
         DataType::Instant,
         DataType::BigInteger,
         DataType::BigDecimal,
-        DataType::IntSize,
-        DataType::UIntSize,
         DataType::Duration,
         DataType::Url,
         DataType::StringMap,
@@ -46,10 +44,20 @@ fn all_data_types() -> [DataType; 27] {
     ]
 }
 
+/// Verifies that the public catalog contains only platform-independent types.
+#[test]
+fn test_data_type_catalog_excludes_platform_sized_integers() {
+    let names = DataType::ALL.map(DataType::as_str);
+
+    assert_eq!(names.len(), 25);
+    assert!(!names.contains(&"intsize"));
+    assert!(!names.contains(&"uintsize"));
+}
+
 /// Test the exhaustive variant list and numeric classifications.
 #[test]
 fn test_data_type_all_and_numeric_classifications() {
-    assert_eq!(DataType::ALL.len(), 27);
+    assert_eq!(DataType::ALL.len(), 25);
     assert_eq!(DataType::ALL, all_data_types());
 
     let cases = [
@@ -74,8 +82,6 @@ fn test_data_type_all_and_numeric_classifications() {
         (DataType::Instant, false, false, false, false, false, false),
         (DataType::BigInteger, true, false, false, false, false, true),
         (DataType::BigDecimal, true, false, false, false, false, true),
-        (DataType::IntSize, true, true, true, false, false, false),
-        (DataType::UIntSize, true, true, false, true, false, false),
         (DataType::Duration, false, false, false, false, false, false),
         (DataType::Url, false, false, false, false, false, false),
         (
@@ -115,7 +121,7 @@ fn test_data_type_as_str_display_consistency_and_uniqueness() {
         );
         assert_eq!(data_type.to_string(), name);
     }
-    assert_eq!(names.len(), 27);
+    assert_eq!(names.len(), 25);
 }
 
 /// Test DataType::as_str method for all data types
@@ -244,8 +250,6 @@ fn test_data_type_debug() {
 /// Test as_str for v0.4.0 new types
 #[test]
 fn test_data_type_as_str_v040_types() {
-    assert_eq!(DataType::IntSize.as_str(), "intsize");
-    assert_eq!(DataType::UIntSize.as_str(), "uintsize");
     assert_eq!(DataType::Duration.as_str(), "duration");
     assert_eq!(DataType::Url.as_str(), "url");
     assert_eq!(DataType::StringMap.as_str(), "stringmap");
@@ -255,8 +259,6 @@ fn test_data_type_as_str_v040_types() {
 /// Test Display for v0.4.0 new types
 #[test]
 fn test_data_type_display_v040_types() {
-    assert_eq!(DataType::IntSize.to_string(), "intsize");
-    assert_eq!(DataType::UIntSize.to_string(), "uintsize");
     assert_eq!(DataType::Duration.to_string(), "duration");
     assert_eq!(DataType::Url.to_string(), "url");
     assert_eq!(DataType::StringMap.to_string(), "stringmap");
@@ -308,13 +310,6 @@ fn test_data_type_from_str_case_insensitive_for_all_variants() {
 
 #[test]
 fn test_data_type_equality_v040_types() {
-    assert_eq!(DataType::IntSize, DataType::IntSize);
-    assert_ne!(DataType::IntSize, DataType::UIntSize);
-    assert_ne!(DataType::IntSize, DataType::Int64);
-
-    assert_eq!(DataType::UIntSize, DataType::UIntSize);
-    assert_ne!(DataType::UIntSize, DataType::UInt64);
-
     assert_eq!(DataType::Duration, DataType::Duration);
     assert_ne!(DataType::Duration, DataType::Int64);
 
@@ -348,8 +343,6 @@ fn test_data_type_serde_v040_types() {
     use serde_json;
 
     let cases = [
-        (DataType::IntSize, "\"intsize\""),
-        (DataType::UIntSize, "\"uintsize\""),
         (DataType::Duration, "\"duration\""),
         (DataType::Url, "\"url\""),
         (DataType::StringMap, "\"stringmap\""),
@@ -391,7 +384,6 @@ fn test_data_type_deserialize_rejects_non_lowercase_values() {
         "\"Int32\"",
         "\"DateTime\"",
         "\"BigDecimal\"",
-        "\"IntSize\"",
         "\"StringMap\"",
     ];
 

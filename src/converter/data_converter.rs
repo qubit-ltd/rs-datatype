@@ -12,7 +12,9 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::time::Duration;
 
+#[cfg(feature = "big-number")]
 use bigdecimal::BigDecimal;
+#[cfg(feature = "chrono")]
 use chrono::{
     DateTime,
     NaiveDate,
@@ -20,7 +22,9 @@ use chrono::{
     NaiveTime,
     Utc,
 };
+#[cfg(feature = "big-number")]
 use num_bigint::BigInt;
+#[cfg(feature = "url")]
 use url::Url;
 
 use super::data_convert_to::DataConvertTo;
@@ -36,6 +40,7 @@ mod duration;
 mod numeric;
 mod source;
 mod string_source;
+#[cfg(feature = "json")]
 mod structured;
 mod text;
 
@@ -68,6 +73,14 @@ mod text;
 /// let value: u16 = DataConverter::from("3.9").to_with(&lossy).unwrap();
 /// assert_eq!(value, 3);
 /// ```
+///
+/// Platform-sized integers are intentionally not conversion sources:
+///
+/// ```compile_fail
+/// use qubit_datatype::DataConverter;
+///
+/// let _ = DataConverter::from(1_usize);
+/// ```
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataConverter<'a> {
     /// Missing source whose declared type remains known.
@@ -96,35 +109,39 @@ pub enum DataConverter<'a> {
     UInt64(u64),
     /// 128-bit unsigned integer source value.
     UInt128(u128),
-    /// Pointer-width signed integer source value.
-    IntSize(isize),
-    /// Pointer-width unsigned integer source value.
-    UIntSize(usize),
     /// 32-bit floating-point source value.
     Float32(f32),
     /// 64-bit floating-point source value.
     Float64(f64),
     /// Borrowed or owned arbitrary-precision integer source value.
+    #[cfg(feature = "big-number")]
     BigInteger(Cow<'a, BigInt>),
     /// Borrowed or owned arbitrary-precision decimal source value.
+    #[cfg(feature = "big-number")]
     BigDecimal(Cow<'a, BigDecimal>),
     /// Borrowed or owned UTF-8 text source value.
     String(Cow<'a, str>),
     /// Calendar date without a time zone.
+    #[cfg(feature = "chrono")]
     Date(NaiveDate),
     /// Clock time without a date or time zone.
+    #[cfg(feature = "chrono")]
     Time(NaiveTime),
     /// Local date and time without a time zone.
+    #[cfg(feature = "chrono")]
     DateTime(NaiveDateTime),
     /// UTC instant.
+    #[cfg(feature = "chrono")]
     Instant(DateTime<Utc>),
     /// Non-negative span represented by [`Duration`].
     Duration(Duration),
     /// Borrowed or owned absolute URL source value.
+    #[cfg(feature = "url")]
     Url(Cow<'a, Url>),
     /// Borrowed or owned string-to-string map source value.
     StringMap(Cow<'a, HashMap<String, String>>),
     /// Borrowed or owned JSON source value.
+    #[cfg(feature = "json")]
     Json(Cow<'a, serde_json::Value>),
 }
 
@@ -206,20 +223,26 @@ impl DataConverter<'_> {
             Self::UInt32(_) => DataType::UInt32,
             Self::UInt64(_) => DataType::UInt64,
             Self::UInt128(_) => DataType::UInt128,
-            Self::IntSize(_) => DataType::IntSize,
-            Self::UIntSize(_) => DataType::UIntSize,
             Self::Float32(_) => DataType::Float32,
             Self::Float64(_) => DataType::Float64,
+            #[cfg(feature = "big-number")]
             Self::BigInteger(_) => DataType::BigInteger,
+            #[cfg(feature = "big-number")]
             Self::BigDecimal(_) => DataType::BigDecimal,
             Self::String(_) => DataType::String,
+            #[cfg(feature = "chrono")]
             Self::Date(_) => DataType::Date,
+            #[cfg(feature = "chrono")]
             Self::Time(_) => DataType::Time,
+            #[cfg(feature = "chrono")]
             Self::DateTime(_) => DataType::DateTime,
+            #[cfg(feature = "chrono")]
             Self::Instant(_) => DataType::Instant,
             Self::Duration(_) => DataType::Duration,
+            #[cfg(feature = "url")]
             Self::Url(_) => DataType::Url,
             Self::StringMap(_) => DataType::StringMap,
+            #[cfg(feature = "json")]
             Self::Json(_) => DataType::Json,
         }
     }
