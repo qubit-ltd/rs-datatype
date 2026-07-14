@@ -15,14 +15,21 @@
 
 ```toml
 [dependencies]
-qubit-datatype = "0.5"
+qubit-datatype = "0.6"
 ```
 
-需要完整转换引擎时：
+需要不引入富类型依赖的基础转换引擎时：
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.5", features = ["converter"] }
+qubit-datatype = { version = "0.6", features = ["converter"] }
+```
+
+转换器可以只组合实际使用的富类型：
+
+```toml
+[dependencies]
+qubit-datatype = { version = "0.6", features = ["converter", "chrono"] }
 ```
 
 ## Features
@@ -30,23 +37,25 @@ qubit-datatype = { version = "0.5", features = ["converter"] }
 | Feature | 内容 |
 | --- | --- |
 | default | 不启用任何可选依赖 |
-| chrono | Chrono 类型的 `DataTypeOf` |
-| big-number | `BigInt`、`BigDecimal` 的 `DataTypeOf` |
-| url | `Url` 的 `DataTypeOf` |
-| json | JSON 值的 `DataTypeOf` |
-| converter | 完整转换 API，并聚合所有 rich-type feature |
+| chrono | Chrono 类型映射；与 `converter` 组合时提供 Chrono 转换 |
+| big-number | `BigInt`、`BigDecimal` 类型映射；与 `converter` 组合时提供大数转换 |
+| url | `Url` 类型映射；与 `converter` 组合时提供 URL 转换 |
+| json | JSON 类型映射；与 `converter` 组合时提供 JSON 和 StringMap 转换 |
+| converter | 基础标量、字符串和 Duration 转换 API |
+| all | 转换器及全部富类型 feature |
 
 ## 类型词汇
 
-`DataType` 提供 27 个稳定类型名、完整的 `ALL` 数组、数值分类方法、
+`DataType` 提供 25 个稳定类型名、完整的 `ALL` 数组、数值分类方法、
 Serde 支持和大小写不敏感解析；`DataTypeOf` 把 Rust 类型映射为运行时描述。
+平台相关的 `isize` 和 `usize` 不提供运行时描述。
 
 ```rust
 use qubit_datatype::{DataType, DataTypeOf};
 
 assert_eq!(i32::DATA_TYPE, DataType::Int32);
 assert!(DataType::Int32.is_signed_integer());
-assert_eq!(DataType::ALL.len(), 27);
+assert_eq!(DataType::ALL.len(), 25);
 ```
 
 ## 转换契约

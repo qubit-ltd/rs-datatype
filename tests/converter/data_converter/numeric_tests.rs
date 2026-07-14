@@ -72,13 +72,11 @@ fn test_data_converter_signed_integer_targets_accept_supported_sources() {
         (DataConverter::from(3i32), 3),
         (DataConverter::from(4i64), 4),
         (DataConverter::from(5i128), 5),
-        (DataConverter::from(6isize), 6),
         (DataConverter::from(7u8), 7),
         (DataConverter::from(8u16), 8),
         (DataConverter::from(9u32), 9),
         (DataConverter::from(10u64), 10),
         (DataConverter::from(11u128), 11),
-        (DataConverter::from(12usize), 12),
         (DataConverter::from(13.0f32), 13),
         (DataConverter::from(14.0f64), 14),
         (DataConverter::from("15"), 15),
@@ -110,13 +108,6 @@ fn test_data_converter_signed_integer_targets_accept_supported_sources() {
             .expect("i64 should convert to i32"),
         1_000_000
     );
-    assert_eq!(
-        DataConverter::from(1_000_000i128)
-            .to::<isize>()
-            .expect("i128 should convert to isize"),
-        1_000_000isize
-    );
-
     assert!(matches!(
         DataConverter::Empty(DataType::Int128).to::<i128>(),
         Err(DataConversionError::Missing { .. })
@@ -162,13 +153,11 @@ fn test_data_converter_unsigned_integer_targets_accept_supported_sources() {
         (DataConverter::from(3i32), 3),
         (DataConverter::from(4i64), 4),
         (DataConverter::from(5i128), 5),
-        (DataConverter::from(6isize), 6),
         (DataConverter::from(7u8), 7),
         (DataConverter::from(8u16), 8),
         (DataConverter::from(9u32), 9),
         (DataConverter::from(10u64), 10),
         (DataConverter::from(11u128), 11),
-        (DataConverter::from(12usize), 12),
         (DataConverter::from("13"), 13),
     ];
     for (source, expected) in cases {
@@ -202,13 +191,6 @@ fn test_data_converter_unsigned_integer_targets_accept_supported_sources() {
             .expect("u128 should convert to u64"),
         1_000_000
     );
-    assert_eq!(
-        DataConverter::from(1_000usize)
-            .to::<usize>()
-            .expect("usize should convert to usize"),
-        1_000
-    );
-
     assert!(matches!(
         DataConverter::Empty(DataType::UInt128).to::<u128>(),
         Err(DataConversionError::Missing { .. })
@@ -243,13 +225,11 @@ fn test_data_converter_float_targets_accept_supported_sources() {
         DataConverter::from(5i32),
         DataConverter::from(6i64),
         DataConverter::from(7i128),
-        DataConverter::from(8isize),
         DataConverter::from(9u8),
         DataConverter::from(10u16),
         DataConverter::from(11u32),
         DataConverter::from(12u64),
         DataConverter::from(13u128),
-        DataConverter::from(14usize),
         DataConverter::from("15.5"),
         DataConverter::from(&big_int),
         DataConverter::from(&big_decimal),
@@ -273,13 +253,11 @@ fn test_data_converter_float_targets_accept_supported_sources() {
         DataConverter::from(5i32),
         DataConverter::from(6i64),
         DataConverter::from(7i128),
-        DataConverter::from(8isize),
         DataConverter::from(9u8),
         DataConverter::from(10u16),
         DataConverter::from(11u32),
         DataConverter::from(12u64),
         DataConverter::from(13u128),
-        DataConverter::from(14usize),
         DataConverter::from("15.5"),
         DataConverter::from(&big_int),
         DataConverter::from(&big_decimal),
@@ -483,6 +461,186 @@ fn test_data_converter_big_decimal_non_finite_classification_is_consistent() {
     }
 }
 
+/// Test decimal text parsing across syntax, precision, and range boundaries.
+#[test]
+fn test_data_converter_core_numeric_parser_covers_decimal_boundaries() {
+    let lossy = DataConversionOptions::lossy();
+
+    assert_eq!(DataConverter::from("+1").to::<i128>(), Ok(1));
+    assert_eq!(DataConverter::from("1e2").to::<i128>(), Ok(100));
+    assert_eq!(DataConverter::from("1e-2").to_with::<i128>(&lossy), Ok(0));
+    assert_eq!(DataConverter::from("-0.0").to::<i128>(), Ok(0));
+    assert_eq!(
+        DataConverter::from(i128::MIN.to_string()).to::<i128>(),
+        Ok(i128::MIN)
+    );
+    assert_eq!(
+        DataConverter::from(u128::MAX.to_string()).to::<u128>(),
+        Ok(u128::MAX)
+    );
+
+    for value in ["", "+", "e1", ".", "1e", "1e+", "1eX", "1e1x", "1..0"] {
+        assert!(matches!(
+            DataConverter::from(value).to::<i128>(),
+            Err(DataConversionError::InvalidValue {
+                reason: InvalidValueReason::InvalidSyntax { .. },
+                ..
+            })
+        ));
+    }
+    for value in [
+        "340282366920938463463374607431768211456",
+        "1e999999999999999999999",
+        "1e39",
+        "35e37",
+    ] {
+        assert!(matches!(
+            DataConverter::from(value).to::<u128>(),
+            Err(DataConversionError::InvalidValue {
+                reason: InvalidValueReason::OutOfRange,
+                ..
+            })
+        ));
+    }
+    assert!(matches!(
+        DataConverter::from("170141183460469231731687303715884105728")
+            .to::<i128>(),
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::OutOfRange,
+            ..
+        })
+    ));
+    assert!(matches!(
+        DataConverter::from("-1").to::<u128>(),
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::OutOfRange,
+            ..
+        })
+    ));
+
+    assert_eq!(DataConverter::from("0.0").to::<f64>(), Ok(0.0));
+    assert_eq!(DataConverter::from("0.5").to::<f64>(), Ok(0.5));
+    assert_eq!(DataConverter::from("1e1").to::<f64>(), Ok(10.0));
+    assert_eq!(DataConverter::from("-1").to::<f64>(), Ok(-1.0));
+    for value in [
+        "0.1",
+        "999999999999999999999999999999999999999",
+        "0e999999999999999999999",
+        "1e-4294967296",
+    ] {
+        assert!(matches!(
+            DataConverter::from(value).to::<f64>(),
+            Err(DataConversionError::InvalidValue {
+                reason: InvalidValueReason::PrecisionLoss,
+                ..
+            })
+        ));
+    }
+    assert!(matches!(
+        DataConverter::from("1e500").to::<f64>(),
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::OutOfRange,
+            ..
+        })
+    ));
+}
+
+/// Test arbitrary-precision targets across every numeric source family.
+#[test]
+fn test_data_converter_big_integer_target_covers_numeric_sources() {
+    let integral_decimal = BigDecimal::from_str("12.0").unwrap();
+    let sources = [
+        (DataConverter::from(true), BigInt::from(1)),
+        (DataConverter::from('A'), BigInt::from(65)),
+        (DataConverter::from(-1i8), BigInt::from(-1)),
+        (DataConverter::from(2i16), BigInt::from(2)),
+        (DataConverter::from(3i32), BigInt::from(3)),
+        (DataConverter::from(4i64), BigInt::from(4)),
+        (DataConverter::from(5i128), BigInt::from(5)),
+        (DataConverter::from(7u8), BigInt::from(7)),
+        (DataConverter::from(8u16), BigInt::from(8)),
+        (DataConverter::from(9u32), BigInt::from(9)),
+        (DataConverter::from(10u64), BigInt::from(10)),
+        (DataConverter::from(11u128), BigInt::from(11)),
+        (DataConverter::from(12.0f32), BigInt::from(12)),
+        (DataConverter::from(13.0f64), BigInt::from(13)),
+        (DataConverter::from(&integral_decimal), BigInt::from(12)),
+        (DataConverter::from("-14"), BigInt::from(-14)),
+        (
+            DataConverter::from(Duration::from_secs(2)),
+            BigInt::from(2_000),
+        ),
+    ];
+    for (source, expected) in sources {
+        assert_eq!(source.to::<BigInt>(), Ok(expected));
+    }
+
+    let lossy = DataConversionOptions::lossy();
+    assert!(matches!(
+        DataConverter::from(12.5f64).to::<BigInt>(),
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::PrecisionLoss,
+            ..
+        })
+    ));
+    assert_eq!(
+        DataConverter::from(12.5f64).to_with::<BigInt>(&lossy),
+        Ok(BigInt::from(12))
+    );
+    assert!(matches!(
+        DataConverter::from(f64::NAN).to::<BigInt>(),
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::NonFinite,
+            ..
+        })
+    ));
+    let fractional_decimal = BigDecimal::from_str("12.5").unwrap();
+    assert!(matches!(
+        DataConverter::from(&fractional_decimal).to::<BigInt>(),
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::PrecisionLoss,
+            ..
+        })
+    ));
+
+    let imprecise_integer = BigInt::from(9_007_199_254_740_993u64);
+    assert!(matches!(
+        DataConverter::from(&imprecise_integer).to::<f64>(),
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::PrecisionLoss,
+            ..
+        })
+    ));
+    assert_eq!(
+        DataConverter::from(&imprecise_integer).to_with::<f64>(&lossy),
+        Ok(9_007_199_254_740_992.0)
+    );
+    let imprecise_decimal = BigDecimal::from_str("0.1").unwrap();
+    assert!(matches!(
+        DataConverter::from(&imprecise_decimal).to::<f64>(),
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::PrecisionLoss,
+            ..
+        })
+    ));
+    assert!(
+        DataConverter::from(&imprecise_decimal)
+            .to_with::<f64>(&lossy)
+            .expect("lossy decimal conversion should succeed")
+            .is_finite()
+    );
+
+    assert_eq!(
+        DataConverter::from(15u8).to::<BigDecimal>(),
+        Ok(BigDecimal::from(15))
+    );
+    let map = HashMap::from([("key".to_owned(), "value".to_owned())]);
+    assert!(matches!(
+        DataConverter::from(&map).to::<BigInt>(),
+        Err(DataConversionError::Unsupported { .. })
+    ));
+}
+
 proptest! {
     /// Test that arbitrary UTF-8 strings never panic in numeric parsing.
     #[test]
@@ -501,12 +659,10 @@ fn test_data_converter_numeric_boundary_branches() {
     assert!(DataConverter::from(i32::MAX).to::<i16>().is_err());
     assert!(DataConverter::from(i64::MAX).to::<i32>().is_err());
     assert!(DataConverter::from(i128::MAX).to::<i64>().is_err());
-    assert!(DataConverter::from(i128::MAX).to::<isize>().is_err());
     assert!(DataConverter::from(u16::MAX).to::<u8>().is_err());
     assert!(DataConverter::from(u32::MAX).to::<u16>().is_err());
     assert!(DataConverter::from(u64::MAX).to::<u32>().is_err());
     assert!(DataConverter::from(u128::MAX).to::<u64>().is_err());
-    assert!(DataConverter::from(u128::MAX).to::<usize>().is_err());
 
     assert!(DataConverter::from("nan").to::<f32>().unwrap().is_nan());
     assert_eq!(DataConverter::from("inf").to::<f32>(), Ok(f32::INFINITY));

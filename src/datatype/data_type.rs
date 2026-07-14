@@ -136,10 +136,6 @@ pub enum DataType {
     BigInteger,
     /// Big decimal type (BigDecimal)
     BigDecimal,
-    /// Platform-dependent signed integer (isize)
-    IntSize,
-    /// Platform-dependent unsigned integer (usize)
-    UIntSize,
     /// Duration type (std::time::Duration)
     Duration,
     /// URL type (url::Url)
@@ -172,7 +168,7 @@ macro_rules! define_data_type_names {
 
         impl DataType {
             /// All data type variants in their stable declaration order.
-            pub const ALL: [DataType; 27] = [$( DataType::$variant, )+];
+            pub const ALL: [DataType; 25] = [$( DataType::$variant, )+];
 
             /// Returns the stable lowercase name of this data type.
             #[inline]
@@ -207,8 +203,6 @@ define_data_type_names! {
     Instant => "instant",
     BigInteger => "biginteger",
     BigDecimal => "bigdecimal",
-    IntSize => "intsize",
-    UIntSize => "uintsize",
     Duration => "duration",
     Url => "url",
     StringMap => "stringmap",
@@ -222,7 +216,7 @@ impl DataType {
         self.is_integer() || self.is_float() || self.is_big_number()
     }
 
-    /// Tests whether this type is a fixed-width or platform-width integer.
+    /// Tests whether this type is a fixed-width integer.
     #[inline]
     pub const fn is_integer(self) -> bool {
         self.is_signed_integer() || self.is_unsigned_integer()
@@ -238,7 +232,6 @@ impl DataType {
                 | DataType::Int32
                 | DataType::Int64
                 | DataType::Int128
-                | DataType::IntSize
         )
     }
 
@@ -252,7 +245,6 @@ impl DataType {
                 | DataType::UInt32
                 | DataType::UInt64
                 | DataType::UInt128
-                | DataType::UIntSize
         )
     }
 

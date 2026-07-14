@@ -7,16 +7,15 @@
 
 use std::time::Duration;
 
-use num_bigint::BigInt;
-use num_traits::{
-    ToPrimitive,
-    Zero,
-};
+#[cfg(feature = "big-number")]
+use num_bigint::Sign;
+#[cfg(feature = "big-number")]
+use num_traits::ToPrimitive;
 
 use super::DataConverter;
 use super::numeric::{
-    duration_to_bigint,
-    source_to_bigint,
+    duration_to_u128,
+    source_to_integer,
 };
 use super::string_source::normalize;
 use crate::converter::{
@@ -35,24 +34,18 @@ use crate::datatype::DataType;
 /// retained as error context. Returns the exact duration, or an invalid-value
 /// error for negative or out-of-range counts.
 fn integer_to_duration(
-    value: &BigInt,
+    value: (bool, u128),
     from: DataType,
     options: &DataConversionOptions,
 ) -> Result<Duration, DataConversionError> {
-    if value < &BigInt::zero() {
+    let (negative, value) = value;
+    if negative {
         return Err(DataConversionError::InvalidValue {
             from,
             to: DataType::Duration,
             reason: InvalidValueReason::NegativeDuration,
         });
     }
-    let Some(value) = value.to_u128() else {
-        return Err(DataConversionError::InvalidValue {
-            from,
-            to: DataType::Duration,
-            reason: InvalidValueReason::OutOfRange,
-        });
-    };
     match options
         .duration
         .numeric_input_unit
@@ -154,26 +147,41 @@ impl DataConvertTo<Duration> for DataConverter<'_> {
         match self {
             Self::Duration(value) => Ok(*value),
             Self::String(value) => parse_duration(value, options),
-            Self::BigInteger(value) => {
-                integer_to_duration(value, DataType::BigInteger, options)
-            }
             Self::Empty(_) => Err(self.missing(DataType::Duration)),
             Self::Int8(_)
             | Self::Int16(_)
             | Self::Int32(_)
             | Self::Int64(_)
             | Self::Int128(_)
-            | Self::IntSize(_)
             | Self::UInt8(_)
             | Self::UInt16(_)
             | Self::UInt32(_)
             | Self::UInt64(_)
-            | Self::UInt128(_)
-            | Self::UIntSize(_) => integer_to_duration(
-                &source_to_bigint(self, options, DataType::Duration)?,
+            | Self::UInt128(_) => integer_to_duration(
+                source_to_integer(self, options, DataType::Duration)?,
                 self.data_type(),
                 options,
             ),
+            #[cfg(feature = "big-number")]
+            Self::BigInteger(value) => {
+                if value.sign() == Sign::Minus {
+                    return Err(self.invalid(
+                        DataType::Duration,
+                        InvalidValueReason::NegativeDuration,
+                    ));
+                }
+                let Some(value) = value.to_u128() else {
+                    return Err(self.invalid(
+                        DataType::Duration,
+                        InvalidValueReason::OutOfRange,
+                    ));
+                };
+                integer_to_duration(
+                    (false, value),
+                    DataType::BigInteger,
+                    options,
+                )
+            }
             _ => Err(self.unsupported(DataType::Duration)),
         }
     }
@@ -188,7 +196,7 @@ pub(super) fn format_duration(
     value: Duration,
     options: &DataConversionOptions,
 ) -> Result<String, DataConversionError> {
-    let units = duration_to_bigint(value, options, DataType::String)?;
+    let units = duration_to_u128(value, options, DataType::String)?;
     if options.duration.append_unit_suffix {
         Ok(format!("{units}{}", options.duration.output_unit.suffix()))
     } else {

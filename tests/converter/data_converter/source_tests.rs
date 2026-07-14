@@ -72,14 +72,8 @@ fn test_data_converter_from_impls_cover_all_sources() {
     assert_data_type(DataConverter::from(uint128_value), DataType::UInt128);
     assert_data_type(DataConverter::from(&uint128_value), DataType::UInt128);
 
-    let intsize_value = 11isize;
-    let uintsize_value = 12usize;
     let float32_value = 13.0f32;
     let float64_value = 14.0f64;
-    assert_data_type(DataConverter::from(intsize_value), DataType::IntSize);
-    assert_data_type(DataConverter::from(&intsize_value), DataType::IntSize);
-    assert_data_type(DataConverter::from(uintsize_value), DataType::UIntSize);
-    assert_data_type(DataConverter::from(&uintsize_value), DataType::UIntSize);
     assert_data_type(DataConverter::from(float32_value), DataType::Float32);
     assert_data_type(DataConverter::from(&float32_value), DataType::Float32);
     assert_data_type(DataConverter::from(float64_value), DataType::Float64);

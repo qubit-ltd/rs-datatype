@@ -15,15 +15,21 @@ The default build contains the lightweight type vocabulary only:
 
 ```toml
 [dependencies]
-qubit-datatype = "0.5"
+qubit-datatype = "0.6"
 ```
 
-Enable individual external type mappings as needed, or enable the complete
-conversion engine:
+Enable the core conversion engine without rich-type dependencies:
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.5", features = ["converter"] }
+qubit-datatype = { version = "0.6", features = ["converter"] }
+```
+
+Compose the converter with only the rich families you use:
+
+```toml
+[dependencies]
+qubit-datatype = { version = "0.6", features = ["converter", "chrono"] }
 ```
 
 ## Features
@@ -31,24 +37,26 @@ qubit-datatype = { version = "0.5", features = ["converter"] }
 | Feature | Adds |
 | --- | --- |
 | default | No optional dependencies |
-| chrono | `DataTypeOf` for Chrono date/time types |
-| big-number | `DataTypeOf` for `BigInt` and `BigDecimal` |
-| url | `DataTypeOf` for `Url` |
-| json | `DataTypeOf` for JSON values |
-| converter | The conversion API and all rich-type features |
+| chrono | Chrono mappings; with `converter`, Chrono conversions |
+| big-number | `BigInt`/`BigDecimal` mappings; with `converter`, big-number conversions |
+| url | `Url` mapping; with `converter`, URL conversions |
+| json | JSON mapping; with `converter`, JSON and string-map conversions |
+| converter | Core scalar, string, and Duration conversion APIs |
+| all | Converter plus every rich-type feature |
 
 ## Type vocabulary
 
-`DataType` provides 27 stable runtime type names, an exhaustive `ALL` array,
+`DataType` provides 25 stable runtime type names, an exhaustive `ALL` array,
 numeric classification methods, Serde support, and case-insensitive parsing.
 `DataTypeOf` maps Rust types to their runtime descriptors.
+Platform-sized `isize` and `usize` deliberately have no runtime descriptor.
 
 ```rust
 use qubit_datatype::{DataType, DataTypeOf};
 
 assert_eq!(i32::DATA_TYPE, DataType::Int32);
 assert!(DataType::Int32.is_signed_integer());
-assert_eq!(DataType::ALL.len(), 27);
+assert_eq!(DataType::ALL.len(), 25);
 ```
 
 ## Conversion contract
