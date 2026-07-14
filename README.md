@@ -7,218 +7,175 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![中文文档](https://img.shields.io/badge/文档-中文版-blue.svg)](README.zh_CN.md)
 
-Runtime data type descriptors and conversion utilities for Rust.
-
-## Overview
-
-Qubit Datatype provides a shared `DataType` enum, compile-time type mapping
-through `DataTypeOf`, and reusable conversion utilities for moving values between
-supported Rust data types. It is intended for libraries that need runtime type
-metadata, typed empty values, configuration parsing, value containers, or
-structured conversion diagnostics.
-
-## Design Goals
-
-- **Focused scope**: model supported data types and conversions, not general data processing.
-- **Shared type vocabulary**: use `DataType` consistently across value, config, and metadata crates.
-- **Structured errors**: preserve source and target `DataType` in unsupported conversions.
-- **Borrow-first conversion**: accept borrowed values where possible and own only when needed.
-- **Composable options**: centralize string, boolean, and collection parsing policies.
-
-## Features
-
-### Data Type System
-
-- **Runtime Type Enum**: `DataType` covers primitive Rust types and selected common ecosystem types.
-- **Compile-time Type Mapping**: `DataTypeOf` maps Rust types to `DataType`.
-- **Typed Empty Values**: `DataConverter::Empty(DataType)` preserves the intended missing value type.
-- **Serde Support**: `DataType` serializes using stable lowercase names such as `int32` and `stringmap`.
-
-### Data Conversion
-
-- **Single-value Conversion**: `DataConverter` converts one source value to a target Rust type.
-- **Batch Conversion**: `DataConverters` converts slices, vectors, or iterators in source order.
-- **Scalar String Splitting**: `ScalarStringDataConverters` supports comma- or delimiter-separated inputs.
-- **Conversion Options**: configure blank strings, boolean literals, trimming, delimiters, and empty items.
-- **Detailed Errors**: unsupported conversions report `from` and `to` data types; invalid content carries context.
+Runtime data type descriptors and policy-driven conversion utilities for Rust.
 
 ## Installation
 
-Add this to your `Cargo.toml`:
+The default build contains the lightweight type vocabulary only:
 
 ```toml
 [dependencies]
-qubit-datatype = "0.2"
+qubit-datatype = "0.3"
 ```
 
-## Quick Start
+Enable individual external type mappings as needed, or enable the complete
+conversion engine:
 
-### Data Type Usage
+```toml
+[dependencies]
+qubit-datatype = { version = "0.3", features = ["converter"] }
+```
+
+## Features
+
+| Feature | Adds |
+| --- | --- |
+| default | No optional dependencies |
+| chrono | `DataTypeOf` for Chrono date/time types |
+| big-number | `DataTypeOf` for `BigInt` and `BigDecimal` |
+| url | `DataTypeOf` for `Url` |
+| json | `DataTypeOf` for JSON and string maps |
+| converter | The conversion API and all rich-type features |
+
+## Type vocabulary
+
+`DataType` provides 27 stable runtime type names, an exhaustive `ALL` array,
+numeric classification methods, Serde support, and case-insensitive parsing.
+`DataTypeOf` maps Rust types to their runtime descriptors.
 
 ```rust
 use qubit_datatype::{DataType, DataTypeOf};
 
-let data_type = DataType::Int32;
-assert_eq!(data_type.as_str(), "int32");
-
 assert_eq!(i32::DATA_TYPE, DataType::Int32);
-assert_eq!(String::DATA_TYPE, DataType::String);
+assert!(DataType::Int32.is_signed_integer());
+assert_eq!(DataType::ALL.len(), 27);
 ```
 
-### Data Conversion
+## Conversion contract
+
+With the `converter` feature, `DataConverter` converts a single value,
+`DataConverters` converts an iterator, and `ScalarStringDataConverters`
+lazily splits a scalar string while preserving original source indices.
+
+The default `NumericConversionPolicy::Exact` rejects truncation, rounding, and
+precision loss. Select `Lossy` explicitly to allow finite decimal/float to
+integer truncation toward zero, integer-to-float IEEE rounding, and Duration
+half-up rounding.
 
 ```rust
-use std::time::Duration;
-
+# #[cfg(feature = "converter")]
+# {
 use qubit_datatype::{
-    DataConversionResult,
-    DataConverter,
-    DataConverters,
-    DataListConversionResult,
+    DataConversionError, DataConversionErrorKind, DataConversionOptions,
+    DataConverter, NumericConversionPolicy,
 };
 
-fn read_settings() -> DataConversionResult<(u16, bool, Duration)> {
-    let port = DataConverter::from("8080").to::<u16>()?;
-    let enabled = DataConverter::from("true").to::<bool>()?;
-    let timeout = DataConverter::from("1500000000ns").to::<Duration>()?;
+assert!(matches!(
+    DataConverter::from("3.9").to::<i32>(),
+    Err(DataConversionError::Invalid {
+        kind: DataConversionErrorKind::PrecisionLoss,
+        ..
+    }),
+));
 
-    Ok((port, enabled, timeout))
-}
-
-fn read_ports(values: &[String]) -> DataListConversionResult<Vec<u16>> {
-    DataConverters::from(values).to_vec()
-}
+let lossy = DataConversionOptions::default()
+    .with_numeric_policy(NumericConversionPolicy::Lossy);
+assert_eq!(DataConverter::from("3.9").to_with::<i32>(&lossy), Ok(3));
+# }
 ```
 
-### Conversion Options
+### Conversion matrix
+
+“Numeric” below includes primitive integers/floats and arbitrary-precision
+numbers. Invalid values return `Invalid`; type pairs outside this matrix return
+`Unsupported`; typed empty values return `Missing`.
+
+| Source family | Supported targets |
+| --- | --- |
+| Any concrete source | Its own type; `String` |
+| `String` | Numeric, bool, char, Chrono types, Duration, URL, JSON, StringMap |
+| Bool / char | Primitive numeric targets |
+| Integer / BigInt | Numeric targets, bool, Duration |
+| Float / BigDecimal | Numeric targets |
+| Duration | Integer targets and String |
+| StringMap | JSON and String |
+| JSON | String |
+
+### Strings and booleans
+
+Strings are not trimmed by default. Every string conversion calls
+`StringConversionOptions::normalize` once; enable `trim` explicitly.
+Blank strings can be preserved, treated as missing, or rejected.
+
+Boolean text defaults to only `true` and `false` (ASCII
+case-insensitive). Numeric 0/1 handling is controlled separately by
+`BooleanNumericPolicy::ZeroOrOne`; `NonZero` and `Reject` are explicit
+alternatives. Literal builders are fallible, so true/false sets cannot overlap.
 
 ```rust
+# #[cfg(feature = "converter")]
+# {
 use qubit_datatype::{
-    BlankStringPolicy,
-    DataConversionOptions,
-    DataConverter,
+    DataConversionOptions, DataConverter, StringConversionOptions,
 };
 
-let options = DataConversionOptions::default()
-    .with_blank_string_policy(BlankStringPolicy::AsNone);
-
-let value = DataConverter::from(" 8080 ")
-    .to_with::<u16>(&options)
-    .expect("port should convert");
-
-assert_eq!(value, 8080);
+assert!(DataConverter::from(" true ").to::<bool>().is_err());
+let options = DataConversionOptions::default().with_string_options(
+    StringConversionOptions::default().with_trim(true),
+);
+assert_eq!(DataConverter::from(" true ").to_with::<bool>(&options), Ok(true));
+# }
 ```
 
-## Supported Data Types
+### Duration
 
-The [`DataType`](https://docs.rs/qubit-datatype/latest/qubit_datatype/enum.DataType.html)
-enum lists every variant. String forms use `as_str()`.
+Duration text uses `[0-9]+(ns|us|ms|s|m|h|d)?`; a missing suffix uses the
+configured unit. Whitespace, signs, decimals, and non-ASCII suffixes are
+rejected. Large integer counts are decomposed into seconds and nanoseconds
+before range checking.
 
-### Basic Types
+Duration-to-integer and Duration-to-String follow the numeric policy: Exact
+requires divisibility by the configured unit; Lossy rounds half-up.
 
-- **Integers**: `i8`, `i16`, `i32`, `i64`, `i128`, `u8`, `u16`, `u32`, `u64`, `u128`
-- **Platform integers**: `isize`, `usize`
-- **Floats**: `f32`, `f64`
-- **Other**: `bool`, `char`, `String`
+### Rich text formats
 
-### Date, Time, and Structured Types
+- char: exactly one Unicode scalar value
+- date: `YYYY-MM-DD`
+- time: `HH:MM:SS[.fraction]`, 1–9 fractional digits
+- local date-time: `YYYY-MM-DDTHH:MM:SS[.fraction]`
+- UTC instant: RFC 3339 with `Z` or an offset
+- BigInt: signed decimal integer
+- BigDecimal: decimal with optional exponent
+- URL: absolute URL
+- JSON: any valid JSON value
+- StringMap: JSON object with unique keys and string values
 
-- **Chrono**: `NaiveDate`, `NaiveTime`, `NaiveDateTime`, `DateTime<Utc>`
-- **Big numbers**: `BigInt`, `BigDecimal`
-- **Duration**: `std::time::Duration`
-- **String maps**: `HashMap<String, String>`
-- **JSON**: `serde_json::Value`
-- **URL**: `url::Url`
+## Structured errors and collections
 
-## API Reference
+`DataConversionError` has exactly three categories: `Missing`,
+`Unsupported`, and `Invalid { kind }`. Errors store source and target
+`DataType` but never retain or display the original value.
 
-### Data Types
+List failures use `DataListConversionError::source_index`. Empty-item
+`Skip` does not renumber later items, and `to_first` stops after the first
+retained item without validating the tail.
 
-- [`DataType`](https://docs.rs/qubit-datatype/latest/qubit_datatype/enum.DataType.html) - runtime data type descriptor.
-- [`DataTypeOf`](https://docs.rs/qubit-datatype/latest/qubit_datatype/trait.DataTypeOf.html) - compile-time type mapping trait.
-- [`DataTypeParseError`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.DataTypeParseError.html) - parse error for unknown type names.
-
-### Conversion
-
-- [`DataConverter`](https://docs.rs/qubit-datatype/latest/qubit_datatype/enum.DataConverter.html) - single-value conversion wrapper.
-- [`DataConverters`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.DataConverters.html) - batch conversion adapter.
-- [`ScalarStringDataConverters`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.ScalarStringDataConverters.html) - delimiter-aware string conversion adapter.
-- [`DataConversionError`](https://docs.rs/qubit-datatype/latest/qubit_datatype/enum.DataConversionError.html) - conversion failure details.
-- [`DataListConversionError`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.DataListConversionError.html) - batch conversion error with failing index.
-- [`DataConversionOptions`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.DataConversionOptions.html) - combined conversion options.
-
-## Testing & Code Coverage
-
-This project maintains comprehensive test coverage for data type parsing,
-mapping, conversion success paths, conversion errors, and boundary conditions.
-
-### Running Tests
+## Development
 
 ```bash
-# Run all tests
-cargo test
-
-# Run with coverage report
-./coverage.sh
-
-# Generate text format report
+cargo +1.94.0 test --no-default-features
+cargo +1.94.0 test --all-features
 ./coverage.sh text
-
-# Run CI checks (format, clippy, test, coverage, audit)
+./align-ci.sh
 ./ci-check.sh
 ```
 
-### Coverage Metrics
-
-See [COVERAGE.md](COVERAGE.md) for detailed coverage statistics.
-
-## Dependencies
-
-Runtime dependencies:
-
-- `bigdecimal` for arbitrary precision decimal support.
-- `chrono` for date and time types.
-- `num-bigint` and `num-traits` for arbitrary precision integer support and numeric conversions.
-- `serde` and `serde_json` for serialization and JSON values.
-- `url` for URL type support.
+See [COVERAGE.md](COVERAGE.md) for coverage commands and thresholds.
 
 ## License
 
-Copyright (c) 2025 - 2026. Haixing Hu, Qubit Co. Ltd. All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-See [LICENSE](LICENSE) for the full license text.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-### Development Guidelines
-
-- Follow the Rust API guidelines.
-- Maintain comprehensive test coverage.
-- Document all public APIs with examples when they clarify usage.
-- Run `./ci-check.sh` before submitting PRs.
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
 
 ## Author
 
-**Haixing Hu** - *Qubit Co. Ltd.*
-
-## Related Projects
-
-More Rust libraries from Qubit are published under the [qubit-ltd](https://github.com/qubit-ltd) organization on GitHub.
-
----
-
-Repository: [https://github.com/qubit-ltd/rs-datatype](https://github.com/qubit-ltd/rs-datatype)
+**Haixing Hu** — Qubit Co. Ltd.
