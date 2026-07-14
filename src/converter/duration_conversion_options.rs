@@ -10,9 +10,14 @@
 //! Defines options that control duration conversion.
 
 use super::duration_unit::DurationUnit;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 /// Options that control [`std::time::Duration`] conversion.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct DurationConversionOptions {
     /// Unit used for suffixless strings and integer conversions.
     pub unit: DurationUnit,

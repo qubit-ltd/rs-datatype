@@ -7,6 +7,7 @@
 // =============================================================================
 use std::error::Error;
 
+use qubit_datatype::DataType;
 use qubit_datatype::converter::{
     DataConversionError,
     DataListConversionError,
@@ -16,13 +17,21 @@ use qubit_datatype::converter::{
 #[test]
 fn test_data_list_conversion_error_exposes_index_and_source() {
     let error = DataListConversionError {
-        index: 3,
-        source: DataConversionError::NoValue,
+        source_index: 3,
+        source: DataConversionError::Missing {
+            from: DataType::String,
+            to: DataType::UInt16,
+        },
     };
 
     assert_eq!(
         error.to_string(),
-        "Data conversion failed at index 3: No value",
+        "Data conversion failed at source index 3: Missing value for conversion from string to uint16",
     );
-    assert_eq!(Error::source(&error).unwrap().to_string(), "No value");
+    assert_eq!(
+        Error::source(&error)
+            .expect("list error should expose its source")
+            .to_string(),
+        "Missing value for conversion from string to uint16",
+    );
 }

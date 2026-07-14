@@ -11,7 +11,9 @@
 //! `DataType`.
 
 use super::data_type::DataType;
+#[cfg(feature = "big-number")]
 use bigdecimal::BigDecimal;
+#[cfg(feature = "chrono")]
 use chrono::{
     DateTime,
     NaiveDate,
@@ -19,9 +21,12 @@ use chrono::{
     NaiveTime,
     Utc,
 };
+#[cfg(feature = "big-number")]
 use num_bigint::BigInt;
+#[cfg(feature = "json")]
 use std::collections::HashMap;
 use std::time::Duration;
+#[cfg(feature = "url")]
 use url::Url;
 
 /// Marker trait for mapping concrete Rust types to `DataType`.
@@ -75,21 +80,27 @@ impl DataTypeOf for f64 {
 impl DataTypeOf for String {
     const DATA_TYPE: DataType = DataType::String;
 }
+#[cfg(feature = "chrono")]
 impl DataTypeOf for NaiveDate {
     const DATA_TYPE: DataType = DataType::Date;
 }
+#[cfg(feature = "chrono")]
 impl DataTypeOf for NaiveTime {
     const DATA_TYPE: DataType = DataType::Time;
 }
+#[cfg(feature = "chrono")]
 impl DataTypeOf for NaiveDateTime {
     const DATA_TYPE: DataType = DataType::DateTime;
 }
+#[cfg(feature = "chrono")]
 impl DataTypeOf for DateTime<Utc> {
     const DATA_TYPE: DataType = DataType::Instant;
 }
+#[cfg(feature = "big-number")]
 impl DataTypeOf for BigInt {
     const DATA_TYPE: DataType = DataType::BigInteger;
 }
+#[cfg(feature = "big-number")]
 impl DataTypeOf for BigDecimal {
     const DATA_TYPE: DataType = DataType::BigDecimal;
 }
@@ -102,12 +113,15 @@ impl DataTypeOf for usize {
 impl DataTypeOf for Duration {
     const DATA_TYPE: DataType = DataType::Duration;
 }
+#[cfg(feature = "url")]
 impl DataTypeOf for Url {
     const DATA_TYPE: DataType = DataType::Url;
 }
+#[cfg(feature = "json")]
 impl DataTypeOf for HashMap<String, String> {
     const DATA_TYPE: DataType = DataType::StringMap;
 }
+#[cfg(feature = "json")]
 impl DataTypeOf for serde_json::Value {
     const DATA_TYPE: DataType = DataType::Json;
 }

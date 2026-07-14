@@ -17,19 +17,19 @@ use super::data_conversion_error::DataConversionError;
 /// Error type returned by reusable batch data conversions.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataListConversionError {
-    /// Zero-based index of the source element that failed conversion.
-    pub index: usize,
+    /// Zero-based index in the original source, before any items were skipped.
+    pub source_index: usize,
     /// Original single-value conversion error.
     pub source: DataConversionError,
 }
 
 impl fmt::Display for DataListConversionError {
-    /// Formats the list conversion error with the failing element index.
+    /// Formats the list conversion error with the original source index.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Data conversion failed at index {}: {}",
-            self.index, self.source
+            "Data conversion failed at source index {}: {}",
+            self.source_index, self.source
         )
     }
 }

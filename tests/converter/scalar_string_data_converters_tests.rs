@@ -9,10 +9,12 @@
 //!
 //! Tests for scalar string collection conversion behavior.
 
+use qubit_datatype::DataType;
 use qubit_datatype::converter::{
     BlankStringPolicy,
     CollectionConversionOptions,
     DataConversionError,
+    DataConversionErrorKind,
     DataConversionOptions,
     EmptyItemPolicy,
     ScalarStringDataConverters,
@@ -85,8 +87,14 @@ fn test_scalar_string_data_converters_to_vec_with_reports_missing_scalar() {
         .to_vec_with::<u16>(&options)
         .expect_err("blank scalar string should be treated as missing");
 
-    assert_eq!(error.index, 0);
-    assert!(matches!(error.source, DataConversionError::NoValue));
+    assert_eq!(error.source_index, 0);
+    assert_eq!(
+        error.source,
+        DataConversionError::Missing {
+            from: DataType::String,
+            to: DataType::UInt16,
+        },
+    );
 }
 
 /// Test scalar string first-value normalization errors.
@@ -98,10 +106,13 @@ fn test_scalar_string_data_converters_to_first_with_reports_missing_scalar() {
             .with_blank_string_policy(BlankStringPolicy::TreatAsMissing),
     );
 
-    assert!(matches!(
+    assert_eq!(
         ScalarStringDataConverters::from("   ").to_first_with::<u16>(&options),
-        Err(DataConversionError::NoValue),
-    ));
+        Err(DataConversionError::Missing {
+            from: DataType::String,
+            to: DataType::UInt16,
+        }),
+    );
 }
 
 /// Test scalar string empty item rejection.
@@ -117,11 +128,15 @@ fn test_scalar_string_data_converters_to_vec_with_rejects_empty_item() {
         .to_vec_with::<u16>(&options)
         .expect_err("empty scalar item should be rejected");
 
-    assert_eq!(error.index, 1);
-    assert!(matches!(
+    assert_eq!(error.source_index, 1);
+    assert_eq!(
         error.source,
-        DataConversionError::ConversionError(_),
-    ));
+        DataConversionError::Invalid {
+            from: DataType::String,
+            to: DataType::UInt16,
+            kind: DataConversionErrorKind::BlankRejected,
+        },
+    );
 }
 
 /// Test scalar string first-value empty item rejection.
@@ -133,24 +148,85 @@ fn test_scalar_string_data_converters_to_first_with_rejects_empty_item() {
             .with_empty_item_policy(EmptyItemPolicy::Reject),
     );
 
-    assert!(matches!(
-        ScalarStringDataConverters::from("1,,2").to_first_with::<u16>(&options),
-        Err(DataConversionError::ConversionError(_)),
-    ));
+    assert_eq!(
+        ScalarStringDataConverters::from(",1,2").to_first_with::<u16>(&options),
+        Err(DataConversionError::Invalid {
+            from: DataType::String,
+            to: DataType::UInt16,
+            kind: DataConversionErrorKind::BlankRejected,
+        }),
+    );
 }
 
 /// Test scalar string first-value behavior when all items are skipped.
 #[test]
-fn test_scalar_string_data_converters_to_first_with_reports_no_value_after_skip()
- {
+fn test_scalar_string_data_converters_to_first_with_reports_missing_after_skip()
+{
     let options = DataConversionOptions::default().with_collection_options(
         CollectionConversionOptions::default()
             .with_split_scalar_strings(true)
             .with_empty_item_policy(EmptyItemPolicy::Skip),
     );
 
-    assert!(matches!(
+    assert_eq!(
         ScalarStringDataConverters::from(",,").to_first_with::<u16>(&options),
-        Err(DataConversionError::NoValue),
+        Err(DataConversionError::Missing {
+            from: DataType::String,
+            to: DataType::UInt16,
+        }),
+    );
+}
+
+/// Test that skipped empty items do not renumber later source failures.
+#[test]
+fn test_scalar_string_data_converters_preserves_original_source_index() {
+    let options = DataConversionOptions::default().with_collection_options(
+        CollectionConversionOptions::default()
+            .with_split_scalar_strings(true)
+            .with_empty_item_policy(EmptyItemPolicy::Skip),
+    );
+
+    let error = ScalarStringDataConverters::from("1,,bad")
+        .to_vec_with::<u16>(&options)
+        .expect_err("invalid third source item should fail");
+
+    assert_eq!(error.source_index, 2);
+}
+
+/// Test that first-value conversion does not inspect a rejected tail item.
+#[test]
+fn test_scalar_string_data_converters_to_first_short_circuits_tail() {
+    let options = DataConversionOptions::default().with_collection_options(
+        CollectionConversionOptions::default()
+            .with_split_scalar_strings(true)
+            .with_empty_item_policy(EmptyItemPolicy::Reject),
+    );
+
+    let first = ScalarStringDataConverters::from("1,,")
+        .to_first_with::<u16>(&options)
+        .expect("valid first item should short-circuit the rejected tail");
+
+    assert_eq!(first, 1);
+}
+
+/// Test whole-scalar blank rejection is reported as a conversion failure.
+#[test]
+fn test_scalar_string_data_converters_rejects_blank_scalar() {
+    let options = DataConversionOptions::default().with_string_options(
+        StringConversionOptions::default()
+            .with_trim(true)
+            .with_blank_string_policy(BlankStringPolicy::Reject),
+    );
+
+    let error = ScalarStringDataConverters::from("   ")
+        .to_vec_with::<u16>(&options)
+        .expect_err("blank scalar should be rejected");
+    assert_eq!(error.source_index, 0);
+    assert!(matches!(
+        error.source,
+        DataConversionError::Invalid {
+            kind: DataConversionErrorKind::BlankRejected,
+            ..
+        },
     ));
 }

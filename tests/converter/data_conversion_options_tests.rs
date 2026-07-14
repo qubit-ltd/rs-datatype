@@ -9,15 +9,19 @@
 //!
 //! Tests for grouped data conversion options.
 
+use qubit_datatype::DataType;
 use qubit_datatype::converter::{
     BlankStringPolicy,
     BooleanConversionOptions,
+    BooleanNumericPolicy,
     DataConversionError,
+    DataConversionErrorKind,
     DataConversionOptions,
     DataConverter,
     DurationConversionOptions,
     DurationUnit,
     EmptyItemPolicy,
+    NumericConversionPolicy,
     StringConversionOptions,
 };
 
@@ -33,7 +37,9 @@ fn test_data_conversion_options_apply_to_converter() {
         .with_boolean_options(
             BooleanConversionOptions::strict()
                 .with_true_literal("enabled")
-                .with_false_literal("disabled"),
+                .expect("enabled should not conflict")
+                .with_false_literal("disabled")
+                .expect("disabled should not conflict"),
         );
 
     let enabled: bool = DataConverter::from(" enabled ")
@@ -52,7 +58,13 @@ fn test_data_conversion_options_apply_to_converter() {
     assert_eq!(port, 8080);
 
     let missing = DataConverter::from("   ").to_with::<String>(&options);
-    assert!(matches!(missing, Err(DataConversionError::NoValue)));
+    assert!(matches!(
+        missing,
+        Err(DataConversionError::Missing {
+            from: DataType::String,
+            to: DataType::String,
+        }),
+    ));
 }
 
 /// Test convenience constructors and branch-specific normalization.
@@ -83,7 +95,11 @@ fn test_data_conversion_options_convenience_builders() {
     let blank = DataConverter::from("   ").to_with::<String>(&options);
     assert!(matches!(
         blank,
-        Err(DataConversionError::ConversionError(_))
+        Err(DataConversionError::Invalid {
+            from: DataType::String,
+            to: DataType::String,
+            kind: DataConversionErrorKind::BlankRejected,
+        }),
     ));
 }
 
@@ -135,4 +151,151 @@ fn test_duration_unit_suffixes_and_rounding_cover_all_units() {
             1
         );
     }
+}
+
+/// Test exact and lossy numeric policies for typed and textual sources.
+#[test]
+fn test_data_conversion_options_numeric_policy_is_source_independent() {
+    let exact = DataConversionOptions::default()
+        .with_numeric_policy(NumericConversionPolicy::Exact);
+    for (converter, from) in [
+        (DataConverter::from(3.9f64), DataType::Float64),
+        (DataConverter::from("3.9"), DataType::String),
+    ] {
+        assert!(matches!(
+            converter.to_with::<i32>(&exact),
+            Err(DataConversionError::Invalid {
+                from: actual_from,
+                to: DataType::Int32,
+                kind: DataConversionErrorKind::PrecisionLoss,
+            }) if actual_from == from,
+        ));
+    }
+
+    let lossy = DataConversionOptions::default()
+        .with_numeric_policy(NumericConversionPolicy::Lossy);
+    for converter in [DataConverter::from(3.9f64), DataConverter::from("3.9")] {
+        assert_eq!(
+            converter
+                .to_with::<i32>(&lossy)
+                .expect("lossy conversion should truncate toward zero"),
+            3,
+        );
+    }
+    for converter in [DataConverter::from(-3.9f64), DataConverter::from("-3.9")]
+    {
+        assert_eq!(
+            converter.to_with::<i32>(&lossy).expect(
+                "lossy negative conversion should truncate toward zero"
+            ),
+            -3,
+        );
+    }
+}
+
+/// Test every numeric-to-boolean policy for typed and textual integers.
+#[test]
+fn test_data_conversion_options_boolean_numeric_policy_is_source_independent() {
+    let zero_or_one = DataConversionOptions::default().with_boolean_options(
+        BooleanConversionOptions::default()
+            .with_numeric_policy(BooleanNumericPolicy::ZeroOrOne),
+    );
+    for (converter, from) in [
+        (DataConverter::from(2i32), DataType::Int32),
+        (DataConverter::from("2"), DataType::String),
+    ] {
+        assert!(matches!(
+            converter.to_with::<bool>(&zero_or_one),
+            Err(DataConversionError::Invalid {
+                from: actual_from,
+                to: DataType::Bool,
+                kind: DataConversionErrorKind::InvalidBoolean,
+            }) if actual_from == from,
+        ));
+    }
+    for converter in [DataConverter::from(0i32), DataConverter::from("0")] {
+        assert!(
+            !converter
+                .to_with::<bool>(&zero_or_one)
+                .expect("zero should convert to false"),
+        );
+    }
+    for converter in [DataConverter::from(1i32), DataConverter::from("1")] {
+        assert!(
+            converter
+                .to_with::<bool>(&zero_or_one)
+                .expect("one should convert to true"),
+        );
+    }
+
+    let non_zero = DataConversionOptions::default().with_boolean_options(
+        BooleanConversionOptions::default()
+            .with_numeric_policy(BooleanNumericPolicy::NonZero),
+    );
+    for converter in [DataConverter::from(2i32), DataConverter::from("2")] {
+        assert!(
+            converter
+                .to_with::<bool>(&non_zero)
+                .expect("non-zero integer should convert to true"),
+        );
+    }
+    for converter in [DataConverter::from(0i32), DataConverter::from("0")] {
+        assert!(
+            !converter
+                .to_with::<bool>(&non_zero)
+                .expect("zero should convert to false"),
+        );
+    }
+    for converter in [DataConverter::from(-2i32), DataConverter::from("-2")] {
+        assert!(
+            converter
+                .to_with::<bool>(&non_zero)
+                .expect("negative non-zero integer should convert to true"),
+        );
+    }
+
+    let reject = DataConversionOptions::default().with_boolean_options(
+        BooleanConversionOptions::default()
+            .with_numeric_policy(BooleanNumericPolicy::Reject),
+    );
+    for (converter, from) in [
+        (DataConverter::from(1i32), DataType::Int32),
+        (DataConverter::from("1"), DataType::String),
+    ] {
+        assert!(matches!(
+            converter.to_with::<bool>(&reject),
+            Err(DataConversionError::Invalid {
+                from: actual_from,
+                to: DataType::Bool,
+                kind: DataConversionErrorKind::InvalidBoolean,
+            }) if actual_from == from,
+        ));
+    }
+}
+
+/// Test defaults, shared default identity, and nested Serde defaults.
+#[test]
+fn test_data_conversion_options_serde_and_default_ref() {
+    let defaults = DataConversionOptions::default();
+    assert_eq!(defaults.numeric_policy, NumericConversionPolicy::Exact);
+    assert_eq!(
+        defaults.boolean.numeric_policy(),
+        BooleanNumericPolicy::ZeroOrOne,
+    );
+    assert!(std::ptr::eq(
+        DataConversionOptions::default_ref(),
+        DataConversionOptions::default_ref(),
+    ));
+    assert_eq!(
+        serde_json::from_str::<DataConversionOptions>("{}")
+            .expect("empty options object should use defaults"),
+        defaults,
+    );
+    let wire = serde_json::to_string(&defaults)
+        .expect("conversion options should serialize");
+    assert_eq!(
+        serde_json::from_str::<DataConversionOptions>(&wire)
+            .expect("conversion options should deserialize"),
+        defaults,
+    );
 }

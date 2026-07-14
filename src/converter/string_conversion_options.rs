@@ -10,11 +10,15 @@
 //! Defines options that control string-source normalization.
 
 use super::blank_string_policy::BlankStringPolicy;
-use super::data_conversion_error::DataConversionError;
-use super::data_conversion_result::DataConversionResult;
+use super::string_normalization_error::StringNormalizationError;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 /// Options that control string-source normalization.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct StringConversionOptions {
     /// Whether strings are trimmed before conversion.
     pub trim: bool,
@@ -78,25 +82,26 @@ impl StringConversionOptions {
     ///
     /// # Errors
     ///
-    /// Returns [`DataConversionError::NoValue`] when blank strings are treated
-    /// as missing, or [`DataConversionError::ConversionError`] when blank
-    /// strings are rejected.
-    pub fn normalize(&self, value: &str) -> DataConversionResult<String> {
+    /// Returns [`StringNormalizationError::Missing`] when blank strings are
+    /// treated as missing, or [`StringNormalizationError::BlankRejected`] when
+    /// blank strings are rejected.
+    pub fn normalize<'a>(
+        &self,
+        value: &'a str,
+    ) -> Result<&'a str, StringNormalizationError> {
         let value = if self.trim { value.trim() } else { value };
         if value.trim().is_empty() {
             match self.blank_string_policy {
-                BlankStringPolicy::Preserve => Ok(value.to_string()),
+                BlankStringPolicy::Preserve => Ok(value),
                 BlankStringPolicy::TreatAsMissing => {
-                    Err(DataConversionError::NoValue)
+                    Err(StringNormalizationError::Missing)
                 }
                 BlankStringPolicy::Reject => {
-                    Err(DataConversionError::ConversionError(
-                        "blank string is not allowed".to_string(),
-                    ))
+                    Err(StringNormalizationError::BlankRejected)
                 }
             }
         } else {
-            Ok(value.to_string())
+            Ok(value)
         }
     }
 }
