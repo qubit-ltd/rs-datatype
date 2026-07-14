@@ -15,7 +15,7 @@ The default build contains the lightweight type vocabulary only:
 
 ```toml
 [dependencies]
-qubit-datatype = "0.3"
+qubit-datatype = "0.4"
 ```
 
 Enable individual external type mappings as needed, or enable the complete
@@ -23,7 +23,7 @@ conversion engine:
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.3", features = ["converter"] }
+qubit-datatype = { version = "0.4", features = ["converter"] }
 ```
 
 ## Features
@@ -34,7 +34,7 @@ qubit-datatype = { version = "0.3", features = ["converter"] }
 | chrono | `DataTypeOf` for Chrono date/time types |
 | big-number | `DataTypeOf` for `BigInt` and `BigDecimal` |
 | url | `DataTypeOf` for `Url` |
-| json | `DataTypeOf` for JSON and string maps |
+| json | `DataTypeOf` for JSON values |
 | converter | The conversion API and all rich-type features |
 
 ## Type vocabulary
@@ -153,7 +153,7 @@ requires divisibility by the configured unit; Lossy rounds half-up.
 ## Structured errors and collections
 
 `DataConversionError` has exactly three categories: `Missing`,
-`Unsupported`, and `Invalid { kind }`. Errors store source and target
+`Unsupported`, and `InvalidValue { reason }`. Errors store source and target
 `DataType` but never retain or display the original value.
 
 List failures use `DataListConversionError::source_index`. Empty-item
