@@ -33,6 +33,12 @@ pub struct BooleanConversionOptions {
 }
 
 impl BooleanConversionOptions {
+    /// Text literals accepted as `true` by the strict/default profile.
+    pub const DEFAULT_TRUE_LITERALS: &'static [&'static str] = &["true"];
+
+    /// Text literals accepted as `false` by the strict/default profile.
+    pub const DEFAULT_FALSE_LITERALS: &'static [&'static str] = &["false"];
+
     /// Creates validated boolean conversion options.
     ///
     /// # Errors
@@ -63,8 +69,14 @@ impl BooleanConversionOptions {
     #[inline]
     pub fn strict() -> Self {
         Self {
-            true_literals: default_true_literals(),
-            false_literals: default_false_literals(),
+            true_literals: Self::DEFAULT_TRUE_LITERALS
+                .iter()
+                .map(|literal| (*literal).to_string())
+                .collect(),
+            false_literals: Self::DEFAULT_FALSE_LITERALS
+                .iter()
+                .map(|literal| (*literal).to_string())
+                .collect(),
             case_sensitive: false,
             numeric_policy: BooleanNumericPolicy::default(),
         }
@@ -269,7 +281,7 @@ impl Default for BooleanConversionOptions {
 /// Deserialization representation with field defaults.
 #[derive(Deserialize)]
 #[serde(default)]
-struct BooleanConversionOptionsDef {
+struct UncheckedBooleanConversionOptions {
     /// String literals accepted as true.
     true_literals: Vec<String>,
     /// String literals accepted as false.
@@ -280,7 +292,7 @@ struct BooleanConversionOptionsDef {
     numeric_policy: BooleanNumericPolicy,
 }
 
-impl Default for BooleanConversionOptionsDef {
+impl Default for UncheckedBooleanConversionOptions {
     /// Creates the wire defaults used by [`BooleanConversionOptions`].
     fn default() -> Self {
         let options = BooleanConversionOptions::default();
@@ -300,7 +312,7 @@ impl<'de> Deserialize<'de> for BooleanConversionOptions {
         D: Deserializer<'de>,
     {
         let definition =
-            BooleanConversionOptionsDef::deserialize(deserializer)?;
+            UncheckedBooleanConversionOptions::deserialize(deserializer)?;
         Self::try_new(
             definition.true_literals,
             definition.false_literals,
@@ -309,14 +321,4 @@ impl<'de> Deserialize<'de> for BooleanConversionOptions {
         )
         .map_err(D::Error::custom)
     }
-}
-
-/// Creates the default true literal list.
-fn default_true_literals() -> Vec<String> {
-    vec!["true".to_string()]
-}
-
-/// Creates the default false literal list.
-fn default_false_literals() -> Vec<String> {
-    vec!["false".to_string()]
 }

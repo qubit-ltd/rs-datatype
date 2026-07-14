@@ -17,13 +17,12 @@ use num_traits::{
 
 use super::{
     DataConverter,
-    invalid,
     normalize,
 };
 use crate::converter::{
-    DataConversionErrorKind,
+    InvalidValueReason,
     DataConversionOptions,
-    DataConversionResult,
+    DataConversionError,
     DataConvertTo,
     NumericConversionPolicy,
 };
@@ -42,7 +41,7 @@ enum ParsedNumber {
 fn parse_number(
     value: &str,
     to: DataType,
-) -> DataConversionResult<ParsedNumber> {
+) -> Result<ParsedNumber, DataConversionError> {
     let lower = value.to_ascii_lowercase();
     match lower.as_str() {
         "nan" => return Ok(ParsedNumber::NaN),
@@ -66,13 +65,13 @@ fn parse_number(
     }
     match BigDecimal::from_str(value) {
         Ok(value) => Ok(ParsedNumber::Decimal(value)),
-        Err(_) => Err(invalid(
-            DataType::String,
+        Err(_) => Err(DataConversionError::InvalidValue {
+            from: DataType::String,
             to,
-            DataConversionErrorKind::InvalidSyntax {
+            reason: InvalidValueReason::InvalidSyntax {
                 expected: numeric_syntax(to),
             },
-        )),
+        }),
     }
 }
 
@@ -96,7 +95,7 @@ fn parsed_to_bigint(
     parsed: ParsedNumber,
     policy: NumericConversionPolicy,
     to: DataType,
-) -> DataConversionResult<BigInt> {
+) -> Result<BigInt, DataConversionError> {
     match parsed {
         ParsedNumber::Integer(value) => Ok(value),
         ParsedNumber::Decimal(value) => {
@@ -104,11 +103,13 @@ fn parsed_to_bigint(
         }
         ParsedNumber::NaN
         | ParsedNumber::PositiveInfinity
-        | ParsedNumber::NegativeInfinity => Err(invalid(
-            DataType::String,
-            to,
-            DataConversionErrorKind::NonFinite,
-        )),
+        | ParsedNumber::NegativeInfinity => {
+            Err(DataConversionError::InvalidValue {
+                from: DataType::String,
+                to,
+                reason: InvalidValueReason::NonFinite,
+            })
+        }
     }
 }
 
@@ -118,7 +119,7 @@ fn decimal_to_bigint(
     policy: NumericConversionPolicy,
     from: DataType,
     to: DataType,
-) -> DataConversionResult<BigInt> {
+) -> Result<BigInt, DataConversionError> {
     let (coefficient, scale) = value.as_bigint_and_exponent();
     if coefficient == BigInt::from(0u8) {
         return Ok(coefficient);
@@ -132,7 +133,11 @@ fn decimal_to_bigint(
             && coefficient_digits.saturating_add(exponent) > 39)
             || exponent > u64::from(u32::MAX)
         {
-            return Err(invalid(from, to, DataConversionErrorKind::OutOfRange));
+            return Err(DataConversionError::InvalidValue {
+                from,
+                to,
+                reason: InvalidValueReason::OutOfRange,
+            });
         }
         return Ok(coefficient * BigInt::from(10u8).pow(exponent as u32));
     }
@@ -141,7 +146,11 @@ fn decimal_to_bigint(
         coefficient.to_str_radix(10).trim_start_matches('-').len() as u64;
     if scale as u64 >= coefficient_digits {
         return if policy == NumericConversionPolicy::Exact {
-            Err(invalid(from, to, DataConversionErrorKind::PrecisionLoss))
+            Err(DataConversionError::InvalidValue {
+                from,
+                to,
+                reason: InvalidValueReason::PrecisionLoss,
+            })
         } else {
             Ok(BigInt::from(0u8))
         };
@@ -152,7 +161,11 @@ fn decimal_to_bigint(
     if policy == NumericConversionPolicy::Exact
         && remainder != BigInt::from(0u8)
     {
-        Err(invalid(from, to, DataConversionErrorKind::PrecisionLoss))
+        Err(DataConversionError::InvalidValue {
+            from,
+            to,
+            reason: InvalidValueReason::PrecisionLoss,
+        })
     } else {
         Ok(quotient)
     }
@@ -164,14 +177,22 @@ fn float_to_bigint(
     policy: NumericConversionPolicy,
     from: DataType,
     to: DataType,
-) -> DataConversionResult<BigInt> {
+) -> Result<BigInt, DataConversionError> {
     if !value.is_finite() {
-        return Err(invalid(from, to, DataConversionErrorKind::NonFinite));
+        return Err(DataConversionError::InvalidValue {
+            from,
+            to,
+            reason: InvalidValueReason::NonFinite,
+        });
     }
     let converted = BigInt::from_f64(value.trunc())
         .expect("finite primitive floats always have a BigInt representation");
     if policy == NumericConversionPolicy::Exact && value.fract() != 0.0 {
-        Err(invalid(from, to, DataConversionErrorKind::PrecisionLoss))
+        Err(DataConversionError::InvalidValue {
+            from,
+            to,
+            reason: InvalidValueReason::PrecisionLoss,
+        })
     } else {
         Ok(converted)
     }
@@ -182,7 +203,7 @@ pub(super) fn source_to_bigint(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
     to: DataType,
-) -> DataConversionResult<BigInt> {
+) -> Result<BigInt, DataConversionError> {
     match source {
         DataConverter::Bool(value) => Ok(BigInt::from(u8::from(*value))),
         DataConverter::Char(value) => Ok(BigInt::from(*value as u32)),
@@ -220,13 +241,13 @@ pub(super) fn source_to_bigint(
         DataConverter::String(value) => {
             let value = normalize(value, options, to)?;
             if to == DataType::BigInteger && !is_integer_syntax(value) {
-                return Err(invalid(
-                    DataType::String,
+                return Err(DataConversionError::InvalidValue {
+                    from: DataType::String,
                     to,
-                    DataConversionErrorKind::InvalidSyntax {
+                    reason: InvalidValueReason::InvalidSyntax {
                         expected: "[+-]?[0-9]+",
                     },
-                ));
+                });
             }
             parsed_to_bigint(
                 parse_number(value, to)?,
@@ -247,17 +268,17 @@ pub(super) fn duration_to_bigint(
     duration: Duration,
     options: &DataConversionOptions,
     to: DataType,
-) -> DataConversionResult<BigInt> {
+) -> Result<BigInt, DataConversionError> {
     let unit_nanos = options.duration.unit.nanos_per_unit();
     let total_nanos = duration.as_nanos();
     if options.numeric_policy == NumericConversionPolicy::Exact
         && !total_nanos.is_multiple_of(unit_nanos)
     {
-        return Err(invalid(
-            DataType::Duration,
+        return Err(DataConversionError::InvalidValue {
+            from: DataType::Duration,
             to,
-            DataConversionErrorKind::PrecisionLoss,
-        ));
+            reason: InvalidValueReason::PrecisionLoss,
+        });
     }
     Ok(BigInt::from(
         if options.numeric_policy == NumericConversionPolicy::Exact {
@@ -273,14 +294,14 @@ fn to_i128(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
     to: DataType,
-) -> DataConversionResult<i128> {
+) -> Result<i128, DataConversionError> {
     match source_to_bigint(source, options, to)?.to_i128() {
         Some(value) => Ok(value),
-        None => Err(invalid(
-            source.data_type(),
+        None => Err(DataConversionError::InvalidValue {
+            from: source.data_type(),
             to,
-            DataConversionErrorKind::OutOfRange,
-        )),
+            reason: InvalidValueReason::OutOfRange,
+        }),
     }
 }
 
@@ -289,14 +310,14 @@ fn to_u128(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
     to: DataType,
-) -> DataConversionResult<u128> {
+) -> Result<u128, DataConversionError> {
     match source_to_bigint(source, options, to)?.to_u128() {
         Some(value) => Ok(value),
-        None => Err(invalid(
-            source.data_type(),
+        None => Err(DataConversionError::InvalidValue {
+            from: source.data_type(),
             to,
-            DataConversionErrorKind::OutOfRange,
-        )),
+            reason: InvalidValueReason::OutOfRange,
+        }),
     }
 }
 
@@ -305,17 +326,17 @@ fn checked_signed<T>(
     value: i128,
     source: &DataConverter<'_>,
     to: DataType,
-) -> DataConversionResult<T>
+) -> Result<T, DataConversionError>
 where
     T: TryFrom<i128>,
 {
     match T::try_from(value) {
         Ok(value) => Ok(value),
-        Err(_) => Err(invalid(
-            source.data_type(),
+        Err(_) => Err(DataConversionError::InvalidValue {
+            from: source.data_type(),
             to,
-            DataConversionErrorKind::OutOfRange,
-        )),
+            reason: InvalidValueReason::OutOfRange,
+        }),
     }
 }
 
@@ -324,17 +345,17 @@ fn checked_unsigned<T>(
     value: u128,
     source: &DataConverter<'_>,
     to: DataType,
-) -> DataConversionResult<T>
+) -> Result<T, DataConversionError>
 where
     T: TryFrom<u128>,
 {
     match T::try_from(value) {
         Ok(value) => Ok(value),
-        Err(_) => Err(invalid(
-            source.data_type(),
+        Err(_) => Err(DataConversionError::InvalidValue {
+            from: source.data_type(),
             to,
-            DataConversionErrorKind::OutOfRange,
-        )),
+            reason: InvalidValueReason::OutOfRange,
+        }),
     }
 }
 
@@ -344,7 +365,7 @@ macro_rules! impl_signed_target {
             fn convert(
                 &self,
                 options: &DataConversionOptions,
-            ) -> DataConversionResult<$target> {
+            ) -> Result<$target, DataConversionError> {
                 checked_signed(
                     to_i128(self, options, $data_type)?,
                     self,
@@ -361,7 +382,7 @@ macro_rules! impl_unsigned_target {
             fn convert(
                 &self,
                 options: &DataConversionOptions,
-            ) -> DataConversionResult<$target> {
+            ) -> Result<$target, DataConversionError> {
                 checked_unsigned(
                     to_u128(self, options, $data_type)?,
                     self,
@@ -391,15 +412,23 @@ fn bigint_to_f64(
     policy: NumericConversionPolicy,
     from: DataType,
     to: DataType,
-) -> DataConversionResult<f64> {
+) -> Result<f64, DataConversionError> {
     let converted = value.to_f64().unwrap_or(f64::INFINITY);
     if !converted.is_finite() {
-        return Err(invalid(from, to, DataConversionErrorKind::OutOfRange));
+        return Err(DataConversionError::InvalidValue {
+            from,
+            to,
+            reason: InvalidValueReason::OutOfRange,
+        });
     }
     if policy == NumericConversionPolicy::Exact
         && BigInt::from_f64(converted).as_ref() != Some(value)
     {
-        Err(invalid(from, to, DataConversionErrorKind::PrecisionLoss))
+        Err(DataConversionError::InvalidValue {
+            from,
+            to,
+            reason: InvalidValueReason::PrecisionLoss,
+        })
     } else {
         Ok(converted)
     }
@@ -411,15 +440,23 @@ fn decimal_to_f64(
     policy: NumericConversionPolicy,
     from: DataType,
     to: DataType,
-) -> DataConversionResult<f64> {
+) -> Result<f64, DataConversionError> {
     let converted = value.to_f64().unwrap_or(f64::INFINITY);
     if !converted.is_finite() {
-        return Err(invalid(from, to, DataConversionErrorKind::OutOfRange));
+        return Err(DataConversionError::InvalidValue {
+            from,
+            to,
+            reason: InvalidValueReason::OutOfRange,
+        });
     }
     if policy == NumericConversionPolicy::Exact
         && BigDecimal::from_f64(converted).as_ref() != Some(value)
     {
-        Err(invalid(from, to, DataConversionErrorKind::PrecisionLoss))
+        Err(DataConversionError::InvalidValue {
+            from,
+            to,
+            reason: InvalidValueReason::PrecisionLoss,
+        })
     } else {
         Ok(converted)
     }
@@ -430,7 +467,7 @@ fn source_to_f64(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
     to: DataType,
-) -> DataConversionResult<f64> {
+) -> Result<f64, DataConversionError> {
     match source {
         DataConverter::Float64(value) => Ok(*value),
         DataConverter::Float32(value) => Ok(f64::from(*value)),
@@ -549,7 +586,7 @@ impl DataConvertTo<f64> for DataConverter<'_> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<f64> {
+    ) -> Result<f64, DataConversionError> {
         source_to_f64(self, options, DataType::Float64)
     }
 }
@@ -558,7 +595,7 @@ impl DataConvertTo<f32> for DataConverter<'_> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<f32> {
+    ) -> Result<f32, DataConversionError> {
         if let Self::Float32(value) = self {
             return Ok(*value);
         }
@@ -576,7 +613,7 @@ impl DataConvertTo<f32> for DataConverter<'_> {
         if !converted.is_finite() {
             return Err(self.invalid(
                 DataType::Float32,
-                DataConversionErrorKind::OutOfRange,
+                InvalidValueReason::OutOfRange,
             ));
         }
         if options.numeric_policy == NumericConversionPolicy::Exact
@@ -584,7 +621,7 @@ impl DataConvertTo<f32> for DataConverter<'_> {
         {
             Err(self.invalid(
                 DataType::Float32,
-                DataConversionErrorKind::PrecisionLoss,
+                InvalidValueReason::PrecisionLoss,
             ))
         } else {
             Ok(converted)
@@ -596,7 +633,7 @@ impl DataConvertTo<BigInt> for DataConverter<'_> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<BigInt> {
+    ) -> Result<BigInt, DataConversionError> {
         source_to_bigint(self, options, DataType::BigInteger)
     }
 }
@@ -605,21 +642,21 @@ impl DataConvertTo<BigDecimal> for DataConverter<'_> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<BigDecimal> {
+    ) -> Result<BigDecimal, DataConversionError> {
         match self {
             Self::BigDecimal(value) => Ok(value.as_ref().clone()),
             Self::Float32(value) => match BigDecimal::from_f32(*value) {
                 Some(value) => Ok(value),
                 None => Err(self.invalid(
                     DataType::BigDecimal,
-                    DataConversionErrorKind::NonFinite,
+                    InvalidValueReason::NonFinite,
                 )),
             },
             Self::Float64(value) => match BigDecimal::from_f64(*value) {
                 Some(value) => Ok(value),
                 None => Err(self.invalid(
                     DataType::BigDecimal,
-                    DataConversionErrorKind::NonFinite,
+                    InvalidValueReason::NonFinite,
                 )),
             },
             Self::String(value) => {
@@ -631,7 +668,7 @@ impl DataConvertTo<BigDecimal> for DataConverter<'_> {
                     | ParsedNumber::PositiveInfinity
                     | ParsedNumber::NegativeInfinity => Err(self.invalid(
                         DataType::BigDecimal,
-                        DataConversionErrorKind::NonFinite,
+                        InvalidValueReason::NonFinite,
                     )),
                 }
             }

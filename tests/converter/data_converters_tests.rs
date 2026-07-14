@@ -15,7 +15,7 @@ use qubit_datatype::DataType;
 use qubit_datatype::converter::{
     BlankStringPolicy,
     DataConversionError,
-    DataConversionErrorKind,
+    InvalidValueReason,
     DataConversionOptions,
     DataConverters,
     StringConversionOptions,
@@ -145,10 +145,10 @@ fn test_data_converters_error_contains_failing_index() {
     assert_eq!(error.source_index, 1);
     assert_eq!(
         error.source,
-        DataConversionError::Invalid {
+        DataConversionError::InvalidValue {
             from: DataType::String,
             to: DataType::UInt16,
-            kind: DataConversionErrorKind::InvalidSyntax {
+            reason: InvalidValueReason::InvalidSyntax {
                 expected: "integer",
             },
         },

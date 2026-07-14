@@ -12,7 +12,7 @@
 use qubit_datatype::DataType;
 use qubit_datatype::converter::{
     DataConversionError,
-    DataConversionErrorKind,
+    InvalidValueReason,
 };
 
 /// Test the conversion error display strings.
@@ -36,10 +36,10 @@ fn test_data_conversion_error_display() {
         "Unsupported conversion from string to int32",
     );
     assert_eq!(
-        DataConversionError::Invalid {
+        DataConversionError::InvalidValue {
             from: DataType::String,
             to: DataType::Int32,
-            kind: DataConversionErrorKind::PrecisionLoss,
+            reason: InvalidValueReason::PrecisionLoss,
         }
         .to_string(),
         "Invalid conversion from string to int32: precision loss",
@@ -50,10 +50,10 @@ fn test_data_conversion_error_display() {
 #[test]
 fn test_data_conversion_error_does_not_contain_source_value() {
     let secret = "secret-marker-9271";
-    let error = DataConversionError::Invalid {
+    let error = DataConversionError::InvalidValue {
         from: DataType::String,
         to: DataType::Json,
-        kind: DataConversionErrorKind::InvalidSyntax { expected: "JSON" },
+        reason: InvalidValueReason::InvalidSyntax { expected: "JSON" },
     };
     assert!(!error.to_string().contains(secret));
     assert!(!format!("{error:?}").contains(secret));

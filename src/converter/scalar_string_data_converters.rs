@@ -10,13 +10,11 @@
 //! Provides conversion of a single scalar string into collection values.
 
 use super::data_conversion_error::DataConversionError;
-use super::data_conversion_error_kind::DataConversionErrorKind;
+use super::data_conversion_error_kind::InvalidValueReason;
 use super::data_conversion_options::DataConversionOptions;
-use super::data_conversion_result::DataConversionResult;
 use super::data_convert_to::DataConvertTo;
 use super::data_converter::DataConverter;
 use super::data_list_conversion_error::DataListConversionError;
-use super::data_list_conversion_result::DataListConversionResult;
 use super::string_normalization_error::StringNormalizationError;
 use crate::datatype::{
     DataType,
@@ -36,10 +34,10 @@ fn normalization_error<T: DataTypeOf>(
             to: T::DATA_TYPE,
         },
         StringNormalizationError::BlankRejected => {
-            DataConversionError::Invalid {
+            DataConversionError::InvalidValue {
                 from: DataType::String,
                 to: T::DATA_TYPE,
-                kind: DataConversionErrorKind::BlankRejected,
+                reason: InvalidValueReason::BlankRejected,
             }
         }
     }
@@ -87,7 +85,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// Returns [`DataListConversionError`] when the scalar string cannot be
     /// normalized, split, or converted to the requested element type.
-    pub fn to_vec<T>(self) -> DataListConversionResult<Vec<T>>
+    pub fn to_vec<T>(self) -> Result<Vec<T>, DataListConversionError>
     where
         T: DataTypeOf,
         DataConverter<'a>: DataConvertTo<T>,
@@ -117,7 +115,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     pub fn to_vec_with<'b, T>(
         self,
         options: &'b DataConversionOptions,
-    ) -> DataListConversionResult<Vec<T>>
+    ) -> Result<Vec<T>, DataListConversionError>
     where
         'a: 'b,
         T: DataTypeOf,
@@ -138,10 +136,10 @@ impl<'a> ScalarStringDataConverters<'a> {
         for item in items {
             let item = item.map_err(|error| DataListConversionError {
                 source_index: error.source_index,
-                source: DataConversionError::Invalid {
+                source: DataConversionError::InvalidValue {
                     from: DataType::String,
                     to: T::DATA_TYPE,
-                    kind: DataConversionErrorKind::BlankRejected,
+                    reason: InvalidValueReason::BlankRejected,
                 },
             })?;
             let value = match DataConverter::from(item.value).to_with(options) {
@@ -172,7 +170,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// Returns [`DataConversionError::Missing`] when normalization or splitting
     /// yields no item, or the underlying conversion error.
-    pub fn to_first<T>(self) -> DataConversionResult<T>
+    pub fn to_first<T>(self) -> Result<T, DataConversionError>
     where
         T: DataTypeOf,
         DataConverter<'a>: DataConvertTo<T>,
@@ -201,7 +199,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     pub fn to_first_with<'b, T>(
         self,
         options: &'b DataConversionOptions,
-    ) -> DataConversionResult<T>
+    ) -> Result<T, DataConversionError>
     where
         'a: 'b,
         T: DataTypeOf,
@@ -219,10 +217,10 @@ impl<'a> ScalarStringDataConverters<'a> {
                 from: DataType::String,
                 to: T::DATA_TYPE,
             })?
-            .map_err(|_| DataConversionError::Invalid {
+            .map_err(|_| DataConversionError::InvalidValue {
                 from: DataType::String,
                 to: T::DATA_TYPE,
-                kind: DataConversionErrorKind::BlankRejected,
+                reason: InvalidValueReason::BlankRejected,
             })?;
         DataConverter::from(first.value).to_with::<T>(options)
     }

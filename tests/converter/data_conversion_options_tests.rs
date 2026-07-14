@@ -15,7 +15,7 @@ use qubit_datatype::converter::{
     BooleanConversionOptions,
     BooleanNumericPolicy,
     DataConversionError,
-    DataConversionErrorKind,
+    InvalidValueReason,
     DataConversionOptions,
     DataConverter,
     DurationConversionOptions,
@@ -95,10 +95,10 @@ fn test_data_conversion_options_convenience_builders() {
     let blank = DataConverter::from("   ").to_with::<String>(&options);
     assert!(matches!(
         blank,
-        Err(DataConversionError::Invalid {
+        Err(DataConversionError::InvalidValue {
             from: DataType::String,
             to: DataType::String,
-            kind: DataConversionErrorKind::BlankRejected,
+            reason: InvalidValueReason::BlankRejected,
         }),
     ));
 }
@@ -164,10 +164,10 @@ fn test_data_conversion_options_numeric_policy_is_source_independent() {
     ] {
         assert!(matches!(
             converter.to_with::<i32>(&exact),
-            Err(DataConversionError::Invalid {
+            Err(DataConversionError::InvalidValue {
                 from: actual_from,
                 to: DataType::Int32,
-                kind: DataConversionErrorKind::PrecisionLoss,
+                reason: InvalidValueReason::PrecisionLoss,
             }) if actual_from == from,
         ));
     }
@@ -206,10 +206,10 @@ fn test_data_conversion_options_boolean_numeric_policy_is_source_independent() {
     ] {
         assert!(matches!(
             converter.to_with::<bool>(&zero_or_one),
-            Err(DataConversionError::Invalid {
+            Err(DataConversionError::InvalidValue {
                 from: actual_from,
                 to: DataType::Bool,
-                kind: DataConversionErrorKind::InvalidBoolean,
+                reason: InvalidValueReason::InvalidBoolean,
             }) if actual_from == from,
         ));
     }
@@ -264,10 +264,10 @@ fn test_data_conversion_options_boolean_numeric_policy_is_source_independent() {
     ] {
         assert!(matches!(
             converter.to_with::<bool>(&reject),
-            Err(DataConversionError::Invalid {
+            Err(DataConversionError::InvalidValue {
                 from: actual_from,
                 to: DataType::Bool,
-                kind: DataConversionErrorKind::InvalidBoolean,
+                reason: InvalidValueReason::InvalidBoolean,
             }) if actual_from == from,
         ));
     }

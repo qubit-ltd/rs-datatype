@@ -20,7 +20,7 @@ use chrono::{
 use num_bigint::BigInt;
 use qubit_datatype::{
     DataConversionError,
-    DataConversionErrorKind,
+    InvalidValueReason,
     DataConverter,
     DataType,
 };
@@ -34,10 +34,10 @@ fn assert_invalid_syntax<T>(
 ) {
     let matches_expected = matches!(
         &result,
-        Err(DataConversionError::Invalid {
+        Err(DataConversionError::InvalidValue {
             from: DataType::String,
             to: actual_to,
-            kind: DataConversionErrorKind::InvalidSyntax {
+            reason: InvalidValueReason::InvalidSyntax {
                 expected: actual_expected,
             },
         }) if *actual_to == to && *actual_expected == expected
@@ -148,10 +148,10 @@ fn test_data_converter_temporal_parsers_reject_invalid_components() {
 fn test_data_converter_default_does_not_trim_any_text_parser() {
     assert!(matches!(
         DataConverter::from(" true ").to::<bool>(),
-        Err(DataConversionError::Invalid {
+        Err(DataConversionError::InvalidValue {
             from: DataType::String,
             to: DataType::Bool,
-            kind: DataConversionErrorKind::InvalidBoolean,
+            reason: InvalidValueReason::InvalidBoolean,
         }),
     ));
     assert_invalid_syntax(

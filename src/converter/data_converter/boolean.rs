@@ -13,14 +13,13 @@ use num_traits::Zero;
 use super::numeric::is_integer_syntax;
 use super::{
     DataConverter,
-    invalid,
     normalize,
 };
 use crate::converter::{
     BooleanNumericPolicy,
-    DataConversionErrorKind,
+    InvalidValueReason,
     DataConversionOptions,
-    DataConversionResult,
+    DataConversionError,
     DataConvertTo,
 };
 use crate::datatype::DataType;
@@ -30,7 +29,7 @@ fn integer_to_bool(
     value: &BigInt,
     policy: BooleanNumericPolicy,
     from: DataType,
-) -> DataConversionResult<bool> {
+) -> Result<bool, DataConversionError> {
     let zero = value.is_zero();
     let one = value == &BigInt::from(1u8);
     match policy {
@@ -38,11 +37,11 @@ fn integer_to_bool(
         BooleanNumericPolicy::ZeroOrOne if one => Ok(true),
         BooleanNumericPolicy::NonZero => Ok(!zero),
         BooleanNumericPolicy::ZeroOrOne | BooleanNumericPolicy::Reject => {
-            Err(invalid(
+            Err(DataConversionError::InvalidValue {
                 from,
-                DataType::Bool,
-                DataConversionErrorKind::InvalidBoolean,
-            ))
+                to: DataType::Bool,
+                reason: InvalidValueReason::InvalidBoolean,
+            })
         }
     }
 }
@@ -51,7 +50,7 @@ impl DataConvertTo<bool> for DataConverter<'_> {
     fn convert(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<bool> {
+    ) -> Result<bool, DataConversionError> {
         match self {
             Self::Bool(value) => Ok(*value),
             Self::String(value) => {
@@ -65,7 +64,7 @@ impl DataConvertTo<bool> for DataConverter<'_> {
                         Err(_) => {
                             return Err(self.invalid(
                                 DataType::Bool,
-                                DataConversionErrorKind::InvalidBoolean,
+                                InvalidValueReason::InvalidBoolean,
                             ));
                         }
                     };
@@ -77,7 +76,7 @@ impl DataConvertTo<bool> for DataConverter<'_> {
                 } else {
                     Err(self.invalid(
                         DataType::Bool,
-                        DataConversionErrorKind::InvalidBoolean,
+                        InvalidValueReason::InvalidBoolean,
                     ))
                 }
             }

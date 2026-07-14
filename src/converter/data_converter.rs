@@ -24,9 +24,8 @@ use num_bigint::BigInt;
 use url::Url;
 
 use super::data_conversion_error::DataConversionError;
-use super::data_conversion_error_kind::DataConversionErrorKind;
+use super::data_conversion_error_kind::InvalidValueReason;
 use super::data_conversion_options::DataConversionOptions;
-use super::data_conversion_result::DataConversionResult;
 use super::data_convert_to::DataConvertTo;
 use super::string_normalization_error::StringNormalizationError;
 use crate::datatype::DataType;
@@ -89,8 +88,8 @@ impl DataConverter<'_> {
     ///
     /// Returns a structured error when the value is missing, the type pair is
     /// unsupported, or the source value violates the target contract.
-    #[inline]
-    pub fn to<T>(&self) -> DataConversionResult<T>
+    #[inline(always)]
+    pub fn to<T>(&self) -> Result<T, DataConversionError>
     where
         Self: DataConvertTo<T>,
     {
@@ -103,11 +102,11 @@ impl DataConverter<'_> {
     ///
     /// Returns a structured error containing source type, target type, and a
     /// value-free rejection reason.
-    #[inline]
+    #[inline(always)]
     pub fn to_with<T>(
         &self,
         options: &DataConversionOptions,
-    ) -> DataConversionResult<T>
+    ) -> Result<T, DataConversionError>
     where
         Self: DataConvertTo<T>,
     {
@@ -150,6 +149,7 @@ impl DataConverter<'_> {
     }
 
     /// Builds a missing-value error for this source and target.
+    #[inline(always)]
     fn missing(&self, to: DataType) -> DataConversionError {
         DataConversionError::Missing {
             from: self.data_type(),
@@ -158,6 +158,7 @@ impl DataConverter<'_> {
     }
 
     /// Builds an unsupported-pair error for this source and target.
+    #[inline(always)]
     fn unsupported(&self, to: DataType) -> DataConversionError {
         DataConversionError::Unsupported {
             from: self.data_type(),
@@ -166,22 +167,18 @@ impl DataConverter<'_> {
     }
 
     /// Builds an invalid-value error for this source and target.
+    #[inline(always)]
     fn invalid(
         &self,
         to: DataType,
-        kind: DataConversionErrorKind,
+        reason: InvalidValueReason,
     ) -> DataConversionError {
-        invalid(self.data_type(), to, kind)
+        DataConversionError::InvalidValue {
+            from: self.data_type(),
+            to,
+            reason,
+        }
     }
-}
-
-/// Builds a structured invalid-value error.
-fn invalid(
-    from: DataType,
-    to: DataType,
-    kind: DataConversionErrorKind,
-) -> DataConversionError {
-    DataConversionError::Invalid { from, to, kind }
 }
 
 /// Normalizes a textual source and attaches target context to policy errors.
@@ -189,7 +186,7 @@ fn normalize<'a>(
     value: &'a str,
     options: &DataConversionOptions,
     to: DataType,
-) -> DataConversionResult<&'a str> {
+) -> Result<&'a str, DataConversionError> {
     options
         .string
         .normalize(value)
@@ -198,10 +195,12 @@ fn normalize<'a>(
                 from: DataType::String,
                 to,
             },
-            StringNormalizationError::BlankRejected => invalid(
-                DataType::String,
-                to,
-                DataConversionErrorKind::BlankRejected,
-            ),
+            StringNormalizationError::BlankRejected => {
+                DataConversionError::InvalidValue {
+                    from: DataType::String,
+                    to,
+                    reason: InvalidValueReason::BlankRejected,
+                }
+            }
         })
 }
