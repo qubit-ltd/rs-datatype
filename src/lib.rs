@@ -10,15 +10,18 @@
 //! The default feature set is empty and exposes the lightweight [`DataType`]
 //! vocabulary plus [`DataTypeOf`]. Optional `chrono`, `big-number`, `url`, and
 //! `json` features add mappings for external types. The `converter` feature
-//! enables the complete conversion engine and all rich-type features.
+//! enables core scalar, string, and Duration conversions. Combine it with a
+//! rich-type feature to enable conversions for that family, or use `all`.
 //!
 //! # Conversion contract
 //!
-//! With `converter`, strings can target numeric, boolean, character, temporal,
-//! Duration, URL, JSON, and StringMap values. Integers and BigInt can target
-//! numeric, boolean, and Duration values; floats and BigDecimal can target
-//! numeric values; Duration can target integers and String; StringMap can
-//! target JSON and String. Other type pairs return
+//! With `converter`, strings can target fixed-width numeric, boolean,
+//! character, and Duration values. Fixed-width integers can target numeric,
+//! boolean, and Duration values; floats can target fixed-width numeric values;
+//! Duration can target fixed-width integers and String. `chrono`,
+//! `big-number`, `url`, and `json` add their corresponding source and target
+//! conversions when combined with `converter`; JSON also enables StringMap
+//! parsing and formatting. Other type pairs return
 //! `DataConversionError::Unsupported`.
 //!
 //! Numeric conversion defaults to `NumericConversionPolicy::Exact`, which

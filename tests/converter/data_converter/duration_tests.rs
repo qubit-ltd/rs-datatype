@@ -206,12 +206,10 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
         DataConverter::from(1i16),
         DataConverter::from(1i64),
         DataConverter::from(1i128),
-        DataConverter::from(1isize),
         DataConverter::from(1u8),
         DataConverter::from(1u16),
         DataConverter::from(1u32),
         DataConverter::from(1u128),
-        DataConverter::from(1usize),
     ];
     for source in integer_sources {
         let duration: Duration = source
@@ -275,6 +273,15 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
     let negative_big_integer = BigInt::from(-1);
     assert!(matches!(
         DataConverter::from(&negative_big_integer).to::<Duration>(),
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::NegativeDuration,
+            ..
+        })
+    ));
+    let huge_negative_big_integer =
+        -(BigInt::from(u128::MAX) + BigInt::from(1u8));
+    assert!(matches!(
+        DataConverter::from(&huge_negative_big_integer).to::<Duration>(),
         Err(DataConversionError::InvalidValue {
             reason: InvalidValueReason::NegativeDuration,
             ..

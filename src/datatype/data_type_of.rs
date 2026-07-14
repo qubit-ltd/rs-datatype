@@ -54,6 +54,14 @@ use url::Url;
 ///     DataType::StringMap,
 /// );
 /// ```
+///
+/// Platform-sized integers deliberately have no runtime descriptor:
+///
+/// ```compile_fail
+/// use qubit_datatype::DataTypeOf;
+///
+/// let _ = usize::DATA_TYPE;
+/// ```
 pub trait DataTypeOf {
     /// The stable [`DataType`] corresponding to `Self`.
     const DATA_TYPE: DataType;
@@ -127,12 +135,6 @@ impl DataTypeOf for BigInt {
 #[cfg(feature = "big-number")]
 impl DataTypeOf for BigDecimal {
     const DATA_TYPE: DataType = DataType::BigDecimal;
-}
-impl DataTypeOf for isize {
-    const DATA_TYPE: DataType = DataType::IntSize;
-}
-impl DataTypeOf for usize {
-    const DATA_TYPE: DataType = DataType::UIntSize;
 }
 impl DataTypeOf for Duration {
     const DATA_TYPE: DataType = DataType::Duration;
