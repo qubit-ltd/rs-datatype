@@ -44,6 +44,13 @@ fn test_data_conversion_error_display() {
         .to_string(),
         "Invalid conversion from string to int32: precision loss",
     );
+    assert_eq!(
+        DataConversionError::EmptyCollection {
+            to: DataType::Int32,
+        }
+        .to_string(),
+        "Cannot convert the first value of an empty collection to int32",
+    );
 }
 
 /// Test that structured errors cannot reveal source text.

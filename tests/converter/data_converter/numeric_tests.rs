@@ -18,13 +18,13 @@ use chrono::{
     Utc,
 };
 use num_bigint::BigInt;
+use proptest::proptest;
 use qubit_datatype::{
     DataConversionError,
     DataConversionOptions,
     DataConverter,
     DataType,
     InvalidValueReason,
-    NumericConversionPolicy,
 };
 use url::Url;
 
@@ -368,8 +368,7 @@ fn test_data_converter_numeric_conversions_check_integer_bounds() {
 /// Test floating point conversion edge cases for integer and f32 targets.
 #[test]
 fn test_data_converter_float_conversions_check_non_finite_and_overflow() {
-    let lossy = DataConversionOptions::default()
-        .with_numeric_policy(NumericConversionPolicy::Lossy);
+    let lossy = DataConversionOptions::lossy();
     let truncated: i8 = DataConverter::from(-12.9f64)
         .to_with(&lossy)
         .expect("finite f64 should truncate when converting to i8");
@@ -433,8 +432,7 @@ fn test_data_converter_big_number_conversions_check_range() {
 /// Test the focused numeric module applies explicit lossy conversion.
 #[test]
 fn test_data_converter_numeric_lossy_conversion() {
-    let options = DataConversionOptions::default()
-        .with_numeric_policy(NumericConversionPolicy::Lossy);
+    let options = DataConversionOptions::lossy();
     assert_eq!(DataConverter::from("-2.9").to_with::<i32>(&options), Ok(-2));
 }
 
@@ -460,8 +458,7 @@ fn test_data_converter_big_decimal_extreme_exponents_are_bounded() {
             ..
         }),
     ));
-    let lossy = DataConversionOptions::default()
-        .with_numeric_policy(NumericConversionPolicy::Lossy);
+    let lossy = DataConversionOptions::lossy();
     assert_eq!(DataConverter::from(&tiny).to_with::<i32>(&lossy), Ok(0));
 }
 
@@ -483,6 +480,17 @@ fn test_data_converter_big_decimal_non_finite_classification_is_consistent() {
                 ..
             }),
         ));
+    }
+}
+
+proptest! {
+    /// Test that arbitrary UTF-8 strings never panic in numeric parsing.
+    #[test]
+    fn test_data_converter_numeric_arbitrary_string_never_panics(value in ".*") {
+        let converter = DataConverter::from(value);
+        let _ = converter.to::<i128>();
+        let _ = converter.to::<u128>();
+        let _ = converter.to::<f64>();
     }
 }
 
@@ -544,8 +552,7 @@ fn test_data_converter_numeric_boundary_branches() {
     let integral_decimal = BigDecimal::from_str("12.0").unwrap();
     assert_eq!(DataConverter::from(&integral_decimal).to::<i32>(), Ok(12));
     let fractional = BigDecimal::from_str("12.9").unwrap();
-    let lossy = DataConversionOptions::default()
-        .with_numeric_policy(NumericConversionPolicy::Lossy);
+    let lossy = DataConversionOptions::lossy();
     assert_eq!(
         DataConverter::from(&fractional).to_with::<i32>(&lossy),
         Ok(12)

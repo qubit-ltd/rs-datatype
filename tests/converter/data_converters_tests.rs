@@ -126,8 +126,7 @@ fn test_data_converters_empty_sources() {
 
     assert!(matches!(
         DataConverters::from(&values).to_first::<u16>(),
-        Err(DataConversionError::Missing {
-            from: DataType::UInt16,
+        Err(DataConversionError::EmptyCollection {
             to: DataType::UInt16,
         })
     ));

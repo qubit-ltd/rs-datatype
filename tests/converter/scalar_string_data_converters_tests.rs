@@ -160,8 +160,7 @@ fn test_scalar_string_data_converters_to_first_with_rejects_empty_item() {
 
 /// Test scalar string first-value behavior when all items are skipped.
 #[test]
-fn test_scalar_string_data_converters_to_first_with_reports_missing_after_skip()
-{
+fn test_scalar_string_data_converters_to_first_with_reports_empty_after_skip() {
     let options = DataConversionOptions::default().with_collection_options(
         CollectionConversionOptions::default()
             .with_split_scalar_strings(true)
@@ -170,8 +169,7 @@ fn test_scalar_string_data_converters_to_first_with_reports_missing_after_skip()
 
     assert_eq!(
         ScalarStringDataConverters::from(",,").to_first_with::<u16>(&options),
-        Err(DataConversionError::Missing {
-            from: DataType::String,
+        Err(DataConversionError::EmptyCollection {
             to: DataType::UInt16,
         }),
     );

@@ -9,6 +9,14 @@
 //!
 //! Tests for string-to-boolean conversion options.
 
+use proptest::arbitrary::any;
+use proptest::collection;
+use proptest::strategy::Just;
+use proptest::{
+    prop_assert_eq,
+    prop_oneof,
+    proptest,
+};
 use qubit_datatype::converter::{
     BooleanConversionOptions,
     BooleanNumericPolicy,
@@ -117,4 +125,36 @@ fn test_boolean_conversion_options_serde_and_defaults() {
             .expect("boolean options should deserialize"),
         defaults,
     );
+}
+
+proptest! {
+    /// Test that every successfully constructed literal configuration remains
+    /// valid after a Serde round trip.
+    #[test]
+    fn test_boolean_conversion_options_validated_round_trip_property(
+        true_literals in collection::vec("[A-Za-z0-9]{0,8}", 0..8),
+        false_literals in collection::vec("[A-Za-z0-9]{0,8}", 0..8),
+        case_sensitive in any::<bool>(),
+        numeric_policy in prop_oneof![
+            Just(BooleanNumericPolicy::ZeroOrOne),
+            Just(BooleanNumericPolicy::NonZero),
+            Just(BooleanNumericPolicy::Reject),
+        ],
+    ) {
+        let Ok(options) = BooleanConversionOptions::try_new(
+            true_literals,
+            false_literals,
+            case_sensitive,
+            numeric_policy,
+        ) else {
+            return Ok(());
+        };
+        let wire = serde_json::to_string(&options)
+            .expect("validated Boolean options should serialize");
+        let restored: BooleanConversionOptions = serde_json::from_str(&wire)
+            .expect("validated Boolean options should deserialize");
+
+        prop_assert_eq!(&restored, &options);
+        prop_assert_eq!(restored.validate(), Ok(()));
+    }
 }

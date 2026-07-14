@@ -298,7 +298,7 @@ pub(super) fn duration_to_bigint(
     options: &DataConversionOptions,
     to: DataType,
 ) -> Result<BigInt, DataConversionError> {
-    let unit_nanos = options.duration.unit.nanos_per_unit();
+    let unit_nanos = options.duration.output_unit.nanos_per_unit();
     let total_nanos = duration.as_nanos();
     if options.numeric_policy == NumericConversionPolicy::Exact
         && !total_nanos.is_multiple_of(unit_nanos)
@@ -313,7 +313,7 @@ pub(super) fn duration_to_bigint(
         if options.numeric_policy == NumericConversionPolicy::Exact {
             total_nanos / unit_nanos
         } else {
-            options.duration.unit.rounded_units(duration)
+            options.duration.output_unit.rounded_units(duration)
         },
     ))
 }

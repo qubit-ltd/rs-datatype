@@ -172,11 +172,9 @@ where
     ///
     /// # Errors
     ///
-    /// Returns [`DataConversionError::Missing`] when the source iterator is
-    /// empty. Because an empty generic iterator has no source value whose type
-    /// can be inferred, that error uses the requested target type for both its
-    /// `from` and `to` fields. Returns the original single-value conversion
-    /// error when the first element cannot be converted.
+    /// Returns [`DataConversionError::EmptyCollection`] when the source
+    /// iterator is empty. Returns the original single-value conversion error
+    /// when the first element cannot be converted.
     ///
     /// # Examples
     ///
@@ -216,11 +214,9 @@ where
     ///
     /// # Errors
     ///
-    /// Returns [`DataConversionError::Missing`] when the source iterator is
-    /// empty. Because an empty generic iterator has no source value whose type
-    /// can be inferred, that error uses the requested target type for both its
-    /// `from` and `to` fields. Returns the original conversion error when the
-    /// first element cannot be converted.
+    /// Returns [`DataConversionError::EmptyCollection`] when the source
+    /// iterator is empty. Returns the original conversion error when the first
+    /// element cannot be converted.
     pub fn to_first_with<'a, T>(
         self,
         options: &DataConversionOptions,
@@ -233,13 +229,9 @@ where
         let mut sources = self.sources;
         match sources.next() {
             Some(source) => source.into().to_with::<T>(options),
-            None => Err(DataConversionError::Missing {
-                // An empty generic collection has no source value whose type
-                // could be inferred, so the requested type is used for both
-                // sides of the missing-value relation.
-                from: T::DATA_TYPE,
-                to: T::DATA_TYPE,
-            }),
+            None => {
+                Err(DataConversionError::EmptyCollection { to: T::DATA_TYPE })
+            }
         }
     }
 }

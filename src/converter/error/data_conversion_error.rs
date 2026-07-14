@@ -15,8 +15,10 @@ use super::invalid_value_reason::InvalidValueReason;
 
 /// Describes why a single source value could not be converted.
 ///
-/// Every variant records both the declared source and requested target
-/// [`DataType`]. Invalid-value errors additionally carry a stable,
+/// Value conversion variants record both the declared source and requested
+/// target [`DataType`]. [`Self::EmptyCollection`] records only the requested
+/// target because an empty generic collection has no source value whose type
+/// can be observed. Invalid-value errors additionally carry a stable,
 /// value-independent [`InvalidValueReason`]. Source values are deliberately not
 /// retained or formatted, which makes these errors safe to surface for secrets
 /// such as environment variables.
@@ -41,6 +43,13 @@ pub enum DataConversionError {
     Missing {
         /// Source data type.
         from: DataType,
+        /// Requested target data type.
+        to: DataType,
+    },
+
+    /// A first-value conversion was requested from an empty collection.
+    #[error("Cannot convert the first value of an empty collection to {to}")]
+    EmptyCollection {
         /// Requested target data type.
         to: DataType,
     },
