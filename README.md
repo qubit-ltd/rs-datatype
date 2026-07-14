@@ -15,7 +15,7 @@ The default build contains the lightweight type vocabulary only:
 
 ```toml
 [dependencies]
-qubit-datatype = "0.4"
+qubit-datatype = "0.5"
 ```
 
 Enable individual external type mappings as needed, or enable the complete
@@ -23,7 +23,7 @@ conversion engine:
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.4", features = ["converter"] }
+qubit-datatype = { version = "0.5", features = ["converter"] }
 ```
 
 ## Features
@@ -67,7 +67,7 @@ half-up rounding.
 # {
 use qubit_datatype::{
     DataConversionError, InvalidValueReason, DataConversionOptions,
-    DataConverter, NumericConversionPolicy,
+    DataConverter,
 };
 
 assert!(matches!(
@@ -78,9 +78,8 @@ assert!(matches!(
     }),
 ));
 
-let lossy = DataConversionOptions::default()
-    .with_numeric_policy(NumericConversionPolicy::Lossy);
-assert_eq!(DataConverter::from("3.9").to_with::<i32>(&lossy), Ok(3));
+let lossy = DataConversionOptions::lossy();
+assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 # }
 ```
 
@@ -129,13 +128,14 @@ assert_eq!(DataConverter::from(" true ").to_with::<bool>(&options), Ok(true));
 
 ### Duration
 
-Duration text uses `[0-9]+(ns|us|ms|s|m|h|d)?`; a missing suffix uses the
-configured unit. Whitespace, signs, decimals, and non-ASCII suffixes are
-rejected. Large integer counts are decomposed into seconds and nanoseconds
-before range checking.
+Duration text uses `[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`. Numeric input,
+suffixless strings, and output formatting have independent unit policies;
+the default profile uses milliseconds for all three. Whitespace, signs, and
+decimals are rejected. Large integer counts are decomposed into seconds and
+nanoseconds before range checking.
 
 Duration-to-integer and Duration-to-String follow the numeric policy: Exact
-requires divisibility by the configured unit; Lossy rounds half-up.
+requires divisibility by the configured output unit; Lossy rounds half-up.
 
 ### Rich text formats
 
