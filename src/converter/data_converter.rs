@@ -67,7 +67,8 @@ mod text;
 ///
 /// let lossy = DataConversionOptions::default()
 ///     .with_numeric_policy(NumericConversionPolicy::Lossy);
-/// assert_eq!(DataConverter::from("3.9").to_with::<u16>(&lossy), Ok(3));
+/// let value: u16 = DataConverter::from("3.9").to_with(&lossy).unwrap();
+/// assert_eq!(value, 3);
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataConverter<'a> {
