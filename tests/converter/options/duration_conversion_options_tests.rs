@@ -10,6 +10,17 @@ use qubit_datatype::converter::{
     DurationUnit,
     SuffixlessDurationPolicy,
 };
+use serde_json::json;
+
+const DURATION_UNITS: [(DurationUnit, &str); 7] = [
+    (DurationUnit::Nanoseconds, "nanoseconds"),
+    (DurationUnit::Microseconds, "microseconds"),
+    (DurationUnit::Milliseconds, "milliseconds"),
+    (DurationUnit::Seconds, "seconds"),
+    (DurationUnit::Minutes, "minutes"),
+    (DurationUnit::Hours, "hours"),
+    (DurationUnit::Days, "days"),
+];
 
 /// Test duration option defaults and builder methods.
 #[test]
@@ -44,5 +55,119 @@ fn test_duration_conversion_options_env_friendly_profile() {
     assert_eq!(
         DurationConversionOptions::env_friendly(),
         DurationConversionOptions::default(),
+    );
+}
+
+/// Test the exact four-field JSON wire format and its round trip.
+#[test]
+fn test_duration_conversion_options_exact_json_wire_and_round_trip() {
+    let options = DurationConversionOptions::default()
+        .with_numeric_input_unit(DurationUnit::Seconds)
+        .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(
+            DurationUnit::Minutes,
+        ))
+        .with_output_unit(DurationUnit::Hours)
+        .with_append_unit_suffix(false);
+
+    let wire = serde_json::to_string(&options)
+        .expect("duration options should serialize");
+    assert_eq!(
+        wire,
+        r#"{"numeric_input_unit":"seconds","suffixless_string_policy":{"assume":"minutes"},"output_unit":"hours","append_unit_suffix":false}"#,
+    );
+    assert_eq!(
+        serde_json::from_str::<DurationConversionOptions>(&wire)
+            .expect("duration options should deserialize"),
+        options,
+    );
+}
+
+/// Test that omitted JSON fields receive their default values.
+#[test]
+fn test_duration_conversion_options_partial_json_uses_defaults() {
+    let options: DurationConversionOptions =
+        serde_json::from_str(r#"{"output_unit":"seconds"}"#)
+            .expect("partial duration options should deserialize");
+
+    assert_eq!(options.numeric_input_unit, DurationUnit::Milliseconds);
+    assert_eq!(
+        options.suffixless_string_policy,
+        SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds),
+    );
+    assert_eq!(options.output_unit, DurationUnit::Seconds);
+    assert!(options.append_unit_suffix);
+}
+
+/// Test all duration units, suffixless policies, and suffix flag values.
+#[test]
+fn test_duration_conversion_options_all_serde_values() {
+    for (unit, wire_name) in DURATION_UNITS {
+        let options = DurationConversionOptions::default()
+            .with_numeric_input_unit(unit)
+            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(
+                unit,
+            ))
+            .with_output_unit(unit);
+        let wire = serde_json::to_value(&options)
+            .expect("duration options should serialize");
+
+        assert_eq!(
+            wire,
+            json!({
+                "numeric_input_unit": wire_name,
+                "suffixless_string_policy": { "assume": wire_name },
+                "output_unit": wire_name,
+                "append_unit_suffix": true,
+            }),
+        );
+        assert_eq!(
+            serde_json::from_value::<DurationConversionOptions>(wire)
+                .expect("duration options should deserialize"),
+            options,
+        );
+    }
+
+    for append_unit_suffix in [true, false] {
+        let options = DurationConversionOptions::default()
+            .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject)
+            .with_append_unit_suffix(append_unit_suffix);
+        let wire = serde_json::to_value(&options)
+            .expect("duration options should serialize");
+
+        assert_eq!(wire["suffixless_string_policy"], json!("reject"));
+        assert_eq!(wire["append_unit_suffix"], json!(append_unit_suffix),);
+        assert_eq!(
+            serde_json::from_value::<DurationConversionOptions>(wire)
+                .expect("duration options should deserialize"),
+            options,
+        );
+    }
+}
+
+/// Test that the removed `unit` field is rejected with a precise error.
+#[test]
+fn test_duration_conversion_options_rejects_legacy_unit_field() {
+    let error = serde_json::from_str::<DurationConversionOptions>(
+        r#"{"unit":"seconds"}"#,
+    )
+    .expect_err("the legacy unit field should be rejected");
+
+    assert!(
+        error.to_string().contains("unknown field `unit`"),
+        "error should identify the rejected field: {error}",
+    );
+}
+
+/// Test that an arbitrary unknown field is rejected with a precise error.
+#[test]
+fn test_duration_conversion_options_rejects_unknown_field() {
+    let error = serde_json::from_str::<DurationConversionOptions>(
+        r#"{"future_option":true}"#,
+    )
+    .expect_err("unknown duration option fields should be rejected");
+
+    assert!(
+        error.to_string().contains("future_option"),
+        "error should identify the rejected field: {error}",
     );
 }
