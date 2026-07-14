@@ -46,6 +46,61 @@ fn all_data_types() -> [DataType; 27] {
     ]
 }
 
+/// Test the exhaustive variant list and numeric classifications.
+#[test]
+fn test_data_type_all_and_numeric_classifications() {
+    assert_eq!(DataType::ALL.len(), 27);
+    assert_eq!(DataType::ALL, all_data_types());
+
+    let cases = [
+        (DataType::Bool, false, false, false, false, false, false),
+        (DataType::Char, false, false, false, false, false, false),
+        (DataType::Int8, true, true, true, false, false, false),
+        (DataType::Int16, true, true, true, false, false, false),
+        (DataType::Int32, true, true, true, false, false, false),
+        (DataType::Int64, true, true, true, false, false, false),
+        (DataType::Int128, true, true, true, false, false, false),
+        (DataType::UInt8, true, true, false, true, false, false),
+        (DataType::UInt16, true, true, false, true, false, false),
+        (DataType::UInt32, true, true, false, true, false, false),
+        (DataType::UInt64, true, true, false, true, false, false),
+        (DataType::UInt128, true, true, false, true, false, false),
+        (DataType::Float32, true, false, false, false, true, false),
+        (DataType::Float64, true, false, false, false, true, false),
+        (DataType::String, false, false, false, false, false, false),
+        (DataType::Date, false, false, false, false, false, false),
+        (DataType::Time, false, false, false, false, false, false),
+        (DataType::DateTime, false, false, false, false, false, false),
+        (DataType::Instant, false, false, false, false, false, false),
+        (DataType::BigInteger, true, false, false, false, false, true),
+        (DataType::BigDecimal, true, false, false, false, false, true),
+        (DataType::IntSize, true, true, true, false, false, false),
+        (DataType::UIntSize, true, true, false, true, false, false),
+        (DataType::Duration, false, false, false, false, false, false),
+        (DataType::Url, false, false, false, false, false, false),
+        (
+            DataType::StringMap,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+        ),
+        (DataType::Json, false, false, false, false, false, false),
+    ];
+    for (data_type, numeric, integer, signed, unsigned, float, big_number) in
+        cases
+    {
+        assert_eq!(data_type.is_numeric(), numeric, "{data_type}");
+        assert_eq!(data_type.is_integer(), integer, "{data_type}");
+        assert_eq!(data_type.is_signed_integer(), signed, "{data_type}");
+        assert_eq!(data_type.is_unsigned_integer(), unsigned, "{data_type}");
+        assert_eq!(data_type.is_float(), float, "{data_type}");
+        assert_eq!(data_type.is_big_number(), big_number, "{data_type}");
+    }
+}
+
 /// Ensure `as_str()` mapping is exhaustive, unique, and consistent with
 /// Display.
 #[test]

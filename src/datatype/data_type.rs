@@ -156,81 +156,115 @@ impl fmt::Display for DataType {
     }
 }
 
-impl FromStr for DataType {
-    type Err = DataTypeParseError;
+macro_rules! define_data_type_names {
+    ($( $variant:ident => $name:literal ),+ $(,)?) => {
+        impl FromStr for DataType {
+            type Err = DataTypeParseError;
 
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        match value.to_ascii_lowercase().as_str() {
-            "bool" => Ok(DataType::Bool),
-            "char" => Ok(DataType::Char),
-            "int8" => Ok(DataType::Int8),
-            "int16" => Ok(DataType::Int16),
-            "int32" => Ok(DataType::Int32),
-            "int64" => Ok(DataType::Int64),
-            "int128" => Ok(DataType::Int128),
-            "uint8" => Ok(DataType::UInt8),
-            "uint16" => Ok(DataType::UInt16),
-            "uint32" => Ok(DataType::UInt32),
-            "uint64" => Ok(DataType::UInt64),
-            "uint128" => Ok(DataType::UInt128),
-            "float32" => Ok(DataType::Float32),
-            "float64" => Ok(DataType::Float64),
-            "string" => Ok(DataType::String),
-            "date" => Ok(DataType::Date),
-            "time" => Ok(DataType::Time),
-            "datetime" => Ok(DataType::DateTime),
-            "instant" => Ok(DataType::Instant),
-            "biginteger" => Ok(DataType::BigInteger),
-            "bigdecimal" => Ok(DataType::BigDecimal),
-            "intsize" => Ok(DataType::IntSize),
-            "uintsize" => Ok(DataType::UIntSize),
-            "duration" => Ok(DataType::Duration),
-            "url" => Ok(DataType::Url),
-            "stringmap" => Ok(DataType::StringMap),
-            "json" => Ok(DataType::Json),
-            _ => Err(DataTypeParseError::new(value)),
+            /// Parses a case-insensitive data type name.
+            fn from_str(value: &str) -> Result<Self, Self::Err> {
+                match value.to_ascii_lowercase().as_str() {
+                    $( $name => Ok(DataType::$variant), )+
+                    _ => Err(DataTypeParseError::new(value)),
+                }
+            }
         }
-    }
+
+        impl DataType {
+            /// All data type variants in their stable declaration order.
+            pub const ALL: [DataType; 27] = [$( DataType::$variant, )+];
+
+            /// Returns the stable lowercase name of this data type.
+            #[inline]
+            pub const fn as_str(self) -> &'static str {
+                match self {
+                    $( DataType::$variant => $name, )+
+                }
+            }
+        }
+    };
+}
+
+define_data_type_names! {
+    Bool => "bool",
+    Char => "char",
+    Int8 => "int8",
+    Int16 => "int16",
+    Int32 => "int32",
+    Int64 => "int64",
+    Int128 => "int128",
+    UInt8 => "uint8",
+    UInt16 => "uint16",
+    UInt32 => "uint32",
+    UInt64 => "uint64",
+    UInt128 => "uint128",
+    Float32 => "float32",
+    Float64 => "float64",
+    String => "string",
+    Date => "date",
+    Time => "time",
+    DateTime => "datetime",
+    Instant => "instant",
+    BigInteger => "biginteger",
+    BigDecimal => "bigdecimal",
+    IntSize => "intsize",
+    UIntSize => "uintsize",
+    Duration => "duration",
+    Url => "url",
+    StringMap => "stringmap",
+    Json => "json",
 }
 
 impl DataType {
-    // Keep explicit conversion helper for existing call-sites and API parity
-    // with current serialized/configuration text values.
-    /// Get the string representation of the data type.
-    ///
-    /// # Returns
-    ///
-    /// Returns the name string of the data type.
+    /// Tests whether this type belongs to the numeric family.
     #[inline]
-    pub const fn as_str(&self) -> &'static str {
-        match self {
-            DataType::Bool => "bool",
-            DataType::Char => "char",
-            DataType::Int8 => "int8",
-            DataType::Int16 => "int16",
-            DataType::Int32 => "int32",
-            DataType::Int64 => "int64",
-            DataType::Int128 => "int128",
-            DataType::UInt8 => "uint8",
-            DataType::UInt16 => "uint16",
-            DataType::UInt32 => "uint32",
-            DataType::UInt64 => "uint64",
-            DataType::UInt128 => "uint128",
-            DataType::Float32 => "float32",
-            DataType::Float64 => "float64",
-            DataType::String => "string",
-            DataType::Date => "date",
-            DataType::Time => "time",
-            DataType::DateTime => "datetime",
-            DataType::Instant => "instant",
-            DataType::BigInteger => "biginteger",
-            DataType::BigDecimal => "bigdecimal",
-            DataType::IntSize => "intsize",
-            DataType::UIntSize => "uintsize",
-            DataType::Duration => "duration",
-            DataType::Url => "url",
-            DataType::StringMap => "stringmap",
-            DataType::Json => "json",
-        }
+    pub const fn is_numeric(self) -> bool {
+        self.is_integer() || self.is_float() || self.is_big_number()
+    }
+
+    /// Tests whether this type is a fixed-width or platform-width integer.
+    #[inline]
+    pub const fn is_integer(self) -> bool {
+        self.is_signed_integer() || self.is_unsigned_integer()
+    }
+
+    /// Tests whether this type is a signed integer.
+    #[inline]
+    pub const fn is_signed_integer(self) -> bool {
+        matches!(
+            self,
+            DataType::Int8
+                | DataType::Int16
+                | DataType::Int32
+                | DataType::Int64
+                | DataType::Int128
+                | DataType::IntSize
+        )
+    }
+
+    /// Tests whether this type is an unsigned integer.
+    #[inline]
+    pub const fn is_unsigned_integer(self) -> bool {
+        matches!(
+            self,
+            DataType::UInt8
+                | DataType::UInt16
+                | DataType::UInt32
+                | DataType::UInt64
+                | DataType::UInt128
+                | DataType::UIntSize
+        )
+    }
+
+    /// Tests whether this type is a primitive floating-point type.
+    #[inline]
+    pub const fn is_float(self) -> bool {
+        matches!(self, DataType::Float32 | DataType::Float64)
+    }
+
+    /// Tests whether this type is an arbitrary-precision number.
+    #[inline]
+    pub const fn is_big_number(self) -> bool {
+        matches!(self, DataType::BigInteger | DataType::BigDecimal)
     }
 }
