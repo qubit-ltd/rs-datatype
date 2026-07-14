@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "checks": [
+    {
+      "name": "minimal",
+      "commands": ["check", "test", "doc"],
+      "defaultFeatures": false,
+      "features": []
+    },
+    {
+      "name": "chrono",
+      "commands": ["check", "doc"],
+      "defaultFeatures": false,
+      "features": ["chrono"]
+    },
+    {
+      "name": "big-number",
+      "commands": ["check", "doc"],
+      "defaultFeatures": false,
+      "features": ["big-number"]
+    },
+    {
+      "name": "url",
+      "commands": ["check", "doc"],
+      "defaultFeatures": false,
+      "features": ["url"]
+    },
+    {
+      "name": "json",
+      "commands": ["check", "doc"],
+      "defaultFeatures": false,
+      "features": ["json"]
+    },
+    {
+      "name": "converter",
+      "commands": ["check", "test", "doc", "clippy"],
+      "defaultFeatures": false,
+      "features": ["converter"]
+    }
+  ]
+}
