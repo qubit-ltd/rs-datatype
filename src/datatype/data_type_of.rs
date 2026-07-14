@@ -23,7 +23,6 @@ use chrono::{
 };
 #[cfg(feature = "big-number")]
 use num_bigint::BigInt;
-#[cfg(feature = "json")]
 use std::collections::HashMap;
 use std::time::Duration;
 #[cfg(feature = "url")]
@@ -117,7 +116,6 @@ impl DataTypeOf for Duration {
 impl DataTypeOf for Url {
     const DATA_TYPE: DataType = DataType::Url;
 }
-#[cfg(feature = "json")]
 impl DataTypeOf for HashMap<String, String> {
     const DATA_TYPE: DataType = DataType::StringMap;
 }
