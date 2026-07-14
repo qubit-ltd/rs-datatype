@@ -5,213 +5,169 @@
 [![Crates.io](https://img.shields.io/crates/v/qubit-datatype.svg?color=blue)](https://crates.io/crates/qubit-datatype)
 [![Rust](https://img.shields.io/badge/rust-1.94+-blue.svg?logo=rust)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![English Document](https://img.shields.io/badge/Document-English-blue.svg)](README.md)
+[![English](https://img.shields.io/badge/Document-English-blue.svg)](README.md)
 
-面向 Rust 的运行时数据类型描述与类型转换工具库。
-
-## 概述
-
-Qubit Datatype 提供统一的 `DataType` 枚举、通过 `DataTypeOf` 实现的编译期类型映射，以及用于在受支持 Rust 数据类型之间转换值的可复用工具。它适用于需要运行时类型元数据、typed empty、配置解析、值容器或结构化转换诊断的库。
-
-## 设计目标
-
-- **聚焦范围**：只建模受支持的数据类型和转换，不做泛泛的数据处理。
-- **统一类型词汇**：在 value、config、metadata 等 crate 中一致使用 `DataType`。
-- **结构化错误**：不支持的转换保留来源和目标 `DataType`。
-- **优先借用**：尽可能接受借用值，只在必要时拥有数据。
-- **可组合选项**：集中管理字符串、布尔值和集合解析策略。
-
-## 特性
-
-### 数据类型系统
-
-- **运行时类型枚举**：`DataType` 覆盖基础 Rust 类型和部分常见生态类型。
-- **编译期类型映射**：`DataTypeOf` 将 Rust 类型映射到 `DataType`。
-- **Typed Empty**：`DataConverter::Empty(DataType)` 保留缺失值的预期类型。
-- **Serde 支持**：`DataType` 使用稳定的小写名称序列化，例如 `int32` 和 `stringmap`。
-
-### 数据转换
-
-- **单值转换**：`DataConverter` 将一个源值转换为目标 Rust 类型。
-- **批量转换**：`DataConverters` 按源顺序转换切片、向量或迭代器。
-- **标量字符串拆分**：`ScalarStringDataConverters` 支持逗号或自定义分隔符输入。
-- **转换选项**：配置空白字符串、布尔字面量、trim、分隔符和空元素策略。
-- **详细错误**：不支持的转换报告 `from` 和 `to` 数据类型；无效内容保留上下文。
+面向 Rust 的运行时类型描述和策略驱动转换工具。
 
 ## 安装
 
-在 `Cargo.toml` 中添加：
+默认构建只包含轻量类型词汇，不引入可选依赖：
 
 ```toml
 [dependencies]
-qubit-datatype = "0.2"
+qubit-datatype = "0.3"
 ```
 
-## 快速开始
+需要完整转换引擎时：
 
-### 数据类型使用
+```toml
+[dependencies]
+qubit-datatype = { version = "0.3", features = ["converter"] }
+```
+
+## Features
+
+| Feature | 内容 |
+| --- | --- |
+| default | 不启用任何可选依赖 |
+| chrono | Chrono 类型的 `DataTypeOf` |
+| big-number | `BigInt`、`BigDecimal` 的 `DataTypeOf` |
+| url | `Url` 的 `DataTypeOf` |
+| json | JSON 与字符串映射的 `DataTypeOf` |
+| converter | 完整转换 API，并聚合所有 rich-type feature |
+
+## 类型词汇
+
+`DataType` 提供 27 个稳定类型名、完整的 `ALL` 数组、数值分类方法、
+Serde 支持和大小写不敏感解析；`DataTypeOf` 把 Rust 类型映射为运行时描述。
 
 ```rust
 use qubit_datatype::{DataType, DataTypeOf};
 
-let data_type = DataType::Int32;
-assert_eq!(data_type.as_str(), "int32");
-
 assert_eq!(i32::DATA_TYPE, DataType::Int32);
-assert_eq!(String::DATA_TYPE, DataType::String);
+assert!(DataType::Int32.is_signed_integer());
+assert_eq!(DataType::ALL.len(), 27);
 ```
 
-### 数据转换
+## 转换契约
+
+启用 `converter` 后，`DataConverter` 负责单值转换，
+`DataConverters` 负责迭代器转换，`ScalarStringDataConverters` 惰性拆分
+标量字符串并保留原始索引。
+
+默认 `NumericConversionPolicy::Exact` 禁止截断、舍入和精度损失。
+只有显式选择 `Lossy`，才允许有限浮点/十进制向零截断、整数到浮点的 IEEE
+舍入，以及 Duration 的 half-up 舍入。
 
 ```rust
-use std::time::Duration;
-
+# #[cfg(feature = "converter")]
+# {
 use qubit_datatype::{
-    DataConversionResult,
-    DataConverter,
-    DataConverters,
-    DataListConversionResult,
+    DataConversionError, DataConversionErrorKind, DataConversionOptions,
+    DataConverter, NumericConversionPolicy,
 };
 
-fn read_settings() -> DataConversionResult<(u16, bool, Duration)> {
-    let port = DataConverter::from("8080").to::<u16>()?;
-    let enabled = DataConverter::from("true").to::<bool>()?;
-    let timeout = DataConverter::from("1500000000ns").to::<Duration>()?;
+assert!(matches!(
+    DataConverter::from("3.9").to::<i32>(),
+    Err(DataConversionError::Invalid {
+        kind: DataConversionErrorKind::PrecisionLoss,
+        ..
+    }),
+));
 
-    Ok((port, enabled, timeout))
-}
-
-fn read_ports(values: &[String]) -> DataListConversionResult<Vec<u16>> {
-    DataConverters::from(values).to_vec()
-}
+let lossy = DataConversionOptions::default()
+    .with_numeric_policy(NumericConversionPolicy::Lossy);
+assert_eq!(DataConverter::from("3.9").to_with::<i32>(&lossy), Ok(3));
+# }
 ```
 
-### 转换选项
+### 转换矩阵
+
+下表中的“数值”包括 primitive 整数/浮点数和任意精度数。内容无效返回
+`Invalid`，表外类型组合返回 `Unsupported`，typed empty 返回 `Missing`。
+
+| 来源族 | 支持的目标 |
+| --- | --- |
+| 任意具体值 | 自身类型；`String` |
+| `String` | 数值、bool、char、Chrono、Duration、URL、JSON、StringMap |
+| Bool / char | primitive 数值 |
+| 整数 / BigInt | 数值、bool、Duration |
+| 浮点 / BigDecimal | 数值 |
+| Duration | 整数、String |
+| StringMap | JSON、String |
+| JSON | String |
+
+### 字符串与布尔值
+
+默认不 trim。每次字符串转换只调用一次
+`StringConversionOptions::normalize`；需要时显式开启 `trim`。空白字符串可保留、
+视为缺失或拒绝。
+
+默认布尔文字只有 `true`、`false`，匹配时 ASCII 大小写不敏感。数值 0/1
+由独立的 `BooleanNumericPolicy::ZeroOrOne` 控制，还可选择 `NonZero` 或
+`Reject`。文字 builder 返回 `Result`，因此无法制造 true/false 重叠集合。
 
 ```rust
+# #[cfg(feature = "converter")]
+# {
 use qubit_datatype::{
-    BlankStringPolicy,
-    DataConversionOptions,
-    DataConverter,
+    DataConversionOptions, DataConverter, StringConversionOptions,
 };
 
-let options = DataConversionOptions::default()
-    .with_blank_string_policy(BlankStringPolicy::AsNone);
-
-let value = DataConverter::from(" 8080 ")
-    .to_with::<u16>(&options)
-    .expect("port should convert");
-
-assert_eq!(value, 8080);
+assert!(DataConverter::from(" true ").to::<bool>().is_err());
+let options = DataConversionOptions::default().with_string_options(
+    StringConversionOptions::default().with_trim(true),
+);
+assert_eq!(DataConverter::from(" true ").to_with::<bool>(&options), Ok(true));
+# }
 ```
 
-## 支持的数据类型
+### Duration
 
-完整变体见 [`DataType`](https://docs.rs/qubit-datatype/latest/qubit_datatype/enum.DataType.html)。
-字符串形式由 `as_str()` 给出。
+Duration 文本格式为 `[0-9]+(ns|us|ms|s|m|h|d)?`，无后缀时使用配置单位；
+拒绝空白、符号、小数和非 ASCII 后缀。大整数先拆成秒和纳秒，再判断最终
+`Duration` 是否越界。
 
-### 基础类型
+Duration 转整数和字符串同样遵循数值策略：Exact 要求按配置单位整除，Lossy
+采用 half-up 舍入。
 
-- **整数**：`i8`、`i16`、`i32`、`i64`、`i128`、`u8`、`u16`、`u32`、`u64`、`u128`
-- **平台相关整数**：`isize`、`usize`
-- **浮点数**：`f32`、`f64`
-- **其他**：`bool`、`char`、`String`
+### Rich text 格式
 
-### 日期、时间和结构化类型
+- char：恰好一个 Unicode scalar value
+- date：`YYYY-MM-DD`
+- time：`HH:MM:SS[.fraction]`，小数秒 1–9 位
+- local date-time：`YYYY-MM-DDTHH:MM:SS[.fraction]`
+- instant：带 `Z` 或 offset 的 RFC 3339
+- BigInt：带可选正负号的十进制整数
+- BigDecimal：十进制及可选指数
+- URL：绝对 URL
+- JSON：任意合法 JSON
+- StringMap：key 唯一、value 全为字符串的 JSON object
 
-- **Chrono**：`NaiveDate`、`NaiveTime`、`NaiveDateTime`、`DateTime<Utc>`
-- **大数**：`BigInt`、`BigDecimal`
-- **时长**：`std::time::Duration`
-- **字符串映射**：`HashMap<String, String>`
-- **JSON**：`serde_json::Value`
-- **URL**：`url::Url`
+## 结构化错误与集合
 
-## API 参考
+`DataConversionError` 只有 `Missing`、`Unsupported` 和
+`Invalid { kind }` 三类。错误保存来源/目标 `DataType`，但不保存或显示原始值。
 
-### 数据类型
+列表错误使用 `DataListConversionError::source_index`。空元素 `Skip` 不会重排
+后续索引；`to_first` 找到首个保留项就停止，不验证尾部。
 
-- [`DataType`](https://docs.rs/qubit-datatype/latest/qubit_datatype/enum.DataType.html) - 运行时数据类型描述。
-- [`DataTypeOf`](https://docs.rs/qubit-datatype/latest/qubit_datatype/trait.DataTypeOf.html) - 编译期类型映射 trait。
-- [`DataTypeParseError`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.DataTypeParseError.html) - 未知类型名称的解析错误。
-
-### 转换
-
-- [`DataConverter`](https://docs.rs/qubit-datatype/latest/qubit_datatype/enum.DataConverter.html) - 单值转换包装器。
-- [`DataConverters`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.DataConverters.html) - 批量转换适配器。
-- [`ScalarStringDataConverters`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.ScalarStringDataConverters.html) - 支持分隔符的字符串转换适配器。
-- [`DataConversionError`](https://docs.rs/qubit-datatype/latest/qubit_datatype/enum.DataConversionError.html) - 转换失败详情。
-- [`DataListConversionError`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.DataListConversionError.html) - 带失败索引的批量转换错误。
-- [`DataConversionOptions`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.DataConversionOptions.html) - 组合转换选项。
-
-## 测试与代码覆盖率
-
-本项目对数据类型解析、类型映射、转换成功路径、转换错误和边界条件保持全面测试覆盖。
-
-### 运行测试
+## 开发
 
 ```bash
-# 运行所有测试
-cargo test
-
-# 运行覆盖率报告
-./coverage.sh
-
-# 生成文本格式报告
+cargo +1.94.0 test --no-default-features
+cargo +1.94.0 test --all-features
 ./coverage.sh text
-
-# 运行 CI 检查（格式化、clippy、测试、覆盖率、审计）
+./align-ci.sh
 ./ci-check.sh
 ```
 
-### 覆盖率指标
-
-详细的覆盖率统计请参见 [COVERAGE.zh_CN.md](COVERAGE.zh_CN.md)。
-
-## 依赖项
-
-运行时依赖：
-
-- `bigdecimal`：支持任意精度十进制数。
-- `chrono`：支持日期和时间类型。
-- `num-bigint` 和 `num-traits`：支持任意精度整数和数值转换。
-- `serde` 和 `serde_json`：支持序列化和 JSON 值。
-- `url`：支持 URL 类型。
+覆盖率命令和阈值见 [COVERAGE.zh_CN.md](COVERAGE.zh_CN.md)。
 
 ## 许可证
 
-Copyright (c) 2025 - 2026. Haixing Hu, Qubit Co. Ltd. All rights reserved.
-
-根据 Apache 许可证 2.0 版（"许可证"）授权；
-除非遵守许可证，否则您不得使用此文件。
-您可以在以下位置获取许可证副本：
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-除非适用法律要求或书面同意，否则根据许可证分发的软件
-按"原样"分发，不附带任何明示或暗示的担保或条件。
-有关许可证下的特定语言管理权限和限制，请参阅许可证。
-
-完整的许可证文本请参阅 [LICENSE](LICENSE)。
-
-## 贡献
-
-欢迎贡献！请随时提交 Pull Request。
-
-### 开发指南
-
-- 遵循 Rust API 指南。
-- 保持全面的测试覆盖。
-- 在文档能帮助理解时，为公共 API 提供示例。
-- 提交 PR 前运行 `./ci-check.sh`。
+采用 Apache License 2.0，详见 [LICENSE](LICENSE)。
 
 ## 作者
 
-**胡海星** - *Qubit Co. Ltd.*
-
-## 相关项目
-
-Qubit 旗下的更多 Rust 库发布在 GitHub 组织 [qubit-ltd](https://github.com/qubit-ltd)。
-
----
-
-仓库地址：[https://github.com/qubit-ltd/rs-datatype](https://github.com/qubit-ltd/rs-datatype)
+**胡海星** — Qubit Co. Ltd.

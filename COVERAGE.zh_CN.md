@@ -1,167 +1,49 @@
-# 代码覆盖率统计指南
+# 代码覆盖率指南
 
-本项目使用 `cargo-llvm-cov` 进行代码覆盖率统计。
+本 crate 通过仓库固定的 CI 脚本使用 `cargo-llvm-cov`。默认覆盖率运行启用全部
+feature，因此会统计可选转换引擎和所有 rich type 映射。
 
-## 安装依赖
+## 准备
 
-如果还没有安装 `cargo-llvm-cov`，请先安装：
-
-```bash
-cargo install cargo-llvm-cov
-```
-
-## 快速开始
-
-### 使用便捷脚本（推荐）
-
-我们提供了一个便捷脚本 `coverage.sh`，可以快速生成各种格式的覆盖率报告：
-
-```bash
-# 生成 HTML 报告并在浏览器中打开（默认）
-./coverage.sh
-
-# 或指定格式
-./coverage.sh html       # HTML 报告（在浏览器中打开）
-./coverage.sh text       # 终端文本报告
-./coverage.sh lcov       # LCOV 格式
-./coverage.sh json       # JSON 格式
-./coverage.sh cobertura  # Cobertura XML 格式
-./coverage.sh all        # 生成所有格式
-
-# 查看帮助
-./coverage.sh help
-```
-
-### 使用 cargo 命令
-
-你也可以直接使用 `cargo llvm-cov` 命令：
-
-```bash
-# 清理旧的覆盖率数据
-cargo llvm-cov clean
-
-# 生成 HTML 报告并在浏览器中打开
-cargo llvm-cov --html --open
-
-# 生成文本格式报告（输出到终端）
-cargo llvm-cov
-
-# 生成 LCOV 格式报告
-cargo llvm-cov --lcov --output-path target/llvm-cov/lcov.info
-
-# 生成 JSON 格式报告
-cargo llvm-cov --json --output-path target/llvm-cov/coverage.json
-
-# 生成 Cobertura XML 格式报告
-cargo llvm-cov --cobertura --output-path target/llvm-cov/cobertura.xml
-```
-
-## 报告位置
-
-生成的报告默认保存在以下位置：
-
-- **HTML 报告**: `target/llvm-cov/html/index.html`
-- **LCOV 报告**: `target/llvm-cov/lcov.info`
-- **JSON 报告**: `target/llvm-cov/coverage.json`
-- **Cobertura 报告**: `target/llvm-cov/cobertura.xml`
-
-## 只测试特定模块
-
-如果只想测试特定的模块，可以使用：
-
-```bash
-# 只测试 lang 模块
-cargo llvm-cov --html --open -- lang::
-
-# 只测试特定的测试文件
-cargo llvm-cov --html --open --test lang_tests -- lang::argument
-```
-
-## 排除特定文件
-
-在 `.llvm-cov.toml` 配置文件中，我们已经排除了以下文件：
-
-- `tests/*` - 测试文件
-- `benches/*` - 性能测试文件
-- `examples/*` - 示例文件
-
-如果需要修改排除规则，请编辑 `.llvm-cov.toml` 文件。
-
-## CI/CD 集成
-
-### GitHub Actions 示例
-
-```yaml
-name: Code Coverage
-
-on:
-  push:
-    branches: [ main, dev ]
-  pull_request:
-    branches: [ main, dev ]
-
-jobs:
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-
-      - name: Install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov
-
-      - name: Generate coverage
-        run: |
-          cd rust-common
-          cargo llvm-cov --lcov --output-path lcov.info
-
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: rust-common/lcov.info
-          flags: qubit-datatype
-```
-
-## 常见问题
-
-### 1. 找不到 `cargo-llvm-cov` 命令
-
-确保已经安装了 `cargo-llvm-cov`：
+安装 `cargo-llvm-cov`；脚本会为 Rust 1.94 检查或安装固定的 LLVM tools：
 
 ```bash
 cargo install cargo-llvm-cov
 ```
 
-### 2. 覆盖率数据不准确
-
-先清理旧的覆盖率数据：
+## 命令
 
 ```bash
-cargo llvm-cov clean
+./coverage.sh text
+./coverage.sh json --clean
+./coverage.sh html
+./coverage.sh lcov
+./coverage.sh cobertura
+./coverage.sh all --clean
 ```
 
-### 3. 如何提高覆盖率？
+产物写入 `target/llvm-cov/`。`json` 和 `all` 会执行与 CI 相同的逐源码文件
+阈值：
 
-- 为所有公共 API 编写测试
-- 测试边界条件和异常情况
-- 使用覆盖率报告识别未测试的代码路径
-- 为复杂的逻辑分支编写测试
+- 函数覆盖率不低于 100%
+- 行覆盖率高于 95%
+- region 覆盖率高于 95%
 
-## 覆盖率目标
+测试、benchmark 和 example 由 [`.llvm-cov.toml`](.llvm-cov.toml) 排除。
+权威 CI 入口是 `./ci-check.sh` 和仓库内 `.rs-ci` 配置，不在本文维护独立的
+GitHub Actions 示例。
 
-我们建议的覆盖率目标：
+## 指定 feature 检查
 
-- **最低要求**: 60%
-- **良好**: 75%
-- **优秀**: 85%+
-- **核心模块**: 90%+
+默认使用 `--all-features`。本地诊断可覆盖脚本环境变量：
 
-## 参考资料
+```bash
+COVERAGE_ALL_FEATURES=0 COVERAGE_NO_DEFAULT_FEATURES=1 ./coverage.sh text
+COVERAGE_ALL_FEATURES=0 COVERAGE_FEATURES=converter ./coverage.sh text
+```
 
-- [cargo-llvm-cov GitHub](https://github.com/taiki-e/cargo-llvm-cov)
-- [LLVM Coverage Mapping](https://llvm.org/docs/CoverageMappingFormat.html)
+## 处理失败
+
+JSON 运行会列出低于阈值的源码文件。应为真实的公开或内部行为增加稳定测试，不要
+为了提高百分比而排除生产代码。源码位置或 feature 集合变化后，可用 `--clean`
+清理旧插桩数据。
