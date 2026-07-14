@@ -9,7 +9,9 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::time::Duration;
 
+#[cfg(feature = "big-number")]
 use bigdecimal::BigDecimal;
+#[cfg(feature = "chrono")]
 use chrono::{
     DateTime,
     NaiveDate,
@@ -17,7 +19,9 @@ use chrono::{
     NaiveTime,
     Utc,
 };
+#[cfg(feature = "big-number")]
 use num_bigint::BigInt;
+#[cfg(feature = "url")]
 use url::Url;
 
 use super::DataConverter;
@@ -68,19 +72,25 @@ impl_from_copy!(u16, UInt16);
 impl_from_copy!(u32, UInt32);
 impl_from_copy!(u64, UInt64);
 impl_from_copy!(u128, UInt128);
-impl_from_copy!(isize, IntSize);
-impl_from_copy!(usize, UIntSize);
 impl_from_copy!(f32, Float32);
 impl_from_copy!(f64, Float64);
+#[cfg(feature = "chrono")]
 impl_from_copy!(NaiveDate, Date);
+#[cfg(feature = "chrono")]
 impl_from_copy!(NaiveTime, Time);
+#[cfg(feature = "chrono")]
 impl_from_copy!(NaiveDateTime, DateTime);
+#[cfg(feature = "chrono")]
 impl_from_copy!(DateTime<Utc>, Instant);
 impl_from_copy!(Duration, Duration);
+#[cfg(feature = "big-number")]
 impl_from_cow!(BigInt, BigInteger);
+#[cfg(feature = "big-number")]
 impl_from_cow!(BigDecimal, BigDecimal);
+#[cfg(feature = "url")]
 impl_from_cow!(Url, Url);
 impl_from_cow!(HashMap<String, String>, StringMap);
+#[cfg(feature = "json")]
 impl_from_cow!(serde_json::Value, Json);
 
 impl<'a> From<&'a str> for DataConverter<'a> {
