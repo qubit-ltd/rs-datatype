@@ -38,6 +38,7 @@ use serde::{
 ///     .collect();
 /// assert_eq!(items, ["1", "3"]);
 /// ```
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct CollectionConversionOptions {
@@ -92,7 +93,6 @@ impl CollectionConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
     pub fn with_split_scalar_strings(
         mut self,
         split_scalar_strings: bool,
@@ -112,7 +112,6 @@ impl CollectionConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
     pub fn with_delimiters(
         mut self,
         delimiters: impl IntoIterator<Item = char>,
@@ -130,7 +129,6 @@ impl CollectionConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
     pub fn with_trim_items(mut self, trim_items: bool) -> Self {
         self.trim_items = trim_items;
         self
@@ -145,7 +143,6 @@ impl CollectionConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
     pub fn with_empty_item_policy(mut self, policy: EmptyItemPolicy) -> Self {
         self.empty_item_policy = policy;
         self

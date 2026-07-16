@@ -5,6 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
+//! Numeric comparison policy definitions.
 
 use serde::{
     Deserialize,

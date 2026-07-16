@@ -18,6 +18,7 @@ use serde::{
 ///
 /// This policy applies both to integer source variants and to integer-shaped
 /// strings that did not match a configured boolean literal.
+#[must_use]
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
 )]

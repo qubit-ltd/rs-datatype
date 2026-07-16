@@ -15,6 +15,7 @@ use super::super::{
 };
 
 /// Holds deserialized Boolean fields before literal-set validation.
+#[must_use]
 #[derive(Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub(in crate::converter::options) struct UncheckedBooleanConversionOptions {

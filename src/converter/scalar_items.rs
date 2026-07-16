@@ -20,6 +20,7 @@ use super::scalar_item::ScalarItem;
 /// that need only the first retained item do not validate or allocate the
 /// unconsumed tail. Each item borrows the original source string; iteration
 /// allocates no item strings.
+#[must_use]
 #[derive(Debug, Clone)]
 pub struct ScalarItems<'a> {
     /// Original scalar source.

@@ -5,6 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
+//! Borrowed numeric value representations used by comparison APIs.
 
 use std::marker::PhantomData;
 

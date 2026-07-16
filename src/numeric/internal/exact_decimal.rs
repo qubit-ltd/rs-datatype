@@ -5,6 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
+//! Exact arbitrary-precision decimal comparison helpers.
 
 use std::cmp::Ordering;
 
