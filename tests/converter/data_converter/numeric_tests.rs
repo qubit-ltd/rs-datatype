@@ -643,6 +643,32 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
     ));
 }
 
+/// Test decimal text follows the numeric policy for BigInt targets.
+#[test]
+fn test_data_converter_big_integer_target_applies_policy_to_decimal_text() {
+    assert_eq!(
+        DataConverter::from("12.0").to::<BigInt>(),
+        Ok(BigInt::from(12))
+    );
+    assert_eq!(
+        DataConverter::from("1.2e2").to::<BigInt>(),
+        Ok(BigInt::from(120))
+    );
+    assert!(matches!(
+        DataConverter::from("12.5").to::<BigInt>(),
+        Err(DataConversionError::InvalidValue {
+            reason: InvalidValueReason::PrecisionLoss,
+            ..
+        })
+    ));
+
+    let lossy = DataConversionOptions::lossy();
+    assert_eq!(
+        DataConverter::from("-12.5").to_with::<BigInt>(&lossy),
+        Ok(BigInt::from(-12))
+    );
+}
+
 proptest! {
     /// Test that arbitrary UTF-8 strings never panic in numeric parsing.
     #[test]
