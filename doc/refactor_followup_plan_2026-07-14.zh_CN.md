@@ -81,7 +81,7 @@
 
 **范围：** `src/**/*.rs` 共 37 个现有源文件及本计划移动后的对应文件。
 
-- [x] 为 DataType/DataTypeOf/DataConverter/DataConvertTo/DataConverters/
+- [x] 为 DataType/DataTypeOf/DataConverter/目标侧转换 trait/DataConverters/
   ScalarStringDataConverters 补职责、场景、关系、约束与可执行示例。
 - [x] 为所有 options、policy、error、scalar iterator 类型补完整类型文档。
 - [x] 为每个公开 variant/字段补独立文档。

@@ -44,7 +44,12 @@ qubit-datatype = { version = "0.6", features = ["converter", "chrono"] }
 | converter | Core scalar, string, and Duration conversion APIs |
 | all | Converter plus every rich-type feature |
 
-## Type vocabulary
+## Typical usage
+
+The examples below use the `converter` feature where conversion APIs are
+involved.
+
+### Runtime type vocabulary
 
 `DataType` provides 25 stable runtime type names, an exhaustive `ALL` array,
 numeric classification methods, Serde support, and case-insensitive parsing.
@@ -59,11 +64,95 @@ assert!(DataType::Int32.is_signed_integer());
 assert_eq!(DataType::ALL.len(), 25);
 ```
 
+### Single-value and batch conversion
+
+`DataConverter` applies one conversion contract to one source value, while
+`DataConverters` applies the same contract to every item and reports the
+original index when an item fails. Exact conversion is the default; lossy
+behavior must be selected explicitly.
+
+```rust
+use qubit_datatype::{
+    DataConversionOptions, DataConverter, DataConverters,
+};
+
+assert_eq!(DataConverter::from("8080").to::<u16>(), Ok(8080));
+
+let ports: Vec<u16> = DataConverters::from(vec!["8080", "8081"])
+    .to_vec()
+    .unwrap();
+assert_eq!(ports, vec![8080, 8081]);
+
+let lossy = DataConversionOptions::lossy();
+assert_eq!(DataConverter::from("3.9").to_with::<i32>(&lossy), Ok(3));
+```
+
+### Downstream target types
+
+Implement `DataConversionTarget` on a downstream-owned type and delegate to a
+built-in target. Generic conversion APIs can then use that type directly.
+
+```rust
+use qubit_datatype::{
+    DataConversionError, DataConversionOptions, DataConversionTarget,
+    DataConverter, DataType, DataTypeOf,
+};
+
+#[derive(Debug, PartialEq, Eq)]
+struct Port(u16);
+
+impl DataTypeOf for Port {
+    const DATA_TYPE: DataType = DataType::UInt16;
+}
+
+impl DataConversionTarget for Port {
+    fn convert_from(
+        source: &DataConverter<'_>,
+        options: &DataConversionOptions,
+    ) -> Result<Self, DataConversionError> {
+        u16::convert_from(source, options).map(Self)
+    }
+}
+
+let port = DataConverter::from("8080").to::<Port>().unwrap();
+assert_eq!(port, Port(8080));
+```
+
+### Exact and approximate numeric ordering
+
+Representation-sensitive comparisons require an explicit policy. Exact mode
+does not round integers through `f64`; approximate mode intentionally uses a
+finite `f64` projection when a floating operand participates.
+
+```rust
+use std::cmp::Ordering;
+use qubit_datatype::{
+    NumericComparisonPolicy, NumericValueRef, compare_numeric,
+};
+
+let integer = NumericValueRef::UInt64((1_u64 << 53) + 1);
+let float = NumericValueRef::Float64((1_u64 << 53) as f64);
+
+assert_eq!(
+    compare_numeric(integer, float, NumericComparisonPolicy::Exact),
+    Some(Ordering::Greater),
+);
+assert_eq!(
+    compare_numeric(integer, float, NumericComparisonPolicy::Approximate),
+    Some(Ordering::Equal),
+);
+```
+
 ## Conversion contract
 
 With the `converter` feature, `DataConverter` converts a single value,
 `DataConverters` converts an iterator, and `ScalarStringDataConverters`
 lazily splits a scalar string while preserving original source indices.
+
+Conversion is target-oriented: generic APIs require only
+`T: DataConversionTarget`. A downstream crate can implement that trait for its
+own newtype and delegate to an existing target, without a lifetime-wide bound
+on `DataConverter`.
 
 The default `NumericConversionPolicy::Exact` rejects truncation, rounding, and
 precision loss. Select `Lossy` explicitly to allow finite decimal/float to
@@ -90,6 +179,17 @@ let lossy = DataConversionOptions::lossy();
 assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 # }
 ```
+
+## Numeric comparison
+
+`compare_numeric` compares borrowed numeric representations under an explicit
+`NumericComparisonPolicy`. `Exact` decodes IEEE significands and exponents and
+never rounds through `f64`; big-number comparisons use exact rationals, with
+extreme decimal scales delegated to `BigDecimal`'s allocation-bounded exact
+ordering.
+`Approximate` projects to `f64` only when a floating operand participates and
+falls back to exact comparison when finite projection is unavailable. NaN is
+unordered, infinities are ordered, and signed zeros compare equal.
 
 ### Conversion matrix
 
