@@ -83,6 +83,7 @@ mod text;
 ///
 /// let _ = DataConverter::from(1_usize);
 /// ```
+#[must_use]
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataConverter<'a> {
     /// Missing source whose declared type remains known.

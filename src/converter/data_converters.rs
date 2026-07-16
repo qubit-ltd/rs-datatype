@@ -46,6 +46,7 @@ use crate::datatype::DataTypeOf;
 /// assert_eq!(ports, vec![8080, 9090]);
 /// assert_eq!(values, vec![String::from("8080"), String::from("9090")]);
 /// ```
+#[must_use]
 #[derive(Debug, Clone)]
 pub struct DataConverters<I> {
     /// The iterator of source values.

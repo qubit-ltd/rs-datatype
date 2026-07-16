@@ -19,6 +19,7 @@ use serde::{
 use super::super::error::DurationOverflowError;
 
 /// Unit used when converting [`Duration`] values to and from scalar values.
+#[must_use]
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
 )]

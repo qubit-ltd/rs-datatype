@@ -51,6 +51,7 @@ fn normalization_error<T: DataTypeOf>(
 /// scalar string to a vector or first value. It keeps scalar strings such as
 /// `"1,2,3"` distinct from already-materialized string collections such as
 /// `["1", "2", "3"]`.
+#[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct ScalarStringDataConverters<'a> {
     /// The scalar string source.

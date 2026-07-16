@@ -51,6 +51,7 @@ use super::duration_unit::DurationUnit;
 ///     Ok(Duration::from_secs(5)),
 /// );
 /// ```
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SuffixlessDurationPolicy {

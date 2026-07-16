@@ -91,6 +91,7 @@ use serde::{
 /// let deserialized: DataType = serde_json::from_str(&json).unwrap();
 /// assert_eq!(deserialized, DataType::Float64);
 /// ```
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum DataType {

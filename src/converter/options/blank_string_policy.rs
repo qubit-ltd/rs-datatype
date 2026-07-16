@@ -15,6 +15,7 @@ use serde::{
 };
 
 /// Controls how blank string sources are interpreted during conversion.
+#[must_use]
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
 )]

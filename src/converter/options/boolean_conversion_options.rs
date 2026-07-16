@@ -39,6 +39,7 @@ use super::internal::UncheckedBooleanConversionOptions;
 /// assert_eq!(options.parse("ENABLED"), Some(true));
 /// assert_eq!(options.parse("unknown"), None);
 /// ```
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct BooleanConversionOptions {
     /// String literals accepted as `true`.
@@ -201,7 +202,6 @@ impl BooleanConversionOptions {
     ///
     /// Returns the updated options value.
     #[inline]
-    #[must_use]
     pub fn with_numeric_policy(
         mut self,
         numeric_policy: BooleanNumericPolicy,

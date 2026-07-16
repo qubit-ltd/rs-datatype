@@ -15,6 +15,7 @@ use serde::{
 };
 
 /// Controls how empty collection items are interpreted after splitting.
+#[must_use]
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
 )]

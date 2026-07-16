@@ -5,6 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
+//! Exact comparison helpers for fixed-width numeric representations.
 
 use std::cmp::Ordering;
 

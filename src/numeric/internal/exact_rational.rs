@@ -5,6 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
+//! Exact rational comparison helpers for mixed numeric representations.
 
 use std::cmp::Ordering;
 
