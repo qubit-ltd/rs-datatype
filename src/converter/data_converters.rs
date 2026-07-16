@@ -11,7 +11,7 @@
 //! batches of common runtime values with the single-value [`DataConverter`]
 //! rules.
 
-use super::data_convert_to::DataConvertTo;
+use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::{
     DataConversionError,
@@ -109,7 +109,7 @@ where
     pub fn to_vec<'a, T>(self) -> Result<Vec<T>, DataListConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         self.to_vec_with(DataConversionOptions::default_ref())
     }
@@ -140,7 +140,7 @@ where
     ) -> Result<Vec<T>, DataListConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         let sources = self.sources;
         let (capacity, _) = sources.size_hint();
@@ -192,7 +192,7 @@ where
     where
         T: DataTypeOf,
         I::Item: Into<DataConverter<'a>>,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         self.to_first_with(DataConversionOptions::default_ref())
     }
@@ -224,7 +224,7 @@ where
     where
         T: DataTypeOf,
         I::Item: Into<DataConverter<'a>>,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         let mut sources = self.sources;
         match sources.next() {

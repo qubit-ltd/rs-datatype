@@ -5,11 +5,13 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # Datatype Crate Test Entry
-//!
-//! Tests for data type descriptors and conversion utilities.
+//! Policy-driven comparison across numeric representations.
 
-#[cfg(feature = "converter")]
-mod converter;
-mod datatype;
-mod numeric;
+mod compare_numeric;
+mod internal;
+mod numeric_comparison_policy;
+mod numeric_value_ref;
+
+pub use compare_numeric::compare_numeric;
+pub use numeric_comparison_policy::NumericComparisonPolicy;
+pub use numeric_value_ref::NumericValueRef;

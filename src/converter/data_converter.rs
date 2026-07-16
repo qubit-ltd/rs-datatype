@@ -27,7 +27,7 @@ use num_bigint::BigInt;
 #[cfg(feature = "url")]
 use url::Url;
 
-use super::data_convert_to::DataConvertTo;
+use super::data_conversion_target::DataConversionTarget;
 use super::error::{
     DataConversionError,
     InvalidValueReason,
@@ -164,7 +164,7 @@ impl DataConverter<'_> {
     #[inline(always)]
     pub fn to<T>(&self) -> Result<T, DataConversionError>
     where
-        Self: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         self.to_with(DataConversionOptions::default_ref())
     }
@@ -194,9 +194,9 @@ impl DataConverter<'_> {
         options: &DataConversionOptions,
     ) -> Result<T, DataConversionError>
     where
-        Self: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
-        <Self as DataConvertTo<T>>::convert(self, options)
+        T::convert_from(self, options)
     }
 
     /// Returns the runtime type of the wrapped source.
