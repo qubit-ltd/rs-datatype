@@ -11,6 +11,7 @@ use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 
 /// Represents a parsed finite number or an explicit non-finite marker.
+#[must_use]
 pub(super) enum ParsedNumber {
     /// Arbitrary-precision integral value.
     Integer(BigInt),

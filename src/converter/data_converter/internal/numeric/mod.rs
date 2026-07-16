@@ -7,12 +7,16 @@
 // =============================================================================
 //! Private numeric conversion implementation modules.
 
-mod conversion;
+#[cfg(feature = "big-number")]
+mod big_number;
+mod float;
+mod integer;
 #[cfg(feature = "big-number")]
 mod parsed_number;
+mod syntax;
 
-pub(in crate::converter::data_converter) use conversion::{
+pub(in crate::converter::data_converter) use integer::{
     duration_to_u128,
-    is_integer_syntax,
     source_to_integer,
 };
+pub(in crate::converter::data_converter) use syntax::is_integer_syntax;

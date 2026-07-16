@@ -147,10 +147,10 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
         DataType::Instant,
         "RFC 3339 timestamp with offset",
     );
-    assert_invalid_syntax(
+    assert_invalid_reason(
         DataConverter::from("1.5").to::<BigInt>(),
         DataType::BigInteger,
-        "[+-]?[0-9]+",
+        InvalidValueReason::PrecisionLoss,
     );
     assert_invalid_syntax(
         DataConverter::from("1.2.3").to::<BigDecimal>(),
