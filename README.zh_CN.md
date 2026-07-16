@@ -44,7 +44,11 @@ qubit-datatype = { version = "0.6", features = ["converter", "chrono"] }
 | converter | 基础标量、字符串和 Duration 转换 API |
 | all | 转换器及全部富类型 feature |
 
-## 类型词汇
+## 典型用法
+
+以下示例涉及转换 API 时，需要启用 `converter` feature。
+
+### 运行时类型词汇
 
 `DataType` 提供 25 个稳定类型名、完整的 `ALL` 数组、数值分类方法、
 Serde 支持和大小写不敏感解析；`DataTypeOf` 把 Rust 类型映射为运行时描述。
@@ -58,11 +62,92 @@ assert!(DataType::Int32.is_signed_integer());
 assert_eq!(DataType::ALL.len(), 25);
 ```
 
+### 单值与批量转换
+
+`DataConverter` 对一个来源值执行一次转换；`DataConverters` 对每个元素应用相同
+契约，并在元素失败时报告其原始索引。默认采用精确转换，必须显式选择才能启用有损
+行为。
+
+```rust
+use qubit_datatype::{
+    DataConversionOptions, DataConverter, DataConverters,
+};
+
+assert_eq!(DataConverter::from("8080").to::<u16>(), Ok(8080));
+
+let ports: Vec<u16> = DataConverters::from(vec!["8080", "8081"])
+    .to_vec()
+    .unwrap();
+assert_eq!(ports, vec![8080, 8081]);
+
+let lossy = DataConversionOptions::lossy();
+assert_eq!(DataConverter::from("3.9").to_with::<i32>(&lossy), Ok(3));
+```
+
+### 下游目标类型
+
+为下游自有类型实现 `DataConversionTarget`，并委托给内置目标类型。之后泛型转换
+API 就可以直接使用该类型。
+
+```rust
+use qubit_datatype::{
+    DataConversionError, DataConversionOptions, DataConversionTarget,
+    DataConverter, DataType, DataTypeOf,
+};
+
+#[derive(Debug, PartialEq, Eq)]
+struct Port(u16);
+
+impl DataTypeOf for Port {
+    const DATA_TYPE: DataType = DataType::UInt16;
+}
+
+impl DataConversionTarget for Port {
+    fn convert_from(
+        source: &DataConverter<'_>,
+        options: &DataConversionOptions,
+    ) -> Result<Self, DataConversionError> {
+        u16::convert_from(source, options).map(Self)
+    }
+}
+
+let port = DataConverter::from("8080").to::<Port>().unwrap();
+assert_eq!(port, Port(8080));
+```
+
+### 精确与近似数值排序
+
+跨表示比较需要显式策略。精确模式不会让整数经过 `f64` 舍入；近似模式则会在至少
+一侧是浮点表示时，有意使用有限的 `f64` 投影。
+
+```rust
+use std::cmp::Ordering;
+use qubit_datatype::{
+    NumericComparisonPolicy, NumericValueRef, compare_numeric,
+};
+
+let integer = NumericValueRef::UInt64((1_u64 << 53) + 1);
+let float = NumericValueRef::Float64((1_u64 << 53) as f64);
+
+assert_eq!(
+    compare_numeric(integer, float, NumericComparisonPolicy::Exact),
+    Some(Ordering::Greater),
+);
+assert_eq!(
+    compare_numeric(integer, float, NumericComparisonPolicy::Approximate),
+    Some(Ordering::Equal),
+);
+```
+
 ## 转换契约
 
 启用 `converter` 后，`DataConverter` 负责单值转换，
 `DataConverters` 负责迭代器转换，`ScalarStringDataConverters` 惰性拆分
 标量字符串并保留原始索引。
+
+转换 API 以目标类型为扩展点：泛型接口只要求 `T: DataConversionTarget`。
+下游可以为自己的 newtype 实现该 trait，并委托给已有目标类型，无需再为
+`DataConverter` 编写覆盖所有生命周期的约束。
 
 默认 `NumericConversionPolicy::Exact` 禁止截断、舍入和精度损失。
 只有显式选择 `Lossy`，才允许有限浮点/十进制向零截断、整数到浮点的 IEEE
@@ -88,6 +173,14 @@ let lossy = DataConversionOptions::lossy();
 assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 # }
 ```
+
+## 数值比较
+
+`compare_numeric` 在显式 `NumericComparisonPolicy` 下比较借用的数值表示。
+`Exact` 直接解码 IEEE 有效数与指数，不会经由 `f64` 舍入；大数使用精确有理数，
+极端十进制 scale 则委托给 `BigDecimal` 的有界内存精确排序。
+`Approximate` 仅在至少一侧是浮点变体时投影到 `f64`，有限投影不可用时回退到
+精确比较。NaN 无序，无穷值正常排序，正负零相等。
 
 ### 转换矩阵
 
