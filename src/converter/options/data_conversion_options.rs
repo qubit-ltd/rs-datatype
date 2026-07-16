@@ -123,6 +123,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// A process-wide lazily initialized default value.
+    #[inline(always)]
     pub fn default_ref() -> &'static Self {
         static DEFAULT: LazyLock<DataConversionOptions> =
             LazyLock::new(DataConversionOptions::default);
@@ -155,6 +156,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Returns the updated options value.
+    #[inline(always)]
     pub fn with_numeric_policy(
         mut self,
         numeric_policy: NumericConversionPolicy,
@@ -172,6 +174,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
+    #[inline(always)]
     pub fn with_blank_string_policy(
         mut self,
         policy: BlankStringPolicy,
@@ -189,6 +192,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
+    #[inline(always)]
     pub fn with_empty_item_policy(mut self, policy: EmptyItemPolicy) -> Self {
         self.collection = self.collection.with_empty_item_policy(policy);
         self
@@ -203,6 +207,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
+    #[inline(always)]
     pub fn with_string_options(
         mut self,
         string: StringConversionOptions,
@@ -220,6 +225,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
+    #[inline(always)]
     pub fn with_boolean_options(
         mut self,
         boolean: BooleanConversionOptions,
@@ -237,6 +243,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
+    #[inline(always)]
     pub fn with_collection_options(
         mut self,
         collection: CollectionConversionOptions,
@@ -254,6 +261,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
+    #[inline(always)]
     pub fn with_duration_options(
         mut self,
         duration: DurationConversionOptions,

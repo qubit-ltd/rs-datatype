@@ -78,6 +78,7 @@ impl StringConversionOptions {
     /// # Returns
     ///
     /// Updated options.
+    #[inline(always)]
     pub fn with_trim(mut self, trim: bool) -> Self {
         self.trim = trim;
         self
@@ -92,6 +93,7 @@ impl StringConversionOptions {
     /// # Returns
     ///
     /// Updated options.
+    #[inline(always)]
     pub fn with_blank_string_policy(
         mut self,
         policy: BlankStringPolicy,
