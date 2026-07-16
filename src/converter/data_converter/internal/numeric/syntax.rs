@@ -102,6 +102,189 @@ pub(super) fn invalid_numeric_syntax(to: DataType) -> DataConversionError {
     }
 }
 
+/// Reports whether text explicitly names a non-finite value.
+///
+/// The check is ASCII case-insensitive and does not allocate a normalized copy.
+fn is_explicit_non_finite(value: &str) -> bool {
+    [
+        "nan",
+        "inf",
+        "+inf",
+        "-inf",
+        "infinity",
+        "+infinity",
+        "-infinity",
+    ]
+    .iter()
+    .any(|candidate| value.eq_ignore_ascii_case(candidate))
+}
+
+/// Splits an optional leading sign from numeric text.
+///
+/// # Returns
+///
+/// Whether the sign is negative and the unsigned remainder.
+fn split_sign(value: &str) -> (bool, &str) {
+    match value.as_bytes().first() {
+        Some(b'-') => (true, &value[1..]),
+        Some(b'+') => (false, &value[1..]),
+        _ => (false, value),
+    }
+}
+
+/// Splits and validates an optional decimal exponent.
+///
+/// Exponents outside `i64` saturate toward the matching bound so later range
+/// checks can reject them without allocating an exponent-sized buffer.
+///
+/// # Parameters
+///
+/// * `value` - Unsigned numeric text.
+/// * `to` - Target type used in syntax errors.
+///
+/// # Returns
+///
+/// The mantissa text and signed base-ten exponent.
+///
+/// # Errors
+///
+/// Returns an invalid-syntax error when the exponent is missing or malformed.
+fn split_exponent(
+    value: &str,
+    to: DataType,
+) -> Result<(&str, i64), DataConversionError> {
+    let Some(index) =
+        value.bytes().position(|byte| matches!(byte, b'e' | b'E'))
+    else {
+        return Ok((value, 0));
+    };
+    let mantissa = &value[..index];
+    let exponent_text = &value[index + 1..];
+    let digits = exponent_text
+        .strip_prefix(['+', '-'])
+        .unwrap_or(exponent_text);
+    if digits.is_empty() || digits.bytes().any(|byte| !byte.is_ascii_digit()) {
+        return Err(invalid_numeric_syntax(to));
+    }
+    let exponent = match exponent_text.parse::<i64>() {
+        Ok(exponent) => exponent,
+        Err(_) if exponent_text.starts_with('-') => i64::MIN,
+        Err(_) => i64::MAX,
+    };
+    Ok((mantissa, exponent))
+}
+
+/// Validates a decimal mantissa and counts its digits.
+///
+/// # Parameters
+///
+/// * `mantissa` - Mantissa without a sign or exponent.
+/// * `to` - Target type used in syntax errors.
+///
+/// # Returns
+///
+/// The total number of digits and the number following the decimal point.
+///
+/// # Errors
+///
+/// Returns an invalid-syntax error for an empty mantissa, repeated decimal
+/// points, non-digit characters, or a mantissa without digits.
+fn analyze_mantissa(
+    mantissa: &str,
+    to: DataType,
+) -> Result<(usize, usize), DataConversionError> {
+    if mantissa.is_empty() {
+        return Err(invalid_numeric_syntax(to));
+    }
+    let mut digit_count = 0usize;
+    let mut decimal_seen = false;
+    let mut fractional_digits = 0usize;
+    for byte in mantissa.bytes() {
+        match byte {
+            b'0'..=b'9' => {
+                digit_count += 1;
+                if decimal_seen {
+                    fractional_digits += 1;
+                }
+            }
+            b'.' if !decimal_seen => decimal_seen = true,
+            _ => return Err(invalid_numeric_syntax(to)),
+        }
+    }
+    if digit_count == 0 {
+        return Err(invalid_numeric_syntax(to));
+    }
+    Ok((digit_count, fractional_digits))
+}
+
+/// Reports whether the fractional portion contains a non-zero digit.
+///
+/// # Parameters
+///
+/// * `mantissa` - Validated mantissa text.
+/// * `integer_digit_count` - Number of flattened digits before the effective
+///   decimal point.
+/// * `decimal_position` - Effective decimal point position after applying the
+///   exponent.
+///
+/// # Returns
+///
+/// `true` when truncating the effective fractional portion loses information.
+fn fractional_part_is_non_zero(
+    mantissa: &str,
+    integer_digit_count: usize,
+    decimal_position: i128,
+) -> bool {
+    for (digit_index, byte) in
+        mantissa.bytes().filter(u8::is_ascii_digit).enumerate()
+    {
+        if (decimal_position <= 0 || digit_index >= integer_digit_count)
+            && byte != b'0'
+        {
+            return true;
+        }
+    }
+    false
+}
+
+/// Accumulates the effective integer digits into a `u128` magnitude.
+///
+/// # Parameters
+///
+/// * `mantissa` - Validated mantissa text.
+/// * `integer_digit_count` - Number of flattened digits to consume.
+/// * `to` - Target type used in range errors.
+///
+/// # Returns
+///
+/// The parsed unsigned magnitude.
+///
+/// # Errors
+///
+/// Returns an out-of-range error when the magnitude exceeds `u128`.
+fn parse_integer_magnitude(
+    mantissa: &str,
+    integer_digit_count: usize,
+    to: DataType,
+) -> Result<u128, DataConversionError> {
+    let mut magnitude = 0u128;
+    for byte in mantissa
+        .bytes()
+        .filter(u8::is_ascii_digit)
+        .take(integer_digit_count)
+    {
+        magnitude = magnitude
+            .checked_mul(10)
+            .and_then(|value| value.checked_add(u128::from(byte - b'0')))
+            .ok_or(DataConversionError::InvalidValue {
+                from: DataType::String,
+                to,
+                reason: InvalidValueReason::OutOfRange,
+            })?;
+    }
+    Ok(magnitude)
+}
+
 /// Parses decimal text into a platform-independent integer intermediate.
 ///
 /// Exact mode rejects a non-zero fractional part. Lossy mode truncates toward
@@ -112,17 +295,7 @@ pub(super) fn parse_text_integer(
     policy: NumericConversionPolicy,
     to: DataType,
 ) -> Result<(bool, u128), DataConversionError> {
-    let lower = value.to_ascii_lowercase();
-    if matches!(
-        lower.as_str(),
-        "nan"
-            | "inf"
-            | "+inf"
-            | "-inf"
-            | "infinity"
-            | "+infinity"
-            | "-infinity"
-    ) {
+    if is_explicit_non_finite(value) {
         return Err(DataConversionError::InvalidValue {
             from: DataType::String,
             to,
@@ -130,89 +303,28 @@ pub(super) fn parse_text_integer(
         });
     }
 
-    let (negative, unsigned) = match value.as_bytes().first() {
-        Some(b'-') => (true, &value[1..]),
-        Some(b'+') => (false, &value[1..]),
-        _ => (false, value),
-    };
+    let (negative, unsigned) = split_sign(value);
     if unsigned.is_empty() {
         return Err(invalid_numeric_syntax(to));
     }
-
-    let exponent_index = unsigned
-        .bytes()
-        .position(|byte| matches!(byte, b'e' | b'E'));
-    let (mantissa, exponent) = if let Some(index) = exponent_index {
-        let mantissa = &unsigned[..index];
-        let exponent_text = &unsigned[index + 1..];
-        let exponent_bytes = exponent_text.as_bytes();
-        if exponent_bytes.is_empty()
-            || exponent_bytes[1..]
-                .iter()
-                .any(|byte| !byte.is_ascii_digit())
-            || !matches!(exponent_bytes[0], b'+' | b'-' | b'0'..=b'9')
-        {
-            return Err(invalid_numeric_syntax(to));
-        }
-        let digits = exponent_text
-            .strip_prefix(['+', '-'])
-            .unwrap_or(exponent_text);
-        if digits.is_empty()
-            || digits.bytes().any(|byte| !byte.is_ascii_digit())
-        {
-            return Err(invalid_numeric_syntax(to));
-        }
-        let exponent = match exponent_text.parse::<i64>() {
-            Ok(exponent) => exponent,
-            Err(_) if exponent_text.starts_with('-') => i64::MIN,
-            Err(_) => i64::MAX,
-        };
-        (mantissa, exponent)
-    } else {
-        (unsigned, 0)
-    };
-    if mantissa.is_empty() {
-        return Err(invalid_numeric_syntax(to));
-    }
-
-    let mut digits = String::with_capacity(mantissa.len());
-    let mut decimal_seen = false;
-    let mut fractional_digits = 0usize;
-    for byte in mantissa.bytes() {
-        match byte {
-            b'0'..=b'9' => {
-                digits.push(char::from(byte));
-                if decimal_seen {
-                    fractional_digits += 1;
-                }
-            }
-            b'.' if !decimal_seen => decimal_seen = true,
-            _ => return Err(invalid_numeric_syntax(to)),
-        }
-    }
-    if digits.is_empty() {
-        return Err(invalid_numeric_syntax(to));
-    }
-
+    let (mantissa, exponent) = split_exponent(unsigned, to)?;
+    let (digit_count, fractional_digits) = analyze_mantissa(mantissa, to)?;
     let decimal_position =
-        (digits.len() - fractional_digits) as i128 + i128::from(exponent);
+        (digit_count - fractional_digits) as i128 + i128::from(exponent);
     let integer_digit_count = if decimal_position <= 0 {
         0
     } else {
         usize::try_from(decimal_position)
             .unwrap_or(usize::MAX)
-            .min(digits.len())
+            .min(digit_count)
     };
-    let fractional_non_zero = if decimal_position <= 0 {
-        digits.bytes().any(|byte| byte != b'0')
-    } else if decimal_position < digits.len() as i128 {
-        digits.as_bytes()[integer_digit_count..]
-            .iter()
-            .any(|byte| *byte != b'0')
-    } else {
-        false
-    };
-    if policy == NumericConversionPolicy::Exact && fractional_non_zero {
+    if policy == NumericConversionPolicy::Exact
+        && fractional_part_is_non_zero(
+            mantissa,
+            integer_digit_count,
+            decimal_position,
+        )
+    {
         return Err(DataConversionError::InvalidValue {
             from: DataType::String,
             to,
@@ -220,36 +332,15 @@ pub(super) fn parse_text_integer(
         });
     }
 
-    let mut magnitude = 0u128;
-    for byte in digits.bytes().take(integer_digit_count) {
-        let Some(next) = magnitude.checked_mul(10) else {
-            return Err(DataConversionError::InvalidValue {
+    let mut magnitude =
+        parse_integer_magnitude(mantissa, integer_digit_count, to)?;
+    if decimal_position > digit_count as i128 && magnitude != 0 {
+        let zero_count = u32::try_from(decimal_position - digit_count as i128)
+            .map_err(|_| DataConversionError::InvalidValue {
                 from: DataType::String,
                 to,
                 reason: InvalidValueReason::OutOfRange,
-            });
-        };
-        let Some(next) = next.checked_add(u128::from(byte - b'0')) else {
-            return Err(DataConversionError::InvalidValue {
-                from: DataType::String,
-                to,
-                reason: InvalidValueReason::OutOfRange,
-            });
-        };
-        magnitude = next;
-    }
-    if decimal_position > digits.len() as i128 && magnitude != 0 {
-        let zero_count =
-            match u32::try_from(decimal_position - digits.len() as i128) {
-                Ok(zero_count) => zero_count,
-                Err(_) => {
-                    return Err(DataConversionError::InvalidValue {
-                        from: DataType::String,
-                        to,
-                        reason: InvalidValueReason::OutOfRange,
-                    });
-                }
-            };
+            })?;
         let multiplier = 10u128.checked_pow(zero_count).ok_or(
             DataConversionError::InvalidValue {
                 from: DataType::String,
