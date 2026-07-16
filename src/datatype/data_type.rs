@@ -172,7 +172,7 @@ macro_rules! define_data_type_names {
             pub const ALL: [DataType; 25] = [$( DataType::$variant, )+];
 
             /// Returns the stable lowercase name of this data type.
-            #[inline]
+            #[inline(always)]
             pub const fn as_str(self) -> &'static str {
                 match self {
                     $( DataType::$variant => $name, )+
@@ -212,19 +212,19 @@ define_data_type_names! {
 
 impl DataType {
     /// Tests whether this type belongs to the numeric family.
-    #[inline]
+    #[inline(always)]
     pub const fn is_numeric(self) -> bool {
         self.is_integer() || self.is_float() || self.is_big_number()
     }
 
     /// Tests whether this type is a fixed-width integer.
-    #[inline]
+    #[inline(always)]
     pub const fn is_integer(self) -> bool {
         self.is_signed_integer() || self.is_unsigned_integer()
     }
 
     /// Tests whether this type is a signed integer.
-    #[inline]
+    #[inline(always)]
     pub const fn is_signed_integer(self) -> bool {
         matches!(
             self,
@@ -237,7 +237,7 @@ impl DataType {
     }
 
     /// Tests whether this type is an unsigned integer.
-    #[inline]
+    #[inline(always)]
     pub const fn is_unsigned_integer(self) -> bool {
         matches!(
             self,
@@ -250,13 +250,13 @@ impl DataType {
     }
 
     /// Tests whether this type is a primitive floating-point type.
-    #[inline]
+    #[inline(always)]
     pub const fn is_float(self) -> bool {
         matches!(self, DataType::Float32 | DataType::Float64)
     }
 
     /// Tests whether this type is an arbitrary-precision number.
-    #[inline]
+    #[inline(always)]
     pub const fn is_big_number(self) -> bool {
         matches!(self, DataType::BigInteger | DataType::BigDecimal)
     }

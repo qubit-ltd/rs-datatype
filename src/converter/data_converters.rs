@@ -246,7 +246,7 @@ where
     /// # Returns
     ///
     /// Returns the exact number of items that can still be converted.
-    #[inline]
+    #[inline(always)]
     pub fn len(&self) -> usize {
         self.sources.len()
     }
@@ -256,7 +256,7 @@ where
     /// # Returns
     ///
     /// Returns `true` when [`Self::len`] is zero.
-    #[inline]
+    #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.sources.len() == 0
     }
@@ -264,7 +264,7 @@ where
 
 impl<'a, V> From<&'a [V]> for DataConverters<std::slice::Iter<'a, V>> {
     /// Creates a batch converter from a borrowed slice.
-    #[inline]
+    #[inline(always)]
     fn from(values: &'a [V]) -> Self {
         Self::from_iterator(values.iter())
     }
@@ -272,7 +272,7 @@ impl<'a, V> From<&'a [V]> for DataConverters<std::slice::Iter<'a, V>> {
 
 impl<'a, V> From<&'a Vec<V>> for DataConverters<std::slice::Iter<'a, V>> {
     /// Creates a batch converter from a borrowed vector.
-    #[inline]
+    #[inline(always)]
     fn from(values: &'a Vec<V>) -> Self {
         Self::from(values.as_slice())
     }
@@ -280,7 +280,7 @@ impl<'a, V> From<&'a Vec<V>> for DataConverters<std::slice::Iter<'a, V>> {
 
 impl<V> From<Vec<V>> for DataConverters<std::vec::IntoIter<V>> {
     /// Creates a batch converter from an owned vector.
-    #[inline]
+    #[inline(always)]
     fn from(values: Vec<V>) -> Self {
         Self::from_iterator(values.into_iter())
     }

@@ -43,24 +43,6 @@ pub enum DurationUnit {
 }
 
 impl DurationUnit {
-    /// Returns the canonical suffix for this duration unit.
-    ///
-    /// # Returns
-    ///
-    /// The ASCII suffix used when formatting this unit.
-    #[inline]
-    pub const fn suffix(self) -> &'static str {
-        match self {
-            DurationUnit::Nanoseconds => "ns",
-            DurationUnit::Microseconds => "us",
-            DurationUnit::Milliseconds => "ms",
-            DurationUnit::Seconds => "s",
-            DurationUnit::Minutes => "m",
-            DurationUnit::Hours => "h",
-            DurationUnit::Days => "d",
-        }
-    }
-
     /// Parses a duration unit suffix.
     ///
     /// # Parameters
@@ -81,6 +63,24 @@ impl DurationUnit {
             "h" => Some(DurationUnit::Hours),
             "d" => Some(DurationUnit::Days),
             _ => None,
+        }
+    }
+
+    /// Returns the canonical suffix for this duration unit.
+    ///
+    /// # Returns
+    ///
+    /// The ASCII suffix used when formatting this unit.
+    #[inline(always)]
+    pub const fn suffix(self) -> &'static str {
+        match self {
+            DurationUnit::Nanoseconds => "ns",
+            DurationUnit::Microseconds => "us",
+            DurationUnit::Milliseconds => "ms",
+            DurationUnit::Seconds => "s",
+            DurationUnit::Minutes => "m",
+            DurationUnit::Hours => "h",
+            DurationUnit::Days => "d",
         }
     }
 

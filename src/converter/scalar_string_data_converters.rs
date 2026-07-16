@@ -230,7 +230,7 @@ impl<'a> ScalarStringDataConverters<'a> {
 
 impl<'a> From<&'a str> for ScalarStringDataConverters<'a> {
     /// Creates a scalar string converter from a string slice.
-    #[inline]
+    #[inline(always)]
     fn from(source: &'a str) -> Self {
         Self::new(source)
     }

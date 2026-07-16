@@ -25,7 +25,7 @@ pub enum DataFormat {
 
 impl DataFormat {
     /// Returns the stable lowercase name of this format.
-    #[inline]
+    #[inline(always)]
     pub const fn as_str(self) -> &'static str {
         match self {
             DataFormat::Json => "json",
