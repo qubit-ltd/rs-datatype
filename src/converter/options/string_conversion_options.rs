@@ -33,7 +33,7 @@ use serde::{
 /// assert!(options.normalize("   ").is_err());
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct StringConversionOptions {
     /// Whether strings are trimmed before conversion.
     pub trim: bool,

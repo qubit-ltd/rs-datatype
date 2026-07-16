@@ -47,6 +47,17 @@ fn test_data_conversion_options_profiles() {
     assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3),);
 }
 
+/// Test that misspelled top-level option fields are rejected.
+#[test]
+fn test_data_conversion_options_reject_unknown_fields() {
+    let error = serde_json::from_str::<DataConversionOptions>(
+        r#"{"numeric_policy":"exact","unexpected":true}"#,
+    )
+    .expect_err("unknown top-level fields must be rejected");
+
+    assert!(error.to_string().contains("unknown field `unexpected`"));
+}
+
 /// Test configurable string normalization and boolean literal parsing.
 #[test]
 fn test_data_conversion_options_apply_to_converter() {

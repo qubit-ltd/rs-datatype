@@ -18,7 +18,7 @@ use super::{
 
 /// Compares two numeric representations under an explicit policy.
 ///
-/// # Arguments
+/// # Parameters
 ///
 /// * `left` - Left numeric operand.
 /// * `right` - Right numeric operand.

@@ -42,7 +42,7 @@ use super::string_conversion_options::StringConversionOptions;
 /// assert_eq!(DataConverter::from(" yes ").to_with::<bool>(&options), Ok(true));
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct DataConversionOptions {
     /// Numeric precision and rounding behavior.
     pub numeric_policy: NumericConversionPolicy,

@@ -18,6 +18,7 @@ use serde::{
 
 use super::super::error::BooleanLiteralConflictError;
 use super::boolean_numeric_policy::BooleanNumericPolicy;
+use super::internal::UncheckedBooleanConversionOptions;
 
 /// Validated rules for textual and numeric boolean conversion.
 ///
@@ -322,33 +323,6 @@ impl Default for BooleanConversionOptions {
     #[inline(always)]
     fn default() -> Self {
         Self::strict()
-    }
-}
-
-/// Deserialization representation with field defaults.
-#[derive(Deserialize)]
-#[serde(default)]
-struct UncheckedBooleanConversionOptions {
-    /// String literals accepted as true.
-    true_literals: Vec<String>,
-    /// String literals accepted as false.
-    false_literals: Vec<String>,
-    /// Whether matching is case-sensitive.
-    case_sensitive: bool,
-    /// Numeric boolean policy.
-    numeric_policy: BooleanNumericPolicy,
-}
-
-impl Default for UncheckedBooleanConversionOptions {
-    /// Creates the wire defaults used by [`BooleanConversionOptions`].
-    fn default() -> Self {
-        let options = BooleanConversionOptions::default();
-        Self {
-            true_literals: options.true_literals,
-            false_literals: options.false_literals,
-            case_sensitive: options.case_sensitive,
-            numeric_policy: options.numeric_policy,
-        }
     }
 }
 

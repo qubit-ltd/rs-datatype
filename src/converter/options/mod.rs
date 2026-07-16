@@ -2,6 +2,8 @@
 //    Copyright (c) 2025 - 2026 Haixing Hu.
 //
 //    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Policies and option groups used by data conversions.
 
@@ -13,6 +15,7 @@ mod data_conversion_options;
 mod duration_conversion_options;
 mod duration_unit;
 mod empty_item_policy;
+mod internal;
 mod numeric_conversion_policy;
 mod string_conversion_options;
 mod suffixless_duration_policy;

@@ -39,7 +39,7 @@ use serde::{
 /// assert_eq!(items, ["1", "3"]);
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct CollectionConversionOptions {
     /// Whether a scalar string can be split into collection items.
     pub split_scalar_strings: bool,

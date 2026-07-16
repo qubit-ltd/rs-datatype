@@ -5,10 +5,11 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Numeric conversion integration for sibling target families.
+//! Private implementation details for runtime data conversion.
 
-pub(super) use super::internal::numeric::{
-    duration_to_u128,
-    is_integer_syntax,
-    source_to_integer,
-};
+pub(super) mod numeric;
+#[cfg(feature = "json")]
+mod string_map_visitor;
+
+#[cfg(feature = "json")]
+pub(super) use string_map_visitor::StringMapVisitor;

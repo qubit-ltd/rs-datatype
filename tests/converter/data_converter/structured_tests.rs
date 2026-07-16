@@ -2,13 +2,33 @@
 //    Copyright (c) 2025 - 2026 Haixing Hu.
 //
 //    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Structured conversion tests.
 
 use std::collections::HashMap;
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use std::time::Duration;
 
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use bigdecimal::BigDecimal;
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use chrono::{
     DateTime,
     NaiveDate,
@@ -16,17 +36,41 @@ use chrono::{
     NaiveTime,
     Utc,
 };
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use num_bigint::BigInt;
+use qubit_datatype::DataConverter;
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use qubit_datatype::{
     DataConversionError,
-    DataConverter,
     DataFormat,
     DataType,
     InvalidValueReason,
 };
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use url::Url;
 
 /// Assert an invalid-syntax error with exact source and target types.
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 fn assert_invalid_syntax<T>(
     result: Result<T, DataConversionError>,
     to: DataType,
@@ -46,6 +90,12 @@ fn assert_invalid_syntax<T>(
 }
 
 /// Assert an invalid error with exact source type, target type, and reason.
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 fn assert_invalid_reason<T>(
     result: Result<T, DataConversionError>,
     to: DataType,
@@ -63,6 +113,12 @@ fn assert_invalid_reason<T>(
 
 /// Test rejection boundaries for every canonical rich textual format.
 #[test]
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 fn test_data_converter_rich_targets_reject_noncanonical_text() {
     for value in ["", "ab"] {
         assert_invalid_syntax(
@@ -151,8 +207,25 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
     );
 }
 
+/// Test that string-map identity conversion only needs `converter`.
+#[test]
+fn test_data_converter_string_map_identity_without_json() {
+    let source = HashMap::from([("key".to_owned(), "value".to_owned())]);
+    let converted: HashMap<String, String> = DataConverter::from(&source)
+        .to()
+        .expect("a string map should convert to itself");
+
+    assert_eq!(converted, source);
+}
+
 /// Test URL and JSON conversion behavior.
 #[test]
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 fn test_data_converter_url_and_json_conversions() {
     let url: Url = DataConverter::from("https://example.com/path")
         .to()
