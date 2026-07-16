@@ -2,6 +2,8 @@
 //    Copyright (c) 2025 - 2026 Haixing Hu.
 //
 //    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Tests mirroring the focused DataConverter implementation modules.
 
@@ -23,12 +25,6 @@ mod numeric_tests;
 ))]
 mod source_tests;
 mod string_source_tests;
-#[cfg(all(
-    feature = "big-number",
-    feature = "chrono",
-    feature = "url",
-    feature = "json"
-))]
 mod structured_tests;
 #[cfg(all(
     feature = "big-number",

@@ -48,7 +48,7 @@ use crate::DataTypeOf;
 pub trait DataConversionTarget: DataTypeOf + Sized {
     /// Converts `source` into this target type using `options`.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
     /// * `options` - Policies controlling parsing and lossy conversion.

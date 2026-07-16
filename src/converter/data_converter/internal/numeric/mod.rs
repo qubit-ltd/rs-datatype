@@ -5,9 +5,13 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Numeric conversion integration for sibling target families.
+//! Private numeric conversion implementation modules.
 
-pub(super) use super::internal::numeric::{
+mod conversion;
+#[cfg(feature = "big-number")]
+mod parsed_number;
+
+pub(in crate::converter::data_converter) use conversion::{
     duration_to_u128,
     is_integer_syntax,
     source_to_integer,

@@ -22,7 +22,7 @@ const MAX_MATERIALIZED_DECIMAL_SCALE: u32 = 4_096;
 
 /// Builds an exact rational from an IEEE-style binary decomposition.
 ///
-/// # Arguments
+/// # Parameters
 ///
 /// * `negative` - Whether the represented number is negative.
 /// * `significand` - Unsigned binary significand.

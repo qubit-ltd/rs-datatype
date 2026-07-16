@@ -5,10 +5,8 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Numeric conversion integration for sibling target families.
+//! Private Serde wire representations for conversion options.
 
-pub(super) use super::internal::numeric::{
-    duration_to_u128,
-    is_integer_syntax,
-    source_to_integer,
-};
+mod unchecked_boolean_conversion_options;
+
+pub(super) use unchecked_boolean_conversion_options::UncheckedBooleanConversionOptions;
