@@ -19,24 +19,24 @@ use super::string_source::normalize;
 use crate::converter::{
     DataConversionError,
     DataConversionOptions,
-    DataConvertTo,
+    DataConversionTarget,
     DataFormat,
     InvalidValueReason,
 };
 use crate::datatype::DataType;
 
-impl DataConvertTo<serde_json::Value> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for serde_json::Value {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<serde_json::Value, DataConversionError> {
-        match self {
-            Self::Json(value) => Ok(value.as_ref().clone()),
-            Self::String(value) => {
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::Json(value) => Ok(value.as_ref().clone()),
+            DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Json)?;
                 match serde_json::from_str(value) {
                     Ok(value) => Ok(value),
-                    Err(_) => Err(self.invalid(
+                    Err(_) => Err(source.invalid(
                         DataType::Json,
                         InvalidValueReason::Deserialization {
                             format: DataFormat::Json,
@@ -44,7 +44,7 @@ impl DataConvertTo<serde_json::Value> for DataConverter<'_> {
                     )),
                 }
             }
-            Self::StringMap(value) => Ok(serde_json::Value::Object(
+            DataConverter::StringMap(value) => Ok(serde_json::Value::Object(
                 value
                     .iter()
                     .map(|(key, value)| {
@@ -52,8 +52,8 @@ impl DataConvertTo<serde_json::Value> for DataConverter<'_> {
                     })
                     .collect(),
             )),
-            Self::Empty(_) => Err(self.missing(DataType::Json)),
-            _ => Err(self.unsupported(DataType::Json)),
+            DataConverter::Empty(_) => Err(source.missing(DataType::Json)),
+            _ => Err(source.unsupported(DataType::Json)),
         }
     }
 }
@@ -99,18 +99,18 @@ fn deserialize_string_map(
     Ok(result)
 }
 
-impl DataConvertTo<HashMap<String, String>> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for HashMap<String, String> {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<HashMap<String, String>, DataConversionError> {
-        match self {
-            Self::StringMap(value) => Ok(value.as_ref().clone()),
-            Self::String(value) => {
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::StringMap(value) => Ok(value.as_ref().clone()),
+            DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::StringMap)?;
                 match deserialize_string_map(value) {
                     Ok(value) => Ok(value),
-                    Err(_) => Err(self.invalid(
+                    Err(_) => Err(source.invalid(
                         DataType::StringMap,
                         InvalidValueReason::Deserialization {
                             format: DataFormat::Json,
@@ -118,8 +118,8 @@ impl DataConvertTo<HashMap<String, String>> for DataConverter<'_> {
                     )),
                 }
             }
-            Self::Empty(_) => Err(self.missing(DataType::StringMap)),
-            _ => Err(self.unsupported(DataType::StringMap)),
+            DataConverter::Empty(_) => Err(source.missing(DataType::StringMap)),
+            _ => Err(source.unsupported(DataType::StringMap)),
         }
     }
 }

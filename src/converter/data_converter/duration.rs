@@ -21,7 +21,7 @@ use super::string_source::normalize;
 use crate::converter::{
     DataConversionError,
     DataConversionOptions,
-    DataConvertTo,
+    DataConversionTarget,
     DurationUnit,
     InvalidValueReason,
     SuffixlessDurationPolicy,
@@ -139,39 +139,39 @@ fn parse_duration(
     }
 }
 
-impl DataConvertTo<Duration> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for Duration {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<Duration, DataConversionError> {
-        match self {
-            Self::Duration(value) => Ok(*value),
-            Self::String(value) => parse_duration(value, options),
-            Self::Empty(_) => Err(self.missing(DataType::Duration)),
-            Self::Int8(_)
-            | Self::Int16(_)
-            | Self::Int32(_)
-            | Self::Int64(_)
-            | Self::Int128(_)
-            | Self::UInt8(_)
-            | Self::UInt16(_)
-            | Self::UInt32(_)
-            | Self::UInt64(_)
-            | Self::UInt128(_) => integer_to_duration(
-                source_to_integer(self, options, DataType::Duration)?,
-                self.data_type(),
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::Duration(value) => Ok(*value),
+            DataConverter::String(value) => parse_duration(value, options),
+            DataConverter::Empty(_) => Err(source.missing(DataType::Duration)),
+            DataConverter::Int8(_)
+            | DataConverter::Int16(_)
+            | DataConverter::Int32(_)
+            | DataConverter::Int64(_)
+            | DataConverter::Int128(_)
+            | DataConverter::UInt8(_)
+            | DataConverter::UInt16(_)
+            | DataConverter::UInt32(_)
+            | DataConverter::UInt64(_)
+            | DataConverter::UInt128(_) => integer_to_duration(
+                source_to_integer(source, options, DataType::Duration)?,
+                source.data_type(),
                 options,
             ),
             #[cfg(feature = "big-number")]
-            Self::BigInteger(value) => {
+            DataConverter::BigInteger(value) => {
                 if value.sign() == Sign::Minus {
-                    return Err(self.invalid(
+                    return Err(source.invalid(
                         DataType::Duration,
                         InvalidValueReason::NegativeDuration,
                     ));
                 }
                 let Some(value) = value.to_u128() else {
-                    return Err(self.invalid(
+                    return Err(source.invalid(
                         DataType::Duration,
                         InvalidValueReason::OutOfRange,
                     ));
@@ -182,7 +182,7 @@ impl DataConvertTo<Duration> for DataConverter<'_> {
                     options,
                 )
             }
-            _ => Err(self.unsupported(DataType::Duration)),
+            _ => Err(source.unsupported(DataType::Duration)),
         }
     }
 }

@@ -5,11 +5,14 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # Datatype Crate Test Entry
-//!
-//! Tests for data type descriptors and conversion utilities.
+//! Private numeric comparison algorithms.
 
-#[cfg(feature = "converter")]
-mod converter;
-mod datatype;
-mod numeric;
+#[cfg(feature = "big-number")]
+mod exact_decimal;
+#[cfg(feature = "big-number")]
+mod exact_rational;
+mod fixed_numeric;
+
+#[cfg(feature = "big-number")]
+pub(super) use exact_rational::compare_exact_rational;
+pub(super) use fixed_numeric::compare_fixed;

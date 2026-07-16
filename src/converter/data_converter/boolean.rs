@@ -17,7 +17,7 @@ use crate::converter::{
     BooleanNumericPolicy,
     DataConversionError,
     DataConversionOptions,
-    DataConvertTo,
+    DataConversionTarget,
     InvalidValueReason,
 };
 use crate::datatype::DataType;
@@ -48,14 +48,14 @@ fn integer_to_bool(
     }
 }
 
-impl DataConvertTo<bool> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for bool {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<bool, DataConversionError> {
-        match self {
-            Self::Bool(value) => Ok(*value),
-            Self::String(value) => {
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::Bool(value) => Ok(*value),
+            DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Bool)?;
                 if let Some(value) = options.boolean.parse(value) {
                     return Ok(value);
@@ -73,81 +73,81 @@ impl DataConvertTo<bool> for DataConverter<'_> {
                         DataType::String,
                     )
                 } else {
-                    Err(self.invalid(
+                    Err(source.invalid(
                         DataType::Bool,
                         InvalidValueReason::InvalidBoolean,
                     ))
                 }
             }
-            Self::Int8(value) => integer_to_bool(
+            DataConverter::Int8(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::Int8,
             ),
-            Self::Int16(value) => integer_to_bool(
+            DataConverter::Int16(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::Int16,
             ),
-            Self::Int32(value) => integer_to_bool(
+            DataConverter::Int32(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::Int32,
             ),
-            Self::Int64(value) => integer_to_bool(
+            DataConverter::Int64(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::Int64,
             ),
-            Self::Int128(value) => integer_to_bool(
+            DataConverter::Int128(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::Int128,
             ),
-            Self::UInt8(value) => integer_to_bool(
+            DataConverter::UInt8(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::UInt8,
             ),
-            Self::UInt16(value) => integer_to_bool(
+            DataConverter::UInt16(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::UInt16,
             ),
-            Self::UInt32(value) => integer_to_bool(
+            DataConverter::UInt32(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::UInt32,
             ),
-            Self::UInt64(value) => integer_to_bool(
+            DataConverter::UInt64(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::UInt64,
             ),
-            Self::UInt128(value) => integer_to_bool(
+            DataConverter::UInt128(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
                 options.boolean.numeric_policy(),
                 DataType::UInt128,
             ),
             #[cfg(feature = "big-number")]
-            Self::BigInteger(value) => integer_to_bool(
+            DataConverter::BigInteger(value) => integer_to_bool(
                 value.is_zero(),
                 value.as_ref() == &BigInt::from(1u8),
                 options.boolean.numeric_policy(),
                 DataType::BigInteger,
             ),
-            Self::Empty(_) => Err(self.missing(DataType::Bool)),
-            _ => Err(self.unsupported(DataType::Bool)),
+            DataConverter::Empty(_) => Err(source.missing(DataType::Bool)),
+            _ => Err(source.unsupported(DataType::Bool)),
         }
     }
 }

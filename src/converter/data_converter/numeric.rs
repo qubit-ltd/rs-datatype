@@ -24,7 +24,7 @@ use super::string_source::normalize;
 use crate::converter::{
     DataConversionError,
     DataConversionOptions,
-    DataConvertTo,
+    DataConversionTarget,
     InvalidValueReason,
     NumericConversionPolicy,
 };
@@ -700,14 +700,14 @@ where
 
 macro_rules! impl_signed_target {
     ($target:ty, $data_type:expr) => {
-        impl DataConvertTo<$target> for DataConverter<'_> {
-            fn convert(
-                &self,
+        impl DataConversionTarget for $target {
+            fn convert_from(
+                source: &DataConverter<'_>,
                 options: &DataConversionOptions,
-            ) -> Result<$target, DataConversionError> {
+            ) -> Result<Self, DataConversionError> {
                 checked_signed(
-                    to_i128(self, options, $data_type)?,
-                    self,
+                    to_i128(source, options, $data_type)?,
+                    source,
                     $data_type,
                 )
             }
@@ -717,14 +717,14 @@ macro_rules! impl_signed_target {
 
 macro_rules! impl_unsigned_target {
     ($target:ty, $data_type:expr) => {
-        impl DataConvertTo<$target> for DataConverter<'_> {
-            fn convert(
-                &self,
+        impl DataConversionTarget for $target {
+            fn convert_from(
+                source: &DataConverter<'_>,
                 options: &DataConversionOptions,
-            ) -> Result<$target, DataConversionError> {
+            ) -> Result<Self, DataConversionError> {
                 checked_unsigned(
-                    to_u128(self, options, $data_type)?,
-                    self,
+                    to_u128(source, options, $data_type)?,
+                    source,
                     $data_type,
                 )
             }
@@ -1059,24 +1059,24 @@ fn source_to_f64(
     }
 }
 
-impl DataConvertTo<f64> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for f64 {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<f64, DataConversionError> {
-        source_to_f64(self, options, DataType::Float64)
+    ) -> Result<Self, DataConversionError> {
+        source_to_f64(source, options, DataType::Float64)
     }
 }
 
-impl DataConvertTo<f32> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for f32 {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<f32, DataConversionError> {
-        if let Self::Float32(value) = self {
+    ) -> Result<Self, DataConversionError> {
+        if let DataConverter::Float32(value) = source {
             return Ok(*value);
         }
-        let value = source_to_f64(self, options, DataType::Float32)?;
+        let value = source_to_f64(source, options, DataType::Float32)?;
         if value.is_nan() {
             return Ok(f32::NAN);
         }
@@ -1088,14 +1088,13 @@ impl DataConvertTo<f32> for DataConverter<'_> {
         }
         let converted = value as f32;
         if !converted.is_finite() {
-            return Err(
-                self.invalid(DataType::Float32, InvalidValueReason::OutOfRange)
-            );
+            return Err(source
+                .invalid(DataType::Float32, InvalidValueReason::OutOfRange));
         }
         if options.numeric_policy == NumericConversionPolicy::Exact
             && f64::from(converted) != value
         {
-            Err(self
+            Err(source
                 .invalid(DataType::Float32, InvalidValueReason::PrecisionLoss))
         } else {
             Ok(converted)
@@ -1104,65 +1103,75 @@ impl DataConvertTo<f32> for DataConverter<'_> {
 }
 
 #[cfg(feature = "big-number")]
-impl DataConvertTo<BigInt> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for BigInt {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<BigInt, DataConversionError> {
-        source_to_bigint(self, options, DataType::BigInteger)
+    ) -> Result<Self, DataConversionError> {
+        source_to_bigint(source, options, DataType::BigInteger)
     }
 }
 
 #[cfg(feature = "big-number")]
-impl DataConvertTo<BigDecimal> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for BigDecimal {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<BigDecimal, DataConversionError> {
-        match self {
-            Self::BigDecimal(value) => Ok(value.as_ref().clone()),
-            Self::Float32(value) => match BigDecimal::from_f32(*value) {
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::BigDecimal(value) => Ok(value.as_ref().clone()),
+            DataConverter::Float32(value) => match BigDecimal::from_f32(*value)
+            {
                 Some(value) => Ok(value),
-                None => Err(self.invalid(
+                None => Err(source.invalid(
                     DataType::BigDecimal,
                     InvalidValueReason::NonFinite,
                 )),
             },
-            Self::Float64(value) => match BigDecimal::from_f64(*value) {
+            DataConverter::Float64(value) => match BigDecimal::from_f64(*value)
+            {
                 Some(value) => Ok(value),
-                None => Err(self.invalid(
+                None => Err(source.invalid(
                     DataType::BigDecimal,
                     InvalidValueReason::NonFinite,
                 )),
             },
-            Self::String(value) => {
+            DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::BigDecimal)?;
                 match parse_number(value, DataType::BigDecimal)? {
                     ParsedNumber::Integer(value) => Ok(BigDecimal::from(value)),
                     ParsedNumber::Decimal(value) => Ok(value),
                     ParsedNumber::NaN
                     | ParsedNumber::PositiveInfinity
-                    | ParsedNumber::NegativeInfinity => Err(self.invalid(
+                    | ParsedNumber::NegativeInfinity => Err(source.invalid(
                         DataType::BigDecimal,
                         InvalidValueReason::NonFinite,
                     )),
                 }
             }
-            Self::Empty(_) => Err(self.missing(DataType::BigDecimal)),
-            Self::Duration(_) | Self::StringMap(_) => {
-                Err(self.unsupported(DataType::BigDecimal))
+            DataConverter::Empty(_) => {
+                Err(source.missing(DataType::BigDecimal))
+            }
+            DataConverter::Duration(_) | DataConverter::StringMap(_) => {
+                Err(source.unsupported(DataType::BigDecimal))
             }
             #[cfg(feature = "chrono")]
-            Self::Date(_)
-            | Self::Time(_)
-            | Self::DateTime(_)
-            | Self::Instant(_) => Err(self.unsupported(DataType::BigDecimal)),
+            DataConverter::Date(_)
+            | DataConverter::Time(_)
+            | DataConverter::DateTime(_)
+            | DataConverter::Instant(_) => {
+                Err(source.unsupported(DataType::BigDecimal))
+            }
             #[cfg(feature = "url")]
-            Self::Url(_) => Err(self.unsupported(DataType::BigDecimal)),
+            DataConverter::Url(_) => {
+                Err(source.unsupported(DataType::BigDecimal))
+            }
             #[cfg(feature = "json")]
-            Self::Json(_) => Err(self.unsupported(DataType::BigDecimal)),
+            DataConverter::Json(_) => {
+                Err(source.unsupported(DataType::BigDecimal))
+            }
             _ => Ok(BigDecimal::from(source_to_bigint(
-                self,
+                source,
                 options,
                 DataType::BigDecimal,
             )?)),

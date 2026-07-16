@@ -9,7 +9,7 @@
 //!
 //! Provides conversion of a single scalar string into collection values.
 
-use super::data_convert_to::DataConvertTo;
+use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::{
     DataConversionError,
@@ -90,7 +90,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     pub fn to_vec<T>(self) -> Result<Vec<T>, DataListConversionError>
     where
         T: DataTypeOf,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         self.to_vec_with(DataConversionOptions::default_ref())
     }
@@ -121,7 +121,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         'a: 'b,
         T: DataTypeOf,
-        DataConverter<'b>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         let text = match options.string.normalize(self.source) {
             Ok(text) => text,
@@ -176,7 +176,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     pub fn to_first<T>(self) -> Result<T, DataConversionError>
     where
         T: DataTypeOf,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         self.to_first_with(DataConversionOptions::default_ref())
     }
@@ -207,7 +207,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         'a: 'b,
         T: DataTypeOf,
-        DataConverter<'b>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         let text = options
             .string
