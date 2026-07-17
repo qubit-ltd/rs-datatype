@@ -2,6 +2,8 @@
 //    Copyright (c) 2025 - 2026 Haixing Hu.
 //
 //    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Lazy scalar collection item iterator.
 
@@ -18,6 +20,7 @@ use super::scalar_item::ScalarItem;
 /// that need only the first retained item do not validate or allocate the
 /// unconsumed tail. Each item borrows the original source string; iteration
 /// allocates no item strings.
+#[must_use]
 #[derive(Debug, Clone)]
 pub struct ScalarItems<'a> {
     /// Original scalar source.

@@ -2,6 +2,8 @@
 //    Copyright (c) 2025 - 2026 Haixing Hu.
 //
 //    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! # Numeric Conversion Policy
 //!
@@ -18,6 +20,7 @@ use serde::{
 /// and duration unit remainders. [`Self::Lossy`] permits the documented
 /// conversion for each target family but still rejects non-finite or
 /// out-of-range results where no target value exists.
+#[must_use]
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
 )]

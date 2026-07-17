@@ -9,7 +9,7 @@
 //!
 //! Tests for the reusable data conversion module.
 
-mod data_convert_to_tests;
+mod data_conversion_target_tests;
 mod data_converter;
 #[cfg(feature = "chrono")]
 mod data_converter_tests;

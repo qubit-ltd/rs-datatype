@@ -9,7 +9,7 @@
 //!
 //! Provides conversion of a single scalar string into collection values.
 
-use super::data_convert_to::DataConvertTo;
+use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::{
     DataConversionError,
@@ -51,6 +51,7 @@ fn normalization_error<T: DataTypeOf>(
 /// scalar string to a vector or first value. It keeps scalar strings such as
 /// `"1,2,3"` distinct from already-materialized string collections such as
 /// `["1", "2", "3"]`.
+#[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct ScalarStringDataConverters<'a> {
     /// The scalar string source.
@@ -87,10 +88,11 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// Returns [`DataListConversionError`] when the scalar string cannot be
     /// normalized, split, or converted to the requested element type.
+    #[inline(always)]
     pub fn to_vec<T>(self) -> Result<Vec<T>, DataListConversionError>
     where
         T: DataTypeOf,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         self.to_vec_with(DataConversionOptions::default_ref())
     }
@@ -121,7 +123,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         'a: 'b,
         T: DataTypeOf,
-        DataConverter<'b>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         let text = match options.string.normalize(self.source) {
             Ok(text) => text,
@@ -173,10 +175,11 @@ impl<'a> ScalarStringDataConverters<'a> {
     /// Returns [`DataConversionError::Missing`] when normalization treats the
     /// scalar as missing, [`DataConversionError::EmptyCollection`] when
     /// splitting yields no retained item, or the underlying conversion error.
+    #[inline(always)]
     pub fn to_first<T>(self) -> Result<T, DataConversionError>
     where
         T: DataTypeOf,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         self.to_first_with(DataConversionOptions::default_ref())
     }
@@ -207,7 +210,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         'a: 'b,
         T: DataTypeOf,
-        DataConverter<'b>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         let text = options
             .string
@@ -229,7 +232,7 @@ impl<'a> ScalarStringDataConverters<'a> {
 
 impl<'a> From<&'a str> for ScalarStringDataConverters<'a> {
     /// Creates a scalar string converter from a string slice.
-    #[inline]
+    #[inline(always)]
     fn from(source: &'a str) -> Self {
         Self::new(source)
     }

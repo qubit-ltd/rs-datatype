@@ -2,6 +2,8 @@
 //    Copyright (c) 2025 - 2026 Haixing Hu.
 //
 //    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Source constructors for DataConverter.
 
@@ -29,13 +31,13 @@ use super::DataConverter;
 macro_rules! impl_from_copy {
     ($source:ty, $variant:ident) => {
         impl<'a> From<$source> for DataConverter<'a> {
-            #[inline]
+            #[inline(always)]
             fn from(value: $source) -> Self {
                 Self::$variant(value)
             }
         }
         impl<'a> From<&'a $source> for DataConverter<'a> {
-            #[inline]
+            #[inline(always)]
             fn from(value: &'a $source) -> Self {
                 Self::$variant(*value)
             }
@@ -46,13 +48,13 @@ macro_rules! impl_from_copy {
 macro_rules! impl_from_cow {
     ($source:ty, $variant:ident) => {
         impl<'a> From<$source> for DataConverter<'a> {
-            #[inline]
+            #[inline(always)]
             fn from(value: $source) -> Self {
                 Self::$variant(Cow::Owned(value))
             }
         }
         impl<'a> From<&'a $source> for DataConverter<'a> {
-            #[inline]
+            #[inline(always)]
             fn from(value: &'a $source) -> Self {
                 Self::$variant(Cow::Borrowed(value))
             }
@@ -94,21 +96,21 @@ impl_from_cow!(HashMap<String, String>, StringMap);
 impl_from_cow!(serde_json::Value, Json);
 
 impl<'a> From<&'a str> for DataConverter<'a> {
-    #[inline]
+    #[inline(always)]
     fn from(value: &'a str) -> Self {
         Self::String(Cow::Borrowed(value))
     }
 }
 
 impl<'a> From<&'a String> for DataConverter<'a> {
-    #[inline]
+    #[inline(always)]
     fn from(value: &'a String) -> Self {
         Self::String(Cow::Borrowed(value))
     }
 }
 
 impl<'a> From<String> for DataConverter<'a> {
-    #[inline]
+    #[inline(always)]
     fn from(value: String) -> Self {
         Self::String(Cow::Owned(value))
     }

@@ -127,6 +127,17 @@ fn test_boolean_conversion_options_serde_and_defaults() {
     );
 }
 
+/// Test that misspelled Boolean option fields are rejected.
+#[test]
+fn test_boolean_conversion_options_reject_unknown_fields() {
+    let error = serde_json::from_str::<BooleanConversionOptions>(
+        r#"{"case_sensitive":true,"unexpected":false}"#,
+    )
+    .expect_err("unknown Boolean option fields must be rejected");
+
+    assert!(error.to_string().contains("unknown field `unexpected`"));
+}
+
 proptest! {
     /// Test that every successfully constructed literal configuration remains
     /// valid after a Serde round trip.
