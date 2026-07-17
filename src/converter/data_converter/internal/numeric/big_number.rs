@@ -193,6 +193,7 @@ pub(super) fn source_to_bigint(
 
 /// Converts a duration to arbitrary-precision integer units.
 #[cfg(feature = "big-number")]
+#[inline(always)]
 pub(super) fn duration_to_bigint(
     duration: Duration,
     options: &DataConversionOptions,
@@ -203,6 +204,7 @@ pub(super) fn duration_to_bigint(
 
 #[cfg(feature = "big-number")]
 impl DataConversionTarget for BigInt {
+    #[inline(always)]
     fn convert_from(
         source: &DataConverter<'_>,
         options: &DataConversionOptions,

@@ -29,7 +29,6 @@ use super::{
 ///
 /// The numeric ordering, or `None` when either operand is NaN or is the hidden
 /// lifetime marker.
-#[must_use]
 pub fn compare_numeric(
     left: NumericValueRef<'_>,
     right: NumericValueRef<'_>,

@@ -107,6 +107,7 @@ where
     ///
     /// assert_eq!(flags, vec![true, false, true, false]);
     /// ```
+    #[inline(always)]
     pub fn to_vec<'a, T>(self) -> Result<Vec<T>, DataListConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
@@ -189,6 +190,7 @@ where
     ///
     /// assert_eq!(first, 42);
     /// ```
+    #[inline(always)]
     pub fn to_first<'a, T>(self) -> Result<T, DataConversionError>
     where
         T: DataTypeOf,
@@ -246,6 +248,7 @@ where
     /// # Returns
     ///
     /// Returns the exact number of items that can still be converted.
+    #[must_use]
     #[inline(always)]
     pub fn len(&self) -> usize {
         self.sources.len()
@@ -256,6 +259,7 @@ where
     /// # Returns
     ///
     /// Returns `true` when [`Self::len`] is zero.
+    #[must_use]
     #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.sources.len() == 0

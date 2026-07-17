@@ -22,6 +22,7 @@ impl<'de> Visitor<'de> for StringMapVisitor {
     type Value = HashMap<String, String>;
 
     /// Describes the accepted JSON shape.
+    #[inline(always)]
     fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a JSON object with unique keys and string values")
     }
