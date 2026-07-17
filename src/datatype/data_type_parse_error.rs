@@ -14,6 +14,7 @@ use std::fmt;
 /// Error returned when parsing a `DataType` from text fails.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataTypeParseError {
+    /// The rejected data type name.
     input: String,
 }
 
@@ -30,6 +31,7 @@ impl DataTypeParseError {
 }
 
 impl fmt::Display for DataTypeParseError {
+    #[inline(always)]
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "invalid data type: {}", self.input)
     }

@@ -18,6 +18,7 @@ use serde::{
 
 use super::super::error::BooleanLiteralConflictError;
 use super::boolean_numeric_policy::BooleanNumericPolicy;
+use super::internal::UncheckedBooleanConversionOptions;
 
 /// Validated rules for textual and numeric boolean conversion.
 ///
@@ -38,6 +39,7 @@ use super::boolean_numeric_policy::BooleanNumericPolicy;
 /// assert_eq!(options.parse("ENABLED"), Some(true));
 /// assert_eq!(options.parse("unknown"), None);
 /// ```
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct BooleanConversionOptions {
     /// String literals accepted as `true`.
@@ -139,6 +141,7 @@ impl BooleanConversionOptions {
     /// # Returns
     ///
     /// A slice of accepted true literals.
+    #[must_use]
     #[inline(always)]
     pub fn true_literals(&self) -> &[String] {
         &self.true_literals
@@ -149,12 +152,14 @@ impl BooleanConversionOptions {
     /// # Returns
     ///
     /// A slice of accepted false literals.
+    #[must_use]
     #[inline(always)]
     pub fn false_literals(&self) -> &[String] {
         &self.false_literals
     }
 
     /// Returns whether literal matching is case-sensitive.
+    #[must_use]
     #[inline(always)]
     pub const fn case_sensitive(&self) -> bool {
         self.case_sensitive
@@ -180,7 +185,7 @@ impl BooleanConversionOptions {
     ///
     /// Returns [`BooleanLiteralConflictError`] when changing the matching rule
     /// makes a true literal equal to a false literal.
-    #[inline]
+    #[inline(always)]
     pub fn with_case_sensitive(
         mut self,
         case_sensitive: bool,
@@ -199,8 +204,7 @@ impl BooleanConversionOptions {
     /// # Returns
     ///
     /// Returns the updated options value.
-    #[inline]
-    #[must_use]
+    #[inline(always)]
     pub fn with_numeric_policy(
         mut self,
         numeric_policy: BooleanNumericPolicy,
@@ -223,6 +227,7 @@ impl BooleanConversionOptions {
     ///
     /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
     /// false literal under the configured case-sensitivity rule.
+    #[inline(always)]
     pub fn with_true_literal(
         mut self,
         literal: &str,
@@ -246,7 +251,7 @@ impl BooleanConversionOptions {
     ///
     /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
     /// true literal under the configured case-sensitivity rule.
-    #[inline]
+    #[inline(always)]
     pub fn with_false_literal(
         mut self,
         literal: &str,
@@ -322,33 +327,6 @@ impl Default for BooleanConversionOptions {
     #[inline(always)]
     fn default() -> Self {
         Self::strict()
-    }
-}
-
-/// Deserialization representation with field defaults.
-#[derive(Deserialize)]
-#[serde(default)]
-struct UncheckedBooleanConversionOptions {
-    /// String literals accepted as true.
-    true_literals: Vec<String>,
-    /// String literals accepted as false.
-    false_literals: Vec<String>,
-    /// Whether matching is case-sensitive.
-    case_sensitive: bool,
-    /// Numeric boolean policy.
-    numeric_policy: BooleanNumericPolicy,
-}
-
-impl Default for UncheckedBooleanConversionOptions {
-    /// Creates the wire defaults used by [`BooleanConversionOptions`].
-    fn default() -> Self {
-        let options = BooleanConversionOptions::default();
-        Self {
-            true_literals: options.true_literals,
-            false_literals: options.false_literals,
-            case_sensitive: options.case_sensitive,
-            numeric_policy: options.numeric_policy,
-        }
     }
 }
 

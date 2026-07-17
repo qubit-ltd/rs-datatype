@@ -32,8 +32,9 @@ use serde::{
 /// assert_eq!(options.normalize("  value  "), Ok("value"));
 /// assert!(options.normalize("   ").is_err());
 /// ```
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct StringConversionOptions {
     /// Whether strings are trimmed before conversion.
     pub trim: bool,
@@ -77,7 +78,7 @@ impl StringConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_trim(mut self, trim: bool) -> Self {
         self.trim = trim;
         self
@@ -92,7 +93,7 @@ impl StringConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_blank_string_policy(
         mut self,
         policy: BlankStringPolicy,

@@ -2,6 +2,8 @@
 //    Copyright (c) 2025 - 2026 Haixing Hu.
 //
 //    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! # Reusable Data Conversion
 //!
@@ -27,7 +29,7 @@ use num_bigint::BigInt;
 #[cfg(feature = "url")]
 use url::Url;
 
-use super::data_convert_to::DataConvertTo;
+use super::data_conversion_target::DataConversionTarget;
 use super::error::{
     DataConversionError,
     InvalidValueReason,
@@ -37,10 +39,10 @@ use crate::datatype::DataType;
 
 mod boolean;
 mod duration;
+mod internal;
 mod numeric;
 mod source;
 mod string_source;
-#[cfg(feature = "json")]
 mod structured;
 mod text;
 
@@ -81,6 +83,7 @@ mod text;
 ///
 /// let _ = DataConverter::from(1_usize);
 /// ```
+#[must_use]
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataConverter<'a> {
     /// Missing source whose declared type remains known.
@@ -164,7 +167,7 @@ impl DataConverter<'_> {
     #[inline(always)]
     pub fn to<T>(&self) -> Result<T, DataConversionError>
     where
-        Self: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         self.to_with(DataConversionOptions::default_ref())
     }
@@ -194,9 +197,9 @@ impl DataConverter<'_> {
         options: &DataConversionOptions,
     ) -> Result<T, DataConversionError>
     where
-        Self: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
-        <Self as DataConvertTo<T>>::convert(self, options)
+        T::convert_from(self, options)
     }
 
     /// Returns the runtime type of the wrapped source.
@@ -207,7 +210,7 @@ impl DataConverter<'_> {
     /// # Returns
     ///
     /// Returns the [`DataType`] corresponding to this enum variant.
-    #[inline]
+    #[inline(always)]
     pub const fn data_type(&self) -> DataType {
         match self {
             Self::Empty(data_type) => *data_type,

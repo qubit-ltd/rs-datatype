@@ -26,6 +26,17 @@ fn test_collection_conversion_options_env_friendly_profile() {
     assert_eq!(options.empty_item_policy, EmptyItemPolicy::Skip);
 }
 
+/// Test that misspelled collection option fields are rejected.
+#[test]
+fn test_collection_conversion_options_reject_unknown_fields() {
+    let error = serde_json::from_str::<CollectionConversionOptions>(
+        r#"{"split_scalar_strings":true,"unexpected":false}"#,
+    )
+    .expect_err("unknown collection option fields must be rejected");
+
+    assert!(error.to_string().contains("unknown field `unexpected`"));
+}
+
 /// Test collection option split and empty-item branches.
 #[test]
 fn test_collection_conversion_options_cover_policy_branches() {

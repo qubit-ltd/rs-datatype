@@ -11,7 +11,7 @@
 //! batches of common runtime values with the single-value [`DataConverter`]
 //! rules.
 
-use super::data_convert_to::DataConvertTo;
+use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::{
     DataConversionError,
@@ -46,6 +46,7 @@ use crate::datatype::DataTypeOf;
 /// assert_eq!(ports, vec![8080, 9090]);
 /// assert_eq!(values, vec![String::from("8080"), String::from("9090")]);
 /// ```
+#[must_use]
 #[derive(Debug, Clone)]
 pub struct DataConverters<I> {
     /// The iterator of source values.
@@ -106,10 +107,11 @@ where
     ///
     /// assert_eq!(flags, vec![true, false, true, false]);
     /// ```
+    #[inline(always)]
     pub fn to_vec<'a, T>(self) -> Result<Vec<T>, DataListConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         self.to_vec_with(DataConversionOptions::default_ref())
     }
@@ -140,7 +142,7 @@ where
     ) -> Result<Vec<T>, DataListConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         let sources = self.sources;
         let (capacity, _) = sources.size_hint();
@@ -188,11 +190,12 @@ where
     ///
     /// assert_eq!(first, 42);
     /// ```
+    #[inline(always)]
     pub fn to_first<'a, T>(self) -> Result<T, DataConversionError>
     where
         T: DataTypeOf,
         I::Item: Into<DataConverter<'a>>,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         self.to_first_with(DataConversionOptions::default_ref())
     }
@@ -224,7 +227,7 @@ where
     where
         T: DataTypeOf,
         I::Item: Into<DataConverter<'a>>,
-        DataConverter<'a>: DataConvertTo<T>,
+        T: DataConversionTarget,
     {
         let mut sources = self.sources;
         match sources.next() {
@@ -245,7 +248,8 @@ where
     /// # Returns
     ///
     /// Returns the exact number of items that can still be converted.
-    #[inline]
+    #[must_use]
+    #[inline(always)]
     pub fn len(&self) -> usize {
         self.sources.len()
     }
@@ -255,7 +259,8 @@ where
     /// # Returns
     ///
     /// Returns `true` when [`Self::len`] is zero.
-    #[inline]
+    #[must_use]
+    #[inline(always)]
     pub fn is_empty(&self) -> bool {
         self.sources.len() == 0
     }
@@ -263,7 +268,7 @@ where
 
 impl<'a, V> From<&'a [V]> for DataConverters<std::slice::Iter<'a, V>> {
     /// Creates a batch converter from a borrowed slice.
-    #[inline]
+    #[inline(always)]
     fn from(values: &'a [V]) -> Self {
         Self::from_iterator(values.iter())
     }
@@ -271,7 +276,7 @@ impl<'a, V> From<&'a [V]> for DataConverters<std::slice::Iter<'a, V>> {
 
 impl<'a, V> From<&'a Vec<V>> for DataConverters<std::slice::Iter<'a, V>> {
     /// Creates a batch converter from a borrowed vector.
-    #[inline]
+    #[inline(always)]
     fn from(values: &'a Vec<V>) -> Self {
         Self::from(values.as_slice())
     }
@@ -279,7 +284,7 @@ impl<'a, V> From<&'a Vec<V>> for DataConverters<std::slice::Iter<'a, V>> {
 
 impl<V> From<Vec<V>> for DataConverters<std::vec::IntoIter<V>> {
     /// Creates a batch converter from an owned vector.
-    #[inline]
+    #[inline(always)]
     fn from(values: Vec<V>) -> Self {
         Self::from_iterator(values.into_iter())
     }
