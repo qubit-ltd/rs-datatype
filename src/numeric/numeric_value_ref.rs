@@ -56,6 +56,106 @@ pub enum NumericValueRef<'a> {
     __Lifetime(PhantomData<&'a ()>),
 }
 
+impl From<i8> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: i8) -> Self {
+        Self::Int8(value)
+    }
+}
+
+impl From<i16> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: i16) -> Self {
+        Self::Int16(value)
+    }
+}
+
+impl From<i32> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: i32) -> Self {
+        Self::Int32(value)
+    }
+}
+
+impl From<i64> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: i64) -> Self {
+        Self::Int64(value)
+    }
+}
+
+impl From<i128> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: i128) -> Self {
+        Self::Int128(value)
+    }
+}
+
+impl From<u8> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: u8) -> Self {
+        Self::UInt8(value)
+    }
+}
+
+impl From<u16> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: u16) -> Self {
+        Self::UInt16(value)
+    }
+}
+
+impl From<u32> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: u32) -> Self {
+        Self::UInt32(value)
+    }
+}
+
+impl From<u64> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: u64) -> Self {
+        Self::UInt64(value)
+    }
+}
+
+impl From<u128> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: u128) -> Self {
+        Self::UInt128(value)
+    }
+}
+
+impl From<f32> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: f32) -> Self {
+        Self::Float32(value)
+    }
+}
+
+impl From<f64> for NumericValueRef<'_> {
+    #[inline(always)]
+    fn from(value: f64) -> Self {
+        Self::Float64(value)
+    }
+}
+
+#[cfg(feature = "big-number")]
+impl<'a> From<&'a BigInt> for NumericValueRef<'a> {
+    #[inline(always)]
+    fn from(value: &'a BigInt) -> Self {
+        Self::BigInteger(value)
+    }
+}
+
+#[cfg(feature = "big-number")]
+impl<'a> From<&'a BigDecimal> for NumericValueRef<'a> {
+    #[inline(always)]
+    fn from(value: &'a BigDecimal) -> Self {
+        Self::BigDecimal(value)
+    }
+}
+
 impl NumericValueRef<'_> {
     /// Reports whether this value is a primitive floating-point value.
     ///
