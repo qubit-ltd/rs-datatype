@@ -1,0 +1,37 @@
+[package]
+name = "qubit-datatype-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+bigdecimal = "0.4"
+libfuzzer-sys = "0.4"
+num-bigint = "0.4"
+qubit-datatype = { path = "..", features = ["all"] }
+serde_json = "1.0"
+url = "2.5"
+
+[[bin]]
+name = "conversion_text"
+path = "fuzz_targets/conversion_text.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "scalar_collection"
+path = "fuzz_targets/scalar_collection.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "numeric_comparison"
+path = "fuzz_targets/numeric_comparison.rs"
+test = false
+doc = false
+bench = false
