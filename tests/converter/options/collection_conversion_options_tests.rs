@@ -97,7 +97,7 @@ fn test_collection_conversion_options_cover_policy_branches() {
         .next()
         .expect("rejected item should exist")
         .expect_err("blank collection item should be rejected");
-    assert_eq!(rejected_item.source_index, 1);
+    assert_eq!(rejected_item.source_index(), 1);
     assert_eq!(
         rejected_item.to_string(),
         "blank scalar item rejected at source index 1",

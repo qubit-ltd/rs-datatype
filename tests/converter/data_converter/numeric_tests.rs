@@ -7,6 +7,8 @@
 // =============================================================================
 //! Numeric conversion tests.
 
+use qubit_datatype::converter::DataConversionErrorKind;
+
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::time::Duration;
@@ -22,7 +24,6 @@ use chrono::{
 use num_bigint::BigInt;
 use proptest::proptest;
 use qubit_datatype::{
-    DataConversionError,
     DataConversionOptions,
     DataConverter,
     DataType,
@@ -112,35 +113,32 @@ fn test_data_converter_signed_integer_targets_accept_supported_sources() {
     );
     assert!(matches!(
         DataConverter::Empty(DataType::Int128).to::<i128>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
         DataConverter::from("bad").to::<i128>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::InvalidSyntax { .. },
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::InvalidSyntax { .. })
+    )));
     assert!(matches!(
         DataConverter::from(f64::MAX).to::<i128>(),
-        Err(DataConversionError::InvalidValue { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
     let huge = create_huge_bigint();
     let huge_decimal = BigDecimal::from(huge.clone());
     assert!(matches!(
         DataConverter::from(&huge).to::<i128>(),
-        Err(DataConversionError::InvalidValue { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
     assert!(matches!(
         DataConverter::from(&huge_decimal).to::<i128>(),
-        Err(DataConversionError::InvalidValue { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
     assert!(matches!(
         DataConverter::from(
             NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date")
         )
         .to::<i128>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
 }
 
@@ -195,19 +193,16 @@ fn test_data_converter_unsigned_integer_targets_accept_supported_sources() {
     );
     assert!(matches!(
         DataConverter::Empty(DataType::UInt128).to::<u128>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
         DataConverter::from("bad").to::<u128>(),
-        Err(DataConversionError::InvalidValue { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
     assert!(matches!(
         DataConverter::from(1.5f64).to::<u128>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::PrecisionLoss,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
+    )));
 }
 
 /// Test floating point target conversions across supported source variants.
@@ -281,27 +276,27 @@ fn test_data_converter_float_targets_accept_supported_sources() {
     );
     assert!(matches!(
         DataConverter::from("bad").to::<f32>(),
-        Err(DataConversionError::InvalidValue { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
     assert!(matches!(
         DataConverter::from("bad").to::<f64>(),
-        Err(DataConversionError::InvalidValue { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
     assert!(matches!(
         DataConverter::Empty(DataType::Float32).to::<f32>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
         DataConverter::Empty(DataType::Float64).to::<f64>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
         DataConverter::from(Duration::new(1, 0)).to::<f32>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
     assert!(matches!(
         DataConverter::from(Duration::new(1, 0)).to::<f64>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
 
     let huge = create_huge_bigint();
@@ -322,27 +317,18 @@ fn test_data_converter_numeric_conversions_check_integer_bounds() {
 
     assert!(matches!(
         DataConverter::from(-1i8).to::<u16>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::OutOfRange,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)
+    )));
 
     assert!(matches!(
         DataConverter::from(u16::MAX as u32 + 1).to::<u16>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::OutOfRange,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)
+    )));
 
     assert!(matches!(
         DataConverter::from(i128::MAX).to::<i64>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::OutOfRange,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)
+    )));
 }
 
 /// Test floating point conversion edge cases for integer and f32 targets.
@@ -356,28 +342,22 @@ fn test_data_converter_float_conversions_check_non_finite_and_overflow() {
 
     assert!(matches!(
         DataConverter::from(f64::NAN).to::<i64>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::NonFinite,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::NonFinite)
+    )));
 
     assert!(matches!(
         DataConverter::from(f64::INFINITY).to::<i64>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::NonFinite,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::NonFinite)
+    )));
 
     assert!(matches!(
         DataConverter::from(f64::MAX).to::<f32>(),
-        Err(DataConversionError::InvalidValue { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
 
     assert!(matches!(
         DataConverter::from(u128::MAX).to::<f32>(),
-        Err(DataConversionError::InvalidValue { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
 }
 
@@ -395,11 +375,8 @@ fn test_data_converter_big_number_conversions_check_range() {
             .expect("test BigInt literal should parse");
     assert!(matches!(
         DataConverter::from(&huge_int).to::<i64>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::OutOfRange,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)
+    )));
 
     let decimal =
         BigDecimal::from_str("123.75").expect("test BigDecimal should parse");
@@ -423,20 +400,14 @@ fn test_data_converter_big_decimal_extreme_exponents_are_bounded() {
         .expect("large positive exponent should parse compactly");
     assert!(matches!(
         DataConverter::from(&huge).to::<i32>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::OutOfRange,
-            ..
-        }),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)),
     ));
 
     let tiny = BigDecimal::from_str("1e-1000000000")
         .expect("large negative exponent should parse compactly");
     assert!(matches!(
         DataConverter::from(&tiny).to::<i32>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::PrecisionLoss,
-            ..
-        }),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)),
     ));
     let lossy = DataConversionOptions::lossy();
     assert_eq!(DataConverter::from(&tiny).to_with::<i32>(&lossy), Ok(0));
@@ -454,11 +425,13 @@ fn test_data_converter_big_decimal_non_finite_classification_is_consistent() {
     ] {
         assert!(matches!(
             result,
-            Err(DataConversionError::InvalidValue {
-                to: qubit_datatype::DataType::BigDecimal,
-                reason: InvalidValueReason::NonFinite,
-                ..
-            }),
+            Err(conversion_error)
+                if conversion_error.kind() == DataConversionErrorKind::InvalidValue
+                    && conversion_error.to_type() == qubit_datatype::DataType::BigDecimal
+                    && matches!(
+                        conversion_error.reason(),
+                        Some(InvalidValueReason::NonFinite)
+                    ),
         ));
     }
 }
@@ -484,11 +457,8 @@ fn test_data_converter_core_numeric_parser_covers_decimal_boundaries() {
     for value in ["", "+", "e1", ".", "1e", "1e+", "1eX", "1e1x", "1..0"] {
         assert!(matches!(
             DataConverter::from(value).to::<i128>(),
-            Err(DataConversionError::InvalidValue {
-                reason: InvalidValueReason::InvalidSyntax { .. },
-                ..
-            })
-        ));
+            Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::InvalidSyntax { .. })
+        )));
     }
     for value in [
         "340282366920938463463374607431768211456",
@@ -498,27 +468,18 @@ fn test_data_converter_core_numeric_parser_covers_decimal_boundaries() {
     ] {
         assert!(matches!(
             DataConverter::from(value).to::<u128>(),
-            Err(DataConversionError::InvalidValue {
-                reason: InvalidValueReason::OutOfRange,
-                ..
-            })
-        ));
+            Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)
+        )));
     }
     assert!(matches!(
         DataConverter::from("170141183460469231731687303715884105728")
             .to::<i128>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::OutOfRange,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)
+    )));
     assert!(matches!(
         DataConverter::from("-1").to::<u128>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::OutOfRange,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)
+    )));
 
     assert_eq!(DataConverter::from("0.0").to::<f64>(), Ok(0.0));
     assert_eq!(DataConverter::from("0.5").to::<f64>(), Ok(0.5));
@@ -532,19 +493,13 @@ fn test_data_converter_core_numeric_parser_covers_decimal_boundaries() {
     ] {
         assert!(matches!(
             DataConverter::from(value).to::<f64>(),
-            Err(DataConversionError::InvalidValue {
-                reason: InvalidValueReason::PrecisionLoss,
-                ..
-            })
-        ));
+            Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
+        )));
     }
     assert!(matches!(
         DataConverter::from("1e500").to::<f64>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::OutOfRange,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)
+    )));
 }
 
 /// Test arbitrary-precision targets across every numeric source family.
@@ -580,39 +535,27 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
     let lossy = DataConversionOptions::lossy();
     assert!(matches!(
         DataConverter::from(12.5f64).to::<BigInt>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::PrecisionLoss,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
+    )));
     assert_eq!(
         DataConverter::from(12.5f64).to_with::<BigInt>(&lossy),
         Ok(BigInt::from(12))
     );
     assert!(matches!(
         DataConverter::from(f64::NAN).to::<BigInt>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::NonFinite,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::NonFinite)
+    )));
     let fractional_decimal = BigDecimal::from_str("12.5").unwrap();
     assert!(matches!(
         DataConverter::from(&fractional_decimal).to::<BigInt>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::PrecisionLoss,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
+    )));
 
     let imprecise_integer = BigInt::from(9_007_199_254_740_993u64);
     assert!(matches!(
         DataConverter::from(&imprecise_integer).to::<f64>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::PrecisionLoss,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
+    )));
     assert_eq!(
         DataConverter::from(&imprecise_integer).to_with::<f64>(&lossy),
         Ok(9_007_199_254_740_992.0)
@@ -620,11 +563,8 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
     let imprecise_decimal = BigDecimal::from_str("0.1").unwrap();
     assert!(matches!(
         DataConverter::from(&imprecise_decimal).to::<f64>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::PrecisionLoss,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
+    )));
     assert!(
         DataConverter::from(&imprecise_decimal)
             .to_with::<f64>(&lossy)
@@ -639,7 +579,7 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
     let map = HashMap::from([("key".to_owned(), "value".to_owned())]);
     assert!(matches!(
         DataConverter::from(&map).to::<BigInt>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
 }
 
@@ -656,11 +596,8 @@ fn test_data_converter_big_integer_target_applies_policy_to_decimal_text() {
     );
     assert!(matches!(
         DataConverter::from("12.5").to::<BigInt>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::PrecisionLoss,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
+    )));
 
     let lossy = DataConversionOptions::lossy();
     assert_eq!(
@@ -709,26 +646,20 @@ fn test_data_converter_numeric_boundary_branches() {
     );
     assert!(matches!(
         DataConverter::from("NaN").to::<i32>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::NonFinite,
-            ..
-        }),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::NonFinite)),
     ));
     assert!(matches!(
         DataConverter::Empty(DataType::Float32).to::<f32>(),
-        Err(DataConversionError::Missing { .. }),
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing,
     ));
     assert!(matches!(
         DataConverter::from(Duration::from_secs(1)).to::<f64>(),
-        Err(DataConversionError::Unsupported { .. }),
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported,
     ));
     assert_eq!(DataConverter::from("15").to::<f64>(), Ok(15.0));
     assert!(matches!(
         DataConverter::from(0.1f64).to::<f32>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::PrecisionLoss,
-            ..
-        }),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)),
     ));
 
     let zero = BigDecimal::from(0);

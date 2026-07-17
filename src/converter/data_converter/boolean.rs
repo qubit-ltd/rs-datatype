@@ -28,7 +28,7 @@ use crate::datatype::DataType;
 ///
 /// `zero` and `one` classify the already parsed integer, `policy` selects the
 /// accepted numeric domain, and `from` is retained in any error. Returns the
-/// mapped boolean, or [`DataConversionError::InvalidValue`] when the policy
+/// mapped boolean, or an invalid-value [`DataConversionError`] when the policy
 /// rejects the value.
 fn integer_to_bool(
     zero: bool,
@@ -41,11 +41,11 @@ fn integer_to_bool(
         BooleanNumericPolicy::ZeroOrOne if one => Ok(true),
         BooleanNumericPolicy::NonZero => Ok(!zero),
         BooleanNumericPolicy::ZeroOrOne | BooleanNumericPolicy::Reject => {
-            Err(DataConversionError::InvalidValue {
+            Err(DataConversionError::invalid(
                 from,
-                to: DataType::Bool,
-                reason: InvalidValueReason::InvalidBoolean,
-            })
+                DataType::Bool,
+                InvalidValueReason::InvalidBoolean,
+            ))
         }
     }
 }

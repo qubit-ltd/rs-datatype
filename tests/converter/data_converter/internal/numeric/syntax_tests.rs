@@ -8,7 +8,6 @@
 //! Numeric syntax validation tests.
 
 use qubit_datatype::{
-    DataConversionError,
     DataConverter,
     InvalidValueReason,
 };
@@ -18,9 +17,6 @@ use qubit_datatype::{
 fn test_numeric_text_rejects_duplicate_signs() {
     assert!(matches!(
         DataConverter::from("--1").to::<f64>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::InvalidSyntax { .. },
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::InvalidSyntax { .. })
+    )));
 }

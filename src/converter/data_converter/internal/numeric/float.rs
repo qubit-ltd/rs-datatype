@@ -47,20 +47,20 @@ fn bigint_to_f64(
 ) -> Result<f64, DataConversionError> {
     let converted = value.to_f64().unwrap_or(f64::INFINITY);
     if !converted.is_finite() {
-        return Err(DataConversionError::InvalidValue {
+        return Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::OutOfRange,
-        });
+            InvalidValueReason::OutOfRange,
+        ));
     }
     if policy == NumericConversionPolicy::Exact
         && BigInt::from_f64(converted).as_ref() != Some(value)
     {
-        Err(DataConversionError::InvalidValue {
+        Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        })
+            InvalidValueReason::PrecisionLoss,
+        ))
     } else {
         Ok(converted)
     }
@@ -76,20 +76,20 @@ fn bigint_to_f32(
 ) -> Result<f32, DataConversionError> {
     let converted = value.to_f32().unwrap_or(f32::INFINITY);
     if !converted.is_finite() {
-        return Err(DataConversionError::InvalidValue {
+        return Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::OutOfRange,
-        });
+            InvalidValueReason::OutOfRange,
+        ));
     }
     if policy == NumericConversionPolicy::Exact
         && BigInt::from_f32(converted).as_ref() != Some(value)
     {
-        Err(DataConversionError::InvalidValue {
+        Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        })
+            InvalidValueReason::PrecisionLoss,
+        ))
     } else {
         Ok(converted)
     }
@@ -109,20 +109,20 @@ fn decimal_to_f64(
 ) -> Result<f64, DataConversionError> {
     let converted = value.to_f64().unwrap_or(f64::INFINITY);
     if !converted.is_finite() {
-        return Err(DataConversionError::InvalidValue {
+        return Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::OutOfRange,
-        });
+            InvalidValueReason::OutOfRange,
+        ));
     }
     if policy == NumericConversionPolicy::Exact
         && BigDecimal::from_f64(converted).as_ref() != Some(value)
     {
-        Err(DataConversionError::InvalidValue {
+        Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        })
+            InvalidValueReason::PrecisionLoss,
+        ))
     } else {
         Ok(converted)
     }
@@ -138,20 +138,20 @@ fn decimal_to_f32(
 ) -> Result<f32, DataConversionError> {
     let converted = value.to_f32().unwrap_or(f32::INFINITY);
     if !converted.is_finite() {
-        return Err(DataConversionError::InvalidValue {
+        return Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::OutOfRange,
-        });
+            InvalidValueReason::OutOfRange,
+        ));
     }
     if policy == NumericConversionPolicy::Exact
         && BigDecimal::from_f32(converted).as_ref() != Some(value)
     {
-        Err(DataConversionError::InvalidValue {
+        Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        })
+            InvalidValueReason::PrecisionLoss,
+        ))
     } else {
         Ok(converted)
     }
@@ -182,11 +182,11 @@ fn integer_to_f64(
     };
     let exact = unsigned_integer_is_exact(magnitude, f64::MANTISSA_DIGITS);
     if policy == NumericConversionPolicy::Exact && !exact {
-        Err(DataConversionError::InvalidValue {
+        Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        })
+            InvalidValueReason::PrecisionLoss,
+        ))
     } else {
         Ok(converted)
     }
@@ -206,19 +206,19 @@ fn integer_to_f32(
         magnitude as f32
     };
     if !converted.is_finite() {
-        return Err(DataConversionError::InvalidValue {
+        return Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::OutOfRange,
-        });
+            InvalidValueReason::OutOfRange,
+        ));
     }
     let exact = unsigned_integer_is_exact(magnitude, f32::MANTISSA_DIGITS);
     if policy == NumericConversionPolicy::Exact && !exact {
-        Err(DataConversionError::InvalidValue {
+        Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        })
+            InvalidValueReason::PrecisionLoss,
+        ))
     } else {
         Ok(converted)
     }
@@ -351,21 +351,21 @@ fn parse_text_f64(
             .map_err(|_| invalid_numeric_syntax(to))?
     };
     if !explicit_nan && explicit_infinity.is_none() && !converted.is_finite() {
-        return Err(DataConversionError::InvalidValue {
-            from: DataType::String,
+        return Err(DataConversionError::invalid(
+            DataType::String,
             to,
-            reason: InvalidValueReason::OutOfRange,
-        });
+            InvalidValueReason::OutOfRange,
+        ));
     }
     if options.numeric_policy == NumericConversionPolicy::Exact
         && converted.is_finite()
         && !text_is_exact_float(value, converted, f64::MANTISSA_DIGITS, to)
     {
-        Err(DataConversionError::InvalidValue {
-            from: DataType::String,
+        Err(DataConversionError::invalid(
+            DataType::String,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        })
+            InvalidValueReason::PrecisionLoss,
+        ))
     } else {
         Ok(converted)
     }
@@ -393,11 +393,11 @@ fn parse_text_f32(
             .map_err(|_| invalid_numeric_syntax(to))?
     };
     if !explicit_nan && explicit_infinity.is_none() && !converted.is_finite() {
-        return Err(DataConversionError::InvalidValue {
-            from: DataType::String,
+        return Err(DataConversionError::invalid(
+            DataType::String,
             to,
-            reason: InvalidValueReason::OutOfRange,
-        });
+            InvalidValueReason::OutOfRange,
+        ));
     }
     if options.numeric_policy == NumericConversionPolicy::Exact
         && converted.is_finite()
@@ -408,11 +408,11 @@ fn parse_text_f32(
             to,
         )
     {
-        Err(DataConversionError::InvalidValue {
-            from: DataType::String,
+        Err(DataConversionError::invalid(
+            DataType::String,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        })
+            InvalidValueReason::PrecisionLoss,
+        ))
     } else {
         Ok(converted)
     }

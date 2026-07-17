@@ -53,11 +53,11 @@ pub(super) fn decimal_to_bigint(
             && coefficient_digits.saturating_add(exponent) > 39)
             || exponent > u64::from(u32::MAX)
         {
-            return Err(DataConversionError::InvalidValue {
+            return Err(DataConversionError::invalid(
                 from,
                 to,
-                reason: InvalidValueReason::OutOfRange,
-            });
+                InvalidValueReason::OutOfRange,
+            ));
         }
         return Ok(coefficient * BigInt::from(10u8).pow(exponent as u32));
     }
@@ -66,11 +66,11 @@ pub(super) fn decimal_to_bigint(
         coefficient.to_str_radix(10).trim_start_matches('-').len() as u64;
     if scale as u64 >= coefficient_digits {
         return if policy == NumericConversionPolicy::Exact {
-            Err(DataConversionError::InvalidValue {
+            Err(DataConversionError::invalid(
                 from,
                 to,
-                reason: InvalidValueReason::PrecisionLoss,
-            })
+                InvalidValueReason::PrecisionLoss,
+            ))
         } else {
             Ok(BigInt::from(0u8))
         };
@@ -81,11 +81,11 @@ pub(super) fn decimal_to_bigint(
     if policy == NumericConversionPolicy::Exact
         && remainder != BigInt::from(0u8)
     {
-        Err(DataConversionError::InvalidValue {
+        Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        })
+            InvalidValueReason::PrecisionLoss,
+        ))
     } else {
         Ok(quotient)
     }
@@ -104,20 +104,20 @@ fn float_to_bigint(
     to: DataType,
 ) -> Result<BigInt, DataConversionError> {
     if !value.is_finite() {
-        return Err(DataConversionError::InvalidValue {
+        return Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::NonFinite,
-        });
+            InvalidValueReason::NonFinite,
+        ));
     }
     let converted = BigInt::from_f64(value.trunc())
         .expect("finite primitive floats always have a BigInt representation");
     if policy == NumericConversionPolicy::Exact && value.fract() != 0.0 {
-        Err(DataConversionError::InvalidValue {
+        Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        })
+            InvalidValueReason::PrecisionLoss,
+        ))
     } else {
         Ok(converted)
     }

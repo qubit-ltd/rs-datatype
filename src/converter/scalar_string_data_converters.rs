@@ -31,16 +31,15 @@ fn normalization_error<T: DataTypeOf>(
     error: StringNormalizationError,
 ) -> DataConversionError {
     match error {
-        StringNormalizationError::Missing => DataConversionError::Missing {
-            from: DataType::String,
-            to: T::DATA_TYPE,
-        },
+        StringNormalizationError::Missing => {
+            DataConversionError::missing(DataType::String, T::DATA_TYPE)
+        }
         StringNormalizationError::BlankRejected => {
-            DataConversionError::InvalidValue {
-                from: DataType::String,
-                to: T::DATA_TYPE,
-                reason: InvalidValueReason::BlankRejected,
-            }
+            DataConversionError::invalid(
+                DataType::String,
+                T::DATA_TYPE,
+                InvalidValueReason::BlankRejected,
+            )
         }
     }
 }
@@ -128,31 +127,33 @@ impl<'a> ScalarStringDataConverters<'a> {
         let text = match options.string.normalize(self.source) {
             Ok(text) => text,
             Err(error) => {
-                return Err(DataListConversionError {
-                    source_index: 0,
-                    source: normalization_error::<T>(error),
-                });
+                return Err(DataListConversionError::new(
+                    0,
+                    normalization_error::<T>(error),
+                ));
             }
         };
         let items = options.collection.scalar_items(text);
         let (capacity, _) = items.size_hint();
         let mut converted = Vec::with_capacity(capacity);
         for item in items {
-            let item = item.map_err(|error| DataListConversionError {
-                source_index: error.source_index,
-                source: DataConversionError::InvalidValue {
-                    from: DataType::String,
-                    to: T::DATA_TYPE,
-                    reason: InvalidValueReason::BlankRejected,
-                },
+            let item = item.map_err(|error| {
+                DataListConversionError::new(
+                    error.source_index(),
+                    DataConversionError::invalid(
+                        DataType::String,
+                        T::DATA_TYPE,
+                        InvalidValueReason::BlankRejected,
+                    ),
+                )
             })?;
             let value = match DataConverter::from(item.value).to_with(options) {
                 Ok(value) => value,
                 Err(source) => {
-                    return Err(DataListConversionError {
-                        source_index: item.source_index,
+                    return Err(DataListConversionError::new(
+                        item.source_index,
                         source,
-                    });
+                    ));
                 }
             };
             converted.push(value);
@@ -172,8 +173,8 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// # Errors
     ///
-    /// Returns [`DataConversionError::Missing`] when normalization treats the
-    /// scalar as missing, [`DataConversionError::EmptyCollection`] when
+    /// Returns a missing-value [`DataConversionError`] when normalization
+    /// treats the scalar as missing, an empty-collection error when
     /// splitting yields no retained item, or the underlying conversion error.
     #[inline(always)]
     pub fn to_first<T>(self) -> Result<T, DataConversionError>
@@ -200,8 +201,8 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// # Errors
     ///
-    /// Returns [`DataConversionError::Missing`] when normalization treats the
-    /// scalar as missing, [`DataConversionError::EmptyCollection`] when
+    /// Returns a missing-value [`DataConversionError`] when normalization
+    /// treats the scalar as missing, an empty-collection error when
     /// splitting yields no retained item, or the underlying conversion error.
     pub fn to_first_with<'b, T>(
         self,
@@ -220,11 +221,13 @@ impl<'a> ScalarStringDataConverters<'a> {
             .collection
             .scalar_items(text)
             .next()
-            .ok_or(DataConversionError::EmptyCollection { to: T::DATA_TYPE })?
-            .map_err(|_| DataConversionError::InvalidValue {
-                from: DataType::String,
-                to: T::DATA_TYPE,
-                reason: InvalidValueReason::BlankRejected,
+            .ok_or(DataConversionError::empty_collection(T::DATA_TYPE))?
+            .map_err(|_| {
+                DataConversionError::invalid(
+                    DataType::String,
+                    T::DATA_TYPE,
+                    InvalidValueReason::BlankRejected,
+                )
             })?;
         DataConverter::from(first.value).to_with::<T>(options)
     }

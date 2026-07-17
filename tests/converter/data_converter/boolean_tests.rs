@@ -7,6 +7,8 @@
 // =============================================================================
 //! Boolean conversion tests.
 
+use qubit_datatype::converter::DataConversionErrorKind;
+
 #[cfg(feature = "big-number")]
 use num_bigint::BigInt;
 use proptest::proptest;
@@ -83,18 +85,15 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
 
     assert!(matches!(
         DataConverter::from("maybe").to::<bool>(),
-        Err(DataConversionError::InvalidValue {
-            from: DataType::String,
-            to: DataType::Bool,
-            reason: InvalidValueReason::InvalidBoolean,
-        })
+        Err(ref error) if error == &DataConversionError::invalid(
+            DataType::String,
+            DataType::Bool,
+            InvalidValueReason::InvalidBoolean,
+        )
     ));
     assert!(matches!(
         DataConverter::Empty(DataType::Bool).to::<bool>(),
-        Err(DataConversionError::Missing {
-            from: DataType::Bool,
-            to: DataType::Bool,
-        })
+        Err(ref error) if error == &DataConversionError::missing(DataType::Bool, DataType::Bool)
     ));
     #[cfg(feature = "big-number")]
     {
@@ -103,7 +102,7 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
     }
     assert!(matches!(
         DataConverter::from('x').to::<bool>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
 }
 

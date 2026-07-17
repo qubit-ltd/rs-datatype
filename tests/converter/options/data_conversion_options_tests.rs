@@ -93,10 +93,8 @@ fn test_data_conversion_options_apply_to_converter() {
     let missing = DataConverter::from("   ").to_with::<String>(&options);
     assert!(matches!(
         missing,
-        Err(DataConversionError::Missing {
-            from: DataType::String,
-            to: DataType::String,
-        }),
+        Err(ref error)
+            if error == &DataConversionError::missing(DataType::String, DataType::String),
     ));
 }
 
@@ -128,11 +126,11 @@ fn test_data_conversion_options_convenience_builders() {
     let blank = DataConverter::from("   ").to_with::<String>(&options);
     assert!(matches!(
         blank,
-        Err(DataConversionError::InvalidValue {
-            from: DataType::String,
-            to: DataType::String,
-            reason: InvalidValueReason::BlankRejected,
-        }),
+        Err(ref error) if error == &DataConversionError::invalid(
+            DataType::String,
+            DataType::String,
+            InvalidValueReason::BlankRejected,
+        ),
     ));
 }
 
@@ -212,11 +210,9 @@ fn test_data_conversion_options_numeric_policy_is_source_independent() {
     ] {
         assert!(matches!(
             converter.to_with::<i32>(&exact),
-            Err(DataConversionError::InvalidValue {
-                from: actual_from,
-                to: DataType::Int32,
-                reason: InvalidValueReason::PrecisionLoss,
-            }) if actual_from == from,
+            Err(error) if error.from_type() == Some(from)
+                && error.to_type() == DataType::Int32
+                && error.reason() == Some(&InvalidValueReason::PrecisionLoss),
         ));
     }
 
@@ -253,11 +249,9 @@ fn test_data_conversion_options_boolean_numeric_policy_is_source_independent() {
     ] {
         assert!(matches!(
             converter.to_with::<bool>(&zero_or_one),
-            Err(DataConversionError::InvalidValue {
-                from: actual_from,
-                to: DataType::Bool,
-                reason: InvalidValueReason::InvalidBoolean,
-            }) if actual_from == from,
+            Err(error) if error.from_type() == Some(from)
+                && error.to_type() == DataType::Bool
+                && error.reason() == Some(&InvalidValueReason::InvalidBoolean),
         ));
     }
     for converter in [DataConverter::from(0i32), DataConverter::from("0")] {
@@ -311,11 +305,9 @@ fn test_data_conversion_options_boolean_numeric_policy_is_source_independent() {
     ] {
         assert!(matches!(
             converter.to_with::<bool>(&reject),
-            Err(DataConversionError::InvalidValue {
-                from: actual_from,
-                to: DataType::Bool,
-                reason: InvalidValueReason::InvalidBoolean,
-            }) if actual_from == from,
+            Err(error) if error.from_type() == Some(from)
+                && error.to_type() == DataType::Bool
+                && error.reason() == Some(&InvalidValueReason::InvalidBoolean),
         ));
     }
 }

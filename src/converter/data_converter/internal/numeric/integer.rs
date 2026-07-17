@@ -39,18 +39,18 @@ fn float_to_integer(
     to: DataType,
 ) -> Result<(bool, u128), DataConversionError> {
     if !value.is_finite() {
-        return Err(DataConversionError::InvalidValue {
+        return Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::NonFinite,
-        });
+            InvalidValueReason::NonFinite,
+        ));
     }
     if policy == NumericConversionPolicy::Exact && value.fract() != 0.0 {
-        return Err(DataConversionError::InvalidValue {
+        return Err(DataConversionError::invalid(
             from,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        });
+            InvalidValueReason::PrecisionLoss,
+        ));
     }
     match parse_text_integer(
         &value.trunc().to_string(),
@@ -58,10 +58,15 @@ fn float_to_integer(
         to,
     ) {
         Ok(value) => Ok(value),
-        Err(DataConversionError::InvalidValue { to, reason, .. }) => {
-            Err(DataConversionError::InvalidValue { from, to, reason })
+        Err(error) => {
+            let to = error.to_type();
+            match error.reason().cloned() {
+                Some(reason) => {
+                    Err(DataConversionError::invalid(from, to, reason))
+                }
+                None => Err(error),
+            }
         }
-        Err(other) => Err(other),
     }
 }
 
@@ -103,11 +108,11 @@ pub(in crate::converter::data_converter) fn source_to_integer(
             } else if let Some(value) = value.to_u128() {
                 Ok((false, value))
             } else {
-                Err(DataConversionError::InvalidValue {
-                    from: DataType::BigInteger,
+                Err(DataConversionError::invalid(
+                    DataType::BigInteger,
                     to,
-                    reason: InvalidValueReason::OutOfRange,
-                })
+                    InvalidValueReason::OutOfRange,
+                ))
             }
         }
         #[cfg(feature = "big-number")]
@@ -123,11 +128,11 @@ pub(in crate::converter::data_converter) fn source_to_integer(
             } else if let Some(value) = integer.to_u128() {
                 Ok((false, value))
             } else {
-                Err(DataConversionError::InvalidValue {
-                    from: DataType::BigDecimal,
+                Err(DataConversionError::invalid(
+                    DataType::BigDecimal,
                     to,
-                    reason: InvalidValueReason::OutOfRange,
-                })
+                    InvalidValueReason::OutOfRange,
+                ))
             }
         }
         DataConverter::String(value) => {
@@ -156,11 +161,11 @@ pub(in crate::converter::data_converter) fn duration_to_u128(
     if options.numeric_policy == NumericConversionPolicy::Exact
         && !total_nanos.is_multiple_of(unit_nanos)
     {
-        return Err(DataConversionError::InvalidValue {
-            from: DataType::Duration,
+        return Err(DataConversionError::invalid(
+            DataType::Duration,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        });
+            InvalidValueReason::PrecisionLoss,
+        ));
     }
     Ok(
         if options.numeric_policy == NumericConversionPolicy::Exact {
@@ -187,11 +192,11 @@ fn to_i128(
     let value = match i128::try_from(magnitude) {
         Ok(value) => value,
         Err(_) => {
-            return Err(DataConversionError::InvalidValue {
-                from: source.data_type(),
+            return Err(DataConversionError::invalid(
+                source.data_type(),
                 to,
-                reason: InvalidValueReason::OutOfRange,
-            });
+                InvalidValueReason::OutOfRange,
+            ));
         }
     };
     Ok(if negative { -value } else { value })
@@ -208,11 +213,11 @@ fn to_u128(
 ) -> Result<u128, DataConversionError> {
     let (negative, magnitude) = source_to_integer(source, options, to)?;
     if negative {
-        Err(DataConversionError::InvalidValue {
-            from: source.data_type(),
+        Err(DataConversionError::invalid(
+            source.data_type(),
             to,
-            reason: InvalidValueReason::OutOfRange,
-        })
+            InvalidValueReason::OutOfRange,
+        ))
     } else {
         Ok(magnitude)
     }
@@ -232,11 +237,11 @@ where
 {
     match T::try_from(value) {
         Ok(value) => Ok(value),
-        Err(_) => Err(DataConversionError::InvalidValue {
-            from: source.data_type(),
+        Err(_) => Err(DataConversionError::invalid(
+            source.data_type(),
             to,
-            reason: InvalidValueReason::OutOfRange,
-        }),
+            InvalidValueReason::OutOfRange,
+        )),
     }
 }
 
@@ -254,11 +259,11 @@ where
 {
     match T::try_from(value) {
         Ok(value) => Ok(value),
-        Err(_) => Err(DataConversionError::InvalidValue {
-            from: source.data_type(),
+        Err(_) => Err(DataConversionError::invalid(
+            source.data_type(),
             to,
-            reason: InvalidValueReason::OutOfRange,
-        }),
+            InvalidValueReason::OutOfRange,
+        )),
     }
 }
 

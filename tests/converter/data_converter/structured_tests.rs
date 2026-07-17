@@ -7,6 +7,14 @@
 // =============================================================================
 //! Structured conversion tests.
 
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
+use qubit_datatype::converter::DataConversionErrorKind;
+
 use std::collections::HashMap;
 #[cfg(all(
     feature = "big-number",
@@ -78,13 +86,13 @@ fn assert_invalid_syntax<T>(
 ) {
     let matches_expected = matches!(
         &result,
-        Err(DataConversionError::InvalidValue {
-            from: DataType::String,
-            to: actual_to,
-            reason: InvalidValueReason::InvalidSyntax {
-                expected: actual_expected,
-            },
-        }) if *actual_to == to && *actual_expected == expected
+        Err(error) if error.from_type() == Some(DataType::String)
+            && error.to_type() == to
+            && matches!(
+                error.reason(),
+                Some(InvalidValueReason::InvalidSyntax {
+                expected: actual_expected }) if *actual_expected == expected
+    )
     );
     assert!(matches_expected, "unexpected result: {:?}", result.err());
 }
@@ -103,11 +111,8 @@ fn assert_invalid_reason<T>(
 ) {
     assert!(matches!(
         result,
-        Err(DataConversionError::InvalidValue {
-            from: DataType::String,
-            to: actual_to,
-            reason,
-        }) if actual_to == to && reason == expected_reason,
+        Err(error) if error.from_type() == Some(DataType::String)
+            && error.to_type() == to && error.reason() == Some(&expected_reason),
     ));
 }
 
@@ -239,15 +244,15 @@ fn test_data_converter_url_and_json_conversions() {
 
     assert!(matches!(
         DataConverter::from("not a url").to::<Url>(),
-        Err(DataConversionError::InvalidValue { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
     assert!(matches!(
         DataConverter::Empty(DataType::Url).to::<Url>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
         DataConverter::from(1i32).to::<Url>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
 
     let json: serde_json::Value = DataConverter::from(r#"{"answer":42}"#)
@@ -274,19 +279,16 @@ fn test_data_converter_url_and_json_conversions() {
 
     assert!(matches!(
         DataConverter::from("{").to::<serde_json::Value>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::Deserialization {
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::Deserialization {
                 format: DataFormat::Json,
-            },
-            ..
-        })
-    ));
+            })
+    )));
     assert!(matches!(
         DataConverter::Empty(DataType::Json).to::<serde_json::Value>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
         DataConverter::from(1i32).to::<serde_json::Value>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
 }

@@ -34,27 +34,23 @@ fn assert_i32_matrix_outcome(
         }
         MatrixOutcome::Unsupported => assert!(matches!(
             actual,
-            Err(DataConversionError::Unsupported {
-                from: DataType::Date,
-                to: DataType::Int32,
-            }),
+            Err(ref error) if error
+                == &DataConversionError::unsupported(DataType::Date, DataType::Int32),
         )),
         MatrixOutcome::InvalidSyntax => assert!(matches!(
             actual,
-            Err(DataConversionError::InvalidValue {
-                from: DataType::String,
-                to: DataType::Int32,
-                reason: InvalidValueReason::InvalidSyntax {
+            Err(ref error) if error == &DataConversionError::invalid(
+                DataType::String,
+                DataType::Int32,
+                InvalidValueReason::InvalidSyntax {
                     expected: "integer",
                 },
-            }),
+            ),
         )),
         MatrixOutcome::Missing => assert!(matches!(
             actual,
-            Err(DataConversionError::Missing {
-                from: DataType::Int32,
-                to: DataType::Int32,
-            }),
+            Err(ref error) if error
+                == &DataConversionError::missing(DataType::Int32, DataType::Int32),
         )),
     }
 }

@@ -42,11 +42,11 @@ fn integer_to_duration(
 ) -> Result<Duration, DataConversionError> {
     let (negative, value) = value;
     if negative {
-        return Err(DataConversionError::InvalidValue {
+        return Err(DataConversionError::invalid(
             from,
-            to: DataType::Duration,
-            reason: InvalidValueReason::NegativeDuration,
-        });
+            DataType::Duration,
+            InvalidValueReason::NegativeDuration,
+        ));
     }
     match options
         .duration
@@ -54,11 +54,11 @@ fn integer_to_duration(
         .duration_from_u128(value)
     {
         Ok(duration) => Ok(duration),
-        Err(_) => Err(DataConversionError::InvalidValue {
+        Err(_) => Err(DataConversionError::invalid(
             from,
-            to: DataType::Duration,
-            reason: InvalidValueReason::OutOfRange,
-        }),
+            DataType::Duration,
+            InvalidValueReason::OutOfRange,
+        )),
     }
 }
 
@@ -81,63 +81,63 @@ fn parse_duration(
         .unwrap_or(value.len());
     let (digits, suffix) = value.split_at(split_at);
     if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
-        return Err(DataConversionError::InvalidValue {
-            from: DataType::String,
+        return Err(DataConversionError::invalid(
+            DataType::String,
             to,
-            reason: InvalidValueReason::InvalidSyntax {
+            InvalidValueReason::InvalidSyntax {
                 expected: "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?",
             },
-        });
+        ));
     }
     let unit = if suffix.is_empty() {
         match options.duration.suffixless_string_policy {
             SuffixlessDurationPolicy::Reject => {
-                return Err(DataConversionError::InvalidValue {
-                    from: DataType::String,
+                return Err(DataConversionError::invalid(
+                    DataType::String,
                     to,
-                    reason: InvalidValueReason::InvalidSyntax {
+                    InvalidValueReason::InvalidSyntax {
                         expected: "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)",
                     },
-                });
+                ));
             }
             SuffixlessDurationPolicy::Assume(unit) => unit,
         }
     } else {
         let Some(unit) = DurationUnit::from_suffix(suffix) else {
             if suffix.chars().all(char::is_alphabetic) {
-                return Err(DataConversionError::InvalidValue {
-                    from: DataType::String,
+                return Err(DataConversionError::invalid(
+                    DataType::String,
                     to,
-                    reason: InvalidValueReason::UnsupportedDurationUnit,
-                });
+                    InvalidValueReason::UnsupportedDurationUnit,
+                ));
             }
-            return Err(DataConversionError::InvalidValue {
-                from: DataType::String,
+            return Err(DataConversionError::invalid(
+                DataType::String,
                 to,
-                reason: InvalidValueReason::InvalidSyntax {
+                InvalidValueReason::InvalidSyntax {
                     expected: "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?",
                 },
-            });
+            ));
         };
         unit
     };
     let value = match digits.parse::<u128>() {
         Ok(value) => value,
         Err(_) => {
-            return Err(DataConversionError::InvalidValue {
-                from: DataType::String,
+            return Err(DataConversionError::invalid(
+                DataType::String,
                 to,
-                reason: InvalidValueReason::OutOfRange,
-            });
+                InvalidValueReason::OutOfRange,
+            ));
         }
     };
     match unit.duration_from_u128(value) {
         Ok(duration) => Ok(duration),
-        Err(_) => Err(DataConversionError::InvalidValue {
-            from: DataType::String,
+        Err(_) => Err(DataConversionError::invalid(
+            DataType::String,
             to,
-            reason: InvalidValueReason::OutOfRange,
-        }),
+            InvalidValueReason::OutOfRange,
+        )),
     }
 }
 
@@ -193,7 +193,7 @@ impl DataConversionTarget for Duration {
 ///
 /// Returns an exact unit count under [`NumericConversionPolicy::Exact`], or a
 /// half-up rounded count under the lossy policy. A precision-losing exact
-/// conversion returns [`DataConversionError::InvalidValue`].
+/// conversion returns an invalid-value [`DataConversionError`].
 pub(super) fn format_duration(
     value: Duration,
     options: &DataConversionOptions,

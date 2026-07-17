@@ -87,13 +87,10 @@ fn test_scalar_string_data_converters_to_vec_with_reports_missing_scalar() {
         .to_vec_with::<u16>(&options)
         .expect_err("blank scalar string should be treated as missing");
 
-    assert_eq!(error.source_index, 0);
+    assert_eq!(error.source_index(), 0);
     assert_eq!(
-        error.source,
-        DataConversionError::Missing {
-            from: DataType::String,
-            to: DataType::UInt16,
-        },
+        error.conversion_error(),
+        &DataConversionError::missing(DataType::String, DataType::UInt16),
     );
 }
 
@@ -108,10 +105,10 @@ fn test_scalar_string_data_converters_to_first_with_reports_missing_scalar() {
 
     assert_eq!(
         ScalarStringDataConverters::from("   ").to_first_with::<u16>(&options),
-        Err(DataConversionError::Missing {
-            from: DataType::String,
-            to: DataType::UInt16,
-        }),
+        Err(DataConversionError::missing(
+            DataType::String,
+            DataType::UInt16
+        )),
     );
 }
 
@@ -128,14 +125,14 @@ fn test_scalar_string_data_converters_to_vec_with_rejects_empty_item() {
         .to_vec_with::<u16>(&options)
         .expect_err("empty scalar item should be rejected");
 
-    assert_eq!(error.source_index, 1);
+    assert_eq!(error.source_index(), 1);
     assert_eq!(
-        error.source,
-        DataConversionError::InvalidValue {
-            from: DataType::String,
-            to: DataType::UInt16,
-            reason: InvalidValueReason::BlankRejected,
-        },
+        error.conversion_error(),
+        &DataConversionError::invalid(
+            DataType::String,
+            DataType::UInt16,
+            InvalidValueReason::BlankRejected,
+        ),
     );
 }
 
@@ -150,11 +147,11 @@ fn test_scalar_string_data_converters_to_first_with_rejects_empty_item() {
 
     assert_eq!(
         ScalarStringDataConverters::from(",1,2").to_first_with::<u16>(&options),
-        Err(DataConversionError::InvalidValue {
-            from: DataType::String,
-            to: DataType::UInt16,
-            reason: InvalidValueReason::BlankRejected,
-        }),
+        Err(DataConversionError::invalid(
+            DataType::String,
+            DataType::UInt16,
+            InvalidValueReason::BlankRejected,
+        )),
     );
 }
 
@@ -169,9 +166,7 @@ fn test_scalar_string_data_converters_to_first_with_reports_empty_after_skip() {
 
     assert_eq!(
         ScalarStringDataConverters::from(",,").to_first_with::<u16>(&options),
-        Err(DataConversionError::EmptyCollection {
-            to: DataType::UInt16,
-        }),
+        Err(DataConversionError::empty_collection(DataType::UInt16)),
     );
 }
 
@@ -188,7 +183,7 @@ fn test_scalar_string_data_converters_preserves_original_source_index() {
         .to_vec_with::<u16>(&options)
         .expect_err("invalid third source item should fail");
 
-    assert_eq!(error.source_index, 2);
+    assert_eq!(error.source_index(), 2);
 }
 
 /// Test that first-value conversion does not inspect a rejected tail item.
@@ -219,12 +214,9 @@ fn test_scalar_string_data_converters_rejects_blank_scalar() {
     let error = ScalarStringDataConverters::from("   ")
         .to_vec_with::<u16>(&options)
         .expect_err("blank scalar should be rejected");
-    assert_eq!(error.source_index, 0);
+    assert_eq!(error.source_index(), 0);
     assert!(matches!(
-        error.source,
-        DataConversionError::InvalidValue {
-            reason: InvalidValueReason::BlankRejected,
-            ..
-        },
+        error.conversion_error(),
+        conversion_error if matches!(conversion_error.reason(), Some(InvalidValueReason::BlankRejected)),
     ));
 }

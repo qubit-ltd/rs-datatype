@@ -30,16 +30,15 @@ pub(super) fn normalize<'a>(
         .string
         .normalize(value)
         .map_err(|error| match error {
-            StringNormalizationError::Missing => DataConversionError::Missing {
-                from: DataType::String,
-                to,
-            },
+            StringNormalizationError::Missing => {
+                DataConversionError::missing(DataType::String, to)
+            }
             StringNormalizationError::BlankRejected => {
-                DataConversionError::InvalidValue {
-                    from: DataType::String,
+                DataConversionError::invalid(
+                    DataType::String,
                     to,
-                    reason: InvalidValueReason::BlankRejected,
-                }
+                    InvalidValueReason::BlankRejected,
+                )
             }
         })
 }
