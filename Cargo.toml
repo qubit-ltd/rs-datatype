@@ -68,3 +68,13 @@ serde_json = "1.0"
 name = "numeric_conversion_bench"
 harness = false
 required-features = ["converter"]
+
+[[bench]]
+name = "numeric_comparison_bench"
+harness = false
+required-features = ["big-number"]
+
+[[bench]]
+name = "scalar_collection_bench"
+harness = false
+required-features = ["converter"]
