@@ -15,34 +15,12 @@ use super::error::{
     DataConversionError,
     DataListConversionError,
     InvalidValueReason,
-    StringNormalizationError,
 };
 use super::options::DataConversionOptions;
 use crate::datatype::{
     DataType,
     DataTypeOf,
 };
-
-/// Maps string normalization outcomes to the requested element type.
-///
-/// The error does not include the source text. Missing and rejected blanks are
-/// distinguished so callers can apply stable policy-specific handling.
-fn normalization_error<T: DataTypeOf>(
-    error: StringNormalizationError,
-) -> DataConversionError {
-    match error {
-        StringNormalizationError::Missing => {
-            DataConversionError::missing(DataType::String, T::DATA_TYPE)
-        }
-        StringNormalizationError::BlankRejected => {
-            DataConversionError::invalid(
-                DataType::String,
-                T::DATA_TYPE,
-                InvalidValueReason::BlankRejected,
-            )
-        }
-    }
-}
 
 /// Converts a scalar string as a configurable collection source.
 ///
@@ -129,7 +107,7 @@ impl<'a> ScalarStringDataConverters<'a> {
             Err(error) => {
                 return Err(DataListConversionError::new(
                     0,
-                    normalization_error::<T>(error),
+                    error.into_data_conversion_error(T::DATA_TYPE),
                 ));
             }
         };
@@ -216,7 +194,7 @@ impl<'a> ScalarStringDataConverters<'a> {
         let text = options
             .string
             .normalize(self.source)
-            .map_err(normalization_error::<T>)?;
+            .map_err(|error| error.into_data_conversion_error(T::DATA_TYPE))?;
         let first = options
             .collection
             .scalar_items(text)
