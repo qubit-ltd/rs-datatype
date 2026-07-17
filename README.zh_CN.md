@@ -210,7 +210,7 @@ assert_eq!(DataConverter::from("8080").to::<Port>(), Ok(Port(8080)));
 # 使用默认的空 feature 集测试核心 API
 cargo test --no-default-features
 
-# 测试核心 API 和正则校验
+# 测试核心 API 和全部可选 feature
 cargo test --all-features
 
 # 运行项目 CI 检查
