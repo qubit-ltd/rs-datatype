@@ -1,0 +1,142 @@
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
+//! Arbitrary-precision source conversions to primitive floating-point targets.
+
+use bigdecimal::BigDecimal;
+use num_bigint::BigInt;
+use num_traits::{
+    FromPrimitive,
+    ToPrimitive,
+};
+
+use crate::converter::{
+    DataConversionError,
+    InvalidValueReason,
+    NumericConversionPolicy,
+};
+use crate::datatype::DataType;
+
+/// Converts an integer exactly or lossily to a float.
+///
+/// Lossy mode accepts finite IEEE rounding. Exact mode additionally requires
+/// converting the result back to reproduce `value`. Non-finite results are
+/// reported as out of range using `from` and `to`.
+pub(super) fn bigint_to_f64(
+    value: &BigInt,
+    policy: NumericConversionPolicy,
+    from: DataType,
+    to: DataType,
+) -> Result<f64, DataConversionError> {
+    let converted = value.to_f64().unwrap_or(f64::INFINITY);
+    if !converted.is_finite() {
+        return Err(DataConversionError::invalid(
+            from,
+            to,
+            InvalidValueReason::OutOfRange,
+        ));
+    }
+    if policy == NumericConversionPolicy::Exact
+        && BigInt::from_f64(converted).as_ref() != Some(value)
+    {
+        Err(DataConversionError::invalid(
+            from,
+            to,
+            InvalidValueReason::PrecisionLoss,
+        ))
+    } else {
+        Ok(converted)
+    }
+}
+
+/// Converts an integer exactly or lossily to an `f32`.
+pub(super) fn bigint_to_f32(
+    value: &BigInt,
+    policy: NumericConversionPolicy,
+    from: DataType,
+    to: DataType,
+) -> Result<f32, DataConversionError> {
+    let converted = value.to_f32().unwrap_or(f32::INFINITY);
+    if !converted.is_finite() {
+        return Err(DataConversionError::invalid(
+            from,
+            to,
+            InvalidValueReason::OutOfRange,
+        ));
+    }
+    if policy == NumericConversionPolicy::Exact
+        && BigInt::from_f32(converted).as_ref() != Some(value)
+    {
+        Err(DataConversionError::invalid(
+            from,
+            to,
+            InvalidValueReason::PrecisionLoss,
+        ))
+    } else {
+        Ok(converted)
+    }
+}
+
+/// Converts a decimal exactly or lossily to a float.
+///
+/// Lossy mode accepts finite IEEE rounding. Exact mode additionally requires
+/// converting the result back to reproduce `value`. Non-finite results are
+/// reported as out of range using `from` and `to`.
+pub(super) fn decimal_to_f64(
+    value: &BigDecimal,
+    policy: NumericConversionPolicy,
+    from: DataType,
+    to: DataType,
+) -> Result<f64, DataConversionError> {
+    let converted = value.to_f64().unwrap_or(f64::INFINITY);
+    if !converted.is_finite() {
+        return Err(DataConversionError::invalid(
+            from,
+            to,
+            InvalidValueReason::OutOfRange,
+        ));
+    }
+    if policy == NumericConversionPolicy::Exact
+        && BigDecimal::from_f64(converted).as_ref() != Some(value)
+    {
+        Err(DataConversionError::invalid(
+            from,
+            to,
+            InvalidValueReason::PrecisionLoss,
+        ))
+    } else {
+        Ok(converted)
+    }
+}
+
+/// Converts a decimal exactly or lossily to an `f32`.
+pub(super) fn decimal_to_f32(
+    value: &BigDecimal,
+    policy: NumericConversionPolicy,
+    from: DataType,
+    to: DataType,
+) -> Result<f32, DataConversionError> {
+    let converted = value.to_f32().unwrap_or(f32::INFINITY);
+    if !converted.is_finite() {
+        return Err(DataConversionError::invalid(
+            from,
+            to,
+            InvalidValueReason::OutOfRange,
+        ));
+    }
+    if policy == NumericConversionPolicy::Exact
+        && BigDecimal::from_f32(converted).as_ref() != Some(value)
+    {
+        Err(DataConversionError::invalid(
+            from,
+            to,
+            InvalidValueReason::PrecisionLoss,
+        ))
+    } else {
+        Ok(converted)
+    }
+}

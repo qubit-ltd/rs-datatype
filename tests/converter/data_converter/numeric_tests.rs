@@ -485,10 +485,13 @@ fn test_data_converter_core_numeric_parser_covers_decimal_boundaries() {
     assert_eq!(DataConverter::from("0.5").to::<f64>(), Ok(0.5));
     assert_eq!(DataConverter::from("1e1").to::<f64>(), Ok(10.0));
     assert_eq!(DataConverter::from("-1").to::<f64>(), Ok(-1.0));
+    assert_eq!(
+        DataConverter::from("0e999999999999999999999").to::<f64>(),
+        Ok(0.0),
+    );
     for value in [
         "0.1",
         "999999999999999999999999999999999999999",
-        "0e999999999999999999999",
         "1e-4294967296",
     ] {
         assert!(matches!(
