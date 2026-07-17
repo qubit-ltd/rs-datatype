@@ -231,7 +231,7 @@ precision, error, and feature contracts as built-in targets.
 # Core API with the default empty feature set
 cargo test --no-default-features
 
-# Core API plus regex validation
+# Core API plus every optional feature
 cargo test --all-features
 
 # Project CI checks
