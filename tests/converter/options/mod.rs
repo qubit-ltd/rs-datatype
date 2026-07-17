@@ -15,6 +15,7 @@ mod data_conversion_options_tests;
 mod duration_conversion_options_tests;
 mod duration_unit_tests;
 mod empty_item_policy_tests;
+mod internal;
 mod numeric_conversion_policy_tests;
 mod string_conversion_options_tests;
 mod suffixless_duration_policy_tests;

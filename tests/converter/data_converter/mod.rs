@@ -10,6 +10,7 @@
 mod boolean_tests;
 #[cfg(all(feature = "big-number", feature = "chrono"))]
 mod duration_tests;
+mod internal;
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",

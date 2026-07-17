@@ -5,9 +5,10 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Tests for policy-driven numeric comparison.
+//! Tests mirroring internal numeric conversion responsibilities.
 
-mod compare_numeric_tests;
-mod internal;
-mod numeric_comparison_policy_tests;
-mod numeric_value_ref_tests;
+mod big_number_tests;
+mod float_tests;
+mod integer_tests;
+mod parsed_number_tests;
+mod syntax_tests;
