@@ -85,6 +85,7 @@ mod text;
 /// ```
 #[must_use]
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum DataConverter<'a> {
     /// Missing source whose declared type remains known.
     Empty(DataType),
