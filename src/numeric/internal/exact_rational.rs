@@ -172,6 +172,10 @@ pub(in crate::numeric) fn compare_exact_rational(
     left: NumericValueRef<'_>,
     right: NumericValueRef<'_>,
 ) -> Option<Ordering> {
+    // TODO: Benchmark and add borrowed or direct fast paths for BigInteger
+    // and BigDecimal pairs. The current rational fallback clones BigInt
+    // values and materializes powers of ten even when both operands share a
+    // representation that may support allocation-free exact comparison.
     match (to_exact_rational(left), to_exact_rational(right)) {
         (Some(left), Some(right)) => Some(left.cmp(&right)),
         _ => compare_exact_decimal(left, right),
