@@ -52,6 +52,7 @@ use serde::{
 /// );
 /// assert!(DataConverter::from("2").to_with::<Duration>(&options).is_err());
 /// ```
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct DurationConversionOptions {
@@ -75,7 +76,7 @@ impl DurationConversionOptions {
     /// # Returns
     ///
     /// Environment-friendly duration conversion options.
-    #[inline]
+    #[inline(always)]
     pub fn env_friendly() -> Self {
         Self::default()
     }
@@ -89,7 +90,7 @@ impl DurationConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_numeric_input_unit(mut self, unit: DurationUnit) -> Self {
         self.numeric_input_unit = unit;
         self
@@ -104,7 +105,7 @@ impl DurationConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_suffixless_string_policy(
         mut self,
         policy: SuffixlessDurationPolicy,
@@ -123,7 +124,7 @@ impl DurationConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_output_unit(mut self, unit: DurationUnit) -> Self {
         self.output_unit = unit;
         self
@@ -139,7 +140,7 @@ impl DurationConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_append_unit_suffix(mut self, append_unit_suffix: bool) -> Self {
         self.append_unit_suffix = append_unit_suffix;
         self

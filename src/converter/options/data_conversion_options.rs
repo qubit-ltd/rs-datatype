@@ -41,8 +41,9 @@ use super::string_conversion_options::StringConversionOptions;
 /// let options = DataConversionOptions::env_friendly();
 /// assert_eq!(DataConverter::from(" yes ").to_with::<bool>(&options), Ok(true));
 /// ```
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct DataConversionOptions {
     /// Numeric precision and rounding behavior.
     pub numeric_policy: NumericConversionPolicy,
@@ -78,7 +79,6 @@ impl DataConversionOptions {
     /// let options = DataConversionOptions::strict();
     /// assert!(DataConverter::from("3.9").to_with::<i32>(&options).is_err());
     /// ```
-    #[must_use]
     pub fn strict() -> Self {
         Self {
             numeric_policy: NumericConversionPolicy::Exact,
@@ -111,23 +111,11 @@ impl DataConversionOptions {
     /// let options = DataConversionOptions::lossy();
     /// assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&options), Ok(3));
     /// ```
-    #[must_use]
     pub fn lossy() -> Self {
         let mut options = Self::strict();
         options.numeric_policy = NumericConversionPolicy::Lossy;
         options.string.trim = true;
         options
-    }
-
-    /// Returns a shared reference to the default options.
-    ///
-    /// # Returns
-    ///
-    /// A process-wide lazily initialized default value.
-    pub fn default_ref() -> &'static Self {
-        static DEFAULT: LazyLock<DataConversionOptions> =
-            LazyLock::new(DataConversionOptions::default);
-        &DEFAULT
     }
 
     /// Creates options suitable for environment variable style values.
@@ -147,6 +135,18 @@ impl DataConversionOptions {
         }
     }
 
+    /// Returns a shared reference to the default options.
+    ///
+    /// # Returns
+    ///
+    /// A process-wide lazily initialized default value.
+    #[inline(always)]
+    pub fn default_ref() -> &'static Self {
+        static DEFAULT: LazyLock<DataConversionOptions> =
+            LazyLock::new(DataConversionOptions::default);
+        &DEFAULT
+    }
+
     /// Returns a copy with a different numeric conversion policy.
     ///
     /// # Parameters
@@ -156,7 +156,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Returns the updated options value.
-    #[must_use]
+    #[inline(always)]
     pub fn with_numeric_policy(
         mut self,
         numeric_policy: NumericConversionPolicy,
@@ -174,7 +174,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_blank_string_policy(
         mut self,
         policy: BlankStringPolicy,
@@ -192,7 +192,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_empty_item_policy(mut self, policy: EmptyItemPolicy) -> Self {
         self.collection = self.collection.with_empty_item_policy(policy);
         self
@@ -207,7 +207,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_string_options(
         mut self,
         string: StringConversionOptions,
@@ -225,7 +225,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_boolean_options(
         mut self,
         boolean: BooleanConversionOptions,
@@ -243,7 +243,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_collection_options(
         mut self,
         collection: CollectionConversionOptions,
@@ -261,7 +261,7 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_duration_options(
         mut self,
         duration: DurationConversionOptions,
@@ -273,6 +273,7 @@ impl DataConversionOptions {
 
 impl Default for DataConversionOptions {
     /// Creates the strict default conversion profile.
+    #[inline(always)]
     fn default() -> Self {
         Self::strict()
     }

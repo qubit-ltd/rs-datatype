@@ -9,7 +9,7 @@
 //!
 //! Provides data conversion utilities based on [`crate::datatype::DataType`].
 
-mod data_convert_to;
+mod data_conversion_target;
 mod data_converter;
 mod data_converters;
 mod error;
@@ -18,7 +18,7 @@ mod scalar_item;
 mod scalar_items;
 mod scalar_string_data_converters;
 
-pub use data_convert_to::DataConvertTo;
+pub use data_conversion_target::DataConversionTarget;
 pub use data_converter::DataConverter;
 pub use data_converters::DataConverters;
 pub use error::{

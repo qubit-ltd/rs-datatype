@@ -63,6 +63,9 @@
 /// Data type descriptors and compile-time type mappings.
 pub mod datatype;
 
+/// Policy-driven numeric comparison primitives.
+pub mod numeric;
+
 /// Runtime value conversion utilities.
 #[cfg(feature = "converter")]
 pub mod converter;
@@ -76,7 +79,7 @@ pub use converter::{
     CollectionConversionOptions,
     DataConversionError,
     DataConversionOptions,
-    DataConvertTo,
+    DataConversionTarget,
     DataConverter,
     DataConverters,
     DataFormat,
@@ -99,4 +102,9 @@ pub use datatype::{
     DataType,
     DataTypeOf,
     DataTypeParseError,
+};
+pub use numeric::{
+    NumericComparisonPolicy,
+    NumericValueRef,
+    compare_numeric,
 };
