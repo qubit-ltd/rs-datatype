@@ -413,6 +413,23 @@ fn test_data_converter_big_decimal_extreme_exponents_are_bounded() {
     assert_eq!(DataConverter::from(&tiny).to_with::<i32>(&lossy), Ok(0));
 }
 
+/// Test exponent expansion cannot exhaust memory when producing a `BigInt`.
+#[test]
+fn test_data_converter_bigint_exponent_expansion_is_bounded() {
+    let huge = BigDecimal::from_str("1e738508196")
+        .expect("large positive exponent should parse compactly");
+    for result in [
+        DataConverter::from(&huge).to::<BigInt>(),
+        DataConverter::from("1e738508196").to::<BigInt>(),
+    ] {
+        assert!(matches!(
+            result,
+            Err(conversion_error)
+                if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)),
+        ));
+    }
+}
+
 /// Test textual and typed non-finite values share BigDecimal classification.
 #[test]
 fn test_data_converter_big_decimal_non_finite_classification_is_consistent() {

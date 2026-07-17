@@ -27,6 +27,13 @@ use crate::converter::{
 };
 use crate::datatype::DataType;
 
+/// Maximum decimal digits that a conversion may synthesize for a `BigInt`.
+///
+/// Textual and `BigDecimal` exponents are compact, but materializing an
+/// arbitrary exponent as an integer can otherwise amplify a tiny input into
+/// an allocation large enough to exhaust the process memory.
+const MAX_SYNTHESIZED_BIGINT_DECIMAL_DIGITS: u64 = 1_000_000;
+
 /// Converts a decimal to an integer with exactness checks.
 ///
 /// `from` and `to` are used only as error context. Returns the integral value;
@@ -48,11 +55,13 @@ pub(super) fn decimal_to_bigint(
         let exponent = scale.unsigned_abs();
         let coefficient_digits =
             coefficient.to_str_radix(10).trim_start_matches('-').len() as u64;
-        if (to.is_integer()
-            && to != DataType::BigInteger
-            && coefficient_digits.saturating_add(exponent) > 39)
-            || exponent > u64::from(u32::MAX)
-        {
+        let result_digits = coefficient_digits.saturating_add(exponent);
+        let exceeds_target_limit = if to == DataType::BigInteger {
+            result_digits > MAX_SYNTHESIZED_BIGINT_DECIMAL_DIGITS
+        } else {
+            to.is_integer() && result_digits > 39
+        };
+        if exceeds_target_limit || exponent > u64::from(u32::MAX) {
             return Err(DataConversionError::invalid(
                 from,
                 to,
