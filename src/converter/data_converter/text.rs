@@ -2,6 +2,8 @@
 //    Copyright (c) 2025 - 2026 Haixing Hu.
 //
 //    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Textual and temporal conversion implementations.
 
@@ -22,24 +24,24 @@ use super::string_source::normalize;
 use crate::converter::{
     DataConversionError,
     DataConversionOptions,
-    DataConvertTo,
+    DataConversionTarget,
     InvalidValueReason,
 };
 use crate::datatype::DataType;
 
-impl DataConvertTo<char> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for char {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<char, DataConversionError> {
-        match self {
-            Self::Char(value) => Ok(*value),
-            Self::String(value) => {
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::Char(value) => Ok(*value),
+            DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Char)?;
                 let mut chars = value.chars();
                 match (chars.next(), chars.next()) {
                     (Some(value), None) => Ok(value),
-                    _ => Err(self.invalid(
+                    _ => Err(source.invalid(
                         DataType::Char,
                         InvalidValueReason::InvalidSyntax {
                             expected: "one Unicode scalar value",
@@ -47,55 +49,57 @@ impl DataConvertTo<char> for DataConverter<'_> {
                     )),
                 }
             }
-            Self::Empty(_) => Err(self.missing(DataType::Char)),
-            _ => Err(self.unsupported(DataType::Char)),
+            DataConverter::Empty(_) => Err(source.missing(DataType::Char)),
+            _ => Err(source.unsupported(DataType::Char)),
         }
     }
 }
 
-impl DataConvertTo<String> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for String {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<String, DataConversionError> {
-        match self {
-            Self::Empty(_) => Err(self.missing(DataType::String)),
-            Self::String(value) => {
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::Empty(_) => Err(source.missing(DataType::String)),
+            DataConverter::String(value) => {
                 normalize(value, options, DataType::String).map(str::to_owned)
             }
-            Self::Bool(value) => Ok(value.to_string()),
-            Self::Char(value) => Ok(value.to_string()),
-            Self::Int8(value) => Ok(value.to_string()),
-            Self::Int16(value) => Ok(value.to_string()),
-            Self::Int32(value) => Ok(value.to_string()),
-            Self::Int64(value) => Ok(value.to_string()),
-            Self::Int128(value) => Ok(value.to_string()),
-            Self::UInt8(value) => Ok(value.to_string()),
-            Self::UInt16(value) => Ok(value.to_string()),
-            Self::UInt32(value) => Ok(value.to_string()),
-            Self::UInt64(value) => Ok(value.to_string()),
-            Self::UInt128(value) => Ok(value.to_string()),
-            Self::Float32(value) => Ok(value.to_string()),
-            Self::Float64(value) => Ok(value.to_string()),
+            DataConverter::Bool(value) => Ok(value.to_string()),
+            DataConverter::Char(value) => Ok(value.to_string()),
+            DataConverter::Int8(value) => Ok(value.to_string()),
+            DataConverter::Int16(value) => Ok(value.to_string()),
+            DataConverter::Int32(value) => Ok(value.to_string()),
+            DataConverter::Int64(value) => Ok(value.to_string()),
+            DataConverter::Int128(value) => Ok(value.to_string()),
+            DataConverter::UInt8(value) => Ok(value.to_string()),
+            DataConverter::UInt16(value) => Ok(value.to_string()),
+            DataConverter::UInt32(value) => Ok(value.to_string()),
+            DataConverter::UInt64(value) => Ok(value.to_string()),
+            DataConverter::UInt128(value) => Ok(value.to_string()),
+            DataConverter::Float32(value) => Ok(value.to_string()),
+            DataConverter::Float64(value) => Ok(value.to_string()),
             #[cfg(feature = "big-number")]
-            Self::BigInteger(value) => Ok(value.to_string()),
+            DataConverter::BigInteger(value) => Ok(value.to_string()),
             #[cfg(feature = "big-number")]
-            Self::BigDecimal(value) => Ok(value.to_string()),
+            DataConverter::BigDecimal(value) => Ok(value.to_string()),
             #[cfg(feature = "chrono")]
-            Self::Date(value) => Ok(value.format("%Y-%m-%d").to_string()),
+            DataConverter::Date(value) => {
+                Ok(value.format("%Y-%m-%d").to_string())
+            }
             #[cfg(feature = "chrono")]
-            Self::Time(value) => Ok(value.to_string()),
+            DataConverter::Time(value) => Ok(value.to_string()),
             #[cfg(feature = "chrono")]
-            Self::DateTime(value) => {
+            DataConverter::DateTime(value) => {
                 Ok(value.format("%Y-%m-%dT%H:%M:%S%.f").to_string())
             }
             #[cfg(feature = "chrono")]
-            Self::Instant(value) => Ok(value.to_rfc3339()),
-            Self::Duration(value) => format_duration(*value, options),
+            DataConverter::Instant(value) => Ok(value.to_rfc3339()),
+            DataConverter::Duration(value) => format_duration(*value, options),
             #[cfg(feature = "url")]
-            Self::Url(value) => Ok(value.to_string()),
+            DataConverter::Url(value) => Ok(value.to_string()),
             #[cfg(feature = "json")]
-            Self::StringMap(value) => Ok(serde_json::Value::Object(
+            DataConverter::StringMap(value) => Ok(serde_json::Value::Object(
                 value
                     .iter()
                     .map(|(key, value)| {
@@ -105,9 +109,11 @@ impl DataConvertTo<String> for DataConverter<'_> {
             )
             .to_string()),
             #[cfg(not(feature = "json"))]
-            Self::StringMap(_) => Err(self.unsupported(DataType::String)),
+            DataConverter::StringMap(_) => {
+                Err(source.unsupported(DataType::String))
+            }
             #[cfg(feature = "json")]
-            Self::Json(value) => Ok(value.to_string()),
+            DataConverter::Json(value) => Ok(value.to_string()),
         }
     }
 }
@@ -115,18 +121,18 @@ impl DataConvertTo<String> for DataConverter<'_> {
 #[cfg(feature = "chrono")]
 macro_rules! impl_text_or_copy_target {
     ($target:ty, $variant:ident, $data_type:expr, $format:literal, $parser:expr) => {
-        impl DataConvertTo<$target> for DataConverter<'_> {
-            fn convert(
-                &self,
+        impl DataConversionTarget for $target {
+            fn convert_from(
+                source: &DataConverter<'_>,
                 options: &DataConversionOptions,
-            ) -> Result<$target, DataConversionError> {
-                match self {
-                    Self::$variant(value) => Ok(*value),
-                    Self::String(value) => {
+            ) -> Result<Self, DataConversionError> {
+                match source {
+                    DataConverter::$variant(value) => Ok(*value),
+                    DataConverter::String(value) => {
                         let value = normalize(value, options, $data_type)?;
                         match ($parser)(value) {
                             Some(value) => Ok(value),
-                            None => Err(self.invalid(
+                            None => Err(source.invalid(
                                 $data_type,
                                 InvalidValueReason::InvalidSyntax {
                                     expected: $format,
@@ -134,8 +140,8 @@ macro_rules! impl_text_or_copy_target {
                             )),
                         }
                     }
-                    Self::Empty(_) => Err(self.missing($data_type)),
-                    _ => Err(self.unsupported($data_type)),
+                    DataConverter::Empty(_) => Err(source.missing($data_type)),
+                    _ => Err(source.unsupported($data_type)),
                 }
             }
         }
@@ -214,18 +220,18 @@ impl_text_or_copy_target!(
 );
 
 #[cfg(feature = "chrono")]
-impl DataConvertTo<DateTime<Utc>> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for DateTime<Utc> {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<DateTime<Utc>, DataConversionError> {
-        match self {
-            Self::Instant(value) => Ok(*value),
-            Self::String(value) => {
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::Instant(value) => Ok(*value),
+            DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Instant)?;
                 match DateTime::parse_from_rfc3339(value) {
                     Ok(value) => Ok(value.with_timezone(&Utc)),
-                    Err(_) => Err(self.invalid(
+                    Err(_) => Err(source.invalid(
                         DataType::Instant,
                         InvalidValueReason::InvalidSyntax {
                             expected: "RFC 3339 timestamp with offset",
@@ -233,25 +239,25 @@ impl DataConvertTo<DateTime<Utc>> for DataConverter<'_> {
                     )),
                 }
             }
-            Self::Empty(_) => Err(self.missing(DataType::Instant)),
-            _ => Err(self.unsupported(DataType::Instant)),
+            DataConverter::Empty(_) => Err(source.missing(DataType::Instant)),
+            _ => Err(source.unsupported(DataType::Instant)),
         }
     }
 }
 
 #[cfg(feature = "url")]
-impl DataConvertTo<Url> for DataConverter<'_> {
-    fn convert(
-        &self,
+impl DataConversionTarget for Url {
+    fn convert_from(
+        source: &DataConverter<'_>,
         options: &DataConversionOptions,
-    ) -> Result<Url, DataConversionError> {
-        match self {
-            Self::Url(value) => Ok(value.as_ref().clone()),
-            Self::String(value) => {
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::Url(value) => Ok(value.as_ref().clone()),
+            DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Url)?;
                 match Url::parse(value) {
                     Ok(value) => Ok(value),
-                    Err(_) => Err(self.invalid(
+                    Err(_) => Err(source.invalid(
                         DataType::Url,
                         InvalidValueReason::InvalidSyntax {
                             expected: "absolute URL",
@@ -259,8 +265,8 @@ impl DataConvertTo<Url> for DataConverter<'_> {
                     )),
                 }
             }
-            Self::Empty(_) => Err(self.missing(DataType::Url)),
-            _ => Err(self.unsupported(DataType::Url)),
+            DataConverter::Empty(_) => Err(source.missing(DataType::Url)),
+            _ => Err(source.unsupported(DataType::Url)),
         }
     }
 }

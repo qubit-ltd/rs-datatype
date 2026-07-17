@@ -2,6 +2,8 @@
 //    Copyright (c) 2025 - 2026 Haixing Hu.
 //
 //    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! # Boolean Numeric Policy
 //!
@@ -16,6 +18,7 @@ use serde::{
 ///
 /// This policy applies both to integer source variants and to integer-shaped
 /// strings that did not match a configured boolean literal.
+#[must_use]
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
 )]

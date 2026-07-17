@@ -1,6 +1,6 @@
 [package]
 name = "qubit-datatype"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 rust-version = "1.94"
 authors = ["Haixing Hu <starfish.hu@gmail.com>"]
@@ -19,7 +19,7 @@ include = [
     "/README.zh_CN.md",
     "/RUST_CODING_STYLE.md",
     "/RUST_CODING_STYLE.zh_CN.md",
-    "/doc/**/user_guide*.md",
+    "/benches/**",
     "/examples/**",
     "/resources/**",
     "/src/**",
@@ -37,7 +37,12 @@ test = false
 [features]
 default = []
 chrono = ["dep:chrono"]
-big-number = ["dep:bigdecimal", "dep:num-bigint", "dep:num-traits"]
+big-number = [
+    "dep:bigdecimal",
+    "dep:num-bigint",
+    "dep:num-rational",
+    "dep:num-traits",
+]
 url = ["dep:url"]
 json = ["dep:serde_json"]
 converter = ["dep:thiserror"]
@@ -45,8 +50,9 @@ all = ["converter", "chrono", "big-number", "url", "json"]
 
 [dependencies]
 bigdecimal = { version = "0.4", optional = true }
-chrono = { version = "0.4", features = ["serde"], optional = true }
+chrono = { version = "0.4", default-features = false, features = ["std"], optional = true }
 num-bigint = { version = "0.4", optional = true }
+num-rational = { version = "0.4", optional = true }
 num-traits = { version = "0.2", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
@@ -54,5 +60,11 @@ thiserror = { version = "2.0", optional = true }
 url = { version = "2.5", optional = true }
 
 [dev-dependencies]
+criterion = { version = "0.8", default-features = false }
 proptest = "1.0"
 serde_json = "1.0"
+
+[[bench]]
+name = "numeric_conversion_bench"
+harness = false
+required-features = ["converter"]

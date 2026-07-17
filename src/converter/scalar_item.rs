@@ -2,6 +2,8 @@
 //    Copyright (c) 2025 - 2026 Haixing Hu.
 //
 //    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Borrowed scalar collection item.
 
@@ -11,6 +13,7 @@
 /// [`crate::CollectionConversionOptions`], while the index always identifies
 /// the raw item before empty-item filtering.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[must_use]
 pub struct ScalarItem<'a> {
     /// Zero-based index before empty-item filtering.
     pub source_index: usize,

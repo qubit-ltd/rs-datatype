@@ -19,6 +19,7 @@ use serde::{
 use super::super::error::DurationOverflowError;
 
 /// Unit used when converting [`Duration`] values to and from scalar values.
+#[must_use]
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
 )]
@@ -42,24 +43,6 @@ pub enum DurationUnit {
 }
 
 impl DurationUnit {
-    /// Returns the canonical suffix for this duration unit.
-    ///
-    /// # Returns
-    ///
-    /// The ASCII suffix used when formatting this unit.
-    #[inline]
-    pub const fn suffix(self) -> &'static str {
-        match self {
-            DurationUnit::Nanoseconds => "ns",
-            DurationUnit::Microseconds => "us",
-            DurationUnit::Milliseconds => "ms",
-            DurationUnit::Seconds => "s",
-            DurationUnit::Minutes => "m",
-            DurationUnit::Hours => "h",
-            DurationUnit::Days => "d",
-        }
-    }
-
     /// Parses a duration unit suffix.
     ///
     /// # Parameters
@@ -80,6 +63,25 @@ impl DurationUnit {
             "h" => Some(DurationUnit::Hours),
             "d" => Some(DurationUnit::Days),
             _ => None,
+        }
+    }
+
+    /// Returns the canonical suffix for this duration unit.
+    ///
+    /// # Returns
+    ///
+    /// The ASCII suffix used when formatting this unit.
+    #[must_use]
+    #[inline(always)]
+    pub const fn suffix(self) -> &'static str {
+        match self {
+            DurationUnit::Nanoseconds => "ns",
+            DurationUnit::Microseconds => "us",
+            DurationUnit::Milliseconds => "ms",
+            DurationUnit::Seconds => "s",
+            DurationUnit::Minutes => "m",
+            DurationUnit::Hours => "h",
+            DurationUnit::Days => "d",
         }
     }
 
@@ -149,6 +151,7 @@ impl DurationUnit {
     /// # Returns
     ///
     /// The rounded number of units represented by the duration.
+    #[must_use]
     pub fn rounded_units(self, duration: Duration) -> u128 {
         let total_nanos = duration.as_nanos();
         let unit_nanos = self.nanos_per_unit();
@@ -167,6 +170,7 @@ impl DurationUnit {
     /// # Returns
     ///
     /// Nanoseconds per unit.
+    #[must_use]
     pub(crate) const fn nanos_per_unit(self) -> u128 {
         match self {
             DurationUnit::Nanoseconds => 1,

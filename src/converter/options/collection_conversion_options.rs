@@ -38,8 +38,9 @@ use serde::{
 ///     .collect();
 /// assert_eq!(items, ["1", "3"]);
 /// ```
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct CollectionConversionOptions {
     /// Whether a scalar string can be split into collection items.
     pub split_scalar_strings: bool,
@@ -92,7 +93,7 @@ impl CollectionConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_split_scalar_strings(
         mut self,
         split_scalar_strings: bool,
@@ -112,7 +113,7 @@ impl CollectionConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_delimiters(
         mut self,
         delimiters: impl IntoIterator<Item = char>,
@@ -130,7 +131,7 @@ impl CollectionConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_trim_items(mut self, trim_items: bool) -> Self {
         self.trim_items = trim_items;
         self
@@ -145,7 +146,7 @@ impl CollectionConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[must_use]
+    #[inline(always)]
     pub fn with_empty_item_policy(mut self, policy: EmptyItemPolicy) -> Self {
         self.empty_item_policy = policy;
         self
@@ -162,6 +163,7 @@ impl CollectionConversionOptions {
     /// Returns a lazy iterator that borrows `value` and these options. Each
     /// yielded item retains its index in the unsuppressed split sequence.
     /// Rejected empty items are reported only when iteration reaches them.
+    #[inline(always)]
     pub fn scalar_items<'a>(&'a self, value: &'a str) -> ScalarItems<'a> {
         ScalarItems::new(self, value)
     }
