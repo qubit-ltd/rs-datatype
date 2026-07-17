@@ -10,7 +10,10 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
+use bigdecimal::BigDecimal;
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use libfuzzer_sys::fuzz_target;
+use num_bigint::BigInt;
 use qubit_datatype::{DataConversionOptions, DataConversionTarget, DataConverter};
 use serde_json::Value;
 use url::Url;
@@ -34,7 +37,14 @@ fuzz_target!(|data: &[u8]| {
     exercise_conversion::<bool>(&converter, &options);
     exercise_conversion::<i128>(&converter, &options);
     exercise_conversion::<u128>(&converter, &options);
+    exercise_conversion::<f32>(&converter, &options);
     exercise_conversion::<f64>(&converter, &options);
+    exercise_conversion::<BigInt>(&converter, &options);
+    exercise_conversion::<BigDecimal>(&converter, &options);
+    exercise_conversion::<NaiveDate>(&converter, &options);
+    exercise_conversion::<NaiveTime>(&converter, &options);
+    exercise_conversion::<NaiveDateTime>(&converter, &options);
+    exercise_conversion::<DateTime<Utc>>(&converter, &options);
     exercise_conversion::<Duration>(&converter, &options);
     exercise_conversion::<Url>(&converter, &options);
     exercise_conversion::<Value>(&converter, &options);

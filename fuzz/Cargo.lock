@@ -327,6 +327,7 @@ name = "qubit-datatype-fuzz"
 version = "0.0.0"
 dependencies = [
  "bigdecimal",
+ "chrono",
  "libfuzzer-sys",
  "num-bigint",
  "qubit-datatype",

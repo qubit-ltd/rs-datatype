@@ -9,6 +9,7 @@ cargo-fuzz = true
 
 [dependencies]
 bigdecimal = "0.4"
+chrono = { version = "0.4", default-features = false, features = ["std"] }
 libfuzzer-sys = "0.4"
 num-bigint = "0.4"
 qubit-datatype = { path = "..", features = ["all"] }
