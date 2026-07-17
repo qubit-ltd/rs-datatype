@@ -10,8 +10,6 @@
 use crate::converter::{
     DataConversionError,
     DataConversionOptions,
-    InvalidValueReason,
-    StringNormalizationError,
 };
 use crate::datatype::DataType;
 
@@ -29,16 +27,5 @@ pub(super) fn normalize<'a>(
     options
         .string
         .normalize(value)
-        .map_err(|error| match error {
-            StringNormalizationError::Missing => {
-                DataConversionError::missing(DataType::String, to)
-            }
-            StringNormalizationError::BlankRejected => {
-                DataConversionError::invalid(
-                    DataType::String,
-                    to,
-                    InvalidValueReason::BlankRejected,
-                )
-            }
-        })
+        .map_err(|error| error.into_data_conversion_error(to))
 }
