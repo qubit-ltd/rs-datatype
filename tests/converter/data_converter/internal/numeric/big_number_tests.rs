@@ -5,7 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Arbitrary-precision numeric conversion tests.
+//! Primitive and text to arbitrary-precision number tests.
 
 #[cfg(feature = "big-number")]
 use std::str::FromStr;
@@ -15,28 +15,25 @@ use bigdecimal::BigDecimal;
 #[cfg(feature = "big-number")]
 use num_bigint::BigInt;
 #[cfg(feature = "big-number")]
-use qubit_datatype::{
-    DataConversionOptions,
-    DataConverter,
-};
+use qubit_datatype::DataConverter;
 
-/// Verifies that BigInt-to-f32 conversion applies the target precision policy.
+/// Verifies primitive integer conversion preserves the complete value.
 #[cfg(feature = "big-number")]
 #[test]
-fn test_bigint_to_f32_applies_target_width_precision() {
-    let value = BigInt::from(16_777_217_u32);
-    assert!(DataConverter::from(&value).to::<f32>().is_err());
+fn test_integer_to_bigint_preserves_value() {
     assert_eq!(
-        DataConverter::from(&value)
-            .to_with::<f32>(&DataConversionOptions::lossy()),
-        Ok(16_777_216.0),
+        DataConverter::from(i128::MIN).to::<BigInt>(),
+        Ok(BigInt::from(i128::MIN)),
     );
 }
 
-/// Verifies exact BigDecimal-to-f32 conversion rejects rounded values.
+/// Verifies decimal text conversion preserves the represented value.
 #[cfg(feature = "big-number")]
 #[test]
-fn test_big_decimal_to_f32_rejects_precision_loss() {
-    let value = BigDecimal::from_str("0.1").expect("test decimal");
-    assert!(DataConverter::from(&value).to::<f32>().is_err());
+fn test_text_to_big_decimal_preserves_value() {
+    let expected = BigDecimal::from_str("123.50").expect("valid test decimal");
+    assert_eq!(
+        DataConverter::from("123.50").to::<BigDecimal>(),
+        Ok(expected),
+    );
 }

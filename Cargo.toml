@@ -41,7 +41,7 @@ big-number = [
 ]
 url = ["dep:url"]
 json = ["dep:serde_json"]
-converter = ["dep:thiserror"]
+converter = ["dep:num-bigint", "dep:thiserror"]
 all = ["converter", "chrono", "big-number", "url", "json"]
 
 [dependencies]

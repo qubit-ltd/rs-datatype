@@ -10,6 +10,9 @@
 #[cfg(feature = "big-number")]
 mod big_number;
 mod float;
+#[cfg(feature = "big-number")]
+mod float_big_number;
+mod float_text;
 mod integer;
 #[cfg(feature = "big-number")]
 mod parsed_number;

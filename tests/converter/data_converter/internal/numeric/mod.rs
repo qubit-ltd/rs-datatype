@@ -8,7 +8,9 @@
 //! Tests mirroring internal numeric conversion responsibilities.
 
 mod big_number_tests;
+mod float_big_number_tests;
 mod float_tests;
+mod float_text_tests;
 mod integer_tests;
 mod parsed_number_tests;
 mod syntax_tests;
