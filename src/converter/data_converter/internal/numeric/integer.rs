@@ -156,24 +156,21 @@ pub(in crate::converter::data_converter) fn duration_to_u128(
     options: &DataConversionOptions,
     to: DataType,
 ) -> Result<u128, DataConversionError> {
-    let unit_nanos = options.duration.output_unit.nanos_per_unit();
-    let total_nanos = duration.as_nanos();
-    if options.numeric_policy == NumericConversionPolicy::Exact
-        && !total_nanos.is_multiple_of(unit_nanos)
-    {
-        return Err(DataConversionError::invalid(
-            DataType::Duration,
-            to,
-            InvalidValueReason::PrecisionLoss,
-        ));
+    if options.numeric_policy == NumericConversionPolicy::Exact {
+        options
+            .duration
+            .output_unit
+            .exact_units(duration)
+            .ok_or_else(|| {
+                DataConversionError::invalid(
+                    DataType::Duration,
+                    to,
+                    InvalidValueReason::PrecisionLoss,
+                )
+            })
+    } else {
+        Ok(options.duration.output_unit.rounded_units(duration))
     }
-    Ok(
-        if options.numeric_policy == NumericConversionPolicy::Exact {
-            total_nanos / unit_nanos
-        } else {
-            options.duration.output_unit.rounded_units(duration)
-        },
-    )
 }
 
 /// Converts a supported source to a signed primitive range.

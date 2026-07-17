@@ -13,16 +13,19 @@ and policy-driven value conversion for Rust. API documentation is available on
 
 ## 1. What the crate provides
 
-`qubit-datatype` has three complementary tool families:
+`qubit-datatype` has four complementary tool families:
 
 - `DataType` and `DataTypeOf` provide stable runtime type descriptors.
 - `NumericValueRef` and `compare_numeric` compare unlike numeric
   representations without silently losing precision.
+- The lightweight `duration` feature provides Duration units, checked unit
+  arithmetic, configurable text parsing, and exact canonical formatting.
 - The `converter` feature provides single-value, batch, and scalar-string
   collection conversion with explicit policies and structured errors.
 
 Use the first family for schemas and metadata, the second for heterogeneous
-numeric ordering, and the third at configuration, protocol, or ingestion
+numeric ordering, the third for Duration protocols that do not need runtime
+value conversion, and the fourth at configuration, protocol, or ingestion
 boundaries where source types are known only at runtime.
 
 ## 2. Installation and features
@@ -43,7 +46,8 @@ qubit-datatype = { version = "0.7", features = ["converter", "chrono"] }
 
 | Feature | Capability |
 | --- | --- |
-| `converter` | Scalar, string, duration, map, batch, and option APIs |
+| `duration` | Duration units, checked arithmetic, text parsing, and exact formatting |
+| `converter` | Scalar, string, Duration, map, batch, and option APIs; includes `duration` |
 | `chrono` | Chrono type mappings and conversions |
 | `big-number` | `BigInt` and `BigDecimal` mappings and conversions |
 | `url` | `Url` mapping and conversion |
@@ -166,6 +170,11 @@ Strings are not trimmed by default. Blank values can be preserved, treated as
 missing, or rejected. Duration input uses
 `[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`; input and output units are configured
 independently. Exact duration output requires divisibility by the output unit.
+
+With only the `duration` feature, `DurationTextOptions` selects suffixless and
+ASCII-versus-extended suffix policies, `parse_duration_text` performs checked
+parsing without implicit trimming, and `format_duration_exact` selects the
+largest exact canonical unit.
 
 Canonical rich strings are: `YYYY-MM-DD` for dates,
 `HH:MM:SS[.fraction]` for times, RFC 3339 for instants, absolute URLs, standard

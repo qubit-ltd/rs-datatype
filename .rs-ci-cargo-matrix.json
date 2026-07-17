@@ -14,6 +14,12 @@
       "features": ["chrono"]
     },
     {
+      "name": "duration",
+      "commands": ["check", "test", "doc"],
+      "defaultFeatures": false,
+      "features": ["duration"]
+    },
+    {
       "name": "big-number",
       "commands": ["check", "test", "doc"],
       "defaultFeatures": false,

@@ -24,11 +24,16 @@ use crate::converter::{
     DataConversionError,
     DataConversionOptions,
     DataConversionTarget,
-    DurationUnit,
     InvalidValueReason,
-    SuffixlessDurationPolicy,
 };
 use crate::datatype::DataType;
+use crate::duration::{
+    DurationParseError,
+    DurationTextOptions,
+    DurationUnitSuffixSet,
+    SuffixlessDurationPolicy,
+    parse_duration_text,
+};
 
 /// Converts a duration unit count to a duration.
 ///
@@ -75,69 +80,43 @@ fn parse_duration(
 ) -> Result<Duration, DataConversionError> {
     let to = DataType::Duration;
     let value = normalize(value, options, to)?;
-    let split_at = value
-        .bytes()
-        .position(|byte| !byte.is_ascii_digit())
-        .unwrap_or(value.len());
-    let (digits, suffix) = value.split_at(split_at);
-    if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
-        return Err(DataConversionError::invalid(
-            DataType::String,
-            to,
-            InvalidValueReason::InvalidSyntax {
-                expected: "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?",
-            },
-        ));
-    }
-    let unit = if suffix.is_empty() {
-        match options.duration.suffixless_string_policy {
-            SuffixlessDurationPolicy::Reject => {
-                return Err(DataConversionError::invalid(
-                    DataType::String,
-                    to,
-                    InvalidValueReason::InvalidSyntax {
-                        expected: "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)",
-                    },
-                ));
-            }
-            SuffixlessDurationPolicy::Assume(unit) => unit,
-        }
-    } else {
-        let Some(unit) = DurationUnit::from_suffix(suffix) else {
-            if suffix.chars().all(char::is_alphabetic) {
-                return Err(DataConversionError::invalid(
-                    DataType::String,
-                    to,
-                    InvalidValueReason::UnsupportedDurationUnit,
-                ));
-            }
-            return Err(DataConversionError::invalid(
+    let text_options = DurationTextOptions::new(
+        options.duration.suffixless_string_policy,
+        DurationUnitSuffixSet::Extended,
+    );
+    match parse_duration_text(value, &text_options) {
+        Ok(duration) => Ok(duration),
+        Err(DurationParseError::InvalidSyntax) => {
+            let suffix_required = !value.is_empty()
+                && value.bytes().all(|byte| byte.is_ascii_digit())
+                && options.duration.suffixless_string_policy
+                    == SuffixlessDurationPolicy::Reject;
+            Err(DataConversionError::invalid(
                 DataType::String,
                 to,
                 InvalidValueReason::InvalidSyntax {
-                    expected: "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?",
+                    expected: if suffix_required {
+                        "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)"
+                    } else {
+                        "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?"
+                    },
                 },
-            ));
-        };
-        unit
-    };
-    let value = match digits.parse::<u128>() {
-        Ok(value) => value,
-        Err(_) => {
-            return Err(DataConversionError::invalid(
+            ))
+        }
+        Err(DurationParseError::UnsupportedUnit { .. }) => {
+            Err(DataConversionError::invalid(
+                DataType::String,
+                to,
+                InvalidValueReason::UnsupportedDurationUnit,
+            ))
+        }
+        Err(DurationParseError::OutOfRange) => {
+            Err(DataConversionError::invalid(
                 DataType::String,
                 to,
                 InvalidValueReason::OutOfRange,
-            ));
+            ))
         }
-    };
-    match unit.duration_from_u128(value) {
-        Ok(duration) => Ok(duration),
-        Err(_) => Err(DataConversionError::invalid(
-            DataType::String,
-            to,
-            InvalidValueReason::OutOfRange,
-        )),
     }
 }
 

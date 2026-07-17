@@ -8,10 +8,12 @@
 //! Runtime data type descriptors and policy-driven conversion utilities.
 //!
 //! The default feature set is empty and exposes the lightweight [`DataType`]
-//! vocabulary plus [`DataTypeOf`]. Optional `chrono`, `big-number`, `url`, and
+//! vocabulary plus [`DataTypeOf`]. The lightweight `duration` feature adds
+//! Duration units and text codecs. Optional `chrono`, `big-number`, `url`, and
 //! `json` features add mappings for external types. The `converter` feature
-//! enables core scalar, string, and Duration conversions. Combine it with a
-//! rich-type feature to enable conversions for that family, or use `all`.
+//! includes `duration` and enables core scalar, string, and Duration
+//! conversions. Combine it with a rich-type feature to enable conversions for
+//! that family, or use `all`.
 //!
 //! # Conversion contract
 //!
@@ -62,6 +64,10 @@ pub mod datatype;
 /// Policy-driven numeric comparison primitives.
 pub mod numeric;
 
+/// Lightweight Duration units and text codecs.
+#[cfg(feature = "duration")]
+pub mod duration;
+
 /// Runtime value conversion utilities.
 #[cfg(feature = "converter")]
 pub mod converter;
@@ -82,8 +88,6 @@ pub use converter::{
     DataFormat,
     DataListConversionError,
     DurationConversionOptions,
-    DurationOverflowError,
-    DurationUnit,
     EmptyItemPolicy,
     InvalidValueReason,
     NumericConversionPolicy,
@@ -93,12 +97,22 @@ pub use converter::{
     ScalarStringDataConverters,
     StringConversionOptions,
     StringNormalizationError,
-    SuffixlessDurationPolicy,
 };
 pub use datatype::{
     DataType,
     DataTypeOf,
     DataTypeParseError,
+};
+#[cfg(feature = "duration")]
+pub use duration::{
+    DurationOverflowError,
+    DurationParseError,
+    DurationTextOptions,
+    DurationUnit,
+    DurationUnitSuffixSet,
+    SuffixlessDurationPolicy,
+    format_duration_exact,
+    parse_duration_text,
 };
 pub use numeric::{
     NumericComparisonPolicy,

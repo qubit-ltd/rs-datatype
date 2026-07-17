@@ -5,13 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # Datatype Crate Test Entry
-//!
-//! Tests for data type descriptors and conversion utilities.
+//! Tests for lightweight Duration units and text codecs.
 
-#[cfg(feature = "converter")]
-mod converter;
-mod datatype;
-#[cfg(feature = "duration")]
-mod duration;
-mod numeric;
+mod duration_text_tests;
+mod duration_unit_tests;

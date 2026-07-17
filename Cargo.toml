@@ -32,6 +32,7 @@ test = false
 
 [features]
 default = []
+duration = ["dep:thiserror"]
 chrono = ["dep:chrono"]
 big-number = [
     "dep:bigdecimal",
@@ -41,7 +42,7 @@ big-number = [
 ]
 url = ["dep:url"]
 json = ["dep:serde_json"]
-converter = ["dep:num-bigint", "dep:thiserror"]
+converter = ["duration", "dep:num-bigint"]
 all = ["converter", "chrono", "big-number", "url", "json"]
 
 [dependencies]

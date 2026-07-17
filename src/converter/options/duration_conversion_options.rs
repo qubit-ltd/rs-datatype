@@ -9,8 +9,10 @@
 //!
 //! Defines options that control duration conversion.
 
-use super::duration_unit::DurationUnit;
-use super::suffixless_duration_policy::SuffixlessDurationPolicy;
+use crate::duration::{
+    DurationUnit,
+    SuffixlessDurationPolicy,
+};
 use serde::{
     Deserialize,
     Serialize,
