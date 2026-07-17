@@ -118,18 +118,6 @@ impl DataConversionOptions {
         options
     }
 
-    /// Returns a shared reference to the default options.
-    ///
-    /// # Returns
-    ///
-    /// A process-wide lazily initialized default value.
-    #[inline(always)]
-    pub fn default_ref() -> &'static Self {
-        static DEFAULT: LazyLock<DataConversionOptions> =
-            LazyLock::new(DataConversionOptions::default);
-        &DEFAULT
-    }
-
     /// Creates options suitable for environment variable style values.
     ///
     /// # Returns
@@ -145,6 +133,18 @@ impl DataConversionOptions {
             collection: CollectionConversionOptions::env_friendly(),
             duration: DurationConversionOptions::env_friendly(),
         }
+    }
+
+    /// Returns a shared reference to the default options.
+    ///
+    /// # Returns
+    ///
+    /// A process-wide lazily initialized default value.
+    #[inline(always)]
+    pub fn default_ref() -> &'static Self {
+        static DEFAULT: LazyLock<DataConversionOptions> =
+            LazyLock::new(DataConversionOptions::default);
+        &DEFAULT
     }
 
     /// Returns a copy with a different numeric conversion policy.
@@ -273,6 +273,7 @@ impl DataConversionOptions {
 
 impl Default for DataConversionOptions {
     /// Creates the strict default conversion profile.
+    #[inline(always)]
     fn default() -> Self {
         Self::strict()
     }

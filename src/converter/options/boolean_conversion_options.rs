@@ -141,6 +141,7 @@ impl BooleanConversionOptions {
     /// # Returns
     ///
     /// A slice of accepted true literals.
+    #[must_use]
     #[inline(always)]
     pub fn true_literals(&self) -> &[String] {
         &self.true_literals
@@ -151,12 +152,14 @@ impl BooleanConversionOptions {
     /// # Returns
     ///
     /// A slice of accepted false literals.
+    #[must_use]
     #[inline(always)]
     pub fn false_literals(&self) -> &[String] {
         &self.false_literals
     }
 
     /// Returns whether literal matching is case-sensitive.
+    #[must_use]
     #[inline(always)]
     pub const fn case_sensitive(&self) -> bool {
         self.case_sensitive

@@ -88,6 +88,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// Returns [`DataListConversionError`] when the scalar string cannot be
     /// normalized, split, or converted to the requested element type.
+    #[inline(always)]
     pub fn to_vec<T>(self) -> Result<Vec<T>, DataListConversionError>
     where
         T: DataTypeOf,
@@ -174,6 +175,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     /// Returns [`DataConversionError::Missing`] when normalization treats the
     /// scalar as missing, [`DataConversionError::EmptyCollection`] when
     /// splitting yields no retained item, or the underlying conversion error.
+    #[inline(always)]
     pub fn to_first<T>(self) -> Result<T, DataConversionError>
     where
         T: DataTypeOf,

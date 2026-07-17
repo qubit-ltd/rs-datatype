@@ -71,6 +71,7 @@ impl DurationUnit {
     /// # Returns
     ///
     /// The ASCII suffix used when formatting this unit.
+    #[must_use]
     #[inline(always)]
     pub const fn suffix(self) -> &'static str {
         match self {
@@ -150,6 +151,7 @@ impl DurationUnit {
     /// # Returns
     ///
     /// The rounded number of units represented by the duration.
+    #[must_use]
     pub fn rounded_units(self, duration: Duration) -> u128 {
         let total_nanos = duration.as_nanos();
         let unit_nanos = self.nanos_per_unit();
@@ -168,6 +170,7 @@ impl DurationUnit {
     /// # Returns
     ///
     /// Nanoseconds per unit.
+    #[must_use]
     pub(crate) const fn nanos_per_unit(self) -> u128 {
         match self {
             DurationUnit::Nanoseconds => 1,

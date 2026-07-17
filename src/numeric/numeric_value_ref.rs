@@ -62,6 +62,7 @@ impl NumericValueRef<'_> {
     /// # Returns
     ///
     /// `true` for [`Self::Float32`] and [`Self::Float64`].
+    #[must_use]
     #[inline(always)]
     pub(crate) const fn is_float(self) -> bool {
         matches!(self, Self::Float32(_) | Self::Float64(_))
@@ -72,8 +73,9 @@ impl NumericValueRef<'_> {
     /// # Returns
     ///
     /// `true` only for a primitive NaN payload.
+    #[must_use]
     #[inline(always)]
-    pub(crate) fn is_nan(self) -> bool {
+    pub fn is_nan(self) -> bool {
         match self {
             Self::Float32(value) => value.is_nan(),
             Self::Float64(value) => value.is_nan(),

@@ -76,7 +76,7 @@ impl DurationConversionOptions {
     /// # Returns
     ///
     /// Environment-friendly duration conversion options.
-    #[inline]
+    #[inline(always)]
     pub fn env_friendly() -> Self {
         Self::default()
     }

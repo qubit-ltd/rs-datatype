@@ -13,6 +13,7 @@
 /// [`crate::CollectionConversionOptions`], while the index always identifies
 /// the raw item before empty-item filtering.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[must_use]
 pub struct ScalarItem<'a> {
     /// Zero-based index before empty-item filtering.
     pub source_index: usize,
