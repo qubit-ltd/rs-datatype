@@ -19,6 +19,15 @@ use super::{
 
 /// Compares two numeric representations under an explicit policy.
 ///
+/// [`NumericComparisonPolicy::Approximate`] first orders primitive infinities.
+/// When a finite primitive float participates, it attempts to project both
+/// operands to finite `f64` values. If either operand cannot be projected that
+/// way, comparison falls back to the exact path. The projected comparison is
+/// pair-dependent and not transitive, so it must not be used to implement
+/// [`Ord`], sort or group values, or construct ordered-map or ordered-set keys.
+/// Use [`NumericComparisonPolicy::Exact`] whenever a deterministic ordering is
+/// required.
+///
 /// # Parameters
 ///
 /// * `left` - Left numeric operand.
