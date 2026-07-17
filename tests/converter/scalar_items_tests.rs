@@ -59,7 +59,7 @@ fn test_scalar_items_reports_rejection_when_reached() {
             .next()
             .expect("blank item should be visited")
             .expect_err("blank item should be rejected")
-            .source_index,
+            .source_index(),
         1,
     );
     assert_eq!(

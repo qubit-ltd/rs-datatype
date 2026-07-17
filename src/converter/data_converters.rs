@@ -151,10 +151,7 @@ where
             let value = match source.into().to_with::<T>(options) {
                 Ok(value) => value,
                 Err(source) => {
-                    return Err(DataListConversionError {
-                        source_index: index,
-                        source,
-                    });
+                    return Err(DataListConversionError::new(index, source));
                 }
             };
             converted.push(value);
@@ -174,7 +171,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns [`DataConversionError::EmptyCollection`] when the source
+    /// Returns an empty-collection [`DataConversionError`] when the source
     /// iterator is empty. Returns the original single-value conversion error
     /// when the first element cannot be converted.
     ///
@@ -217,7 +214,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns [`DataConversionError::EmptyCollection`] when the source
+    /// Returns an empty-collection [`DataConversionError`] when the source
     /// iterator is empty. Returns the original conversion error when the first
     /// element cannot be converted.
     pub fn to_first_with<'a, T>(
@@ -232,9 +229,7 @@ where
         let mut sources = self.sources;
         match sources.next() {
             Some(source) => source.into().to_with::<T>(options),
-            None => {
-                Err(DataConversionError::EmptyCollection { to: T::DATA_TYPE })
-            }
+            None => Err(DataConversionError::empty_collection(T::DATA_TYPE)),
         }
     }
 }

@@ -8,7 +8,6 @@
 //! Floating-point conversion regression tests.
 
 use qubit_datatype::{
-    DataConversionError,
     DataConversionOptions,
     DataConverter,
     InvalidValueReason,
@@ -48,18 +47,12 @@ fn test_exact_float_text_normalizes_redundant_zeros() {
 fn test_text_to_f32_classifies_range_and_precision_failures() {
     assert!(matches!(
         DataConverter::from("1e1000").to::<f32>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::OutOfRange,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)
+    )));
     assert!(matches!(
         DataConverter::from("0.1").to::<f32>(),
-        Err(DataConversionError::InvalidValue {
-            reason: InvalidValueReason::PrecisionLoss,
-            ..
-        })
-    ));
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
+    )));
 }
 
 /// Verifies primitive non-finite f64 values retain their class in f32.

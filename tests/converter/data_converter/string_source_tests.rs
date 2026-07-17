@@ -26,10 +26,10 @@ fn test_string_source_normalization_maps_policy_errors() {
     );
     assert_eq!(
         DataConverter::from(" ").to_with::<u32>(&missing_options),
-        Err(DataConversionError::Missing {
-            from: DataType::String,
-            to: DataType::UInt32,
-        }),
+        Err(DataConversionError::missing(
+            DataType::String,
+            DataType::UInt32
+        )),
     );
 
     let reject_options = DataConversionOptions::default().with_string_options(
@@ -38,10 +38,10 @@ fn test_string_source_normalization_maps_policy_errors() {
     );
     assert_eq!(
         DataConverter::from(" ").to_with::<bool>(&reject_options),
-        Err(DataConversionError::InvalidValue {
-            from: DataType::String,
-            to: DataType::Bool,
-            reason: InvalidValueReason::BlankRejected,
-        }),
+        Err(DataConversionError::invalid(
+            DataType::String,
+            DataType::Bool,
+            InvalidValueReason::BlankRejected,
+        )),
     );
 }

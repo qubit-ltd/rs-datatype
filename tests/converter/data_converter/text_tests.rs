@@ -7,6 +7,8 @@
 // =============================================================================
 //! Textual and temporal conversion tests.
 
+use qubit_datatype::converter::DataConversionErrorKind;
+
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::time::Duration;
@@ -36,13 +38,13 @@ fn assert_invalid_syntax<T>(
 ) {
     let matches_expected = matches!(
         &result,
-        Err(DataConversionError::InvalidValue {
-            from: DataType::String,
-            to: actual_to,
-            reason: InvalidValueReason::InvalidSyntax {
-                expected: actual_expected,
-            },
-        }) if *actual_to == to && *actual_expected == expected
+        Err(error) if error.from_type() == Some(DataType::String)
+            && error.to_type() == to
+            && matches!(
+                error.reason(),
+                Some(InvalidValueReason::InvalidSyntax {
+                expected: actual_expected }) if *actual_expected == expected
+    )
     );
     assert!(matches_expected, "unexpected result: {:?}", result.err());
 }
@@ -150,11 +152,11 @@ fn test_data_converter_temporal_parsers_reject_invalid_components() {
 fn test_data_converter_default_does_not_trim_any_text_parser() {
     assert!(matches!(
         DataConverter::from(" true ").to::<bool>(),
-        Err(DataConversionError::InvalidValue {
-            from: DataType::String,
-            to: DataType::Bool,
-            reason: InvalidValueReason::InvalidBoolean,
-        }),
+        Err(ref error) if error == &DataConversionError::invalid(
+            DataType::String,
+            DataType::Bool,
+            InvalidValueReason::InvalidBoolean,
+        ),
     ));
     assert_invalid_syntax(
         DataConverter::from(" 1 ").to::<i32>(),
@@ -179,15 +181,12 @@ fn test_data_converter_char_target_conversions() {
     );
     assert!(matches!(
         DataConverter::Empty(DataType::Char).to::<char>(),
-        Err(DataConversionError::Missing {
-            from: DataType::Char,
-            to: DataType::Char,
-        })
+        Err(ref error) if error == &DataConversionError::missing(DataType::Char, DataType::Char)
     ));
     assert_eq!(DataConverter::from("z").to::<char>(), Ok('z'));
     assert!(matches!(
         DataConverter::from(1i32).to::<char>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
 }
 
@@ -247,7 +246,7 @@ fn test_data_converter_string_target_accepts_all_value_sources() {
 
     assert!(matches!(
         DataConverter::Empty(DataType::String).to::<String>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
 }
 
@@ -294,7 +293,7 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
 
     assert!(matches!(
         DataConverter::Empty(DataType::Date).to::<NaiveDate>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert_eq!(
         DataConverter::from("2026-05-01").to::<NaiveDate>(),
@@ -302,7 +301,7 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
     );
     assert!(matches!(
         DataConverter::Empty(DataType::BigInteger).to::<BigInt>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert_eq!(
         DataConverter::from(1i32).to::<BigInt>(),
@@ -310,31 +309,31 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
     );
     assert!(matches!(
         DataConverter::Empty(DataType::Time).to::<NaiveTime>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
         DataConverter::from(1i32).to::<NaiveTime>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
     assert!(matches!(
         DataConverter::Empty(DataType::DateTime).to::<NaiveDateTime>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
         DataConverter::from(1i32).to::<NaiveDateTime>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
     assert!(matches!(
         DataConverter::Empty(DataType::Instant).to::<DateTime<Utc>>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
         DataConverter::from(1i32).to::<DateTime<Utc>>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
     assert!(matches!(
         DataConverter::Empty(DataType::BigDecimal).to::<BigDecimal>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert_eq!(
         DataConverter::from(1i32).to::<BigDecimal>(),
@@ -343,11 +342,11 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
     assert!(matches!(
         DataConverter::Empty(DataType::StringMap)
             .to::<HashMap<String, String>>(),
-        Err(DataConversionError::Missing { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
         DataConverter::from(1i32).to::<HashMap<String, String>>(),
-        Err(DataConversionError::Unsupported { .. })
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
 }
 

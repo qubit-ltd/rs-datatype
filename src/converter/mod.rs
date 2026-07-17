@@ -24,6 +24,7 @@ pub use data_converters::DataConverters;
 pub use error::{
     BooleanLiteralConflictError,
     DataConversionError,
+    DataConversionErrorKind,
     DataFormat,
     DataListConversionError,
     DurationOverflowError,

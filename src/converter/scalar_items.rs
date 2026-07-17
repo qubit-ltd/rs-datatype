@@ -117,9 +117,7 @@ impl<'a> Iterator for ScalarItems<'a> {
                 EmptyItemPolicy::Keep => return Some(Ok(item)),
                 EmptyItemPolicy::Skip => {}
                 EmptyItemPolicy::Reject => {
-                    return Some(Err(ScalarItemError {
-                        source_index: item.source_index,
-                    }));
+                    return Some(Err(ScalarItemError::new(item.source_index)));
                 }
             }
         }

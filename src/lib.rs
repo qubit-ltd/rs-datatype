@@ -22,7 +22,7 @@
 //! `big-number`, `url`, and `json` add their corresponding source and target
 //! conversions when combined with `converter`; JSON also enables StringMap
 //! parsing and formatting. Other type pairs return
-//! `DataConversionError::Unsupported`.
+//! `DataConversionErrorKind::Unsupported`.
 //!
 //! Numeric conversion defaults to `NumericConversionPolicy::Exact`, which
 //! rejects truncation, rounding, and precision loss. Explicit `Lossy` mode
@@ -41,17 +41,13 @@
 //! # #[cfg(feature = "converter")]
 //! # {
 //! use qubit_datatype::{
-//!     DataConversionError, InvalidValueReason, DataConversionOptions,
+//!     DataConversionErrorKind, InvalidValueReason, DataConversionOptions,
 //!     DataConverter,
 //! };
 //!
-//! assert!(matches!(
-//!     DataConverter::from("3.9").to::<i32>(),
-//!     Err(DataConversionError::InvalidValue {
-//!         reason: InvalidValueReason::PrecisionLoss,
-//!         ..
-//!     }),
-//! ));
+//! let error = DataConverter::from("3.9").to::<i32>().unwrap_err();
+//! assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+//! assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
 //!
 //! let lossy = DataConversionOptions::lossy();
 //! assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
@@ -78,6 +74,7 @@ pub use converter::{
     BooleanNumericPolicy,
     CollectionConversionOptions,
     DataConversionError,
+    DataConversionErrorKind,
     DataConversionOptions,
     DataConversionTarget,
     DataConverter,

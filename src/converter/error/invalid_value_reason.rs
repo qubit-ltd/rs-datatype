@@ -17,6 +17,7 @@ use super::data_format::DataFormat;
 /// format. They never contain the original source value. This keeps matching
 /// predictable for callers and avoids accidental disclosure in logs.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum InvalidValueReason {
     /// A blank string is forbidden by the active policy.
     #[error("blank string rejected")]

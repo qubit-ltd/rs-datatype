@@ -7,6 +7,8 @@
 // =============================================================================
 //! Source construction and public wrapper tests.
 
+use qubit_datatype::converter::DataConversionErrorKind;
+
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -165,16 +167,14 @@ fn test_data_converter_string_sources_report_string_data_type() {
 fn test_data_converter_empty_and_unsupported_errors_include_types() {
     assert!(matches!(
         DataConverter::Empty(DataType::Int32).to::<i32>(),
-        Err(DataConversionError::Missing {
-            from: DataType::Int32,
-            to: DataType::Int32,
-        })
+        Err(ref error)
+            if error == &DataConversionError::missing(DataType::Int32, DataType::Int32)
     ));
 
     match DataConverter::from('x').to::<bool>() {
-        Err(DataConversionError::Unsupported { from, to }) => {
-            assert_eq!(from, DataType::Char);
-            assert_eq!(to, DataType::Bool);
+        Err(error) if error.kind() == DataConversionErrorKind::Unsupported => {
+            assert_eq!(error.from_type(), Some(DataType::Char));
+            assert_eq!(error.to_type(), DataType::Bool);
         }
         other => {
             panic!("expected char to bool conversion failure, got {other:?}")

@@ -126,9 +126,8 @@ fn test_data_converters_empty_sources() {
 
     assert!(matches!(
         DataConverters::from(&values).to_first::<u16>(),
-        Err(DataConversionError::EmptyCollection {
-            to: DataType::UInt16,
-        })
+        Err(ref error)
+            if error == &DataConversionError::empty_collection(DataType::UInt16)
     ));
 }
 
@@ -141,16 +140,16 @@ fn test_data_converters_error_contains_failing_index() {
         .to_vec::<u16>()
         .expect_err("invalid second element should fail conversion");
 
-    assert_eq!(error.source_index, 1);
+    assert_eq!(error.source_index(), 1);
     assert_eq!(
-        error.source,
-        DataConversionError::InvalidValue {
-            from: DataType::String,
-            to: DataType::UInt16,
-            reason: InvalidValueReason::InvalidSyntax {
+        error.conversion_error(),
+        &DataConversionError::invalid(
+            DataType::String,
+            DataType::UInt16,
+            InvalidValueReason::InvalidSyntax {
                 expected: "integer",
             },
-        },
+        ),
     );
     assert!(
         error.to_string().contains("source index 1"),

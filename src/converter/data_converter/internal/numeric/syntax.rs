@@ -29,7 +29,7 @@ use crate::datatype::DataType;
 /// `value` must already have passed string normalization; `to` supplies target
 /// context and selects the expected syntax label on failure. Returns an exact
 /// integer/decimal representation or a non-finite marker. Invalid decimal text
-/// returns [`DataConversionError::InvalidValue`].
+/// returns an invalid-value [`DataConversionError`].
 #[cfg(feature = "big-number")]
 pub(super) fn parse_number(
     value: &str,
@@ -58,13 +58,13 @@ pub(super) fn parse_number(
     }
     match BigDecimal::from_str(value) {
         Ok(value) => Ok(ParsedNumber::Decimal(value)),
-        Err(_) => Err(DataConversionError::InvalidValue {
-            from: DataType::String,
+        Err(_) => Err(DataConversionError::invalid(
+            DataType::String,
             to,
-            reason: InvalidValueReason::InvalidSyntax {
+            InvalidValueReason::InvalidSyntax {
                 expected: numeric_syntax(to),
             },
-        }),
+        )),
     }
 }
 
@@ -93,13 +93,13 @@ fn numeric_syntax(to: DataType) -> &'static str {
 
 /// Creates a contextual invalid numeric syntax error.
 pub(super) fn invalid_numeric_syntax(to: DataType) -> DataConversionError {
-    DataConversionError::InvalidValue {
-        from: DataType::String,
+    DataConversionError::invalid(
+        DataType::String,
         to,
-        reason: InvalidValueReason::InvalidSyntax {
+        InvalidValueReason::InvalidSyntax {
             expected: numeric_syntax(to),
         },
-    }
+    )
 }
 
 /// Reports whether text explicitly names a non-finite value.
@@ -276,11 +276,11 @@ fn parse_integer_magnitude(
         magnitude = magnitude
             .checked_mul(10)
             .and_then(|value| value.checked_add(u128::from(byte - b'0')))
-            .ok_or(DataConversionError::InvalidValue {
-                from: DataType::String,
+            .ok_or(DataConversionError::invalid(
+                DataType::String,
                 to,
-                reason: InvalidValueReason::OutOfRange,
-            })?;
+                InvalidValueReason::OutOfRange,
+            ))?;
     }
     Ok(magnitude)
 }
@@ -296,11 +296,11 @@ pub(super) fn parse_text_integer(
     to: DataType,
 ) -> Result<(bool, u128), DataConversionError> {
     if is_explicit_non_finite(value) {
-        return Err(DataConversionError::InvalidValue {
-            from: DataType::String,
+        return Err(DataConversionError::invalid(
+            DataType::String,
             to,
-            reason: InvalidValueReason::NonFinite,
-        });
+            InvalidValueReason::NonFinite,
+        ));
     }
 
     let (negative, unsigned) = split_sign(value);
@@ -325,35 +325,37 @@ pub(super) fn parse_text_integer(
             decimal_position,
         )
     {
-        return Err(DataConversionError::InvalidValue {
-            from: DataType::String,
+        return Err(DataConversionError::invalid(
+            DataType::String,
             to,
-            reason: InvalidValueReason::PrecisionLoss,
-        });
+            InvalidValueReason::PrecisionLoss,
+        ));
     }
 
     let mut magnitude =
         parse_integer_magnitude(mantissa, integer_digit_count, to)?;
     if decimal_position > digit_count as i128 && magnitude != 0 {
         let zero_count = u32::try_from(decimal_position - digit_count as i128)
-            .map_err(|_| DataConversionError::InvalidValue {
-                from: DataType::String,
-                to,
-                reason: InvalidValueReason::OutOfRange,
+            .map_err(|_| {
+                DataConversionError::invalid(
+                    DataType::String,
+                    to,
+                    InvalidValueReason::OutOfRange,
+                )
             })?;
         let multiplier = 10u128.checked_pow(zero_count).ok_or(
-            DataConversionError::InvalidValue {
-                from: DataType::String,
+            DataConversionError::invalid(
+                DataType::String,
                 to,
-                reason: InvalidValueReason::OutOfRange,
-            },
+                InvalidValueReason::OutOfRange,
+            ),
         )?;
         magnitude = magnitude.checked_mul(multiplier).ok_or(
-            DataConversionError::InvalidValue {
-                from: DataType::String,
+            DataConversionError::invalid(
+                DataType::String,
                 to,
-                reason: InvalidValueReason::OutOfRange,
-            },
+                InvalidValueReason::OutOfRange,
+            ),
         )?;
     }
 

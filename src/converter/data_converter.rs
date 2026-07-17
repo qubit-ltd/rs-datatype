@@ -256,10 +256,7 @@ impl DataConverter<'_> {
     /// source type from [`Self::data_type`].
     #[inline(always)]
     fn missing(&self, to: DataType) -> DataConversionError {
-        DataConversionError::Missing {
-            from: self.data_type(),
-            to,
-        }
+        DataConversionError::missing(self.data_type(), to)
     }
 
     /// Builds an unsupported-pair error for this source and target.
@@ -268,10 +265,7 @@ impl DataConverter<'_> {
     /// source type from [`Self::data_type`].
     #[inline(always)]
     fn unsupported(&self, to: DataType) -> DataConversionError {
-        DataConversionError::Unsupported {
-            from: self.data_type(),
-            to,
-        }
+        DataConversionError::unsupported(self.data_type(), to)
     }
 
     /// Builds an invalid-value error for this source and target.
@@ -285,10 +279,6 @@ impl DataConverter<'_> {
         to: DataType,
         reason: InvalidValueReason,
     ) -> DataConversionError {
-        DataConversionError::InvalidValue {
-            from: self.data_type(),
-            to,
-            reason,
-        }
+        DataConversionError::invalid(self.data_type(), to, reason)
     }
 }
