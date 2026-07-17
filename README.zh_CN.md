@@ -12,10 +12,12 @@
 
 ## 1. 工具概览
 
-`qubit-datatype` 提供三组互补工具：
+`qubit-datatype` 提供四组互补工具：
 
 - `DataType`、`DataTypeOf`：稳定的运行时类型描述，适合 schema 和元数据。
 - `NumericValueRef`、`compare_numeric`：比较不同数值表示，避免隐式精度损失。
+- 轻量 `duration` feature：提供 Duration 单位、带溢出检查的单位运算、可配置文本
+  解析和精确规范化格式。
 - `converter` feature：按显式策略执行单值、批量和标量字符串集合转换，并返回
   结构化错误，适合配置、协议和数据接入边界。
 
@@ -37,7 +39,8 @@ qubit-datatype = { version = "0.7", features = ["converter", "chrono"] }
 
 | Feature | 能力 |
 | --- | --- |
-| `converter` | 标量、字符串、Duration、StringMap、批量和配置 API |
+| `duration` | Duration 单位、带检查运算、文本解析和精确格式化 |
+| `converter` | 标量、字符串、Duration、StringMap、批量和配置 API；包含 `duration` |
 | `chrono` | Chrono 类型映射及转换 |
 | `big-number` | `BigInt`、`BigDecimal` 映射及转换 |
 | `url` | `Url` 映射及转换 |
@@ -149,6 +152,10 @@ assert_eq!(DataConverter::from(" yes ").to_with::<bool>(&options), Ok(true));
 默认不 trim 字符串。空白值可保留、视为缺失或拒绝。Duration 输入格式为
 `[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`，输入和输出单位分别配置；精确输出要求按
 输出单位整除。
+
+仅启用 `duration` feature 时，`DurationTextOptions` 可选择无后缀策略以及 ASCII
+或扩展后缀集合；`parse_duration_text` 在不隐式 trim 的情况下执行带范围检查的
+解析，`format_duration_exact` 自动选择最大的精确规范单位。
 
 富文本的规范格式包括：日期 `YYYY-MM-DD`、时间 `HH:MM:SS[.fraction]`、
 instant 的 RFC 3339、绝对 URL、标准 JSON，以及 key 唯一且 value 全为字符串的

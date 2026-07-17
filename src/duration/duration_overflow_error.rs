@@ -5,10 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # Duration Overflow Error
-//!
-//! Defines the low-level error returned when a unit count cannot fit in a
-//! [`std::time::Duration`].
+//! Error returned when a Duration unit count exceeds the supported range.
 
 /// Reports that a unit count exceeds the representable Duration range.
 ///
