@@ -50,7 +50,7 @@ all = ["converter", "chrono", "big-number", "url", "json"]
 
 [dependencies]
 bigdecimal = { version = "0.4", optional = true }
-chrono = { version = "0.4", features = ["serde"], optional = true }
+chrono = { version = "0.4", default-features = false, features = ["std"], optional = true }
 num-bigint = { version = "0.4", optional = true }
 num-rational = { version = "0.4", optional = true }
 num-traits = { version = "0.2", optional = true }
