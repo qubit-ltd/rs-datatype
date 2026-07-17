@@ -16,3 +16,12 @@ fn test_numeric_value_ref_is_copy() {
     assert!(matches!(copied, NumericValueRef::UInt128(u128::MAX)));
     assert!(matches!(value, NumericValueRef::UInt128(u128::MAX)));
 }
+
+/// Verifies that callers can classify primitive NaN values directly.
+#[test]
+fn test_numeric_value_ref_reports_nan() {
+    assert!(NumericValueRef::Float32(f32::NAN).is_nan());
+    assert!(NumericValueRef::Float64(f64::NAN).is_nan());
+    assert!(!NumericValueRef::Float64(f64::INFINITY).is_nan());
+    assert!(!NumericValueRef::Int32(0).is_nan());
+}
