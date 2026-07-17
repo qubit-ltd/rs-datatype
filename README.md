@@ -72,9 +72,10 @@ assert_eq!("INT32".parse::<DataType>(), Ok(DataType::Int32));
 
 Wrap borrowed values in `NumericValueRef`, then choose a policy explicitly.
 `Exact` compares mathematical values without routing integers through `f64`.
-`Approximate` intentionally uses finite `f64` projection when a floating
-operand participates. NaN is unordered, infinities are ordered, and signed
-zeros compare equal.
+When a finite primitive float participates, `Approximate` attempts to project
+both operands to finite `f64` values. Infinities are ordered separately, and if
+either operand cannot be projected that way, comparison falls back to the exact
+path. NaN is unordered, and signed zeros compare equal.
 
 ```rust
 use std::cmp::Ordering;
@@ -88,8 +89,11 @@ assert_eq!(
 );
 ```
 
-Use `Exact` for validation, storage, and deterministic ordering. Use
-`Approximate` only when IEEE-style comparison is the intended domain rule.
+Use `Exact` for validation, storage, and deterministic ordering. `Approximate`
+is pair-dependent and non-transitive across mixed representations. It must not
+be used to implement `Ord`, sort or group values, or construct keys for ordered
+maps and sets. Use it only when IEEE-style pairwise comparison is the intended
+domain rule.
 
 ## 5. Single-value conversion
 
