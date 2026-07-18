@@ -243,7 +243,6 @@ impl<'a> NumberRef<'a> {
     /// `true` for positive finite or infinite values; zero, negative values,
     /// and NaN return `false`.
     #[must_use]
-    #[inline(always)]
     pub fn is_positive(self) -> bool {
         match self.inner {
             NumberRepr::Int8(value) => value > 0,
@@ -274,7 +273,6 @@ impl<'a> NumberRef<'a> {
     /// `true` for negative finite or infinite values; zero, positive values,
     /// and NaN return `false`.
     #[must_use]
-    #[inline(always)]
     pub fn is_negative(self) -> bool {
         match self.inner {
             NumberRepr::Int8(value) => value < 0,
@@ -378,7 +376,6 @@ impl<'a> NumberRef<'a> {
     }
 
     /// Projects this value to `f64` for approximate comparison.
-    #[inline]
     fn to_approximate_f64(self) -> Option<f64> {
         match self.inner {
             NumberRepr::Int8(value) => Some(f64::from(value)),
