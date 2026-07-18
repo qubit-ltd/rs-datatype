@@ -5,17 +5,12 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Exact rational comparison helpers for mixed numeric representations.
-
-use std::cmp::Ordering;
+//! Exact rational conversion helpers for mixed numeric representations.
 
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 use num_rational::BigRational;
-
-use crate::NumberRef;
-use crate::numeric::internal::NumberRepr;
 
 /// Largest decimal scale materialized as an explicit power of ten.
 ///
@@ -59,7 +54,7 @@ fn binary_rational(
 /// # Returns
 ///
 /// The exact represented value. The caller guarantees finiteness.
-fn f32_rational(value: f32) -> BigRational {
+pub(in crate::numeric) fn f32_rational(value: f32) -> BigRational {
     let bits = value.to_bits();
     let negative = bits >> 31 != 0;
     let exponent = ((bits >> 23) & 0xff) as i32;
@@ -80,7 +75,7 @@ fn f32_rational(value: f32) -> BigRational {
 /// # Returns
 ///
 /// The exact represented value. The caller guarantees finiteness.
-fn f64_rational(value: f64) -> BigRational {
+pub(in crate::numeric) fn f64_rational(value: f64) -> BigRational {
     let bits = value.to_bits();
     let negative = bits >> 63 != 0;
     let exponent = ((bits >> 52) & 0x7ff) as i32;
@@ -104,7 +99,7 @@ fn f64_rational(value: f64) -> BigRational {
 /// caller can use `BigDecimal`'s exact scale-aware comparator without an
 /// impractically large power allocation.
 #[cfg(feature = "big-decimal")]
-fn decimal_rational(value: &BigDecimal) -> Option<BigRational> {
+pub(in crate::numeric) fn decimal_rational(value: &BigDecimal) -> Option<BigRational> {
     let (coefficient, scale) = value.as_bigint_and_exponent();
     if scale >= 0 {
         let scale = u32::try_from(scale).ok()?;
@@ -123,96 +118,5 @@ fn decimal_rational(value: &BigDecimal) -> Option<BigRational> {
         Some(BigRational::from_integer(
             coefficient * BigInt::from(10_u8).pow(scale),
         ))
-    }
-}
-
-/// Converts a finite numeric value into an exact rational.
-///
-/// # Parameters
-///
-/// * `value` - Finite numeric representation to convert.
-///
-/// # Returns
-///
-/// The exact mathematical value, or `None` for non-finite values or an
-/// impractically large decimal scale.
-fn to_exact_rational(value: NumberRef<'_>) -> Option<BigRational> {
-    match value.inner() {
-        NumberRepr::Int8(value) => {
-            Some(BigRational::from_integer(BigInt::from(value)))
-        }
-        NumberRepr::Int16(value) => {
-            Some(BigRational::from_integer(BigInt::from(value)))
-        }
-        NumberRepr::Int32(value) => {
-            Some(BigRational::from_integer(BigInt::from(value)))
-        }
-        NumberRepr::Int64(value) => {
-            Some(BigRational::from_integer(BigInt::from(value)))
-        }
-        NumberRepr::Int128(value) => {
-            Some(BigRational::from_integer(BigInt::from(value)))
-        }
-        NumberRepr::UInt8(value) => {
-            Some(BigRational::from_integer(BigInt::from(value)))
-        }
-        NumberRepr::UInt16(value) => {
-            Some(BigRational::from_integer(BigInt::from(value)))
-        }
-        NumberRepr::UInt32(value) => {
-            Some(BigRational::from_integer(BigInt::from(value)))
-        }
-        NumberRepr::UInt64(value) => {
-            Some(BigRational::from_integer(BigInt::from(value)))
-        }
-        NumberRepr::UInt128(value) => {
-            Some(BigRational::from_integer(BigInt::from(value)))
-        }
-        NumberRepr::Float32(value) => Some(f32_rational(value)),
-        NumberRepr::Float64(value) => Some(f64_rational(value)),
-        #[cfg(feature = "big-integer")]
-        NumberRepr::BigInteger(value) => {
-            Some(BigRational::from_integer(value.clone()))
-        }
-        #[cfg(feature = "big-decimal")]
-        NumberRepr::BigDecimal(value) => decimal_rational(value),
-    }
-}
-
-/// Compares arbitrary-precision pairs through exact rational values.
-///
-/// Decimal scales that cannot be materialized as a practical power of ten
-/// fall back to `BigDecimal`'s exact scale-aware ordering.
-///
-/// # Parameters
-///
-/// * `left` - Left arbitrary-precision operand.
-/// * `right` - Right arbitrary-precision operand.
-///
-/// # Returns
-///
-/// Their exact mathematical ordering, or `None` for non-finite values.
-pub(in crate::numeric) fn compare_exact_rational(
-    left: NumberRef<'_>,
-    right: NumberRef<'_>,
-) -> Option<Ordering> {
-    #[cfg(feature = "big-integer")]
-    if let (NumberRepr::BigInteger(left), NumberRepr::BigInteger(right)) =
-        (left.inner(), right.inner())
-    {
-        return Some(left.cmp(right));
-    }
-    #[cfg(feature = "big-decimal")]
-    if let (NumberRepr::BigDecimal(left), NumberRepr::BigDecimal(right)) =
-        (left.inner(), right.inner())
-    {
-        return Some(left.cmp(right));
-    }
-    match (to_exact_rational(left), to_exact_rational(right)) {
-        (Some(left), Some(right)) => Some(left.cmp(&right)),
-        #[cfg(feature = "big-decimal")]
-        _ => left.compare_exact_decimal(right),
-        #[cfg(not(feature = "big-decimal"))]
-        _ => None,
     }
 }
