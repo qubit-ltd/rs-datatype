@@ -7,12 +7,9 @@
 // =============================================================================
 //! Policy-driven comparison across numeric representations.
 
-mod compare_numeric;
 mod internal;
+mod number_ref;
 mod numeric_comparison_policy;
-mod numeric_value;
-mod numeric_value_ref;
 
-pub use compare_numeric::compare_numeric;
+pub use number_ref::NumberRef;
 pub use numeric_comparison_policy::NumericComparisonPolicy;
-pub use numeric_value_ref::NumericValueRef;

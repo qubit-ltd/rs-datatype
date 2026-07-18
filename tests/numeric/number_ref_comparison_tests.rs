@@ -22,25 +22,33 @@ use proptest::{
     proptest,
 };
 use qubit_datatype::{
+    NumberRef,
     NumericComparisonPolicy,
-    NumericValueRef,
-    compare_numeric,
 };
+
+/// Compares two number views through the public method API.
+fn compare_numbers(
+    left: NumberRef<'_>,
+    right: NumberRef<'_>,
+    policy: NumericComparisonPolicy,
+) -> Option<Ordering> {
+    left.compare_to(right, policy)
+}
 #[cfg(feature = "big-number")]
 use std::str::FromStr;
 
 /// Asserts an exact ordering and its reverse-direction symmetry.
 fn assert_exact(
-    left: NumericValueRef<'_>,
-    right: NumericValueRef<'_>,
+    left: NumberRef<'_>,
+    right: NumberRef<'_>,
     expected: Option<Ordering>,
 ) {
     assert_eq!(
-        compare_numeric(left, right, NumericComparisonPolicy::Exact),
+        compare_numbers(left, right, NumericComparisonPolicy::Exact),
         expected
     );
     assert_eq!(
-        compare_numeric(right, left, NumericComparisonPolicy::Exact),
+        compare_numbers(right, left, NumericComparisonPolicy::Exact),
         expected.map(Ordering::reverse)
     );
 }
@@ -133,149 +141,141 @@ fn decimal_parts_to_rational(coefficient: i64, scale: i64) -> BigRational {
 
 /// Covers exact fixed-width boundaries without integer-to-float projection.
 #[test]
-fn test_compare_numeric_exact_fixed_boundaries() {
+fn test_number_ref_comparison_exact_fixed_boundaries() {
     assert_exact(
-        NumericValueRef::from(i128::MIN),
-        NumericValueRef::from(u128::MAX),
+        NumberRef::from(i128::MIN),
+        NumberRef::from(u128::MAX),
         Some(Ordering::Less),
     );
     assert_exact(
-        NumericValueRef::from((1_u64 << 53) + 1),
-        NumericValueRef::from((1_u64 << 53) as f64),
+        NumberRef::from((1_u64 << 53) + 1),
+        NumberRef::from((1_u64 << 53) as f64),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::from((1_u32 << 24) + 1),
-        NumericValueRef::from((1_u32 << 24) as f32),
+        NumberRef::from((1_u32 << 24) + 1),
+        NumberRef::from((1_u32 << 24) as f32),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::from(1_i32),
-        NumericValueRef::from(1.5_f64),
+        NumberRef::from(1_i32),
+        NumberRef::from(1.5_f64),
         Some(Ordering::Less),
     );
     assert_exact(
-        NumericValueRef::from(-0.0_f64),
-        NumericValueRef::from(0.0_f64),
+        NumberRef::from(-0.0_f64),
+        NumberRef::from(0.0_f64),
         Some(Ordering::Equal),
     );
     assert_exact(
-        NumericValueRef::from(f64::NEG_INFINITY),
-        NumericValueRef::from(i8::MIN),
+        NumberRef::from(f64::NEG_INFINITY),
+        NumberRef::from(i8::MIN),
         Some(Ordering::Less),
     );
     assert_exact(
-        NumericValueRef::from(f32::INFINITY),
-        NumericValueRef::from(u128::MAX),
+        NumberRef::from(f32::INFINITY),
+        NumberRef::from(u128::MAX),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::from(f32::NEG_INFINITY),
-        NumericValueRef::from(f64::INFINITY),
+        NumberRef::from(f32::NEG_INFINITY),
+        NumberRef::from(f64::INFINITY),
         Some(Ordering::Less),
     );
     assert_exact(
-        NumericValueRef::from(f32::INFINITY),
-        NumericValueRef::from(f64::INFINITY),
+        NumberRef::from(f32::INFINITY),
+        NumberRef::from(f64::INFINITY),
         Some(Ordering::Equal),
     );
 
     for value in [
-        NumericValueRef::from(1_i8),
-        NumericValueRef::from(1_i16),
-        NumericValueRef::from(1_i32),
-        NumericValueRef::from(1_i64),
-        NumericValueRef::from(1_i128),
-        NumericValueRef::from(1_u8),
-        NumericValueRef::from(1_u16),
-        NumericValueRef::from(1_u32),
-        NumericValueRef::from(1_u64),
-        NumericValueRef::from(1_u128),
-        NumericValueRef::from(1.0_f32),
-        NumericValueRef::from(1.0_f64),
+        NumberRef::from(1_i8),
+        NumberRef::from(1_i16),
+        NumberRef::from(1_i32),
+        NumberRef::from(1_i64),
+        NumberRef::from(1_i128),
+        NumberRef::from(1_u8),
+        NumberRef::from(1_u16),
+        NumberRef::from(1_u32),
+        NumberRef::from(1_u64),
+        NumberRef::from(1_u128),
+        NumberRef::from(1.0_f32),
+        NumberRef::from(1.0_f64),
     ] {
-        assert_exact(value, NumericValueRef::from(1_i8), Some(Ordering::Equal));
+        assert_exact(value, NumberRef::from(1_i8), Some(Ordering::Equal));
     }
     assert_exact(
-        NumericValueRef::from(f32::from_bits(1)),
-        NumericValueRef::from(0_i8),
+        NumberRef::from(f32::from_bits(1)),
+        NumberRef::from(0_i8),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::from(-f64::from_bits(1)),
-        NumericValueRef::from(0_i8),
+        NumberRef::from(-f64::from_bits(1)),
+        NumberRef::from(0_i8),
         Some(Ordering::Less),
     );
     assert_exact(
-        NumericValueRef::from(4.0_f64),
-        NumericValueRef::from(2.0_f64),
+        NumberRef::from(4.0_f64),
+        NumberRef::from(2.0_f64),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::from(-4.0_f64),
-        NumericValueRef::from(-2.0_f64),
+        NumberRef::from(-4.0_f64),
+        NumberRef::from(-2.0_f64),
         Some(Ordering::Less),
     );
 }
 
 /// Verifies that every NaN payload is unordered.
 #[test]
-fn test_compare_numeric_rejects_nan() {
+fn test_number_ref_comparison_rejects_nan() {
     for nan in [
         f64::from_bits(0x7ff8_0000_0000_0001),
         f64::from_bits(0x7fff_ffff_ffff_ffff),
     ] {
-        assert_exact(
-            NumericValueRef::from(nan),
-            NumericValueRef::from(nan),
-            None,
-        );
-        assert_exact(
-            NumericValueRef::from(nan),
-            NumericValueRef::from(0_i8),
-            None,
-        );
+        assert_exact(NumberRef::from(nan), NumberRef::from(nan), None);
+        assert_exact(NumberRef::from(nan), NumberRef::from(0_i8), None);
     }
 }
 
 /// Verifies approximate projection only changes float-participating pairs.
 #[test]
-fn test_compare_numeric_approximate_policy() {
+fn test_number_ref_comparison_approximate_policy() {
     assert_eq!(
-        compare_numeric(
-            NumericValueRef::from((1_u64 << 53) + 1),
-            NumericValueRef::from((1_u64 << 53) as f64),
+        compare_numbers(
+            NumberRef::from((1_u64 << 53) + 1),
+            NumberRef::from((1_u64 << 53) as f64),
             NumericComparisonPolicy::Approximate,
         ),
         Some(Ordering::Equal)
     );
     assert_eq!(
-        compare_numeric(
-            NumericValueRef::from(u128::MAX - 1),
-            NumericValueRef::from(u128::MAX),
+        compare_numbers(
+            NumberRef::from(u128::MAX - 1),
+            NumberRef::from(u128::MAX),
             NumericComparisonPolicy::Approximate,
         ),
         Some(Ordering::Less)
     );
 
     for value in [
-        NumericValueRef::from(0_i8),
-        NumericValueRef::from(0_i16),
-        NumericValueRef::from(0_i32),
-        NumericValueRef::from(0_i64),
-        NumericValueRef::from(0_i128),
-        NumericValueRef::from(0_u8),
-        NumericValueRef::from(0_u16),
-        NumericValueRef::from(0_u32),
-        NumericValueRef::from(0_u64),
-        NumericValueRef::from(0_u128),
-        NumericValueRef::from(0.0_f32),
-        NumericValueRef::from(0.0_f64),
+        NumberRef::from(0_i8),
+        NumberRef::from(0_i16),
+        NumberRef::from(0_i32),
+        NumberRef::from(0_i64),
+        NumberRef::from(0_i128),
+        NumberRef::from(0_u8),
+        NumberRef::from(0_u16),
+        NumberRef::from(0_u32),
+        NumberRef::from(0_u64),
+        NumberRef::from(0_u128),
+        NumberRef::from(0.0_f32),
+        NumberRef::from(0.0_f64),
     ] {
         assert_eq!(
-            compare_numeric(
+            compare_numbers(
                 value,
-                NumericValueRef::from(0.0_f64),
+                NumberRef::from(0.0_f64),
                 NumericComparisonPolicy::Approximate,
             ),
             Some(Ordering::Equal)
@@ -285,20 +285,20 @@ fn test_compare_numeric_approximate_policy() {
 
 /// Characterizes the pair-dependent, non-transitive approximate projection.
 #[test]
-fn test_compare_numeric_approximate_is_not_transitive() {
-    let lower = NumericValueRef::from(1_u64 << 53);
-    let projected = NumericValueRef::from((1_u64 << 53) as f64);
-    let upper = NumericValueRef::from((1_u64 << 53) + 1);
+fn test_number_ref_comparison_approximate_is_not_transitive() {
+    let lower = NumberRef::from(1_u64 << 53);
+    let projected = NumberRef::from((1_u64 << 53) as f64);
+    let upper = NumberRef::from((1_u64 << 53) + 1);
     assert_eq!(
-        compare_numeric(lower, projected, NumericComparisonPolicy::Approximate),
+        compare_numbers(lower, projected, NumericComparisonPolicy::Approximate),
         Some(Ordering::Equal)
     );
     assert_eq!(
-        compare_numeric(projected, upper, NumericComparisonPolicy::Approximate),
+        compare_numbers(projected, upper, NumericComparisonPolicy::Approximate),
         Some(Ordering::Equal)
     );
     assert_eq!(
-        compare_numeric(lower, upper, NumericComparisonPolicy::Approximate),
+        compare_numbers(lower, upper, NumericComparisonPolicy::Approximate),
         Some(Ordering::Less)
     );
 }
@@ -308,7 +308,7 @@ proptest! {
 
     /// Checks exact signed/unsigned ordering against primitive integer ordering.
     #[test]
-    fn test_compare_numeric_exact_signed_unsigned_property(
+    fn test_number_ref_comparison_exact_signed_unsigned_property(
         signed in any::<i128>(),
         unsigned in any::<u128>(),
     ) {
@@ -318,9 +318,9 @@ proptest! {
             (signed as u128).cmp(&unsigned)
         };
         prop_assert_eq!(
-            compare_numeric(
-                NumericValueRef::from(signed),
-                NumericValueRef::from(unsigned),
+            compare_numbers(
+                NumberRef::from(signed),
+                NumberRef::from(unsigned),
                 NumericComparisonPolicy::Exact,
             ),
             Some(expected),
@@ -329,21 +329,21 @@ proptest! {
 
     /// Checks exact comparisons are antisymmetric across integer and float forms.
     #[test]
-    fn test_compare_numeric_exact_antisymmetry_property(
+    fn test_number_ref_comparison_exact_antisymmetry_property(
         integer in any::<i128>(),
         sign in any::<bool>(),
         exponent in 0_u16..0x7ff,
         fraction in 0_u64..(1_u64 << 52),
     ) {
         let float = finite_f64(sign, exponent, fraction);
-        let forward = compare_numeric(
-            NumericValueRef::from(integer),
-            NumericValueRef::from(float),
+        let forward = compare_numbers(
+            NumberRef::from(integer),
+            NumberRef::from(float),
             NumericComparisonPolicy::Exact,
         );
-        let reverse = compare_numeric(
-            NumericValueRef::from(float),
-            NumericValueRef::from(integer),
+        let reverse = compare_numbers(
+            NumberRef::from(float),
+            NumberRef::from(integer),
             NumericComparisonPolicy::Exact,
         );
         prop_assert_eq!(forward, reverse.map(Ordering::reverse));
@@ -351,7 +351,7 @@ proptest! {
 
     /// Checks exact comparison transitivity across three direct representations.
     #[test]
-    fn test_compare_numeric_exact_transitivity_property(
+    fn test_number_ref_comparison_exact_transitivity_property(
         signed in any::<i128>(),
         unsigned in any::<u128>(),
         sign in any::<bool>(),
@@ -359,16 +359,16 @@ proptest! {
         fraction in 0_u64..(1_u64 << 52),
     ) {
         let float = finite_f64(sign, exponent, fraction);
-        let left = NumericValueRef::from(signed);
-        let middle = NumericValueRef::from(float);
-        let right = NumericValueRef::from(unsigned);
-        let left_middle = compare_numeric(left, middle, NumericComparisonPolicy::Exact)
+        let left = NumberRef::from(signed);
+        let middle = NumberRef::from(float);
+        let right = NumberRef::from(unsigned);
+        let left_middle = compare_numbers(left, middle, NumericComparisonPolicy::Exact)
             .expect("generated finite values must be ordered");
-        let middle_right = compare_numeric(middle, right, NumericComparisonPolicy::Exact)
+        let middle_right = compare_numbers(middle, right, NumericComparisonPolicy::Exact)
             .expect("generated finite values must be ordered");
         if left_middle != Ordering::Greater && middle_right != Ordering::Greater {
             prop_assert_ne!(
-                compare_numeric(left, right, NumericComparisonPolicy::Exact),
+                compare_numbers(left, right, NumericComparisonPolicy::Exact),
                 Some(Ordering::Greater),
             );
         }
@@ -376,7 +376,7 @@ proptest! {
 
     /// Checks same-representation exact comparisons against native ordering.
     #[test]
-    fn test_compare_numeric_exact_native_agreement_property(
+    fn test_number_ref_comparison_exact_native_agreement_property(
         left_signed in any::<i128>(),
         right_signed in any::<i128>(),
         left_unsigned in any::<u128>(),
@@ -391,25 +391,25 @@ proptest! {
         let left_float = finite_f64(left_sign, left_exponent, left_fraction);
         let right_float = finite_f64(right_sign, right_exponent, right_fraction);
         prop_assert_eq!(
-            compare_numeric(
-                NumericValueRef::from(left_signed),
-                NumericValueRef::from(right_signed),
+            compare_numbers(
+                NumberRef::from(left_signed),
+                NumberRef::from(right_signed),
                 NumericComparisonPolicy::Exact,
             ),
             Some(left_signed.cmp(&right_signed)),
         );
         prop_assert_eq!(
-            compare_numeric(
-                NumericValueRef::from(left_unsigned),
-                NumericValueRef::from(right_unsigned),
+            compare_numbers(
+                NumberRef::from(left_unsigned),
+                NumberRef::from(right_unsigned),
                 NumericComparisonPolicy::Exact,
             ),
             Some(left_unsigned.cmp(&right_unsigned)),
         );
         prop_assert_eq!(
-            compare_numeric(
-                NumericValueRef::from(left_float),
-                NumericValueRef::from(right_float),
+            compare_numbers(
+                NumberRef::from(left_float),
+                NumberRef::from(right_float),
                 NumericComparisonPolicy::Exact,
             ),
             left_float.partial_cmp(&right_float),
@@ -419,7 +419,7 @@ proptest! {
     /// Checks integer/finite-float comparisons against an independent rational oracle.
     #[cfg(feature = "big-number")]
     #[test]
-    fn test_compare_numeric_exact_integer_float_oracle_property(
+    fn test_number_ref_comparison_exact_integer_float_oracle_property(
         integer in any::<i128>(),
         sign in any::<bool>(),
         exponent in 0_u16..0x7ff,
@@ -429,9 +429,9 @@ proptest! {
         let expected = BigRational::from_integer(BigInt::from(integer))
             .cmp(&finite_f64_to_rational(float));
         prop_assert_eq!(
-            compare_numeric(
-                NumericValueRef::from(integer),
-                NumericValueRef::from(float),
+            compare_numbers(
+                NumberRef::from(integer),
+                NumberRef::from(float),
                 NumericComparisonPolicy::Exact,
             ),
             Some(expected),
@@ -441,7 +441,7 @@ proptest! {
     /// Checks bounded arbitrary-precision coefficients and decimal scales.
     #[cfg(feature = "big-number")]
     #[test]
-    fn test_compare_numeric_exact_big_number_oracle_property(
+    fn test_number_ref_comparison_exact_big_number_oracle_property(
         integer_coefficient in -1_000_000_i64..=1_000_000,
         decimal_coefficient in -1_000_000_i64..=1_000_000,
         decimal_scale in -32_i64..=32,
@@ -451,9 +451,9 @@ proptest! {
         let expected = BigRational::from_integer(BigInt::from(integer_coefficient))
             .cmp(&decimal_parts_to_rational(decimal_coefficient, decimal_scale));
         prop_assert_eq!(
-            compare_numeric(
-                NumericValueRef::from(&integer),
-                NumericValueRef::from(&decimal),
+            compare_numbers(
+                NumberRef::from(&integer),
+                NumberRef::from(&decimal),
                 NumericComparisonPolicy::Exact,
             ),
             Some(expected),
@@ -463,7 +463,7 @@ proptest! {
     /// Checks every public non-NaN representation pair remains ordered.
     #[cfg(feature = "big-number")]
     #[test]
-    fn test_compare_numeric_all_public_representations_are_ordered(
+    fn test_number_ref_comparison_all_public_representations_are_ordered(
         signed in any::<i128>(),
         unsigned in any::<u128>(),
         float32_numerator in any::<i32>(),
@@ -486,20 +486,20 @@ proptest! {
             decimal_scale,
         );
         let values = [
-            NumericValueRef::from(signed as i8),
-            NumericValueRef::from(signed as i16),
-            NumericValueRef::from(signed as i32),
-            NumericValueRef::from(signed as i64),
-            NumericValueRef::from(signed),
-            NumericValueRef::from(unsigned as u8),
-            NumericValueRef::from(unsigned as u16),
-            NumericValueRef::from(unsigned as u32),
-            NumericValueRef::from(unsigned as u64),
-            NumericValueRef::from(unsigned),
-            NumericValueRef::from(float32),
-            NumericValueRef::from(float64),
-            NumericValueRef::from(&integer),
-            NumericValueRef::from(&decimal),
+            NumberRef::from(signed as i8),
+            NumberRef::from(signed as i16),
+            NumberRef::from(signed as i32),
+            NumberRef::from(signed as i64),
+            NumberRef::from(signed),
+            NumberRef::from(unsigned as u8),
+            NumberRef::from(unsigned as u16),
+            NumberRef::from(unsigned as u32),
+            NumberRef::from(unsigned as u64),
+            NumberRef::from(unsigned),
+            NumberRef::from(float32),
+            NumberRef::from(float64),
+            NumberRef::from(&integer),
+            NumberRef::from(&decimal),
         ];
 
         for policy in [
@@ -508,8 +508,8 @@ proptest! {
         ] {
             for &left in &values {
                 for &right in &values {
-                    let forward = compare_numeric(left, right, policy);
-                    let reverse = compare_numeric(right, left, policy);
+                    let forward = compare_numbers(left, right, policy);
+                    let reverse = compare_numbers(right, left, policy);
                     prop_assert_ne!(forward, None);
                     prop_assert_eq!(reverse, forward.map(Ordering::reverse));
                 }
@@ -521,64 +521,64 @@ proptest! {
 /// Covers exact and approximate arbitrary-precision comparisons.
 #[cfg(feature = "big-number")]
 #[test]
-fn test_compare_numeric_big_number_paths() {
+fn test_number_ref_comparison_big_number_paths() {
     let integer = BigInt::from(u128::MAX) + BigInt::from(1_u8);
     assert_exact(
-        NumericValueRef::from(&integer),
-        NumericValueRef::from(u128::MAX),
+        NumberRef::from(&integer),
+        NumberRef::from(u128::MAX),
         Some(Ordering::Greater),
     );
 
     let decimal = BigDecimal::from_str("0.1").unwrap();
     assert_eq!(
-        compare_numeric(
-            NumericValueRef::from(&decimal),
-            NumericValueRef::from(0.1_f64),
+        compare_numbers(
+            NumberRef::from(&decimal),
+            NumberRef::from(0.1_f64),
             NumericComparisonPolicy::Exact,
         ),
         Some(Ordering::Less)
     );
     assert_eq!(
-        compare_numeric(
-            NumericValueRef::from(&decimal),
-            NumericValueRef::from(0.1_f64),
+        compare_numbers(
+            NumberRef::from(&decimal),
+            NumberRef::from(0.1_f64),
             NumericComparisonPolicy::Approximate,
         ),
         Some(Ordering::Equal)
     );
 
     for value in [
-        NumericValueRef::from(1_i8),
-        NumericValueRef::from(1_i16),
-        NumericValueRef::from(1_i32),
-        NumericValueRef::from(1_i64),
-        NumericValueRef::from(1_i128),
-        NumericValueRef::from(1_u8),
-        NumericValueRef::from(1_u16),
-        NumericValueRef::from(1_u32),
-        NumericValueRef::from(1_u64),
-        NumericValueRef::from(1_u128),
-        NumericValueRef::from(1.0_f32),
-        NumericValueRef::from(1.0_f64),
+        NumberRef::from(1_i8),
+        NumberRef::from(1_i16),
+        NumberRef::from(1_i32),
+        NumberRef::from(1_i64),
+        NumberRef::from(1_i128),
+        NumberRef::from(1_u8),
+        NumberRef::from(1_u16),
+        NumberRef::from(1_u32),
+        NumberRef::from(1_u64),
+        NumberRef::from(1_u128),
+        NumberRef::from(1.0_f32),
+        NumberRef::from(1.0_f64),
     ] {
         assert_exact(
-            NumericValueRef::from(&BigInt::from(1)),
+            NumberRef::from(&BigInt::from(1)),
             value,
             Some(Ordering::Equal),
         );
     }
 
     assert_exact(
-        NumericValueRef::from(&BigInt::from(0)),
-        NumericValueRef::from(-f32::from_bits(1)),
+        NumberRef::from(&BigInt::from(0)),
+        NumberRef::from(-f32::from_bits(1)),
         Some(Ordering::Greater),
     );
     for value in [
-        NumericValueRef::from(f64::from_bits(1)),
-        NumericValueRef::from(f64::MAX),
+        NumberRef::from(f64::from_bits(1)),
+        NumberRef::from(f64::MAX),
     ] {
         assert_exact(
-            NumericValueRef::from(&BigInt::from(0)),
+            NumberRef::from(&BigInt::from(0)),
             value,
             Some(Ordering::Less),
         );
@@ -586,8 +586,8 @@ fn test_compare_numeric_big_number_paths() {
 
     let negative_scale = BigDecimal::new(BigInt::from(12), -2);
     assert_exact(
-        NumericValueRef::from(&negative_scale),
-        NumericValueRef::from(&BigInt::from(1_200)),
+        NumberRef::from(&negative_scale),
+        NumberRef::from(&BigInt::from(1_200)),
         Some(Ordering::Equal),
     );
 
@@ -596,48 +596,45 @@ fn test_compare_numeric_big_number_paths() {
     let extreme_negative_scale =
         BigDecimal::new(BigInt::from(0), -(i64::from(u32::MAX) + 1));
     assert_exact(
-        NumericValueRef::from(&extreme_negative_scale),
-        NumericValueRef::from(&extreme_scale),
+        NumberRef::from(&extreme_negative_scale),
+        NumberRef::from(&extreme_scale),
         Some(Ordering::Equal),
     );
     let large_scale = BigDecimal::new(BigInt::from(1), 1_000_000);
     let large_negative_scale = BigDecimal::new(BigInt::from(1), -1_000_000);
     assert_exact(
-        NumericValueRef::from(&large_scale),
-        NumericValueRef::from(&BigInt::from(0)),
+        NumberRef::from(&large_scale),
+        NumberRef::from(&BigInt::from(0)),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::from(&large_negative_scale),
-        NumericValueRef::from(&BigInt::from(0)),
+        NumberRef::from(&large_negative_scale),
+        NumberRef::from(&BigInt::from(0)),
         Some(Ordering::Greater),
     );
     for value in [
-        NumericValueRef::from(0_i8),
-        NumericValueRef::from(0_i16),
-        NumericValueRef::from(0_i32),
-        NumericValueRef::from(0_i64),
-        NumericValueRef::from(0_i128),
-        NumericValueRef::from(0_u8),
-        NumericValueRef::from(0_u16),
-        NumericValueRef::from(0_u32),
-        NumericValueRef::from(0_u64),
-        NumericValueRef::from(0_u128),
-        NumericValueRef::from(0.0_f32),
-        NumericValueRef::from(0.0_f64),
+        NumberRef::from(0_i8),
+        NumberRef::from(0_i16),
+        NumberRef::from(0_i32),
+        NumberRef::from(0_i64),
+        NumberRef::from(0_i128),
+        NumberRef::from(0_u8),
+        NumberRef::from(0_u16),
+        NumberRef::from(0_u32),
+        NumberRef::from(0_u64),
+        NumberRef::from(0_u128),
+        NumberRef::from(0.0_f32),
+        NumberRef::from(0.0_f64),
     ] {
         assert_exact(
-            NumericValueRef::from(&extreme_scale),
+            NumberRef::from(&extreme_scale),
             value,
             Some(Ordering::Equal),
         );
     }
-    for value in [
-        NumericValueRef::from(&integer),
-        NumericValueRef::from(&decimal),
-    ] {
+    for value in [NumberRef::from(&integer), NumberRef::from(&decimal)] {
         assert_exact(
-            NumericValueRef::from(&extreme_scale),
+            NumberRef::from(&extreme_scale),
             value,
             Some(Ordering::Less),
         );
@@ -645,9 +642,9 @@ fn test_compare_numeric_big_number_paths() {
 
     let too_large_for_f64 = BigInt::from(1_u8) << 20_000;
     assert_eq!(
-        compare_numeric(
-            NumericValueRef::from(&too_large_for_f64),
-            NumericValueRef::from(1.0_f64),
+        compare_numbers(
+            NumberRef::from(&too_large_for_f64),
+            NumberRef::from(1.0_f64),
             NumericComparisonPolicy::Approximate,
         ),
         Some(Ordering::Greater)

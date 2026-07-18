@@ -16,9 +16,8 @@ use std::str::FromStr;
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-number")]
 use qubit_datatype::{
+    NumberRef,
     NumericComparisonPolicy,
-    NumericValueRef,
-    compare_numeric,
 };
 
 /// Verifies decimal scale does not change exact mathematical equality.
@@ -27,11 +26,8 @@ use qubit_datatype::{
 fn test_exact_decimal_ignores_redundant_scale() {
     let decimal = BigDecimal::from_str("1.00").expect("test decimal");
     assert_eq!(
-        compare_numeric(
-            NumericValueRef::from(&decimal),
-            NumericValueRef::from(1_u8),
-            NumericComparisonPolicy::Exact,
-        ),
+        NumberRef::from(&decimal)
+            .compare_to(NumberRef::from(1_u8), NumericComparisonPolicy::Exact,),
         Some(Ordering::Equal),
     );
 }

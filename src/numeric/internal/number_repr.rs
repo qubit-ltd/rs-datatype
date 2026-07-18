@@ -5,7 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Internal numeric representations.
+//! Private numeric representation used by [`crate::NumberRef`].
 
 #[cfg(not(any(feature = "big-integer", feature = "big-decimal")))]
 use std::convert::Infallible;
@@ -17,9 +17,9 @@ use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 
-/// Internal numeric representations.
+/// Private storage representation for [`crate::NumberRef`].
 #[derive(Debug, Clone, Copy)]
-pub(in crate::numeric) enum NumericValue<'a> {
+pub(in crate::numeric) enum NumberRepr<'a> {
     /// An `i8` value.
     Int8(i8),
     /// An `i16` value.

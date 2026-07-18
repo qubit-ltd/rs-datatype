@@ -116,7 +116,6 @@ pub use duration::{
     parse_duration_text,
 };
 pub use numeric::{
+    NumberRef,
     NumericComparisonPolicy,
-    NumericValueRef,
-    compare_numeric,
 };

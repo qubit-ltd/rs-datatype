@@ -16,9 +16,8 @@ use std::str::FromStr;
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-number")]
 use qubit_datatype::{
+    NumberRef,
     NumericComparisonPolicy,
-    NumericValueRef,
-    compare_numeric,
 };
 
 /// Verifies an exactly binary-representable decimal equals its float value.
@@ -27,9 +26,8 @@ use qubit_datatype::{
 fn test_exact_rational_matches_binary_fraction() {
     let decimal = BigDecimal::from_str("0.5").expect("test decimal");
     assert_eq!(
-        compare_numeric(
-            NumericValueRef::from(&decimal),
-            NumericValueRef::from(0.5_f64),
+        NumberRef::from(&decimal).compare_to(
+            NumberRef::from(0.5_f64),
             NumericComparisonPolicy::Exact,
         ),
         Some(Ordering::Equal),

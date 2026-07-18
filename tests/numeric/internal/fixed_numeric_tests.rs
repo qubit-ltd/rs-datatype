@@ -10,20 +10,15 @@
 use std::cmp::Ordering;
 
 use qubit_datatype::{
+    NumberRef,
     NumericComparisonPolicy,
-    NumericValueRef,
-    compare_numeric,
 };
 
 /// Verifies fixed signed and unsigned values retain exact ordering.
 #[test]
 fn test_fixed_numeric_compares_signed_and_unsigned_values() {
     assert_eq!(
-        compare_numeric(
-            NumericValueRef::from(-1_i64),
-            NumericValueRef::from(0_u64),
-            NumericComparisonPolicy::Exact,
-        ),
+        NumberRef::from(-1_i64).compare_to(NumberRef::from(0_u64), NumericComparisonPolicy::Exact,),
         Some(Ordering::Less),
     );
 }

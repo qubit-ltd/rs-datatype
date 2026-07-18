@@ -5,23 +5,21 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Tests for internal numeric representation behavior through the public API.
+//! Tests for the private number representation through its public owner.
 
 use std::cmp::Ordering;
 
 use qubit_datatype::{
+    NumberRef,
     NumericComparisonPolicy,
-    NumericValueRef,
-    compare_numeric,
 };
 
 /// Verifies that distinct internal primitive representations compare exactly.
 #[test]
-fn test_numeric_value_representations_preserve_exact_values() {
+fn test_number_repr_preserves_exact_values() {
     assert_eq!(
-        compare_numeric(
-            NumericValueRef::from(42_i8),
-            NumericValueRef::from(42_u128),
+        NumberRef::from(42_i8).compare_to(
+            NumberRef::from(42_u128),
             NumericComparisonPolicy::Exact,
         ),
         Some(Ordering::Equal),
