@@ -15,7 +15,10 @@ use bigdecimal::BigDecimal;
 #[cfg(feature = "big-number")]
 use num_bigint::BigInt;
 #[cfg(feature = "big-number")]
-use qubit_datatype::{DataConversionOptions, DataConverter};
+use qubit_datatype::{
+    DataConversionOptions,
+    DataConverter,
+};
 
 /// Verifies that BigInt-to-f32 conversion applies the target precision policy.
 #[cfg(feature = "big-number")]
@@ -24,7 +27,8 @@ fn test_bigint_to_f32_applies_target_width_precision() {
     let value = BigInt::from(16_777_217_u32);
     assert!(DataConverter::from(&value).to::<f32>().is_err());
     assert_eq!(
-        DataConverter::from(&value).to_with::<f32>(&DataConversionOptions::lossy()),
+        DataConverter::from(&value)
+            .to_with::<f32>(&DataConversionOptions::lossy()),
         Ok(16_777_216.0),
     );
 }

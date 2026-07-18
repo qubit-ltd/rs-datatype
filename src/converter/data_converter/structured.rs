@@ -17,9 +17,16 @@ use super::DataConverter;
 use super::internal::StringMapVisitor;
 #[cfg(feature = "json")]
 use super::string_source::normalize;
-use crate::converter::{DataConversionError, DataConversionOptions, DataConversionTarget};
+use crate::converter::{
+    DataConversionError,
+    DataConversionOptions,
+    DataConversionTarget,
+};
 #[cfg(feature = "json")]
-use crate::converter::{DataFormat, InvalidValueReason};
+use crate::converter::{
+    DataFormat,
+    InvalidValueReason,
+};
 use crate::datatype::DataType;
 
 #[cfg(feature = "json")]
@@ -45,7 +52,9 @@ impl DataConversionTarget for serde_json::Value {
             DataConverter::StringMap(value) => Ok(serde_json::Value::Object(
                 value
                     .iter()
-                    .map(|(key, value)| (key.clone(), serde_json::Value::String(value.clone())))
+                    .map(|(key, value)| {
+                        (key.clone(), serde_json::Value::String(value.clone()))
+                    })
                     .collect(),
             )),
             DataConverter::Empty(_) => Err(source.missing(DataType::Json)),
@@ -69,7 +78,9 @@ impl DataConversionTarget for serde_json::Value {
 /// Returns [`serde_json::Error`] for syntax errors, trailing data, duplicate
 /// keys, or non-string values.
 #[cfg(feature = "json")]
-fn deserialize_string_map(value: &str) -> Result<HashMap<String, String>, serde_json::Error> {
+fn deserialize_string_map(
+    value: &str,
+) -> Result<HashMap<String, String>, serde_json::Error> {
     let mut deserializer = serde_json::Deserializer::from_str(value);
     let result = deserializer.deserialize_map(StringMapVisitor)?;
     deserializer.end()?;

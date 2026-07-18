@@ -192,8 +192,12 @@ impl NumericValueRef<'_> {
     #[inline(always)]
     pub(crate) fn infinity_is_negative(self) -> Option<bool> {
         match self {
-            Self::Float32(value) if value.is_infinite() => Some(value.is_sign_negative()),
-            Self::Float64(value) if value.is_infinite() => Some(value.is_sign_negative()),
+            Self::Float32(value) if value.is_infinite() => {
+                Some(value.is_sign_negative())
+            }
+            Self::Float64(value) if value.is_infinite() => {
+                Some(value.is_sign_negative())
+            }
             _ => None,
         }
     }

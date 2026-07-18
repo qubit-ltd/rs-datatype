@@ -9,8 +9,14 @@
 //!
 //! Defines options that control duration conversion.
 
-use crate::duration::{DurationUnit, SuffixlessDurationPolicy};
-use serde::{Deserialize, Serialize};
+use crate::duration::{
+    DurationUnit,
+    SuffixlessDurationPolicy,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 /// Controls scalar conversions to and from [`std::time::Duration`].
 ///
@@ -102,7 +108,10 @@ impl DurationConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_suffixless_string_policy(mut self, policy: SuffixlessDurationPolicy) -> Self {
+    pub fn with_suffixless_string_policy(
+        mut self,
+        policy: SuffixlessDurationPolicy,
+    ) -> Self {
         self.suffixless_string_policy = policy;
         self
     }

@@ -15,7 +15,11 @@ use std::str::FromStr;
 #[cfg(feature = "big-number")]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-number")]
-use qubit_datatype::{NumericComparisonPolicy, NumericValueRef, compare_numeric};
+use qubit_datatype::{
+    NumericComparisonPolicy,
+    NumericValueRef,
+    compare_numeric,
+};
 
 /// Verifies an exactly binary-representable decimal equals its float value.
 #[cfg(feature = "big-number")]

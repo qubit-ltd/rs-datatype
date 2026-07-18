@@ -40,7 +40,9 @@ fn to_exact_decimal(value: NumericValueRef<'_>) -> Option<BigDecimal> {
         NumericValueRef::Float32(value) => BigDecimal::try_from(value).ok(),
         NumericValueRef::Float64(value) => BigDecimal::try_from(value).ok(),
         #[cfg(feature = "big-integer")]
-        NumericValueRef::BigInteger(value) => Some(BigDecimal::from(value.clone())),
+        NumericValueRef::BigInteger(value) => {
+            Some(BigDecimal::from(value.clone()))
+        }
         NumericValueRef::BigDecimal(value) => Some(value.clone()),
         NumericValueRef::__Lifetime(_) => None,
     }

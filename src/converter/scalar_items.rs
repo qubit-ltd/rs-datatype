@@ -8,7 +8,10 @@
 //! Lazy scalar collection item iterator.
 
 use super::error::ScalarItemError;
-use super::options::{CollectionConversionOptions, EmptyItemPolicy};
+use super::options::{
+    CollectionConversionOptions,
+    EmptyItemPolicy,
+};
 use super::scalar_item::ScalarItem;
 
 /// A lazy iterator over scalar collection items.
@@ -48,7 +51,10 @@ impl<'a> ScalarItems<'a> {
     ///
     /// An iterator borrowing both inputs and deferring all processing until
     /// iteration.
-    pub(super) fn new(options: &'a CollectionConversionOptions, value: &'a str) -> Self {
+    pub(super) fn new(
+        options: &'a CollectionConversionOptions,
+        value: &'a str,
+    ) -> Self {
         Self {
             value,
             delimiters: &options.delimiters,

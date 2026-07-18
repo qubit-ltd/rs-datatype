@@ -13,7 +13,10 @@
 
 use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
-use super::error::{DataConversionError, DataListConversionError};
+use super::error::{
+    DataConversionError,
+    DataListConversionError,
+};
 use super::options::DataConversionOptions;
 use crate::datatype::DataTypeOf;
 

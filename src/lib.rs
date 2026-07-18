@@ -75,17 +75,48 @@ pub mod converter;
 
 #[cfg(feature = "converter")]
 pub use converter::{
-    BlankStringPolicy, BooleanConversionOptions, BooleanLiteralConflictError, BooleanNumericPolicy,
-    CollectionConversionOptions, DataConversionError, DataConversionErrorKind,
-    DataConversionOptions, DataConversionTarget, DataConverter, DataConverters, DataFormat,
-    DataListConversionError, DurationConversionOptions, EmptyItemPolicy, InvalidValueReason,
-    NumericConversionPolicy, ScalarItem, ScalarItemError, ScalarItems, ScalarStringDataConverters,
-    StringConversionOptions, StringNormalizationError,
+    BlankStringPolicy,
+    BooleanConversionOptions,
+    BooleanLiteralConflictError,
+    BooleanNumericPolicy,
+    CollectionConversionOptions,
+    DataConversionError,
+    DataConversionErrorKind,
+    DataConversionOptions,
+    DataConversionTarget,
+    DataConverter,
+    DataConverters,
+    DataFormat,
+    DataListConversionError,
+    DurationConversionOptions,
+    EmptyItemPolicy,
+    InvalidValueReason,
+    NumericConversionPolicy,
+    ScalarItem,
+    ScalarItemError,
+    ScalarItems,
+    ScalarStringDataConverters,
+    StringConversionOptions,
+    StringNormalizationError,
 };
-pub use datatype::{DataType, DataTypeOf, DataTypeParseError};
+pub use datatype::{
+    DataType,
+    DataTypeOf,
+    DataTypeParseError,
+};
 #[cfg(feature = "duration")]
 pub use duration::{
-    DurationOverflowError, DurationParseError, DurationTextOptions, DurationUnit,
-    DurationUnitSuffixSet, SuffixlessDurationPolicy, format_duration_exact, parse_duration_text,
+    DurationOverflowError,
+    DurationParseError,
+    DurationTextOptions,
+    DurationUnit,
+    DurationUnitSuffixSet,
+    SuffixlessDurationPolicy,
+    format_duration_exact,
+    parse_duration_text,
 };
-pub use numeric::{NumericComparisonPolicy, NumericValueRef, compare_numeric};
+pub use numeric::{
+    NumericComparisonPolicy,
+    NumericValueRef,
+    compare_numeric,
+};

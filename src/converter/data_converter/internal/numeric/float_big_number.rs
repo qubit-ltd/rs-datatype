@@ -11,9 +11,16 @@
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-use num_traits::{FromPrimitive, ToPrimitive};
+use num_traits::{
+    FromPrimitive,
+    ToPrimitive,
+};
 
-use crate::converter::{DataConversionError, InvalidValueReason, NumericConversionPolicy};
+use crate::converter::{
+    DataConversionError,
+    InvalidValueReason,
+    NumericConversionPolicy,
+};
 use crate::datatype::DataType;
 
 /// Converts an integer exactly or lossily to a float.

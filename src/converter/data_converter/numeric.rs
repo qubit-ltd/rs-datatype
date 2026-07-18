@@ -7,4 +7,8 @@
 // =============================================================================
 //! Numeric conversion integration for sibling target families.
 
-pub(super) use super::internal::numeric::{duration_to_u128, is_integer_syntax, source_to_integer};
+pub(super) use super::internal::numeric::{
+    duration_to_u128,
+    is_integer_syntax,
+    source_to_integer,
+};

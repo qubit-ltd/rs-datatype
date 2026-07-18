@@ -15,14 +15,23 @@ use num_bigint::Sign;
 use num_traits::ToPrimitive;
 
 use super::DataConverter;
-use super::numeric::{duration_to_u128, source_to_integer};
+use super::numeric::{
+    duration_to_u128,
+    source_to_integer,
+};
 use super::string_source::normalize;
 use crate::converter::{
-    DataConversionError, DataConversionOptions, DataConversionTarget, InvalidValueReason,
+    DataConversionError,
+    DataConversionOptions,
+    DataConversionTarget,
+    InvalidValueReason,
 };
 use crate::datatype::DataType;
 use crate::duration::{
-    DurationParseError, DurationTextOptions, DurationUnitSuffixSet, SuffixlessDurationPolicy,
+    DurationParseError,
+    DurationTextOptions,
+    DurationUnitSuffixSet,
+    SuffixlessDurationPolicy,
     parse_duration_text,
 };
 
@@ -98,7 +107,8 @@ fn parse_duration(
         Err(DurationParseError::InvalidSyntax) => {
             let suffix_required = !value.is_empty()
                 && value.bytes().all(|byte| byte.is_ascii_digit())
-                && options.duration.suffixless_string_policy == SuffixlessDurationPolicy::Reject;
+                && options.duration.suffixless_string_policy
+                    == SuffixlessDurationPolicy::Reject;
             Err(DataConversionError::invalid(
                 DataType::String,
                 to,
@@ -111,16 +121,20 @@ fn parse_duration(
                 },
             ))
         }
-        Err(DurationParseError::UnsupportedUnit { .. }) => Err(DataConversionError::invalid(
-            DataType::String,
-            to,
-            InvalidValueReason::UnsupportedDurationUnit,
-        )),
-        Err(DurationParseError::OutOfRange) => Err(DataConversionError::invalid(
-            DataType::String,
-            to,
-            InvalidValueReason::OutOfRange,
-        )),
+        Err(DurationParseError::UnsupportedUnit { .. }) => {
+            Err(DataConversionError::invalid(
+                DataType::String,
+                to,
+                InvalidValueReason::UnsupportedDurationUnit,
+            ))
+        }
+        Err(DurationParseError::OutOfRange) => {
+            Err(DataConversionError::invalid(
+                DataType::String,
+                to,
+                InvalidValueReason::OutOfRange,
+            ))
+        }
     }
 }
 
@@ -150,14 +164,22 @@ impl DataConversionTarget for Duration {
             #[cfg(feature = "big-integer")]
             DataConverter::BigInteger(value) => {
                 if value.sign() == Sign::Minus {
-                    return Err(
-                        source.invalid(DataType::Duration, InvalidValueReason::NegativeDuration)
-                    );
+                    return Err(source.invalid(
+                        DataType::Duration,
+                        InvalidValueReason::NegativeDuration,
+                    ));
                 }
                 let Some(value) = value.to_u128() else {
-                    return Err(source.invalid(DataType::Duration, InvalidValueReason::OutOfRange));
+                    return Err(source.invalid(
+                        DataType::Duration,
+                        InvalidValueReason::OutOfRange,
+                    ));
                 };
-                integer_to_duration((false, value), DataType::BigInteger, options)
+                integer_to_duration(
+                    (false, value),
+                    DataType::BigInteger,
+                    options,
+                )
             }
             _ => Err(source.unsupported(DataType::Duration)),
         }

@@ -11,9 +11,17 @@ use std::hint::black_box;
 use std::str::FromStr;
 
 use bigdecimal::BigDecimal;
-use criterion::{Criterion, criterion_group, criterion_main};
+use criterion::{
+    Criterion,
+    criterion_group,
+    criterion_main,
+};
 use num_bigint::BigInt;
-use qubit_datatype::{NumericComparisonPolicy, NumericValueRef, compare_numeric};
+use qubit_datatype::{
+    NumericComparisonPolicy,
+    NumericValueRef,
+    compare_numeric,
+};
 
 /// Benchmarks exact and approximate comparison at the `f64` integer boundary.
 fn benchmark_u64_f64_boundary(c: &mut Criterion) {
@@ -92,12 +100,12 @@ fn benchmark_big_integer(c: &mut Criterion) {
 /// Benchmarks exact comparison between decimal and binary representations of
 /// one tenth.
 fn benchmark_big_decimal(c: &mut Criterion) {
-    let decimal =
-        BigDecimal::from_str("0.1").expect("the benchmark decimal literal should be valid");
-    let same_scale =
-        BigDecimal::from_str("0.1").expect("the benchmark decimal literal should be valid");
-    let different_scale =
-        BigDecimal::from_str("0.10").expect("the benchmark decimal literal should be valid");
+    let decimal = BigDecimal::from_str("0.1")
+        .expect("the benchmark decimal literal should be valid");
+    let same_scale = BigDecimal::from_str("0.1")
+        .expect("the benchmark decimal literal should be valid");
+    let different_scale = BigDecimal::from_str("0.10")
+        .expect("the benchmark decimal literal should be valid");
     let right = NumericValueRef::Float64(0.1_f64);
     let policy = NumericComparisonPolicy::Exact;
     let mut group = c.benchmark_group("big_decimal");
@@ -126,7 +134,8 @@ fn benchmark_big_decimal(c: &mut Criterion) {
     group.bench_function("exact_bigdecimal_different_scale_equal", |b| {
         b.iter(|| {
             let left = NumericValueRef::BigDecimal(black_box(&decimal));
-            let right = NumericValueRef::BigDecimal(black_box(&different_scale));
+            let right =
+                NumericValueRef::BigDecimal(black_box(&different_scale));
             black_box(compare_numeric(
                 black_box(left),
                 black_box(right),

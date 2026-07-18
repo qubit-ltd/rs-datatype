@@ -10,7 +10,10 @@
 //! Tests for scalar string collection conversion options.
 
 use qubit_datatype::converter::{
-    CollectionConversionOptions, EmptyItemPolicy, ScalarItem, ScalarItems,
+    CollectionConversionOptions,
+    EmptyItemPolicy,
+    ScalarItem,
+    ScalarItems,
 };
 
 /// Test the environment-variable collection profile.
@@ -83,7 +86,8 @@ fn test_collection_conversion_options_cover_policy_branches() {
         .with_delimiters([','])
         .with_trim_items(true)
         .with_empty_item_policy(EmptyItemPolicy::Reject);
-    let mut rejected_items: ScalarItems<'_> = rejected_options.scalar_items("a,  ,b");
+    let mut rejected_items: ScalarItems<'_> =
+        rejected_options.scalar_items("a,  ,b");
     let first: ScalarItem<'_> = rejected_items
         .next()
         .expect("first item should exist")

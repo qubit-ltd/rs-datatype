@@ -11,7 +11,10 @@ use num_bigint::BigUint;
 
 use super::syntax::invalid_numeric_syntax;
 use crate::converter::{
-    DataConversionError, DataConversionOptions, InvalidValueReason, NumericConversionPolicy,
+    DataConversionError,
+    DataConversionOptions,
+    InvalidValueReason,
+    NumericConversionPolicy,
 };
 use crate::datatype::DataType;
 
@@ -68,10 +71,16 @@ fn factor_u128(mut value: u128) -> (u128, i128, i128) {
 /// # Returns
 ///
 /// `true` if both values have identical prime-factor decompositions.
-fn bounded_coefficient_is_exact_float(coefficient: u128, scale: i128, converted: f64) -> bool {
-    let (decimal_residual, decimal_twos, decimal_fives) = factor_u128(coefficient);
+fn bounded_coefficient_is_exact_float(
+    coefficient: u128,
+    scale: i128,
+    converted: f64,
+) -> bool {
+    let (decimal_residual, decimal_twos, decimal_fives) =
+        factor_u128(coefficient);
     let (float_significand, float_exponent) = finite_float_parts(converted);
-    let (float_residual, float_twos, float_fives) = factor_u128(float_significand);
+    let (float_residual, float_twos, float_fives) =
+        factor_u128(float_significand);
     decimal_residual == float_residual
         && decimal_twos - scale == float_twos + float_exponent
         && decimal_fives - scale == float_fives
@@ -105,7 +114,8 @@ fn unbounded_coefficient_is_exact_float(
     };
     let decimal_twos = coefficient.trailing_zeros().unwrap_or(0);
     let (float_significand, float_exponent) = finite_float_parts(converted);
-    let (float_residual, float_twos, float_fives) = factor_u128(float_significand);
+    let (float_residual, float_twos, float_fives) =
+        factor_u128(float_significand);
     if i128::from(decimal_twos) - scale != float_twos + float_exponent {
         return false;
     }
@@ -116,7 +126,8 @@ fn unbounded_coefficient_is_exact_float(
         decimal_fives += 1;
     }
 
-    coefficient == BigUint::from(float_residual) && decimal_fives - scale == float_fives
+    coefficient == BigUint::from(float_residual)
+        && decimal_fives - scale == float_fives
 }
 
 /// Tests whether decimal text denotes an exactly representable finite float.
@@ -148,7 +159,8 @@ fn text_is_exact_float(value: &str, converted: f64) -> bool {
         match byte {
             b'0'..=b'9' => {
                 digit_count += 1;
-                trailing_zeros = if byte == b'0' { trailing_zeros + 1 } else { 0 };
+                trailing_zeros =
+                    if byte == b'0' { trailing_zeros + 1 } else { 0 };
                 if decimal_seen {
                     fractional_digits += 1;
                 }
@@ -177,7 +189,9 @@ fn text_is_exact_float(value: &str, converted: f64) -> bool {
         - i128::from(exponent)
         - i128::try_from(trailing_zeros).unwrap_or(i128::MAX);
     let mut coefficient = 0u128;
-    for (digit_index, byte) in mantissa.bytes().filter(u8::is_ascii_digit).enumerate() {
+    for (digit_index, byte) in
+        mantissa.bytes().filter(u8::is_ascii_digit).enumerate()
+    {
         if digit_index == significant_digit_count {
             break;
         }
@@ -198,7 +212,8 @@ fn text_is_exact_float(value: &str, converted: f64) -> bool {
     if coefficient == 0 {
         return converted == 0.0;
     }
-    converted != 0.0 && bounded_coefficient_is_exact_float(coefficient, scale, converted)
+    converted != 0.0
+        && bounded_coefficient_is_exact_float(coefficient, scale, converted)
 }
 
 /// Returns the sign of an explicitly named IEEE infinity.

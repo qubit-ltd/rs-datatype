@@ -17,7 +17,11 @@ use num_bigint::BigInt;
 
 #[cfg(feature = "big-decimal")]
 use super::parsed_number::ParsedNumber;
-use crate::converter::{DataConversionError, InvalidValueReason, NumericConversionPolicy};
+use crate::converter::{
+    DataConversionError,
+    InvalidValueReason,
+    NumericConversionPolicy,
+};
 use crate::datatype::DataType;
 
 /// Parses a normalized number without selecting a target primitive first.
@@ -35,7 +39,10 @@ use crate::datatype::DataType;
 ///
 /// Returns an invalid-value [`DataConversionError`] for invalid numeric text.
 #[cfg(feature = "big-decimal")]
-pub(super) fn parse_number(value: &str, to: DataType) -> Result<ParsedNumber, DataConversionError> {
+pub(super) fn parse_number(
+    value: &str,
+    to: DataType,
+) -> Result<ParsedNumber, DataConversionError> {
     let lower = value.to_ascii_lowercase();
     match lower.as_str() {
         "nan" => return Ok(ParsedNumber::NaN),
@@ -78,7 +85,9 @@ pub(super) fn parse_number(value: &str, to: DataType) -> Result<ParsedNumber, Da
 /// # Returns
 ///
 /// `true` for one or more ASCII digits with an optional leading sign.
-pub(in crate::converter::data_converter) fn is_integer_syntax(value: &str) -> bool {
+pub(in crate::converter::data_converter) fn is_integer_syntax(
+    value: &str,
+) -> bool {
     let digits = value.strip_prefix(['+', '-']).unwrap_or(value);
     !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())
 }
@@ -177,8 +186,13 @@ fn split_sign(value: &str) -> (bool, &str) {
 /// # Errors
 ///
 /// Returns an invalid-syntax error when the exponent is missing or malformed.
-fn split_exponent(value: &str, to: DataType) -> Result<(&str, i64), DataConversionError> {
-    let Some(index) = value.bytes().position(|byte| matches!(byte, b'e' | b'E')) else {
+fn split_exponent(
+    value: &str,
+    to: DataType,
+) -> Result<(&str, i64), DataConversionError> {
+    let Some(index) =
+        value.bytes().position(|byte| matches!(byte, b'e' | b'E'))
+    else {
         return Ok((value, 0));
     };
     let mantissa = &value[..index];
@@ -212,7 +226,10 @@ fn split_exponent(value: &str, to: DataType) -> Result<(&str, i64), DataConversi
 ///
 /// Returns an invalid-syntax error for an empty mantissa, repeated decimal
 /// points, non-digit characters, or a mantissa without digits.
-fn analyze_mantissa(mantissa: &str, to: DataType) -> Result<(usize, usize), DataConversionError> {
+fn analyze_mantissa(
+    mantissa: &str,
+    to: DataType,
+) -> Result<(usize, usize), DataConversionError> {
     if mantissa.is_empty() {
         return Err(invalid_numeric_syntax(to));
     }
@@ -255,8 +272,12 @@ fn fractional_part_is_non_zero(
     integer_digit_count: usize,
     decimal_position: i128,
 ) -> bool {
-    for (digit_index, byte) in mantissa.bytes().filter(u8::is_ascii_digit).enumerate() {
-        if (decimal_position <= 0 || digit_index >= integer_digit_count) && byte != b'0' {
+    for (digit_index, byte) in
+        mantissa.bytes().filter(u8::is_ascii_digit).enumerate()
+    {
+        if (decimal_position <= 0 || digit_index >= integer_digit_count)
+            && byte != b'0'
+        {
             return true;
         }
     }
@@ -340,7 +361,8 @@ pub(super) fn parse_text_integer(
     }
     let (mantissa, exponent) = split_exponent(unsigned, to)?;
     let (digit_count, fractional_digits) = analyze_mantissa(mantissa, to)?;
-    let decimal_position = (digit_count - fractional_digits) as i128 + i128::from(exponent);
+    let decimal_position =
+        (digit_count - fractional_digits) as i128 + i128::from(exponent);
     let integer_digit_count = if decimal_position <= 0 {
         0
     } else {
@@ -349,7 +371,11 @@ pub(super) fn parse_text_integer(
             .min(digit_count)
     };
     if policy == NumericConversionPolicy::Exact
-        && fractional_part_is_non_zero(mantissa, integer_digit_count, decimal_position)
+        && fractional_part_is_non_zero(
+            mantissa,
+            integer_digit_count,
+            decimal_position,
+        )
     {
         return Err(DataConversionError::invalid(
             DataType::String,
@@ -358,25 +384,31 @@ pub(super) fn parse_text_integer(
         ));
     }
 
-    let mut magnitude = parse_integer_magnitude(mantissa, integer_digit_count, to)?;
+    let mut magnitude =
+        parse_integer_magnitude(mantissa, integer_digit_count, to)?;
     if decimal_position > digit_count as i128 && magnitude != 0 {
-        let zero_count = u32::try_from(decimal_position - digit_count as i128).map_err(|_| {
-            DataConversionError::invalid(DataType::String, to, InvalidValueReason::OutOfRange)
-        })?;
-        let multiplier = 10u128
-            .checked_pow(zero_count)
-            .ok_or(DataConversionError::invalid(
+        let zero_count = u32::try_from(decimal_position - digit_count as i128)
+            .map_err(|_| {
+                DataConversionError::invalid(
+                    DataType::String,
+                    to,
+                    InvalidValueReason::OutOfRange,
+                )
+            })?;
+        let multiplier = 10u128.checked_pow(zero_count).ok_or(
+            DataConversionError::invalid(
                 DataType::String,
                 to,
                 InvalidValueReason::OutOfRange,
-            ))?;
-        magnitude = magnitude
-            .checked_mul(multiplier)
-            .ok_or(DataConversionError::invalid(
+            ),
+        )?;
+        magnitude = magnitude.checked_mul(multiplier).ok_or(
+            DataConversionError::invalid(
                 DataType::String,
                 to,
                 InvalidValueReason::OutOfRange,
-            ))?;
+            ),
+        )?;
     }
 
     Ok((negative && magnitude != 0, magnitude))
@@ -423,7 +455,8 @@ pub(super) fn parse_text_bigint(
     }
     let (mantissa, exponent) = split_exponent(unsigned, to)?;
     let (digit_count, fractional_digits) = analyze_mantissa(mantissa, to)?;
-    let decimal_position = (digit_count - fractional_digits) as i128 + i128::from(exponent);
+    let decimal_position =
+        (digit_count - fractional_digits) as i128 + i128::from(exponent);
     let integer_digit_count = if decimal_position <= 0 {
         0
     } else {
@@ -432,7 +465,11 @@ pub(super) fn parse_text_bigint(
             .min(digit_count)
     };
     if policy == NumericConversionPolicy::Exact
-        && fractional_part_is_non_zero(mantissa, integer_digit_count, decimal_position)
+        && fractional_part_is_non_zero(
+            mantissa,
+            integer_digit_count,
+            decimal_position,
+        )
     {
         return Err(DataConversionError::invalid(
             DataType::String,
@@ -440,8 +477,10 @@ pub(super) fn parse_text_bigint(
             InvalidValueReason::PrecisionLoss,
         ));
     }
-    let appended_zeros = decimal_position.saturating_sub(digit_count as i128).max(0);
-    let result_digits = (integer_digit_count as i128).saturating_add(appended_zeros);
+    let appended_zeros =
+        decimal_position.saturating_sub(digit_count as i128).max(0);
+    let result_digits =
+        (integer_digit_count as i128).saturating_add(appended_zeros);
     let is_non_zero = mantissa
         .bytes()
         .filter(u8::is_ascii_digit)

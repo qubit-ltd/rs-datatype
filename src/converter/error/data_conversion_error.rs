@@ -106,7 +106,11 @@ impl DataConversionError {
     ///
     /// An invalid-value conversion error.
     #[inline(always)]
-    pub const fn invalid(from: DataType, to: DataType, reason: InvalidValueReason) -> Self {
+    pub const fn invalid(
+        from: DataType,
+        to: DataType,
+        reason: InvalidValueReason,
+    ) -> Self {
         Self {
             inner: DataConversionErrorInner::InvalidValue { from, to, reason },
         }
@@ -120,12 +124,18 @@ impl DataConversionError {
     #[inline(always)]
     pub const fn kind(&self) -> DataConversionErrorKind {
         match &self.inner {
-            DataConversionErrorInner::Missing { .. } => DataConversionErrorKind::Missing,
+            DataConversionErrorInner::Missing { .. } => {
+                DataConversionErrorKind::Missing
+            }
             DataConversionErrorInner::EmptyCollection { .. } => {
                 DataConversionErrorKind::EmptyCollection
             }
-            DataConversionErrorInner::Unsupported { .. } => DataConversionErrorKind::Unsupported,
-            DataConversionErrorInner::InvalidValue { .. } => DataConversionErrorKind::InvalidValue,
+            DataConversionErrorInner::Unsupported { .. } => {
+                DataConversionErrorKind::Unsupported
+            }
+            DataConversionErrorInner::InvalidValue { .. } => {
+                DataConversionErrorKind::InvalidValue
+            }
         }
     }
 
@@ -150,7 +160,9 @@ impl DataConversionError {
         match &self.inner {
             DataConversionErrorInner::Missing { from, .. }
             | DataConversionErrorInner::Unsupported { from, .. }
-            | DataConversionErrorInner::InvalidValue { from, .. } => Some(*from),
+            | DataConversionErrorInner::InvalidValue { from, .. } => {
+                Some(*from)
+            }
             DataConversionErrorInner::EmptyCollection { .. } => None,
         }
     }
@@ -179,7 +191,9 @@ impl DataConversionError {
     #[inline(always)]
     pub const fn reason(&self) -> Option<&InvalidValueReason> {
         match &self.inner {
-            DataConversionErrorInner::InvalidValue { reason, .. } => Some(reason),
+            DataConversionErrorInner::InvalidValue { reason, .. } => {
+                Some(reason)
+            }
             _ => None,
         }
     }
