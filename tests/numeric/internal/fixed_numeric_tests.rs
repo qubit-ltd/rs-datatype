@@ -18,7 +18,8 @@ use qubit_datatype::{
 #[test]
 fn test_fixed_numeric_compares_signed_and_unsigned_values() {
     assert_eq!(
-        NumberRef::from(-1_i64).compare_to(NumberRef::from(0_u64), NumericComparisonPolicy::Exact,),
+        NumberRef::from(-1_i64)
+            .compare(NumberRef::from(0_u64), NumericComparisonPolicy::Exact,),
         Some(Ordering::Less),
     );
 }

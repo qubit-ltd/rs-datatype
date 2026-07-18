@@ -7,8 +7,6 @@
 // =============================================================================
 //! Private numeric comparison algorithms.
 
-#[cfg(feature = "big-decimal")]
-mod exact_decimal;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 mod exact_rational;
 mod fixed_numeric;

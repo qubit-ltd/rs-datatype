@@ -32,7 +32,7 @@ fn compare_numbers(
     right: NumberRef<'_>,
     policy: NumericComparisonPolicy,
 ) -> Option<Ordering> {
-    left.compare_to(right, policy)
+    left.compare(right, policy)
 }
 #[cfg(feature = "big-number")]
 use std::str::FromStr;

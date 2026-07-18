@@ -14,8 +14,6 @@ use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 use num_rational::BigRational;
 
-#[cfg(feature = "big-decimal")]
-use super::exact_decimal::compare_exact_decimal;
 use crate::NumberRef;
 use crate::numeric::internal::NumberRepr;
 
@@ -213,7 +211,7 @@ pub(in crate::numeric) fn compare_exact_rational(
     match (to_exact_rational(left), to_exact_rational(right)) {
         (Some(left), Some(right)) => Some(left.cmp(&right)),
         #[cfg(feature = "big-decimal")]
-        _ => compare_exact_decimal(left, right),
+        _ => left.compare_exact_decimal(right),
         #[cfg(not(feature = "big-decimal"))]
         _ => None,
     }

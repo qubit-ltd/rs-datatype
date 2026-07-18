@@ -36,7 +36,7 @@ fn benchmark_u64_f64_boundary(c: &mut Criterion) {
             b.iter(|| {
                 black_box(
                     black_box(integer)
-                        .compare_to(black_box(float), black_box(policy)),
+                        .compare(black_box(float), black_box(policy)),
                 )
             });
         });
@@ -54,7 +54,7 @@ fn benchmark_fixed_width_extremes(c: &mut Criterion) {
     group.bench_function("exact_i128_min_vs_u128_max", |b| {
         b.iter(|| {
             black_box(
-                black_box(left).compare_to(black_box(right), black_box(policy)),
+                black_box(left).compare(black_box(right), black_box(policy)),
             )
         });
     });
@@ -73,7 +73,7 @@ fn benchmark_big_integer(c: &mut Criterion) {
         b.iter(|| {
             let left = NumberRef::from(black_box(&integer));
             black_box(
-                black_box(left).compare_to(black_box(right), black_box(policy)),
+                black_box(left).compare(black_box(right), black_box(policy)),
             )
         });
     });
@@ -82,7 +82,7 @@ fn benchmark_big_integer(c: &mut Criterion) {
             let left = NumberRef::from(black_box(&integer));
             let right = NumberRef::from(black_box(&same_integer));
             black_box(
-                black_box(left).compare_to(black_box(right), black_box(policy)),
+                black_box(left).compare(black_box(right), black_box(policy)),
             )
         });
     });
@@ -106,7 +106,7 @@ fn benchmark_big_decimal(c: &mut Criterion) {
         b.iter(|| {
             let left = NumberRef::from(black_box(&decimal));
             black_box(
-                black_box(left).compare_to(black_box(right), black_box(policy)),
+                black_box(left).compare(black_box(right), black_box(policy)),
             )
         });
     });
@@ -115,7 +115,7 @@ fn benchmark_big_decimal(c: &mut Criterion) {
             let left = NumberRef::from(black_box(&decimal));
             let right = NumberRef::from(black_box(&same_scale));
             black_box(
-                black_box(left).compare_to(black_box(right), black_box(policy)),
+                black_box(left).compare(black_box(right), black_box(policy)),
             )
         });
     });
@@ -124,7 +124,7 @@ fn benchmark_big_decimal(c: &mut Criterion) {
             let left = NumberRef::from(black_box(&decimal));
             let right = NumberRef::from(black_box(&different_scale));
             black_box(
-                black_box(left).compare_to(black_box(right), black_box(policy)),
+                black_box(left).compare(black_box(right), black_box(policy)),
             )
         });
     });

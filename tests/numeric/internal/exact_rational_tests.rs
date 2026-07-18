@@ -26,10 +26,8 @@ use qubit_datatype::{
 fn test_exact_rational_matches_binary_fraction() {
     let decimal = BigDecimal::from_str("0.5").expect("test decimal");
     assert_eq!(
-        NumberRef::from(&decimal).compare_to(
-            NumberRef::from(0.5_f64),
-            NumericComparisonPolicy::Exact,
-        ),
+        NumberRef::from(&decimal)
+            .compare(NumberRef::from(0.5_f64), NumericComparisonPolicy::Exact,),
         Some(Ordering::Equal),
     );
 }

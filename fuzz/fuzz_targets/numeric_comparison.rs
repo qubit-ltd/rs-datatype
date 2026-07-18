@@ -61,10 +61,10 @@ fuzz_target!(|data: &[u8]| {
         for &left in &values {
             for &right in &values {
                 let forward = left
-                    .compare_to(right, policy)
+                    .compare(right, policy)
                     .expect("generated non-NaN numeric values must be ordered");
                 let reverse = right
-                    .compare_to(left, policy)
+                    .compare(left, policy)
                     .expect("generated non-NaN numeric values must be ordered");
                 assert_eq!(reverse, forward.reverse());
             }

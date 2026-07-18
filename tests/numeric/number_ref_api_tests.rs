@@ -126,16 +126,16 @@ fn test_number_ref_float_properties() {
 
 /// Verifies comparison is exposed as a method on the left operand.
 #[test]
-fn test_number_ref_compare_to() {
+fn test_number_ref_compare() {
     let left = NumberRef::from(1_i32);
     let right = NumberRef::from(2_u64);
     assert_eq!(
-        left.compare_to(right, NumericComparisonPolicy::Exact),
+        left.compare(right, NumericComparisonPolicy::Exact),
         Some(Ordering::Less),
     );
     assert_eq!(
         NumberRef::from(f64::NAN)
-            .compare_to(right, NumericComparisonPolicy::Exact),
+            .compare(right, NumericComparisonPolicy::Exact),
         None,
     );
 }
