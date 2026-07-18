@@ -14,13 +14,9 @@ use super::data_converter::DataConverter;
 use super::error::{
     DataConversionError,
     DataListConversionError,
-    InvalidValueReason,
 };
 use super::options::DataConversionOptions;
-use crate::datatype::{
-    DataType,
-    DataTypeOf,
-};
+use crate::datatype::DataTypeOf;
 
 /// Converts a scalar string as a configurable collection source.
 ///
@@ -112,18 +108,10 @@ impl<'a> ScalarStringDataConverters<'a> {
             }
         };
         let items = options.collection.scalar_items(text);
-        let (capacity, _) = items.size_hint();
-        let mut converted = Vec::with_capacity(capacity);
+        let mut converted = Vec::new();
         for item in items {
             let item = item.map_err(|error| {
-                DataListConversionError::new(
-                    error.source_index(),
-                    DataConversionError::invalid(
-                        DataType::String,
-                        T::DATA_TYPE,
-                        InvalidValueReason::BlankRejected,
-                    ),
-                )
+                error.into_list_conversion_error(T::DATA_TYPE)
             })?;
             let value = match DataConverter::from(item.value).to_with(options) {
                 Ok(value) => value,
@@ -200,13 +188,7 @@ impl<'a> ScalarStringDataConverters<'a> {
             .scalar_items(text)
             .next()
             .ok_or(DataConversionError::empty_collection(T::DATA_TYPE))?
-            .map_err(|_| {
-                DataConversionError::invalid(
-                    DataType::String,
-                    T::DATA_TYPE,
-                    InvalidValueReason::BlankRejected,
-                )
-            })?;
+            .map_err(|error| error.into_data_conversion_error(T::DATA_TYPE))?;
         DataConverter::from(first.value).to_with::<T>(options)
     }
 }
