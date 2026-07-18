@@ -80,7 +80,7 @@ use qubit_datatype::{NumberRef, NumericComparisonPolicy};
 let integer = NumberRef::from((1_u64 << 53) + 1);
 let float = NumberRef::from((1_u64 << 53) as f64);
 assert_eq!(
-    integer.compare_to(float, NumericComparisonPolicy::Exact),
+    integer.compare(float, NumericComparisonPolicy::Exact),
     Some(Ordering::Greater),
 );
 ```

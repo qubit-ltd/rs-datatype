@@ -21,7 +21,7 @@ use num_bigint::BigInt;
 /// Asserts that two number references have the same exact value.
 fn assert_exactly_equal(left: NumberRef<'_>, right: NumberRef<'_>) {
     assert_eq!(
-        left.compare_to(right, NumericComparisonPolicy::Exact),
+        left.compare(right, NumericComparisonPolicy::Exact),
         Some(Ordering::Equal),
     );
 }

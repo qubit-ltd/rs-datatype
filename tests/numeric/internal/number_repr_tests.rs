@@ -18,10 +18,8 @@ use qubit_datatype::{
 #[test]
 fn test_number_repr_preserves_exact_values() {
     assert_eq!(
-        NumberRef::from(42_i8).compare_to(
-            NumberRef::from(42_u128),
-            NumericComparisonPolicy::Exact,
-        ),
+        NumberRef::from(42_i8)
+            .compare(NumberRef::from(42_u128), NumericComparisonPolicy::Exact,),
         Some(Ordering::Equal),
     );
 }

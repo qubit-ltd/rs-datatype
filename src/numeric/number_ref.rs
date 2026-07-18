@@ -120,8 +120,8 @@ impl<'a> NumberRef<'a> {
     /// # Returns
     ///
     /// `true` for `f32` and `f64` values.
-    #[must_use]
     #[inline(always)]
+    #[must_use]
     pub fn is_float(self) -> bool {
         matches!(self.inner, NumberRepr::Float32(_) | NumberRepr::Float64(_))
     }
@@ -132,8 +132,8 @@ impl<'a> NumberRef<'a> {
     ///
     /// `true` for `BigInt` values when the `big-integer` feature is enabled;
     /// otherwise, `false`.
-    #[must_use]
     #[inline(always)]
+    #[must_use]
     pub fn is_big_integer(self) -> bool {
         #[cfg(feature = "big-integer")]
         {
@@ -151,8 +151,8 @@ impl<'a> NumberRef<'a> {
     ///
     /// `true` for `BigDecimal` values when the `big-decimal` feature is
     /// enabled; otherwise, `false`.
-    #[must_use]
     #[inline(always)]
+    #[must_use]
     pub fn is_big_decimal(self) -> bool {
         #[cfg(feature = "big-decimal")]
         {
@@ -169,8 +169,8 @@ impl<'a> NumberRef<'a> {
     /// # Returns
     ///
     /// `true` only for a primitive NaN payload.
-    #[must_use]
     #[inline]
+    #[must_use]
     pub fn is_nan(self) -> bool {
         match self.inner {
             NumberRepr::Float32(value) => value.is_nan(),
@@ -184,8 +184,8 @@ impl<'a> NumberRef<'a> {
     /// # Returns
     ///
     /// `true` for positive or negative infinity; otherwise, `false`.
-    #[must_use]
     #[inline]
+    #[must_use]
     pub fn is_infinite(self) -> bool {
         match self.inner {
             NumberRepr::Float32(value) => value.is_infinite(),
@@ -200,8 +200,8 @@ impl<'a> NumberRef<'a> {
     ///
     /// `true` for all integers, arbitrary-precision values, and finite
     /// primitive floats; otherwise, `false`.
-    #[must_use]
     #[inline(always)]
+    #[must_use]
     pub fn is_finite(self) -> bool {
         !self.is_nan() && !self.is_infinite()
     }
@@ -307,7 +307,7 @@ impl<'a> NumberRef<'a> {
     ///
     /// The numeric ordering, or `None` when either operand is NaN.
     #[must_use]
-    pub fn compare_to(
+    pub fn compare(
         self,
         right: NumberRef<'_>,
         policy: NumericComparisonPolicy,
@@ -369,16 +369,40 @@ impl<'a> NumberRef<'a> {
         compare_fixed(self, right)
     }
 
-    /// Returns the private representation for numeric algorithms.
+    /// Compares values through exact arbitrary-precision decimal
+    /// representations.
+    ///
+    /// # Parameters
+    ///
+    /// * `right` - Right numeric operand.
+    ///
+    /// # Returns
+    ///
+    /// Their mathematical ordering, or `None` when either operand is
+    /// non-finite.
+    #[cfg(feature = "big-decimal")]
     #[inline(always)]
     #[must_use]
-    pub(in crate::numeric) const fn inner(self) -> NumberRepr<'a> {
-        self.inner
+    pub fn compare_exact_decimal(
+        self,
+        right: NumberRef<'_>,
+    ) -> Option<Ordering> {
+        Some(self.to_exact_decimal()?.cmp(&right.to_exact_decimal()?))
     }
 
     /// Projects this value to `f64` for approximate comparison.
+    ///
+    /// Fixed-width integers and primitive floats convert by widening or
+    /// casting. Arbitrary-precision values use `ToPrimitive::to_f64`, which
+    /// may lose precision or return `None` when the magnitude cannot be
+    /// represented.
+    ///
+    /// # Returns
+    ///
+    /// The approximate `f64` projection, or `None` when an arbitrary-precision
+    /// value cannot be represented as `f64`.
     #[must_use]
-    fn to_approximate_f64(self) -> Option<f64> {
+    pub fn to_approximate_f64(self) -> Option<f64> {
         match self.inner {
             NumberRepr::Int8(value) => Some(f64::from(value)),
             NumberRepr::Int16(value) => Some(f64::from(value)),
@@ -399,5 +423,49 @@ impl<'a> NumberRef<'a> {
             #[cfg(not(any(feature = "big-integer", feature = "big-decimal")))]
             NumberRepr::Lifetime(_, impossible) => match impossible {},
         }
+    }
+
+    /// Converts this finite numeric value into an exact arbitrary-precision
+    /// decimal.
+    ///
+    /// `BigDecimal`'s primitive-float conversion decodes the IEEE significand
+    /// and exponent exactly; it does not use display formatting.
+    ///
+    /// # Returns
+    ///
+    /// The exact decimal value, or `None` for a non-finite primitive float.
+    #[cfg(feature = "big-decimal")]
+    #[must_use]
+    pub fn to_exact_decimal(self) -> Option<BigDecimal> {
+        match self.inner {
+            NumberRepr::Int8(value) => Some(BigDecimal::from(value)),
+            NumberRepr::Int16(value) => Some(BigDecimal::from(value)),
+            NumberRepr::Int32(value) => Some(BigDecimal::from(value)),
+            NumberRepr::Int64(value) => Some(BigDecimal::from(value)),
+            NumberRepr::Int128(value) => Some(BigDecimal::from(value)),
+            NumberRepr::UInt8(value) => Some(BigDecimal::from(value)),
+            NumberRepr::UInt16(value) => Some(BigDecimal::from(value)),
+            NumberRepr::UInt32(value) => Some(BigDecimal::from(value)),
+            NumberRepr::UInt64(value) => Some(BigDecimal::from(value)),
+            NumberRepr::UInt128(value) => Some(BigDecimal::from(value)),
+            NumberRepr::Float32(value) => BigDecimal::try_from(value).ok(),
+            NumberRepr::Float64(value) => BigDecimal::try_from(value).ok(),
+            #[cfg(feature = "big-integer")]
+            NumberRepr::BigInteger(value) => {
+                Some(BigDecimal::from(value.clone()))
+            }
+            NumberRepr::BigDecimal(value) => Some(value.clone()),
+        }
+    }
+
+    /// Returns the private representation for numeric algorithms.
+    ///
+    /// # Returns
+    ///
+    /// The crate-private `NumberRepr` payload borrowed or copied by this value.
+    #[inline(always)]
+    #[must_use]
+    pub(in crate::numeric) const fn inner(self) -> NumberRepr<'a> {
+        self.inner
     }
 }
