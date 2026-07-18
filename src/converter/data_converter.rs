@@ -211,7 +211,6 @@ impl DataConverter<'_> {
     /// # Returns
     ///
     /// Returns the [`DataType`] corresponding to this enum variant.
-    #[inline(always)]
     pub const fn data_type(&self) -> DataType {
         match self {
             Self::Empty(data_type) => *data_type,

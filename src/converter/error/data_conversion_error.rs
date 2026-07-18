@@ -121,7 +121,6 @@ impl DataConversionError {
     /// # Returns
     ///
     /// The conversion error kind.
-    #[inline(always)]
     pub const fn kind(&self) -> DataConversionErrorKind {
         match &self.inner {
             DataConversionErrorInner::Missing { .. } => {
