@@ -9,7 +9,21 @@
 
 use std::time::Duration;
 
-use qubit_datatype::DurationUnit;
+use qubit_datatype::{DurationOverflowError, DurationUnit};
+
+/// Tests unit suffix parsing.
+#[test]
+fn test_duration_unit_parses_suffixes() {
+    assert_eq!(
+        DurationUnit::from_suffix("ms"),
+        Some(DurationUnit::Milliseconds),
+    );
+    assert_eq!(
+        DurationUnit::from_suffix("µs"),
+        Some(DurationUnit::Microseconds),
+    );
+    assert_eq!(DurationUnit::from_suffix("unknown"), None);
+}
 
 /// Tests exact and half-up conversion to unit counts.
 #[test]
@@ -38,4 +52,9 @@ fn test_duration_unit_converts_supported_counts() {
     for (unit, value, expected) in cases {
         assert_eq!(unit.duration_from_u128(value), Ok(expected));
     }
+
+    assert_eq!(
+        DurationUnit::Days.duration_from_u128(u128::MAX),
+        Err(DurationOverflowError),
+    );
 }

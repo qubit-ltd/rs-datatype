@@ -30,12 +30,8 @@ fn finite_parts(value: NumericValueRef<'_>) -> Option<(bool, u128, i32)> {
         NumericValueRef::UInt32(value) => Some((false, u128::from(value), 0)),
         NumericValueRef::UInt64(value) => Some((false, u128::from(value), 0)),
         NumericValueRef::UInt128(value) => Some((false, value, 0)),
-        NumericValueRef::Float32(value) if value.is_finite() => {
-            Some(f32_parts(value))
-        }
-        NumericValueRef::Float64(value) if value.is_finite() => {
-            Some(f64_parts(value))
-        }
+        NumericValueRef::Float32(value) if value.is_finite() => Some(f32_parts(value)),
+        NumericValueRef::Float64(value) if value.is_finite() => Some(f64_parts(value)),
         _ => None,
     }
 }
@@ -82,18 +78,17 @@ fn compare_magnitude(
     if left_significand == 0 || right_significand == 0 {
         return left_significand.cmp(&right_significand);
     }
-    let left_high_bit =
-        128 - left_significand.leading_zeros() as i32 + left_exponent;
-    let right_high_bit =
-        128 - right_significand.leading_zeros() as i32 + right_exponent;
+    let left_high_bit = 128 - left_significand.leading_zeros() as i32 + left_exponent;
+    let right_high_bit = 128 - right_significand.leading_zeros() as i32 + right_exponent;
     match left_high_bit.cmp(&right_high_bit) {
         Ordering::Equal => match left_exponent.cmp(&right_exponent) {
             Ordering::Equal => left_significand.cmp(&right_significand),
-            Ordering::Greater => (left_significand
-                << (left_exponent - right_exponent))
-                .cmp(&right_significand),
-            Ordering::Less => left_significand
-                .cmp(&(right_significand << (right_exponent - left_exponent))),
+            Ordering::Greater => {
+                (left_significand << (left_exponent - right_exponent)).cmp(&right_significand)
+            }
+            Ordering::Less => {
+                left_significand.cmp(&(right_significand << (right_exponent - left_exponent)))
+            }
         },
         ordering => ordering,
     }
@@ -110,8 +105,7 @@ pub(in crate::numeric) fn compare_fixed(
     right: NumericValueRef<'_>,
 ) -> Option<Ordering> {
     let (left_negative, left_significand, left_exponent) = finite_parts(left)?;
-    let (right_negative, right_significand, right_exponent) =
-        finite_parts(right)?;
+    let (right_negative, right_significand, right_exponent) = finite_parts(right)?;
     if left_significand == 0 && right_significand == 0 {
         return Some(Ordering::Equal);
     }

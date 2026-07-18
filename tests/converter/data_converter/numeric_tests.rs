@@ -14,21 +14,10 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use bigdecimal::BigDecimal;
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use num_bigint::BigInt;
 use proptest::proptest;
-use qubit_datatype::{
-    DataConversionOptions,
-    DataConverter,
-    DataType,
-    InvalidValueReason,
-};
+use qubit_datatype::{DataConversionOptions, DataConverter, DataType, InvalidValueReason};
 use url::Url;
 
 /// Creates a very large BigInt for overflow-oriented tests.
@@ -209,8 +198,7 @@ fn test_data_converter_unsigned_integer_targets_accept_supported_sources() {
 #[test]
 fn test_data_converter_float_targets_accept_supported_sources() {
     let big_int = BigInt::from(20);
-    let big_decimal =
-        BigDecimal::from_str("21.5").expect("test BigDecimal should parse");
+    let big_decimal = BigDecimal::from_str("21.5").expect("test BigDecimal should parse");
 
     let f32_sources = [
         DataConverter::from(1.0f32),
@@ -370,16 +358,14 @@ fn test_data_converter_big_number_conversions_check_range() {
         .expect("in-range BigInt should convert to i64");
     assert_eq!(converted, i64::MAX);
 
-    let huge_int =
-        BigInt::parse_bytes(b"999999999999999999999999999999999999", 10)
-            .expect("test BigInt literal should parse");
+    let huge_int = BigInt::parse_bytes(b"999999999999999999999999999999999999", 10)
+        .expect("test BigInt literal should parse");
     assert!(matches!(
         DataConverter::from(&huge_int).to::<i64>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)
     )));
 
-    let decimal =
-        BigDecimal::from_str("123.75").expect("test BigDecimal should parse");
+    let decimal = BigDecimal::from_str("123.75").expect("test BigDecimal should parse");
     let converted: f64 = DataConverter::from(&decimal)
         .to()
         .expect("BigDecimal should convert to f64");

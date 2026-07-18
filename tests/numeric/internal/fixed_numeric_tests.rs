@@ -9,11 +9,7 @@
 
 use std::cmp::Ordering;
 
-use qubit_datatype::{
-    NumericComparisonPolicy,
-    NumericValueRef,
-    compare_numeric,
-};
+use qubit_datatype::{NumericComparisonPolicy, NumericValueRef, compare_numeric};
 
 /// Verifies fixed signed and unsigned values retain exact ordering.
 #[test]

@@ -11,14 +11,8 @@
 
 use qubit_datatype::DataType;
 use qubit_datatype::converter::{
-    BlankStringPolicy,
-    CollectionConversionOptions,
-    DataConversionError,
-    DataConversionOptions,
-    EmptyItemPolicy,
-    InvalidValueReason,
-    ScalarStringDataConverters,
-    StringConversionOptions,
+    BlankStringPolicy, CollectionConversionOptions, DataConversionError, DataConversionOptions,
+    EmptyItemPolicy, InvalidValueReason, ScalarStringDataConverters, StringConversionOptions,
 };
 
 /// Test default scalar string conversion without splitting.
@@ -54,10 +48,9 @@ fn test_scalar_string_data_converters_to_vec_with_splits_items() {
                 .with_empty_item_policy(EmptyItemPolicy::Skip),
         );
 
-    let ports: Vec<u16> =
-        ScalarStringDataConverters::from(" 8080, 8081;; 8082 ")
-            .to_vec_with(&options)
-            .expect("scalar string should split and parse into ports");
+    let ports: Vec<u16> = ScalarStringDataConverters::from(" 8080, 8081;; 8082 ")
+        .to_vec_with(&options)
+        .expect("scalar string should split and parse into ports");
 
     assert_eq!(ports, vec![8080, 8081, 8082]);
 }

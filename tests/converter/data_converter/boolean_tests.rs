@@ -12,12 +12,7 @@ use qubit_datatype::converter::DataConversionErrorKind;
 #[cfg(feature = "big-number")]
 use num_bigint::BigInt;
 use proptest::proptest;
-use qubit_datatype::{
-    DataConversionError,
-    DataConverter,
-    DataType,
-    InvalidValueReason,
-};
+use qubit_datatype::{DataConversionError, DataConverter, DataType, InvalidValueReason};
 
 /// Test bool target conversions for all supported source variants.
 #[test]

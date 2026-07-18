@@ -7,17 +7,9 @@
 // =============================================================================
 //! Numeric text conversion benchmarks.
 
-use criterion::{
-    BenchmarkId,
-    Criterion,
-    criterion_group,
-    criterion_main,
-};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use num_bigint::BigUint;
-use qubit_datatype::{
-    DataConversionOptions,
-    DataConverter,
-};
+use qubit_datatype::{DataConversionOptions, DataConverter};
 use std::hint::black_box;
 
 /// Benchmarks representative exact integer text conversions.
@@ -29,17 +21,9 @@ fn benchmark_exact_integer_text(c: &mut Criterion) {
         ("scientific_integer", "12345e4"),
         ("exact_decimal", "12345.000"),
     ] {
-        group.bench_with_input(
-            BenchmarkId::from_parameter(name),
-            source,
-            |b, source| {
-                b.iter(|| {
-                    black_box(
-                        DataConverter::from(black_box(source)).to::<i64>(),
-                    )
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::from_parameter(name), source, |b, source| {
+            b.iter(|| black_box(DataConverter::from(black_box(source)).to::<i64>()));
+        });
     }
     group.finish();
 }
@@ -53,18 +37,13 @@ fn benchmark_lossy_integer_text(c: &mut Criterion) {
         ("fractional_scientific", "12345.6789e2"),
         ("small_fraction", "0.000000001"),
     ] {
-        group.bench_with_input(
-            BenchmarkId::from_parameter(name),
-            source,
-            |b, source| {
-                b.iter(|| {
-                    black_box(
-                        DataConverter::from(black_box(source))
-                            .to_with::<i64>(black_box(&options)),
-                    )
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::from_parameter(name), source, |b, source| {
+            b.iter(|| {
+                black_box(
+                    DataConverter::from(black_box(source)).to_with::<i64>(black_box(&options)),
+                )
+            });
+        });
     }
     group.finish();
 }
@@ -84,18 +63,9 @@ fn benchmark_exact_float_text(c: &mut Criterion) {
     ];
     let mut group = c.benchmark_group("numeric_text_to_f64_exact");
     for (name, source) in &sources {
-        group.bench_with_input(
-            BenchmarkId::from_parameter(name),
-            source,
-            |b, source| {
-                b.iter(|| {
-                    black_box(
-                        DataConverter::from(black_box(source.as_str()))
-                            .to::<f64>(),
-                    )
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::from_parameter(name), source, |b, source| {
+            b.iter(|| black_box(DataConverter::from(black_box(source.as_str())).to::<f64>()));
+        });
     }
     group.finish();
 }

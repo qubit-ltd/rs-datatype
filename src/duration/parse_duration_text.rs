@@ -10,10 +10,7 @@
 use std::time::Duration;
 
 use super::{
-    DurationParseError,
-    DurationTextOptions,
-    DurationUnit,
-    DurationUnitSuffixSet,
+    DurationParseError, DurationTextOptions, DurationUnit, DurationUnitSuffixSet,
     SuffixlessDurationPolicy,
 };
 
@@ -62,9 +59,7 @@ fn resolve_unit(
 ) -> Result<DurationUnit, DurationParseError> {
     if suffix.is_empty() {
         return match options.suffixless_policy {
-            SuffixlessDurationPolicy::Reject => {
-                Err(DurationParseError::InvalidSyntax)
-            }
+            SuffixlessDurationPolicy::Reject => Err(DurationParseError::InvalidSyntax),
             SuffixlessDurationPolicy::Assume(unit) => Ok(unit),
         };
     }
@@ -72,12 +67,8 @@ fn resolve_unit(
         return Ok(unit);
     }
     let alphabetic = match options.unit_suffix_set {
-        DurationUnitSuffixSet::Ascii => {
-            suffix.bytes().all(|byte| byte.is_ascii_alphabetic())
-        }
-        DurationUnitSuffixSet::Extended => {
-            suffix.chars().all(char::is_alphabetic)
-        }
+        DurationUnitSuffixSet::Ascii => suffix.bytes().all(|byte| byte.is_ascii_alphabetic()),
+        DurationUnitSuffixSet::Extended => suffix.chars().all(char::is_alphabetic),
     };
     if alphabetic {
         Err(DurationParseError::UnsupportedUnit {
@@ -89,10 +80,7 @@ fn resolve_unit(
 }
 
 /// Matches a suffix from the selected supported set.
-fn explicit_unit(
-    suffix: &str,
-    suffix_set: DurationUnitSuffixSet,
-) -> Option<DurationUnit> {
+fn explicit_unit(suffix: &str, suffix_set: DurationUnitSuffixSet) -> Option<DurationUnit> {
     match suffix {
         "ns" => Some(DurationUnit::Nanoseconds),
         "us" => Some(DurationUnit::Microseconds),
