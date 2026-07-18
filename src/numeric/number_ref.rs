@@ -371,11 +371,13 @@ impl<'a> NumberRef<'a> {
 
     /// Returns the private representation for numeric algorithms.
     #[inline(always)]
+    #[must_use]
     pub(in crate::numeric) const fn inner(self) -> NumberRepr<'a> {
         self.inner
     }
 
     /// Projects this value to `f64` for approximate comparison.
+    #[must_use]
     fn to_approximate_f64(self) -> Option<f64> {
         match self.inner {
             NumberRepr::Int8(value) => Some(f64::from(value)),
