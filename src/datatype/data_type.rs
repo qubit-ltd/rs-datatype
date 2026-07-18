@@ -10,14 +10,17 @@
 //! Provides cross-module reusable common data type enum `DataType` and type
 //! mapping `DataTypeOf`.
 
-use std::fmt;
-use std::str::FromStr;
-
 use super::data_type_parse_error::DataTypeParseError;
 
 use serde::{
     Deserialize,
     Serialize,
+};
+use strum::{
+    Display,
+    EnumString,
+    IntoStaticStr,
+    VariantArray,
 };
 
 /// Universal data type enumeration for cross-module type representation
@@ -92,8 +95,27 @@ use serde::{
 /// assert_eq!(deserialized, DataType::Float64);
 /// ```
 #[must_use]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    Display,
+    EnumString,
+    IntoStaticStr,
+    VariantArray,
+)]
 #[serde(rename_all = "lowercase")]
+#[strum(
+    serialize_all = "lowercase",
+    ascii_case_insensitive,
+    parse_err_ty = DataTypeParseError,
+    parse_err_fn = DataTypeParseError::new
+)]
 pub enum DataType {
     /// Boolean type
     Bool,
@@ -147,76 +169,21 @@ pub enum DataType {
     Json,
 }
 
-impl fmt::Display for DataType {
-    #[inline(always)]
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(self.as_str())
-    }
-}
-
-macro_rules! define_data_type_names {
-    ($( $variant:ident => $name:literal ),+ $(,)?) => {
-        impl FromStr for DataType {
-            type Err = DataTypeParseError;
-
-            /// Parses a case-insensitive data type name.
-            fn from_str(value: &str) -> Result<Self, Self::Err> {
-                match value.to_ascii_lowercase().as_str() {
-                    $( $name => Ok(DataType::$variant), )+
-                    _ => Err(DataTypeParseError::new(value)),
-                }
-            }
-        }
-
-        impl DataType {
-            /// All data type variants in their stable declaration order.
-            pub const ALL: [DataType; 25] = [$( DataType::$variant, )+];
-
-            /// Returns the stable lowercase name of this data type.
-            ///
-            /// # Returns
-            ///
-            /// The stable lowercase serialization and display name.
-            #[must_use]
-            #[inline(always)]
-            pub const fn as_str(self) -> &'static str {
-                match self {
-                    $( DataType::$variant => $name, )+
-                }
-            }
-        }
-    };
-}
-
-define_data_type_names! {
-    Bool => "bool",
-    Char => "char",
-    Int8 => "int8",
-    Int16 => "int16",
-    Int32 => "int32",
-    Int64 => "int64",
-    Int128 => "int128",
-    UInt8 => "uint8",
-    UInt16 => "uint16",
-    UInt32 => "uint32",
-    UInt64 => "uint64",
-    UInt128 => "uint128",
-    Float32 => "float32",
-    Float64 => "float64",
-    String => "string",
-    Date => "date",
-    Time => "time",
-    DateTime => "datetime",
-    Instant => "instant",
-    BigInteger => "biginteger",
-    BigDecimal => "bigdecimal",
-    Duration => "duration",
-    Url => "url",
-    StringMap => "stringmap",
-    Json => "json",
-}
-
 impl DataType {
+    /// All data type variants in their stable declaration order.
+    pub const ALL: &'static [DataType] = <DataType as VariantArray>::VARIANTS;
+
+    /// Returns the stable lowercase name of this data type.
+    ///
+    /// # Returns
+    ///
+    /// The stable lowercase serialization and display name.
+    #[must_use]
+    #[inline(always)]
+    pub fn as_str(self) -> &'static str {
+        <&'static str>::from(self)
+    }
+
     /// Tests whether this type belongs to the numeric family.
     ///
     /// # Returns

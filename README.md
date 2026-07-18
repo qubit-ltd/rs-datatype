@@ -62,7 +62,7 @@ or formatting that map as JSON additionally needs `json`.
 ## 3. Runtime type descriptors
 
 `DataType` is a stable vocabulary with parsing, display, Serde, classification
-methods, and the exhaustive `DataType::ALL` array. `DataTypeOf` maps supported
+methods, and the exhaustive `DataType::ALL` slice. `DataTypeOf` maps supported
 Rust types to that vocabulary. Platform-sized `isize` and `usize` are omitted
 because their representation is target-dependent.
 
