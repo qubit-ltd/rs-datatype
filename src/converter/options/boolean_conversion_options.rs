@@ -147,6 +147,10 @@ impl BooleanConversionOptions {
     }
 
     /// Returns whether literal matching is case-sensitive.
+    ///
+    /// # Returns
+    ///
+    /// `true` when literal matching preserves ASCII case distinctions.
     #[must_use]
     #[inline(always)]
     pub const fn case_sensitive(&self) -> bool {
@@ -154,6 +158,10 @@ impl BooleanConversionOptions {
     }
 
     /// Returns the integer-to-boolean policy.
+    ///
+    /// # Returns
+    ///
+    /// The configured numeric boolean policy.
     #[inline(always)]
     pub const fn numeric_policy(&self) -> BooleanNumericPolicy {
         self.numeric_policy
@@ -280,6 +288,10 @@ impl BooleanConversionOptions {
     }
 
     /// Checks whether the true and false literal sets are disjoint.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(())` when no true literal conflicts with a false literal.
     ///
     /// # Errors
     ///

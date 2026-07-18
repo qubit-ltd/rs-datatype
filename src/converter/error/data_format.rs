@@ -22,6 +22,10 @@ pub enum DataFormat {
 
 impl DataFormat {
     /// Returns the stable lowercase name of this format.
+    ///
+    /// # Returns
+    ///
+    /// The stable lowercase serialization name.
     #[must_use]
     #[inline(always)]
     pub const fn as_str(self) -> &'static str {

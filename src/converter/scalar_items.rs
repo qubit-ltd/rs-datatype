@@ -39,8 +39,15 @@ pub struct ScalarItems<'a> {
 impl<'a> ScalarItems<'a> {
     /// Creates a lazy scalar-item iterator.
     ///
-    /// The iterator borrows both `options` and `value` for its lifetime and
-    /// defers splitting, trimming, and empty-item handling until iteration.
+    /// # Parameters
+    ///
+    /// * `options` - Collection splitting and empty-item policies.
+    /// * `value` - Scalar or delimited source text to iterate.
+    ///
+    /// # Returns
+    ///
+    /// An iterator borrowing both inputs and deferring all processing until
+    /// iteration.
     pub(super) fn new(options: &'a CollectionConversionOptions, value: &'a str) -> Self {
         Self {
             value,
@@ -55,8 +62,10 @@ impl<'a> ScalarItems<'a> {
 
     /// Returns the next unfiltered source slice and advances iterator state.
     ///
-    /// Returns `Some` with the next raw item and its original index. `None`
-    /// means the final raw item has already been returned.
+    /// # Returns
+    ///
+    /// `Some` with the next raw item and original index, or `None` after the
+    /// final raw item.
     fn next_raw(&mut self) -> Option<ScalarItem<'a>> {
         let start = self.next_start?;
         let source_index = self.next_source_index;

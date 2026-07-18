@@ -202,6 +202,15 @@ fn text_is_exact_float(value: &str, converted: f64) -> bool {
 }
 
 /// Returns the sign of an explicitly named IEEE infinity.
+///
+/// # Parameters
+///
+/// * `value` - Text to match case-insensitively against infinity names.
+///
+/// # Returns
+///
+/// `Some(true)` for negative infinity, `Some(false)` for positive infinity,
+/// or `None` when `value` is not an explicit infinity.
 fn explicit_infinity_is_negative(value: &str) -> Option<bool> {
     if ["inf", "+inf", "infinity", "+infinity"]
         .iter()
@@ -219,6 +228,21 @@ fn explicit_infinity_is_negative(value: &str) -> Option<bool> {
 }
 
 /// Parses a text source as `f64` and enforces exactness when requested.
+///
+/// # Parameters
+///
+/// * `value` - Normalized text to parse.
+/// * `options` - Numeric exactness policy.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The parsed `f64`, including explicitly named non-finite values.
+///
+/// # Errors
+///
+/// Returns a syntax, range, or precision error when parsing or the configured
+/// exactness check fails.
 pub(super) fn parse_text_f64(
     value: &str,
     options: &DataConversionOptions,
@@ -261,6 +285,21 @@ pub(super) fn parse_text_f64(
 }
 
 /// Parses a text source directly as `f32` and enforces exactness.
+///
+/// # Parameters
+///
+/// * `value` - Normalized text to parse.
+/// * `options` - Numeric exactness policy.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The parsed `f32`, including explicitly named non-finite values.
+///
+/// # Errors
+///
+/// Returns a syntax, range, or precision error when parsing or the configured
+/// exactness check fails.
 pub(super) fn parse_text_f32(
     value: &str,
     options: &DataConversionOptions,

@@ -131,8 +131,13 @@ macro_rules! impl_text_or_copy_target {
 
 /// Parses the canonical date grammar without alternate padding.
 ///
-/// Returns `Some` only for a valid `YYYY-MM-DD` value of exactly ten bytes;
-/// otherwise returns `None`.
+/// # Parameters
+///
+/// * `value` - Date text to parse without normalization.
+///
+/// # Returns
+///
+/// `Some` for a valid ten-byte `YYYY-MM-DD` value, otherwise `None`.
 #[cfg(feature = "chrono")]
 fn parse_date(value: &str) -> Option<NaiveDate> {
     if value.len() == 10 {
@@ -144,8 +149,14 @@ fn parse_date(value: &str) -> Option<NaiveDate> {
 
 /// Parses a canonical time with at most nine fractional digits.
 ///
-/// Returns `Some` for `HH:MM:SS` with an optional non-empty decimal fraction,
-/// and `None` for invalid syntax, invalid clock values, or excess precision.
+/// # Parameters
+///
+/// * `value` - Time text to parse without normalization.
+///
+/// # Returns
+///
+/// `Some` for `HH:MM:SS` with an optional non-empty fraction of at most nine
+/// digits, otherwise `None`.
 #[cfg(feature = "chrono")]
 fn parse_time(value: &str) -> Option<NaiveTime> {
     let (whole, fraction) = value
@@ -165,8 +176,14 @@ fn parse_time(value: &str) -> Option<NaiveTime> {
 
 /// Parses a canonical local date-time with a required `T` separator.
 ///
-/// Returns `Some` when both the date and time components use their canonical
-/// grammars and form a valid local date-time; otherwise returns `None`.
+/// # Parameters
+///
+/// * `value` - Local date-time text to parse without normalization.
+///
+/// # Returns
+///
+/// `Some` when canonical date and time components form a valid local
+/// date-time, otherwise `None`.
 #[cfg(feature = "chrono")]
 fn parse_datetime(value: &str) -> Option<NaiveDateTime> {
     let (date, time) = value.split_once('T')?;

@@ -49,6 +49,10 @@ fn binary_rational(negative: bool, significand: u128, exponent: i32) -> BigRatio
 
 /// Decodes a finite `f32` into an exact rational.
 ///
+/// # Parameters
+///
+/// * `value` - Finite `f32` to decode.
+///
 /// # Returns
 ///
 /// The exact represented value. The caller guarantees finiteness.
@@ -66,6 +70,10 @@ fn f32_rational(value: f32) -> BigRational {
 
 /// Decodes a finite `f64` into an exact rational.
 ///
+/// # Parameters
+///
+/// * `value` - Finite `f64` to decode.
+///
 /// # Returns
 ///
 /// The exact represented value. The caller guarantees finiteness.
@@ -82,6 +90,10 @@ fn f64_rational(value: f64) -> BigRational {
 }
 
 /// Converts a decimal coefficient and scale into an exact rational.
+///
+/// # Parameters
+///
+/// * `value` - Arbitrary-precision decimal to convert.
 ///
 /// # Returns
 ///
@@ -113,6 +125,10 @@ fn decimal_rational(value: &BigDecimal) -> Option<BigRational> {
 
 /// Converts a finite numeric value into an exact rational.
 ///
+/// # Parameters
+///
+/// * `value` - Finite numeric representation to convert.
+///
 /// # Returns
 ///
 /// The exact mathematical value, or `None` for non-finite values, the hidden
@@ -143,6 +159,11 @@ fn to_exact_rational(value: NumericValueRef<'_>) -> Option<BigRational> {
 ///
 /// Decimal scales that cannot be materialized as a practical power of ten
 /// fall back to `BigDecimal`'s exact scale-aware ordering.
+///
+/// # Parameters
+///
+/// * `left` - Left arbitrary-precision operand.
+/// * `right` - Right arbitrary-precision operand.
 ///
 /// # Returns
 ///

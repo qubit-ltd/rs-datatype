@@ -185,6 +185,20 @@ impl DurationUnit {
 }
 
 /// Converts a whole-unit count into seconds without overflow.
+///
+/// # Parameters
+///
+/// * `value` - Whole-unit count to convert.
+/// * `seconds_per_unit` - Number of seconds represented by one unit.
+///
+/// # Returns
+///
+/// The exact represented duration.
+///
+/// # Errors
+///
+/// Returns [`DurationOverflowError`] when multiplication or `Duration`'s
+/// seconds range would overflow.
 fn checked_seconds(value: u128, seconds_per_unit: u128) -> Result<Duration, DurationOverflowError> {
     let seconds = value
         .checked_mul(seconds_per_unit)
@@ -194,6 +208,21 @@ fn checked_seconds(value: u128, seconds_per_unit: u128) -> Result<Duration, Dura
 }
 
 /// Decomposes a subsecond count without multiplying the complete value.
+///
+/// # Parameters
+///
+/// * `value` - Subsecond-unit count to convert.
+/// * `units_per_second` - Number of source units in one second.
+/// * `nanos_per_unit` - Nanoseconds represented by one source unit.
+///
+/// # Returns
+///
+/// The exact represented duration.
+///
+/// # Errors
+///
+/// Returns [`DurationOverflowError`] when the whole-seconds component exceeds
+/// `Duration`'s range.
 fn duration_from_subseconds(
     value: u128,
     units_per_second: u128,

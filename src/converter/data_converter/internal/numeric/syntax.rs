@@ -22,10 +22,18 @@ use crate::datatype::DataType;
 
 /// Parses a normalized number without selecting a target primitive first.
 ///
-/// `value` must already have passed string normalization; `to` supplies target
-/// context and selects the expected syntax label on failure. Returns an exact
-/// integer/decimal representation or a non-finite marker. Invalid decimal text
-/// returns an invalid-value [`DataConversionError`].
+/// # Parameters
+///
+/// * `value` - Normalized numeric text to parse.
+/// * `to` - Target context used to select syntax diagnostics.
+///
+/// # Returns
+///
+/// An exact integer or decimal representation, or a non-finite marker.
+///
+/// # Errors
+///
+/// Returns an invalid-value [`DataConversionError`] for invalid numeric text.
 #[cfg(feature = "big-decimal")]
 pub(super) fn parse_number(value: &str, to: DataType) -> Result<ParsedNumber, DataConversionError> {
     let lower = value.to_ascii_lowercase();
@@ -63,8 +71,13 @@ pub(super) fn parse_number(value: &str, to: DataType) -> Result<ParsedNumber, Da
 
 /// Tests whether text uses the canonical integer grammar.
 ///
-/// Returns `true` for one or more ASCII digits with an optional leading sign,
-/// and `false` for empty, whitespace-containing, or otherwise invalid text.
+/// # Parameters
+///
+/// * `value` - Text to validate without normalization.
+///
+/// # Returns
+///
+/// `true` for one or more ASCII digits with an optional leading sign.
 pub(in crate::converter::data_converter) fn is_integer_syntax(value: &str) -> bool {
     let digits = value.strip_prefix(['+', '-']).unwrap_or(value);
     !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())
@@ -72,8 +85,13 @@ pub(in crate::converter::data_converter) fn is_integer_syntax(value: &str) -> bo
 
 /// Returns the stable syntax label for a numeric target.
 ///
-/// `to` selects the label embedded in invalid-syntax errors. The return value
-/// is static and contains no source data.
+/// # Parameters
+///
+/// * `to` - Numeric target whose grammar should be described.
+///
+/// # Returns
+///
+/// A static, source-value-free syntax label for invalid-syntax errors.
 fn numeric_syntax(to: DataType) -> &'static str {
     match to {
         DataType::BigDecimal => "decimal number with optional exponent",
@@ -83,6 +101,14 @@ fn numeric_syntax(to: DataType) -> &'static str {
 }
 
 /// Creates a contextual invalid numeric syntax error.
+///
+/// # Parameters
+///
+/// * `to` - Target type and grammar used by the diagnostic.
+///
+/// # Returns
+///
+/// A source-value-free invalid-syntax conversion error.
 #[inline(always)]
 pub(super) fn invalid_numeric_syntax(to: DataType) -> DataConversionError {
     DataConversionError::invalid(
@@ -96,7 +122,13 @@ pub(super) fn invalid_numeric_syntax(to: DataType) -> DataConversionError {
 
 /// Reports whether text explicitly names a non-finite value.
 ///
-/// The check is ASCII case-insensitive and does not allocate a normalized copy.
+/// # Parameters
+///
+/// * `value` - Text to compare with supported non-finite names.
+///
+/// # Returns
+///
+/// `true` for a case-insensitive NaN or infinity spelling.
 fn is_explicit_non_finite(value: &str) -> bool {
     [
         "nan",
@@ -112,6 +144,10 @@ fn is_explicit_non_finite(value: &str) -> bool {
 }
 
 /// Splits an optional leading sign from numeric text.
+///
+/// # Parameters
+///
+/// * `value` - Numeric text whose optional sign should be removed.
 ///
 /// # Returns
 ///
@@ -270,6 +306,21 @@ fn parse_integer_magnitude(
 /// Exact mode rejects a non-zero fractional part. Lossy mode truncates toward
 /// zero. Exponents are processed structurally, so extreme values are rejected
 /// without allocating an exponent-sized buffer.
+///
+/// # Parameters
+///
+/// * `value` - Normalized decimal text to parse.
+/// * `policy` - Exact or lossy fractional-value policy.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The sign and `u128` magnitude of the parsed integer.
+///
+/// # Errors
+///
+/// Returns a syntax, non-finite, precision-loss, or range error associated
+/// with `to` when the input cannot be converted under `policy`.
 pub(super) fn parse_text_integer(
     value: &str,
     policy: NumericConversionPolicy,
@@ -336,6 +387,16 @@ pub(super) fn parse_text_integer(
 /// Exact mode rejects a non-zero fractional part. Lossy mode truncates toward
 /// zero. Exponents are processed structurally and the resulting allocation is
 /// capped to prevent compact inputs from causing unbounded memory growth.
+///
+/// # Parameters
+///
+/// * `value` - Normalized decimal text to parse.
+/// * `policy` - Exact or lossy fractional-value policy.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The parsed arbitrary-precision integer.
 ///
 /// # Errors
 ///

@@ -23,6 +23,14 @@ impl DataTypeParseError {
     ///
     /// The private constructor copies `input` so the error can outlive the
     /// parsed string.
+    ///
+    /// # Parameters
+    ///
+    /// * `input` - Rejected data type name to retain.
+    ///
+    /// # Returns
+    ///
+    /// A parse error owning a copy of `input`.
     pub(crate) fn new(input: &str) -> Self {
         Self {
             input: input.to_string(),
