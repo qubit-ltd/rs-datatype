@@ -7,13 +7,13 @@
 // =============================================================================
 //! Parsed-number dispatch tests.
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use qubit_datatype::DataConverter;
 
 /// Verifies scientific decimal text is preserved by big-decimal conversion.
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 #[test]
 fn test_scientific_text_converts_to_big_decimal() {
     let converted = DataConverter::from("1.25e2")

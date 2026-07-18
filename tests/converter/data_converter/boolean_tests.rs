@@ -9,7 +9,7 @@
 
 use qubit_datatype::converter::DataConversionErrorKind;
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use proptest::proptest;
 use qubit_datatype::{
@@ -99,7 +99,7 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
         DataConverter::Unset(DataType::Bool).to::<bool>(),
         Err(ref error) if error == &DataConversionError::missing(DataType::Bool, DataType::Bool)
     ));
-    #[cfg(feature = "big-number")]
+    #[cfg(feature = "big-integer")]
     {
         let one = BigInt::from(1u8);
         assert_eq!(DataConverter::from(&one).to::<bool>(), Ok(true));

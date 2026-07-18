@@ -10,7 +10,7 @@ use std::cmp::Ordering;
 
 #[cfg(feature = "big-number")]
 use bigdecimal::BigDecimal;
-#[cfg(feature = "big-number")]
+#[cfg(any(feature = "big-integer", feature = "big-number"))]
 use num_bigint::BigInt;
 #[cfg(feature = "big-number")]
 use num_rational::BigRational;
@@ -648,5 +648,35 @@ fn test_number_ref_comparison_big_number_paths() {
             NumericComparisonPolicy::Approximate,
         ),
         Some(Ordering::Greater)
+    );
+}
+
+/// Covers direct BigInteger comparisons at fixed-width range boundaries.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_number_ref_comparison_big_integer_fixed_boundaries() {
+    let below_i128 = BigInt::from(i128::MIN) - BigInt::from(1_u8);
+    let above_i128 = BigInt::from(i128::MAX) + BigInt::from(1_u8);
+    let above_u128 = BigInt::from(u128::MAX) + BigInt::from(1_u8);
+
+    assert_exact(
+        NumberRef::from(&below_i128),
+        NumberRef::from(i128::MIN),
+        Some(Ordering::Less),
+    );
+    assert_exact(
+        NumberRef::from(&above_i128),
+        NumberRef::from(i128::MAX),
+        Some(Ordering::Greater),
+    );
+    assert_exact(
+        NumberRef::from(&above_u128),
+        NumberRef::from(u128::MAX),
+        Some(Ordering::Greater),
+    );
+    assert_exact(
+        NumberRef::from(&BigInt::from(-1_i8)),
+        NumberRef::from(0_u8),
+        Some(Ordering::Less),
     );
 }
