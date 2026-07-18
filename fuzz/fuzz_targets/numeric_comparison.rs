@@ -10,13 +10,18 @@
 use bigdecimal::BigDecimal;
 use libfuzzer_sys::fuzz_target;
 use num_bigint::BigInt;
-use qubit_datatype::{NumericComparisonPolicy, NumericValueRef, compare_numeric};
+use qubit_datatype::{
+    NumberRef,
+    NumericComparisonPolicy,
+};
 
 const FIXED_INPUT_SIZE: usize = 42;
 const MAX_COEFFICIENT_SIZE: usize = 128;
 
 fuzz_target!(|data: &[u8]| {
-    if data.len() < FIXED_INPUT_SIZE || data.len() > FIXED_INPUT_SIZE + MAX_COEFFICIENT_SIZE {
+    if data.len() < FIXED_INPUT_SIZE
+        || data.len() > FIXED_INPUT_SIZE + MAX_COEFFICIENT_SIZE
+    {
         return;
     }
     let Some(signed_bytes) = read_array::<16>(data, 0) else {
@@ -42,11 +47,11 @@ fuzz_target!(|data: &[u8]| {
     let scale = i64::from(u16::from_le_bytes(scale_bytes) % 257) - 128;
     let decimal = BigDecimal::new(coefficient.clone(), scale);
     let values = [
-        NumericValueRef::from(signed),
-        NumericValueRef::from(unsigned),
-        NumericValueRef::from(float),
-        NumericValueRef::from(&coefficient),
-        NumericValueRef::from(&decimal),
+        NumberRef::from(signed),
+        NumberRef::from(unsigned),
+        NumberRef::from(float),
+        NumberRef::from(&coefficient),
+        NumberRef::from(&decimal),
     ];
 
     for policy in [
@@ -55,9 +60,11 @@ fuzz_target!(|data: &[u8]| {
     ] {
         for &left in &values {
             for &right in &values {
-                let forward = compare_numeric(left, right, policy)
+                let forward = left
+                    .compare_to(right, policy)
                     .expect("generated non-NaN numeric values must be ordered");
-                let reverse = compare_numeric(right, left, policy)
+                let reverse = right
+                    .compare_to(left, policy)
                     .expect("generated non-NaN numeric values must be ordered");
                 assert_eq!(reverse, forward.reverse());
             }

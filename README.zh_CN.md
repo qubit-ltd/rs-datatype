@@ -15,7 +15,7 @@
 `qubit-datatype` 提供四组互补工具：
 
 - `DataType`、`DataTypeOf`：稳定的运行时类型描述，适合 schema 和元数据。
-- `NumericValueRef`、`compare_numeric`：比较不同数值表示，避免隐式精度损失。
+- `NumberRef`：比较不同数值表示，避免隐式精度损失，并提供通用数值属性查询。
 - 轻量 `duration` feature：提供 Duration 单位、带溢出检查的单位运算、可配置文本
   解析和精确规范化格式。
 - `converter` feature：按显式策略执行单值、批量和标量字符串集合转换，并返回
@@ -68,19 +68,19 @@ assert_eq!("INT32".parse::<DataType>(), Ok(DataType::Int32));
 
 ## 4. 数值比较
 
-先把借用值包装成 `NumericValueRef`，再显式选择策略。`Exact` 比较数学值，不让整数
+先把借用值包装成 `NumberRef`，再显式选择策略。`Exact` 比较数学值，不让整数
 经过 `f64`。有限原生浮点数参与时，`Approximate` 会尝试把两个操作数投影为有限
 `f64`；无穷值单独排序，任一操作数无法完成这种投影时回退到精确比较。NaN 无序，
 正负零相等。
 
 ```rust
 use std::cmp::Ordering;
-use qubit_datatype::{compare_numeric, NumericComparisonPolicy, NumericValueRef};
+use qubit_datatype::{NumberRef, NumericComparisonPolicy};
 
-let integer = NumericValueRef::from((1_u64 << 53) + 1);
-let float = NumericValueRef::from((1_u64 << 53) as f64);
+let integer = NumberRef::from((1_u64 << 53) + 1);
+let float = NumberRef::from((1_u64 << 53) as f64);
 assert_eq!(
-    compare_numeric(integer, float, NumericComparisonPolicy::Exact),
+    integer.compare_to(float, NumericComparisonPolicy::Exact),
     Some(Ordering::Greater),
 );
 ```

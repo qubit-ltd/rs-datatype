@@ -16,8 +16,8 @@ and policy-driven value conversion for Rust. API documentation is available on
 `qubit-datatype` has four complementary tool families:
 
 - `DataType` and `DataTypeOf` provide stable runtime type descriptors.
-- `NumericValueRef` and `compare_numeric` compare unlike numeric
-  representations without silently losing precision.
+- `NumberRef` compares unlike numeric representations without silently losing
+  precision and exposes common numeric properties.
 - The lightweight `duration` feature provides Duration units, checked unit
   arithmetic, configurable text parsing, and exact canonical formatting.
 - The `converter` feature provides single-value, batch, and scalar-string
@@ -76,7 +76,7 @@ assert_eq!("INT32".parse::<DataType>(), Ok(DataType::Int32));
 
 ## 4. Numeric comparison
 
-Wrap borrowed values in `NumericValueRef`, then choose a policy explicitly.
+Wrap borrowed values in `NumberRef`, then choose a policy explicitly.
 `Exact` compares mathematical values without routing integers through `f64`.
 When a finite primitive float participates, `Approximate` attempts to project
 both operands to finite `f64` values. Infinities are ordered separately, and if
@@ -85,12 +85,12 @@ path. NaN is unordered, and signed zeros compare equal.
 
 ```rust
 use std::cmp::Ordering;
-use qubit_datatype::{compare_numeric, NumericComparisonPolicy, NumericValueRef};
+use qubit_datatype::{NumberRef, NumericComparisonPolicy};
 
-let integer = NumericValueRef::from((1_u64 << 53) + 1);
-let float = NumericValueRef::from((1_u64 << 53) as f64);
+let integer = NumberRef::from((1_u64 << 53) + 1);
+let float = NumberRef::from((1_u64 << 53) as f64);
 assert_eq!(
-    compare_numeric(integer, float, NumericComparisonPolicy::Exact),
+    integer.compare_to(float, NumericComparisonPolicy::Exact),
     Some(Ordering::Greater),
 );
 ```
