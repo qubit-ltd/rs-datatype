@@ -9,10 +9,7 @@
 //!
 //! Tests for compile-time Rust type to `DataType` mapping.
 
-use qubit_datatype::{
-    DataType,
-    DataTypeOf,
-};
+use qubit_datatype::{DataType, DataTypeOf};
 
 /// Test primitive and standard-library mappings without optional features.
 #[test]
@@ -43,13 +40,7 @@ fn test_data_type_of_primitive_and_standard_types() {
 #[test]
 #[cfg(feature = "chrono")]
 fn test_data_type_of_chrono_types() {
-    use chrono::{
-        DateTime,
-        NaiveDate,
-        NaiveDateTime,
-        NaiveTime,
-        Utc,
-    };
+    use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 
     assert_eq!(NaiveDate::DATA_TYPE, DataType::Date);
     assert_eq!(NaiveTime::DATA_TYPE, DataType::Time);
@@ -57,11 +48,17 @@ fn test_data_type_of_chrono_types() {
     assert_eq!(DateTime::<Utc>::DATA_TYPE, DataType::Instant);
 }
 
-/// Test arbitrary-precision mappings when the feature is enabled.
+/// Test arbitrary-precision integer mapping when the feature is enabled.
 #[test]
-#[cfg(feature = "big-number")]
-fn test_data_type_of_big_number_types() {
+#[cfg(feature = "big-integer")]
+fn test_data_type_of_big_integer_type() {
     assert_eq!(num_bigint::BigInt::DATA_TYPE, DataType::BigInteger);
+}
+
+/// Test arbitrary-precision decimal mapping when the feature is enabled.
+#[test]
+#[cfg(feature = "big-decimal")]
+fn test_data_type_of_big_decimal_type() {
     assert_eq!(bigdecimal::BigDecimal::DATA_TYPE, DataType::BigDecimal);
 }
 

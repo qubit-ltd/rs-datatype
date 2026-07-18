@@ -9,37 +9,38 @@
 
 use std::time::Duration;
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-integer")]
 use num_bigint::Sign;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-integer")]
 use num_traits::ToPrimitive;
 
 use super::DataConverter;
-use super::numeric::{
-    duration_to_u128,
-    source_to_integer,
-};
+use super::numeric::{duration_to_u128, source_to_integer};
 use super::string_source::normalize;
 use crate::converter::{
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    InvalidValueReason,
+    DataConversionError, DataConversionOptions, DataConversionTarget, InvalidValueReason,
 };
 use crate::datatype::DataType;
 use crate::duration::{
-    DurationParseError,
-    DurationTextOptions,
-    DurationUnitSuffixSet,
-    SuffixlessDurationPolicy,
+    DurationParseError, DurationTextOptions, DurationUnitSuffixSet, SuffixlessDurationPolicy,
     parse_duration_text,
 };
 
 /// Converts a duration unit count to a duration.
 ///
-/// `value` is interpreted using the configured duration unit and `from` is
-/// retained as error context. Returns the exact duration, or an invalid-value
-/// error for negative or out-of-range counts.
+/// # Parameters
+///
+/// * `value` - Sign and magnitude of the duration unit count.
+/// * `from` - Source type retained in conversion errors.
+/// * `options` - Duration unit and numeric conversion policies.
+///
+/// # Returns
+///
+/// The exact represented duration.
+///
+/// # Errors
+///
+/// Returns an invalid-value error for negative or out-of-range counts.
 fn integer_to_duration(
     value: (bool, u128),
     from: DataType,
@@ -69,11 +70,19 @@ fn integer_to_duration(
 
 /// Parses the canonical duration grammar.
 ///
-/// `value` is normalized using `options`, then parsed as a non-negative integer
-/// with an optional supported unit suffix. For a missing suffix, the configured
-/// policy either rejects the input or supplies an assumed unit. Returns
-/// contextual conversion errors for normalization, syntax, unit, and range
-/// failures.
+/// # Parameters
+///
+/// * `value` - Duration text to normalize and parse.
+/// * `options` - String normalization and duration parsing policies.
+///
+/// # Returns
+///
+/// The represented non-negative duration.
+///
+/// # Errors
+///
+/// Returns contextual conversion errors for normalization, syntax, unit, and
+/// range failures.
 fn parse_duration(
     value: &str,
     options: &DataConversionOptions,
@@ -89,8 +98,7 @@ fn parse_duration(
         Err(DurationParseError::InvalidSyntax) => {
             let suffix_required = !value.is_empty()
                 && value.bytes().all(|byte| byte.is_ascii_digit())
-                && options.duration.suffixless_string_policy
-                    == SuffixlessDurationPolicy::Reject;
+                && options.duration.suffixless_string_policy == SuffixlessDurationPolicy::Reject;
             Err(DataConversionError::invalid(
                 DataType::String,
                 to,
@@ -103,20 +111,16 @@ fn parse_duration(
                 },
             ))
         }
-        Err(DurationParseError::UnsupportedUnit { .. }) => {
-            Err(DataConversionError::invalid(
-                DataType::String,
-                to,
-                InvalidValueReason::UnsupportedDurationUnit,
-            ))
-        }
-        Err(DurationParseError::OutOfRange) => {
-            Err(DataConversionError::invalid(
-                DataType::String,
-                to,
-                InvalidValueReason::OutOfRange,
-            ))
-        }
+        Err(DurationParseError::UnsupportedUnit { .. }) => Err(DataConversionError::invalid(
+            DataType::String,
+            to,
+            InvalidValueReason::UnsupportedDurationUnit,
+        )),
+        Err(DurationParseError::OutOfRange) => Err(DataConversionError::invalid(
+            DataType::String,
+            to,
+            InvalidValueReason::OutOfRange,
+        )),
     }
 }
 
@@ -143,25 +147,17 @@ impl DataConversionTarget for Duration {
                 source.data_type(),
                 options,
             ),
-            #[cfg(feature = "big-number")]
+            #[cfg(feature = "big-integer")]
             DataConverter::BigInteger(value) => {
                 if value.sign() == Sign::Minus {
-                    return Err(source.invalid(
-                        DataType::Duration,
-                        InvalidValueReason::NegativeDuration,
-                    ));
+                    return Err(
+                        source.invalid(DataType::Duration, InvalidValueReason::NegativeDuration)
+                    );
                 }
                 let Some(value) = value.to_u128() else {
-                    return Err(source.invalid(
-                        DataType::Duration,
-                        InvalidValueReason::OutOfRange,
-                    ));
+                    return Err(source.invalid(DataType::Duration, InvalidValueReason::OutOfRange));
                 };
-                integer_to_duration(
-                    (false, value),
-                    DataType::BigInteger,
-                    options,
-                )
+                integer_to_duration((false, value), DataType::BigInteger, options)
             }
             _ => Err(source.unsupported(DataType::Duration)),
         }
@@ -170,9 +166,20 @@ impl DataConversionTarget for Duration {
 
 /// Formats a duration using the configured unit and suffix policy.
 ///
-/// Returns an exact unit count under [`NumericConversionPolicy::Exact`], or a
-/// half-up rounded count under the lossy policy. A precision-losing exact
-/// conversion returns an invalid-value [`DataConversionError`].
+/// # Parameters
+///
+/// * `value` - Duration to format.
+/// * `options` - Output unit, suffix, and numeric conversion policies.
+///
+/// # Returns
+///
+/// An exact unit count under [`NumericConversionPolicy::Exact`], or a half-up
+/// rounded count under the lossy policy.
+///
+/// # Errors
+///
+/// Returns an invalid-value [`DataConversionError`] when exact conversion
+/// would lose precision.
 pub(super) fn format_duration(
     value: Duration,
     options: &DataConversionOptions,

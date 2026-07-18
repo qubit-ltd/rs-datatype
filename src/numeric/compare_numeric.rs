@@ -9,13 +9,10 @@
 
 use std::cmp::Ordering;
 
-#[cfg(feature = "big-number")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use super::internal::compare_exact_rational;
 use super::internal::compare_fixed;
-use super::{
-    NumericComparisonPolicy,
-    NumericValueRef,
-};
+use super::{NumericComparisonPolicy, NumericValueRef};
 
 /// Compares two numeric representations under an explicit policy.
 ///
@@ -66,15 +63,21 @@ pub fn compare_numeric(
     {
         return left.partial_cmp(&right);
     }
-    #[cfg(feature = "big-number")]
-    if matches!(
-        left,
-        NumericValueRef::BigInteger(_) | NumericValueRef::BigDecimal(_)
-    ) || matches!(
-        right,
-        NumericValueRef::BigInteger(_) | NumericValueRef::BigDecimal(_)
-    ) {
-        return compare_exact_rational(left, right);
+    #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+    {
+        #[cfg(feature = "big-integer")]
+        let has_big_integer = matches!(left, NumericValueRef::BigInteger(_))
+            || matches!(right, NumericValueRef::BigInteger(_));
+        #[cfg(not(feature = "big-integer"))]
+        let has_big_integer = false;
+        #[cfg(feature = "big-decimal")]
+        let has_big_decimal = matches!(left, NumericValueRef::BigDecimal(_))
+            || matches!(right, NumericValueRef::BigDecimal(_));
+        #[cfg(not(feature = "big-decimal"))]
+        let has_big_decimal = false;
+        if has_big_integer || has_big_decimal {
+            return compare_exact_rational(left, right);
+        }
     }
     compare_fixed(left, right)
 }

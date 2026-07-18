@@ -9,8 +9,9 @@
 //!
 //! The default feature set is empty and exposes the lightweight [`DataType`]
 //! vocabulary plus [`DataTypeOf`]. The lightweight `duration` feature adds
-//! Duration units and text codecs. Optional `chrono`, `big-number`, `url`, and
-//! `json` features add mappings for external types. The `converter` feature
+//! Duration units and text codecs. Optional `chrono`, `big-integer`,
+//! `big-decimal`, `url`, and `json` features add mappings for external types;
+//! `big-number` enables both big-number families. The `converter` feature
 //! includes `duration` and enables core scalar, string, and Duration
 //! conversions. Combine it with a rich-type feature to enable conversions for
 //! that family, or use `all`.
@@ -21,9 +22,9 @@
 //! character, and Duration values. Fixed-width integers can target numeric,
 //! boolean, and Duration values; floats can target fixed-width numeric values;
 //! Duration can target fixed-width integers and String. `chrono`,
-//! `big-number`, `url`, and `json` add their corresponding source and target
-//! conversions when combined with `converter`; JSON also enables StringMap
-//! parsing and formatting. Other type pairs return
+//! `big-integer`, `big-decimal`, `url`, and `json` add their corresponding
+//! source and target conversions when combined with `converter`; JSON also
+//! enables StringMap parsing and formatting. Other type pairs return
 //! `DataConversionErrorKind::Unsupported`.
 //!
 //! Numeric conversion defaults to `NumericConversionPolicy::Exact`, which
@@ -74,48 +75,17 @@ pub mod converter;
 
 #[cfg(feature = "converter")]
 pub use converter::{
-    BlankStringPolicy,
-    BooleanConversionOptions,
-    BooleanLiteralConflictError,
-    BooleanNumericPolicy,
-    CollectionConversionOptions,
-    DataConversionError,
-    DataConversionErrorKind,
-    DataConversionOptions,
-    DataConversionTarget,
-    DataConverter,
-    DataConverters,
-    DataFormat,
-    DataListConversionError,
-    DurationConversionOptions,
-    EmptyItemPolicy,
-    InvalidValueReason,
-    NumericConversionPolicy,
-    ScalarItem,
-    ScalarItemError,
-    ScalarItems,
-    ScalarStringDataConverters,
-    StringConversionOptions,
-    StringNormalizationError,
+    BlankStringPolicy, BooleanConversionOptions, BooleanLiteralConflictError, BooleanNumericPolicy,
+    CollectionConversionOptions, DataConversionError, DataConversionErrorKind,
+    DataConversionOptions, DataConversionTarget, DataConverter, DataConverters, DataFormat,
+    DataListConversionError, DurationConversionOptions, EmptyItemPolicy, InvalidValueReason,
+    NumericConversionPolicy, ScalarItem, ScalarItemError, ScalarItems, ScalarStringDataConverters,
+    StringConversionOptions, StringNormalizationError,
 };
-pub use datatype::{
-    DataType,
-    DataTypeOf,
-    DataTypeParseError,
-};
+pub use datatype::{DataType, DataTypeOf, DataTypeParseError};
 #[cfg(feature = "duration")]
 pub use duration::{
-    DurationOverflowError,
-    DurationParseError,
-    DurationTextOptions,
-    DurationUnit,
-    DurationUnitSuffixSet,
-    SuffixlessDurationPolicy,
-    format_duration_exact,
-    parse_duration_text,
+    DurationOverflowError, DurationParseError, DurationTextOptions, DurationUnit,
+    DurationUnitSuffixSet, SuffixlessDurationPolicy, format_duration_exact, parse_duration_text,
 };
-pub use numeric::{
-    NumericComparisonPolicy,
-    NumericValueRef,
-    compare_numeric,
-};
+pub use numeric::{NumericComparisonPolicy, NumericValueRef, compare_numeric};

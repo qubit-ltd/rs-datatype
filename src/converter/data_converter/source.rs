@@ -11,17 +11,11 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::time::Duration;
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "chrono")]
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
-#[cfg(feature = "big-number")]
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 #[cfg(feature = "url")]
 use url::Url;
@@ -85,9 +79,9 @@ impl_from_copy!(NaiveDateTime, DateTime);
 #[cfg(feature = "chrono")]
 impl_from_copy!(DateTime<Utc>, Instant);
 impl_from_copy!(Duration, Duration);
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-integer")]
 impl_from_cow!(BigInt, BigInteger);
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 impl_from_cow!(BigDecimal, BigDecimal);
 #[cfg(feature = "url")]
 impl_from_cow!(Url, Url);

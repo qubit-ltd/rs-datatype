@@ -7,29 +7,37 @@
 // =============================================================================
 //! Boolean conversion implementations.
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-integer")]
 use num_traits::Zero;
 
 use super::DataConverter;
 use super::numeric::is_integer_syntax;
 use super::string_source::normalize;
 use crate::converter::{
-    BooleanNumericPolicy,
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
+    BooleanNumericPolicy, DataConversionError, DataConversionOptions, DataConversionTarget,
     InvalidValueReason,
 };
 use crate::datatype::DataType;
 
 /// Applies the configured integer-to-boolean policy.
 ///
-/// `zero` and `one` classify the already parsed integer, `policy` selects the
-/// accepted numeric domain, and `from` is retained in any error. Returns the
-/// mapped boolean, or an invalid-value [`DataConversionError`] when the policy
-/// rejects the value.
+/// # Parameters
+///
+/// * `zero` - Whether the parsed integer is zero.
+/// * `one` - Whether the parsed integer is positive one.
+/// * `policy` - Accepted numeric domain for boolean conversion.
+/// * `from` - Source type retained in conversion errors.
+///
+/// # Returns
+///
+/// The boolean selected by `policy`.
+///
+/// # Errors
+///
+/// Returns an invalid-value [`DataConversionError`] when `policy` rejects the
+/// integer.
 fn integer_to_bool(
     zero: bool,
     one: bool,
@@ -40,13 +48,9 @@ fn integer_to_bool(
         BooleanNumericPolicy::ZeroOrOne if zero => Ok(false),
         BooleanNumericPolicy::ZeroOrOne if one => Ok(true),
         BooleanNumericPolicy::NonZero => Ok(!zero),
-        BooleanNumericPolicy::ZeroOrOne | BooleanNumericPolicy::Reject => {
-            Err(DataConversionError::invalid(
-                from,
-                DataType::Bool,
-                InvalidValueReason::InvalidBoolean,
-            ))
-        }
+        BooleanNumericPolicy::ZeroOrOne | BooleanNumericPolicy::Reject => Err(
+            DataConversionError::invalid(from, DataType::Bool, InvalidValueReason::InvalidBoolean),
+        ),
     }
 }
 
@@ -63,11 +67,9 @@ impl DataConversionTarget for bool {
                     return Ok(value);
                 }
                 if is_integer_syntax(value) {
-                    let digits =
-                        value.strip_prefix(['+', '-']).unwrap_or(value);
+                    let digits = value.strip_prefix(['+', '-']).unwrap_or(value);
                     let zero = digits.bytes().all(|byte| byte == b'0');
-                    let one = !value.starts_with('-')
-                        && digits.trim_start_matches('0') == "1";
+                    let one = !value.starts_with('-') && digits.trim_start_matches('0') == "1";
                     integer_to_bool(
                         zero,
                         one,
@@ -75,10 +77,7 @@ impl DataConversionTarget for bool {
                         DataType::String,
                     )
                 } else {
-                    Err(source.invalid(
-                        DataType::Bool,
-                        InvalidValueReason::InvalidBoolean,
-                    ))
+                    Err(source.invalid(DataType::Bool, InvalidValueReason::InvalidBoolean))
                 }
             }
             DataConverter::Int8(value) => integer_to_bool(
@@ -141,7 +140,7 @@ impl DataConversionTarget for bool {
                 options.boolean.numeric_policy(),
                 DataType::UInt128,
             ),
-            #[cfg(feature = "big-number")]
+            #[cfg(feature = "big-integer")]
             DataConverter::BigInteger(value) => integer_to_bool(
                 value.is_zero(),
                 value.as_ref() == &BigInt::from(1u8),

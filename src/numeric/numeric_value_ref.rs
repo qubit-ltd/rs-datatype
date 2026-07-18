@@ -9,11 +9,11 @@
 
 use std::marker::PhantomData;
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-#[cfg(feature = "big-number")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_traits::ToPrimitive;
 
 /// Borrows or copies a numeric value without depending on a runtime value enum.
@@ -46,10 +46,10 @@ pub enum NumericValueRef<'a> {
     /// An `f64` value.
     Float64(f64),
     /// An arbitrary-precision integer.
-    #[cfg(feature = "big-number")]
+    #[cfg(feature = "big-integer")]
     BigInteger(&'a BigInt),
     /// An arbitrary-precision decimal.
-    #[cfg(feature = "big-number")]
+    #[cfg(feature = "big-decimal")]
     BigDecimal(&'a BigDecimal),
     /// Retains the borrowing lifetime when arbitrary-precision support is off.
     #[doc(hidden)]
@@ -140,7 +140,7 @@ impl From<f64> for NumericValueRef<'_> {
     }
 }
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-integer")]
 impl<'a> From<&'a BigInt> for NumericValueRef<'a> {
     #[inline(always)]
     fn from(value: &'a BigInt) -> Self {
@@ -148,7 +148,7 @@ impl<'a> From<&'a BigInt> for NumericValueRef<'a> {
     }
 }
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 impl<'a> From<&'a BigDecimal> for NumericValueRef<'a> {
     #[inline(always)]
     fn from(value: &'a BigDecimal) -> Self {
@@ -192,12 +192,8 @@ impl NumericValueRef<'_> {
     #[inline(always)]
     pub(crate) fn infinity_is_negative(self) -> Option<bool> {
         match self {
-            Self::Float32(value) if value.is_infinite() => {
-                Some(value.is_sign_negative())
-            }
-            Self::Float64(value) if value.is_infinite() => {
-                Some(value.is_sign_negative())
-            }
+            Self::Float32(value) if value.is_infinite() => Some(value.is_sign_negative()),
+            Self::Float64(value) if value.is_infinite() => Some(value.is_sign_negative()),
             _ => None,
         }
     }
@@ -222,9 +218,9 @@ impl NumericValueRef<'_> {
             Self::UInt128(value) => Some(value as f64),
             Self::Float32(value) => Some(f64::from(value)),
             Self::Float64(value) => Some(value),
-            #[cfg(feature = "big-number")]
+            #[cfg(feature = "big-integer")]
             Self::BigInteger(value) => value.to_f64(),
-            #[cfg(feature = "big-number")]
+            #[cfg(feature = "big-decimal")]
             Self::BigDecimal(value) => value.to_f64(),
             Self::__Lifetime(_) => None,
         }

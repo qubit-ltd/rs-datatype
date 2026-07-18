@@ -14,26 +14,17 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::time::Duration;
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "chrono")]
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
-#[cfg(feature = "big-number")]
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 #[cfg(feature = "url")]
 use url::Url;
 
 use super::data_conversion_target::DataConversionTarget;
-use super::error::{
-    DataConversionError,
-    InvalidValueReason,
-};
+use super::error::{DataConversionError, InvalidValueReason};
 use super::options::DataConversionOptions;
 use crate::datatype::DataType;
 
@@ -118,10 +109,10 @@ pub enum DataConverter<'a> {
     /// 64-bit floating-point source value.
     Float64(f64),
     /// Borrowed or owned arbitrary-precision integer source value.
-    #[cfg(feature = "big-number")]
+    #[cfg(feature = "big-integer")]
     BigInteger(Cow<'a, BigInt>),
     /// Borrowed or owned arbitrary-precision decimal source value.
-    #[cfg(feature = "big-number")]
+    #[cfg(feature = "big-decimal")]
     BigDecimal(Cow<'a, BigDecimal>),
     /// Borrowed or owned UTF-8 text source value.
     String(Cow<'a, str>),
@@ -193,10 +184,7 @@ impl DataConverter<'_> {
     /// Returns a structured error containing source type, target type, and a
     /// value-free rejection reason.
     #[inline(always)]
-    pub fn to_with<T>(
-        &self,
-        options: &DataConversionOptions,
-    ) -> Result<T, DataConversionError>
+    pub fn to_with<T>(&self, options: &DataConversionOptions) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -229,9 +217,9 @@ impl DataConverter<'_> {
             Self::UInt128(_) => DataType::UInt128,
             Self::Float32(_) => DataType::Float32,
             Self::Float64(_) => DataType::Float64,
-            #[cfg(feature = "big-number")]
+            #[cfg(feature = "big-integer")]
             Self::BigInteger(_) => DataType::BigInteger,
-            #[cfg(feature = "big-number")]
+            #[cfg(feature = "big-decimal")]
             Self::BigDecimal(_) => DataType::BigDecimal,
             Self::String(_) => DataType::String,
             #[cfg(feature = "chrono")]
@@ -275,11 +263,7 @@ impl DataConverter<'_> {
     /// value-independent rejection. The returned error records this source's
     /// runtime type.
     #[inline(always)]
-    fn invalid(
-        &self,
-        to: DataType,
-        reason: InvalidValueReason,
-    ) -> DataConversionError {
+    fn invalid(&self, to: DataType, reason: InvalidValueReason) -> DataConversionError {
         DataConversionError::invalid(self.data_type(), to, reason)
     }
 }

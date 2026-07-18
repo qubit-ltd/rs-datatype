@@ -9,24 +9,22 @@
 
 use std::time::Duration;
 
-#[cfg(feature = "big-number")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_traits::ToPrimitive;
 
 use super::super::super::DataConverter;
 use super::super::super::string_source::normalize;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use super::big_number::decimal_to_bigint;
 use super::syntax::parse_text_integer;
 use crate::converter::{
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    InvalidValueReason,
+    DataConversionError, DataConversionOptions, DataConversionTarget, InvalidValueReason,
     NumericConversionPolicy,
 };
 use crate::datatype::DataType;
 
 /// Returns a platform-independent `(negative, magnitude)` representation.
+#[inline(always)]
 pub(super) fn signed_magnitude(value: i128) -> (bool, u128) {
     (value.is_negative(), value.unsigned_abs())
 }
@@ -61,9 +59,7 @@ fn float_to_integer(
         Err(error) => {
             let to = error.to_type();
             match error.reason().cloned() {
-                Some(reason) => {
-                    Err(DataConversionError::invalid(from, to, reason))
-                }
+                Some(reason) => Err(DataConversionError::invalid(from, to, reason)),
                 None => Err(error),
             }
         }
@@ -95,13 +91,10 @@ pub(in crate::converter::data_converter) fn source_to_integer(
             DataType::Float32,
             to,
         ),
-        DataConverter::Float64(value) => float_to_integer(
-            *value,
-            options.numeric_policy,
-            DataType::Float64,
-            to,
-        ),
-        #[cfg(feature = "big-number")]
+        DataConverter::Float64(value) => {
+            float_to_integer(*value, options.numeric_policy, DataType::Float64, to)
+        }
+        #[cfg(feature = "big-integer")]
         DataConverter::BigInteger(value) => {
             if let Some(value) = value.to_i128() {
                 Ok(signed_magnitude(value))
@@ -115,14 +108,10 @@ pub(in crate::converter::data_converter) fn source_to_integer(
                 ))
             }
         }
-        #[cfg(feature = "big-number")]
+        #[cfg(feature = "big-decimal")]
         DataConverter::BigDecimal(value) => {
-            let integer = decimal_to_bigint(
-                value,
-                options.numeric_policy,
-                DataType::BigDecimal,
-                to,
-            )?;
+            let integer =
+                decimal_to_bigint(value, options.numeric_policy, DataType::BigDecimal, to)?;
             if let Some(value) = integer.to_i128() {
                 Ok(signed_magnitude(value))
             } else if let Some(value) = integer.to_u128() {
@@ -139,9 +128,7 @@ pub(in crate::converter::data_converter) fn source_to_integer(
             let value = normalize(value, options, to)?;
             parse_text_integer(value, options.numeric_policy, to)
         }
-        DataConverter::Duration(value) => {
-            Ok((false, duration_to_u128(*value, options, to)?))
-        }
+        DataConverter::Duration(value) => Ok((false, duration_to_u128(*value, options, to)?)),
         DataConverter::Empty(_) => Err(source.missing(to)),
         _ => Err(source.unsupported(to)),
     }
@@ -271,11 +258,7 @@ macro_rules! impl_signed_target {
                 source: &DataConverter<'_>,
                 options: &DataConversionOptions,
             ) -> Result<Self, DataConversionError> {
-                checked_signed(
-                    to_i128(source, options, $data_type)?,
-                    source,
-                    $data_type,
-                )
+                checked_signed(to_i128(source, options, $data_type)?, source, $data_type)
             }
         }
     };
@@ -288,11 +271,7 @@ macro_rules! impl_unsigned_target {
                 source: &DataConverter<'_>,
                 options: &DataConversionOptions,
             ) -> Result<Self, DataConversionError> {
-                checked_unsigned(
-                    to_u128(source, options, $data_type)?,
-                    source,
-                    $data_type,
-                )
+                checked_unsigned(to_u128(source, options, $data_type)?, source, $data_type)
             }
         }
     };

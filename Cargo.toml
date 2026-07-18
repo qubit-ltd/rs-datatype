@@ -34,12 +34,18 @@ test = false
 default = []
 duration = ["dep:thiserror"]
 chrono = ["dep:chrono"]
-big-number = [
+big-integer = [
+    "dep:num-bigint",
+    "dep:num-rational",
+    "dep:num-traits",
+]
+big-decimal = [
     "dep:bigdecimal",
     "dep:num-bigint",
     "dep:num-rational",
     "dep:num-traits",
 ]
+big-number = ["big-integer", "big-decimal"]
 url = ["dep:url"]
 json = ["dep:serde_json"]
 converter = ["duration", "dep:num-bigint"]

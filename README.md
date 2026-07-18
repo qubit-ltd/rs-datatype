@@ -49,7 +49,9 @@ qubit-datatype = { version = "0.7", features = ["converter", "chrono"] }
 | `duration` | Duration units, checked arithmetic, text parsing, and exact formatting |
 | `converter` | Scalar, string, Duration, map, batch, and option APIs; includes `duration` |
 | `chrono` | Chrono type mappings and conversions |
-| `big-number` | `BigInt` and `BigDecimal` mappings and conversions |
+| `big-integer` | `BigInt` mappings and conversions |
+| `big-decimal` | `BigDecimal` mappings and conversions |
+| `big-number` | Compatibility alias for `big-integer` and `big-decimal` |
 | `url` | `Url` mapping and conversion |
 | `json` | `serde_json::Value`, JSON text, and StringMap JSON conversion |
 | `all` | `converter` plus every rich-type feature |
@@ -237,10 +239,10 @@ precision, error, and feature contracts as built-in targets.
 ## Testing
 
 ```bash
-# Core API with the default empty feature set
-cargo test --no-default-features
+# Run tests with the default feature set
+cargo test
 
-# Core API plus every optional feature
+# Run tests with all declared features
 cargo test --all-features
 
 # Project CI checks
