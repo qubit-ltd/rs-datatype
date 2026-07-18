@@ -23,7 +23,9 @@ use crate::numeric::internal::NumberRepr;
 ///
 /// A tuple representing `(-1)^sign * significand * 2^exponent`, or `None`
 /// for non-finite values or arbitrary-precision representations.
-fn finite_parts(value: NumberRef<'_>) -> Option<(bool, u128, i32)> {
+pub(in crate::numeric) fn finite_parts(
+    value: NumberRef<'_>,
+) -> Option<(bool, u128, i32)> {
     match value.inner() {
         NumberRepr::Int8(value) => signed_parts(i128::from(value)),
         NumberRepr::Int16(value) => signed_parts(i128::from(value)),
@@ -113,7 +115,7 @@ fn f64_parts(value: f64) -> (bool, u128, i32) {
 /// # Returns
 ///
 /// The exact magnitude ordering.
-fn compare_magnitude(
+pub(in crate::numeric) fn compare_magnitude(
     left_significand: u128,
     left_exponent: i32,
     right_significand: u128,
@@ -136,45 +138,5 @@ fn compare_magnitude(
                 .cmp(&(right_significand << (right_exponent - left_exponent))),
         },
         ordering => ordering,
-    }
-}
-
-/// Compares two finite fixed-width numeric values exactly.
-///
-/// # Parameters
-///
-/// * `left` - Left fixed-width operand.
-/// * `right` - Right fixed-width operand.
-///
-/// # Returns
-///
-/// Their mathematical ordering, or `None` for a non-finite or unsupported
-/// input.
-pub(in crate::numeric) fn compare_fixed(
-    left: NumberRef<'_>,
-    right: NumberRef<'_>,
-) -> Option<Ordering> {
-    let (left_negative, left_significand, left_exponent) = finite_parts(left)?;
-    let (right_negative, right_significand, right_exponent) =
-        finite_parts(right)?;
-    if left_significand == 0 && right_significand == 0 {
-        return Some(Ordering::Equal);
-    }
-    match left_negative.cmp(&right_negative) {
-        Ordering::Less => Some(Ordering::Greater),
-        Ordering::Greater => Some(Ordering::Less),
-        Ordering::Equal => {
-            let ordering = compare_magnitude(
-                left_significand,
-                left_exponent,
-                right_significand,
-                right_exponent,
-            );
-            Some(if left_negative {
-                ordering.reverse()
-            } else {
-                ordering
-            })
-        }
     }
 }

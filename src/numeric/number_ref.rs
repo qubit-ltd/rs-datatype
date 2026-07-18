@@ -11,8 +11,10 @@ use std::cmp::Ordering;
 
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-#[cfg(feature = "big-integer")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_bigint::BigInt;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use num_rational::BigRational;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_traits::{
     Signed,
@@ -22,10 +24,16 @@ use num_traits::{
 
 use super::NumericComparisonPolicy;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-use super::internal::compare_exact_rational;
+use super::internal::{
+    f32_rational,
+    f64_rational,
+};
+#[cfg(feature = "big-decimal")]
+use super::internal::decimal_rational;
 use super::internal::{
     NumberRepr,
-    compare_fixed,
+    compare_magnitude,
+    finite_parts,
 };
 
 /// Borrows or copies a numeric value without depending on a runtime value enum.
@@ -363,10 +371,49 @@ impl<'a> NumberRef<'a> {
             #[cfg(not(feature = "big-decimal"))]
             let has_big_decimal = false;
             if has_big_integer || has_big_decimal {
-                return compare_exact_rational(self, right);
+                return self.compare_exact_rational(right);
             }
         }
-        compare_fixed(self, right)
+        self.compare_fixed(right)
+    }
+
+    /// Compares arbitrary-precision pairs through exact rational values.
+    ///
+    /// Decimal scales that cannot be materialized as a practical power of ten
+    /// fall back to `BigDecimal`'s exact scale-aware ordering.
+    ///
+    /// # Parameters
+    ///
+    /// * `right` - Right arbitrary-precision operand.
+    ///
+    /// # Returns
+    ///
+    /// Their exact mathematical ordering, or `None` for non-finite values.
+    #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+    #[must_use]
+    pub fn compare_exact_rational(
+        self,
+        right: NumberRef<'_>,
+    ) -> Option<Ordering> {
+        #[cfg(feature = "big-integer")]
+        if let (NumberRepr::BigInteger(left), NumberRepr::BigInteger(right)) =
+            (self.inner, right.inner)
+        {
+            return Some(left.cmp(right));
+        }
+        #[cfg(feature = "big-decimal")]
+        if let (NumberRepr::BigDecimal(left), NumberRepr::BigDecimal(right)) =
+            (self.inner, right.inner)
+        {
+            return Some(left.cmp(right));
+        }
+        match (self.to_exact_rational(), right.to_exact_rational()) {
+            (Some(left), Some(right)) => Some(left.cmp(&right)),
+            #[cfg(feature = "big-decimal")]
+            _ => self.compare_exact_decimal(right),
+            #[cfg(not(feature = "big-decimal"))]
+            _ => None,
+        }
     }
 
     /// Compares values through exact arbitrary-precision decimal
@@ -388,6 +435,44 @@ impl<'a> NumberRef<'a> {
         right: NumberRef<'_>,
     ) -> Option<Ordering> {
         Some(self.to_exact_decimal()?.cmp(&right.to_exact_decimal()?))
+    }
+
+    /// Compares two finite fixed-width numeric values exactly.
+    ///
+    /// # Parameters
+    ///
+    /// * `right` - Right fixed-width operand.
+    ///
+    /// # Returns
+    ///
+    /// Their mathematical ordering, or `None` for a non-finite or unsupported
+    /// input.
+    #[must_use]
+    pub fn compare_fixed(self, right: NumberRef<'_>) -> Option<Ordering> {
+        let (left_negative, left_significand, left_exponent) =
+            finite_parts(self)?;
+        let (right_negative, right_significand, right_exponent) =
+            finite_parts(right)?;
+        if left_significand == 0 && right_significand == 0 {
+            return Some(Ordering::Equal);
+        }
+        match left_negative.cmp(&right_negative) {
+            Ordering::Less => Some(Ordering::Greater),
+            Ordering::Greater => Some(Ordering::Less),
+            Ordering::Equal => {
+                let ordering = compare_magnitude(
+                    left_significand,
+                    left_exponent,
+                    right_significand,
+                    right_exponent,
+                );
+                Some(if left_negative {
+                    ordering.reverse()
+                } else {
+                    ordering
+                })
+            }
+        }
     }
 
     /// Projects this value to `f64` for approximate comparison.
@@ -422,6 +507,57 @@ impl<'a> NumberRef<'a> {
             NumberRepr::BigDecimal(value) => value.to_f64(),
             #[cfg(not(any(feature = "big-integer", feature = "big-decimal")))]
             NumberRepr::Lifetime(_, impossible) => match impossible {},
+        }
+    }
+
+    /// Converts this finite numeric value into an exact rational.
+    ///
+    /// # Returns
+    ///
+    /// The exact mathematical value, or `None` for non-finite values or an
+    /// impractically large decimal scale.
+    #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+    #[must_use]
+    pub fn to_exact_rational(self) -> Option<BigRational> {
+        match self.inner {
+            NumberRepr::Int8(value) => {
+                Some(BigRational::from_integer(BigInt::from(value)))
+            }
+            NumberRepr::Int16(value) => {
+                Some(BigRational::from_integer(BigInt::from(value)))
+            }
+            NumberRepr::Int32(value) => {
+                Some(BigRational::from_integer(BigInt::from(value)))
+            }
+            NumberRepr::Int64(value) => {
+                Some(BigRational::from_integer(BigInt::from(value)))
+            }
+            NumberRepr::Int128(value) => {
+                Some(BigRational::from_integer(BigInt::from(value)))
+            }
+            NumberRepr::UInt8(value) => {
+                Some(BigRational::from_integer(BigInt::from(value)))
+            }
+            NumberRepr::UInt16(value) => {
+                Some(BigRational::from_integer(BigInt::from(value)))
+            }
+            NumberRepr::UInt32(value) => {
+                Some(BigRational::from_integer(BigInt::from(value)))
+            }
+            NumberRepr::UInt64(value) => {
+                Some(BigRational::from_integer(BigInt::from(value)))
+            }
+            NumberRepr::UInt128(value) => {
+                Some(BigRational::from_integer(BigInt::from(value)))
+            }
+            NumberRepr::Float32(value) => Some(f32_rational(value)),
+            NumberRepr::Float64(value) => Some(f64_rational(value)),
+            #[cfg(feature = "big-integer")]
+            NumberRepr::BigInteger(value) => {
+                Some(BigRational::from_integer(value.clone()))
+            }
+            #[cfg(feature = "big-decimal")]
+            NumberRepr::BigDecimal(value) => decimal_rational(value),
         }
     }
 
