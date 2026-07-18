@@ -13,9 +13,13 @@ mod boolean_numeric_policy;
 mod collection_conversion_options;
 mod data_conversion_options;
 mod duration_conversion_options;
+mod duration_rounding_policy;
 mod empty_item_policy;
+mod float_rounding_policy;
+mod fractional_to_integer_policy;
 mod internal;
-mod numeric_conversion_policy;
+mod numeric_conversion_limits;
+mod numeric_conversion_options;
 mod string_conversion_options;
 
 pub use crate::duration::{
@@ -28,6 +32,10 @@ pub use boolean_numeric_policy::BooleanNumericPolicy;
 pub use collection_conversion_options::CollectionConversionOptions;
 pub use data_conversion_options::DataConversionOptions;
 pub use duration_conversion_options::DurationConversionOptions;
+pub use duration_rounding_policy::DurationRoundingPolicy;
 pub use empty_item_policy::EmptyItemPolicy;
-pub use numeric_conversion_policy::NumericConversionPolicy;
+pub use float_rounding_policy::FloatRoundingPolicy;
+pub use fractional_to_integer_policy::FractionalToIntegerPolicy;
+pub use numeric_conversion_limits::NumericConversionLimits;
+pub use numeric_conversion_options::NumericConversionOptions;
 pub use string_conversion_options::StringConversionOptions;

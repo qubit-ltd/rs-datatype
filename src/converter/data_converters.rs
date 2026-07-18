@@ -18,7 +18,6 @@ use super::error::{
     DataListConversionError,
 };
 use super::options::DataConversionOptions;
-use crate::datatype::DataTypeOf;
 
 /// A lightweight adapter for converting batches of source values.
 ///
@@ -190,7 +189,6 @@ where
     #[inline(always)]
     pub fn to_first<'a, T>(self) -> Result<T, DataConversionError>
     where
-        T: DataTypeOf,
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,
     {
@@ -222,7 +220,6 @@ where
         options: &DataConversionOptions,
     ) -> Result<T, DataConversionError>
     where
-        T: DataTypeOf,
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,
     {

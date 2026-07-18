@@ -11,6 +11,7 @@
 
 use crate::datatype::DataType;
 
+use super::super::conversion_limit::ConversionLimit;
 use super::super::invalid_value_reason::InvalidValueReason;
 
 /// Variant-specific details stored by a public conversion error.
@@ -47,5 +48,15 @@ pub(in crate::converter::error) enum DataConversionErrorInner {
         to: DataType,
         /// Stable, value-free rejection reason.
         reason: InvalidValueReason,
+    },
+    /// The conversion would exceed a configured resource limit.
+    #[error("Conversion limit exceeded from {from} to {to}: {limit}")]
+    LimitExceeded {
+        /// Declared source data type.
+        from: DataType,
+        /// Requested target data type.
+        to: DataType,
+        /// Configured resource limit that was exceeded.
+        limit: ConversionLimit,
     },
 }

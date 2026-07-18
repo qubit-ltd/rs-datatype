@@ -11,6 +11,7 @@
 
 use crate::datatype::DataType;
 
+use super::conversion_limit::ConversionLimit;
 use super::data_conversion_error_kind::DataConversionErrorKind;
 use super::internal::DataConversionErrorInner;
 use super::invalid_value_reason::InvalidValueReason;
@@ -116,6 +117,28 @@ impl DataConversionError {
         }
     }
 
+    /// Creates an error for a conversion resource limit violation.
+    ///
+    /// # Parameters
+    ///
+    /// * `from` - Declared source data type.
+    /// * `to` - Requested target data type.
+    /// * `limit` - Configured resource limit that was exceeded.
+    ///
+    /// # Returns
+    ///
+    /// A resource-limit conversion error.
+    #[inline(always)]
+    pub const fn limit_exceeded(
+        from: DataType,
+        to: DataType,
+        limit: ConversionLimit,
+    ) -> Self {
+        Self {
+            inner: DataConversionErrorInner::LimitExceeded { from, to, limit },
+        }
+    }
+
     /// Returns the stable classification of this error.
     ///
     /// # Returns
@@ -134,6 +157,9 @@ impl DataConversionError {
             }
             DataConversionErrorInner::InvalidValue { .. } => {
                 DataConversionErrorKind::InvalidValue
+            }
+            DataConversionErrorInner::LimitExceeded { .. } => {
+                DataConversionErrorKind::LimitExceeded
             }
         }
     }
@@ -168,7 +194,8 @@ impl DataConversionError {
         match &self.inner {
             DataConversionErrorInner::Missing { from, .. }
             | DataConversionErrorInner::Unsupported { from, .. }
-            | DataConversionErrorInner::InvalidValue { from, .. } => {
+            | DataConversionErrorInner::InvalidValue { from, .. }
+            | DataConversionErrorInner::LimitExceeded { from, .. } => {
                 Some(*from)
             }
             DataConversionErrorInner::EmptyCollection { .. } => None,
@@ -186,6 +213,7 @@ impl DataConversionError {
             DataConversionErrorInner::Missing { to, .. }
             | DataConversionErrorInner::Unsupported { to, .. }
             | DataConversionErrorInner::InvalidValue { to, .. }
+            | DataConversionErrorInner::LimitExceeded { to, .. }
             | DataConversionErrorInner::EmptyCollection { to } => *to,
         }
     }
@@ -201,6 +229,22 @@ impl DataConversionError {
         match &self.inner {
             DataConversionErrorInner::InvalidValue { reason, .. } => {
                 Some(reason)
+            }
+            _ => None,
+        }
+    }
+
+    /// Returns the conversion resource limit when one was exceeded.
+    ///
+    /// # Returns
+    ///
+    /// `Some` with the configured limit for a resource-limit error, or `None`
+    /// for every other error kind.
+    #[inline(always)]
+    pub const fn limit(&self) -> Option<&ConversionLimit> {
+        match &self.inner {
+            DataConversionErrorInner::LimitExceeded { limit, .. } => {
+                Some(limit)
             }
             _ => None,
         }

@@ -13,7 +13,10 @@ use num_bigint::BigInt;
 use num_traits::Zero;
 
 use super::DataConverter;
-use super::numeric::is_integer_syntax;
+use super::numeric::{
+    check_numeric_text_limit,
+    is_integer_syntax,
+};
 use super::string_source::normalize;
 use crate::converter::{
     BooleanNumericPolicy,
@@ -70,10 +73,11 @@ impl DataConversionTarget for bool {
             DataConverter::Bool(value) => Ok(*value),
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Bool)?;
-                if let Some(value) = options.boolean.parse(value) {
+                if let Some(value) = options.boolean().parse(value) {
                     return Ok(value);
                 }
                 if is_integer_syntax(value) {
+                    check_numeric_text_limit(value, options, DataType::Bool)?;
                     let digits =
                         value.strip_prefix(['+', '-']).unwrap_or(value);
                     let zero = digits.bytes().all(|byte| byte == b'0');
@@ -82,7 +86,7 @@ impl DataConversionTarget for bool {
                     integer_to_bool(
                         zero,
                         one,
-                        options.boolean.numeric_policy(),
+                        options.boolean().numeric_policy(),
                         DataType::String,
                     )
                 } else {
@@ -95,71 +99,71 @@ impl DataConversionTarget for bool {
             DataConverter::Int8(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
-                options.boolean.numeric_policy(),
+                options.boolean().numeric_policy(),
                 DataType::Int8,
             ),
             DataConverter::Int16(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
-                options.boolean.numeric_policy(),
+                options.boolean().numeric_policy(),
                 DataType::Int16,
             ),
             DataConverter::Int32(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
-                options.boolean.numeric_policy(),
+                options.boolean().numeric_policy(),
                 DataType::Int32,
             ),
             DataConverter::Int64(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
-                options.boolean.numeric_policy(),
+                options.boolean().numeric_policy(),
                 DataType::Int64,
             ),
             DataConverter::Int128(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
-                options.boolean.numeric_policy(),
+                options.boolean().numeric_policy(),
                 DataType::Int128,
             ),
             DataConverter::UInt8(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
-                options.boolean.numeric_policy(),
+                options.boolean().numeric_policy(),
                 DataType::UInt8,
             ),
             DataConverter::UInt16(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
-                options.boolean.numeric_policy(),
+                options.boolean().numeric_policy(),
                 DataType::UInt16,
             ),
             DataConverter::UInt32(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
-                options.boolean.numeric_policy(),
+                options.boolean().numeric_policy(),
                 DataType::UInt32,
             ),
             DataConverter::UInt64(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
-                options.boolean.numeric_policy(),
+                options.boolean().numeric_policy(),
                 DataType::UInt64,
             ),
             DataConverter::UInt128(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
-                options.boolean.numeric_policy(),
+                options.boolean().numeric_policy(),
                 DataType::UInt128,
             ),
             #[cfg(feature = "big-integer")]
             DataConverter::BigInteger(value) => integer_to_bool(
                 value.is_zero(),
                 value.as_ref() == &BigInt::from(1u8),
-                options.boolean.numeric_policy(),
+                options.boolean().numeric_policy(),
                 DataType::BigInteger,
             ),
-            DataConverter::Empty(_) => Err(source.missing(DataType::Bool)),
+            DataConverter::Unset(_) => Err(source.missing(DataType::Bool)),
             _ => Err(source.unsupported(DataType::Bool)),
         }
     }

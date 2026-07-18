@@ -23,6 +23,7 @@ pub use data_converter::DataConverter;
 pub use data_converters::DataConverters;
 pub use error::{
     BooleanLiteralConflictError,
+    ConversionLimit,
     DataConversionError,
     DataConversionErrorKind,
     DataFormat,
@@ -39,9 +40,13 @@ pub use options::{
     CollectionConversionOptions,
     DataConversionOptions,
     DurationConversionOptions,
+    DurationRoundingPolicy,
     DurationUnit,
     EmptyItemPolicy,
-    NumericConversionPolicy,
+    FloatRoundingPolicy,
+    FractionalToIntegerPolicy,
+    NumericConversionLimits,
+    NumericConversionOptions,
     StringConversionOptions,
     SuffixlessDurationPolicy,
 };

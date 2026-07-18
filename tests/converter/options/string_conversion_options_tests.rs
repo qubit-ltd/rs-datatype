@@ -19,9 +19,9 @@ use qubit_datatype::converter::{
 #[test]
 fn test_string_conversion_options_env_friendly_profile() {
     let options = StringConversionOptions::env_friendly();
-    assert!(options.trim);
+    assert!(options.trim());
     assert_eq!(
-        options.blank_string_policy,
+        options.blank_string_policy(),
         BlankStringPolicy::TreatAsMissing,
     );
 }

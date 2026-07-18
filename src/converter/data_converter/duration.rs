@@ -64,8 +64,8 @@ fn integer_to_duration(
         ));
     }
     match options
-        .duration
-        .numeric_input_unit
+        .duration()
+        .numeric_input_unit()
         .duration_from_u128(value)
     {
         Ok(duration) => Ok(duration),
@@ -99,24 +99,38 @@ fn parse_duration(
     let to = DataType::Duration;
     let value = normalize(value, options, to)?;
     let text_options = DurationTextOptions::new(
-        options.duration.suffixless_string_policy,
-        DurationUnitSuffixSet::Extended,
+        options.duration().suffixless_string_policy(),
+        options.duration().unit_suffix_set(),
     );
     match parse_duration_text(value, &text_options) {
         Ok(duration) => Ok(duration),
         Err(DurationParseError::InvalidSyntax) => {
             let suffix_required = !value.is_empty()
                 && value.bytes().all(|byte| byte.is_ascii_digit())
-                && options.duration.suffixless_string_policy
+                && options.duration().suffixless_string_policy()
                     == SuffixlessDurationPolicy::Reject;
             Err(DataConversionError::invalid(
                 DataType::String,
                 to,
                 InvalidValueReason::InvalidSyntax {
                     expected: if suffix_required {
-                        "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)"
+                        match options.duration().unit_suffix_set() {
+                            DurationUnitSuffixSet::Ascii => {
+                                "[0-9]+(ns|us|ms|s|m|h|d)"
+                            }
+                            DurationUnitSuffixSet::Extended => {
+                                "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)"
+                            }
+                        }
                     } else {
-                        "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?"
+                        match options.duration().unit_suffix_set() {
+                            DurationUnitSuffixSet::Ascii => {
+                                "[0-9]+(ns|us|ms|s|m|h|d)?"
+                            }
+                            DurationUnitSuffixSet::Extended => {
+                                "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?"
+                            }
+                        }
                     },
                 },
             ))
@@ -146,7 +160,7 @@ impl DataConversionTarget for Duration {
         match source {
             DataConverter::Duration(value) => Ok(*value),
             DataConverter::String(value) => parse_duration(value, options),
-            DataConverter::Empty(_) => Err(source.missing(DataType::Duration)),
+            DataConverter::Unset(_) => Err(source.missing(DataType::Duration)),
             DataConverter::Int8(_)
             | DataConverter::Int16(_)
             | DataConverter::Int32(_)
@@ -195,8 +209,8 @@ impl DataConversionTarget for Duration {
 ///
 /// # Returns
 ///
-/// An exact unit count under [`NumericConversionPolicy::Exact`], or a half-up
-/// rounded count under the lossy policy.
+/// An exact unit count under the reject policy, or a half-up rounded count
+/// when Duration rounding permits it.
 ///
 /// # Errors
 ///
@@ -207,8 +221,11 @@ pub(super) fn format_duration(
     options: &DataConversionOptions,
 ) -> Result<String, DataConversionError> {
     let units = duration_to_u128(value, options, DataType::String)?;
-    if options.duration.append_unit_suffix {
-        Ok(format!("{units}{}", options.duration.output_unit.suffix()))
+    if options.duration().append_unit_suffix() {
+        Ok(format!(
+            "{units}{}",
+            options.duration().output_unit().suffix()
+        ))
     } else {
         Ok(units.to_string())
     }

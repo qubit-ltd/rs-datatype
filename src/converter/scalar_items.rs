@@ -57,10 +57,10 @@ impl<'a> ScalarItems<'a> {
     ) -> Self {
         Self {
             value,
-            delimiters: &options.delimiters,
-            split_scalar_strings: options.split_scalar_strings,
-            trim_items: options.trim_items,
-            empty_item_policy: options.empty_item_policy,
+            delimiters: options.delimiters(),
+            split_scalar_strings: options.split_scalar_strings(),
+            trim_items: options.trim_items(),
+            empty_item_policy: options.empty_item_policy(),
             next_start: Some(0),
             next_source_index: 0,
         }

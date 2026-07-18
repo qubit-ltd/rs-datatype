@@ -116,11 +116,12 @@ let lossy = DataConversionOptions::lossy();
 assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 ```
 
-The strict numeric policy rejects truncation, rounding, and precision loss.
-Lossy mode permits finite float/decimal truncation toward zero,
-integer-to-float IEEE rounding, and duration half-up rounding. Decimal and
-scientific-notation strings use the same policy for fixed-width integer and
-`BigInt` targets.
+The strict profile independently rejects fractional-to-integer truncation,
+numeric-to-float rounding, text-to-float rounding, and inexact Duration output.
+The lossy profile permits finite float/decimal truncation toward zero,
+nearest-even float rounding, and Duration half-up rounding. Decimal and
+scientific-notation strings share the configured fractional-to-integer rule for
+fixed-width integer and `BigInt` targets.
 
 ## 6. Conversion matrix
 
@@ -137,23 +138,28 @@ Rich targets require their matching feature.
 | StringMap | StringMap; JSON and `String` with `json` |
 | JSON | `String` |
 
-Unsupported pairs return `DataConversionError::Unsupported`; typed empty
+Unsupported pairs return `DataConversionError::Unsupported`; typed unset
 sources return `Missing`; malformed or policy-rejected values return
-`InvalidValue`. Errors retain type context but never retain the source value.
+`InvalidValue`, and configured resource caps return `LimitExceeded`. Errors
+retain type context but never retain the source value.
 
 ## 7. Options and input profiles
 
 `DataConversionOptions` groups independent policies:
 
-- `numeric_policy`: exact or lossy numeric behavior.
+- `numeric`: fractional-to-integer, numeric-to-float, and text-to-float
+  policies, plus resource limits.
 - `string`: trimming and blank-string handling.
 - `boolean`: accepted literals, case sensitivity, and numeric policy.
 - `collection`: scalar splitting, delimiters, trimming, and empty items.
-- `duration`: numeric input unit, suffixless input, output unit, and suffix.
+- `duration`: numeric input unit, suffixless input, accepted suffix set, output
+  unit, suffix formatting, and rounding.
 
 `strict()` is the default. `env_friendly()` trims strings, accepts common
-Boolean literals, and enables comma-separated scalar collections. Serde input
-uses defaults for omitted fields and rejects unknown fields, so misspelled
+Boolean literals, enables comma-separated scalar collections, and relaxes only
+text-to-float conversion to nearest-even rounding. It does not enable
+fractional-to-integer truncation or numeric-to-float rounding. Serde input uses
+defaults for omitted fields and rejects unknown fields, so misspelled
 configuration keys fail early.
 
 ```rust
@@ -163,15 +169,34 @@ let options = DataConversionOptions::env_friendly();
 assert_eq!(DataConverter::from(" yes ").to_with::<bool>(&options), Ok(true));
 ```
 
+Numeric resource caps are part of the options and remain enabled in every
+profile. They apply after string normalization and before expensive parsing or
+`BigInt` materialization:
+
+```rust
+use qubit_datatype::{
+    DataConversionOptions, NumericConversionLimits, NumericConversionOptions,
+};
+
+let limits = NumericConversionLimits::default()
+    .with_max_text_bytes(4096)
+    .with_max_big_integer_digits(10_000);
+let options = DataConversionOptions::strict().with_numeric_options(
+    NumericConversionOptions::strict().with_limits(limits),
+);
+```
+
 Boolean literal builders are fallible because true and false sets must remain
 disjoint under the selected case-sensitivity rule.
 
 ## 8. Strings, duration, and rich formats
 
 Strings are not trimmed by default. Blank values can be preserved, treated as
-missing, or rejected. Duration input uses
-`[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`; input and output units are configured
-independently. Exact duration output requires divisibility by the output unit.
+missing, or rejected. The default extended Duration suffix set accepts
+`[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`; the ASCII suffix set excludes `µs` and
+`μs`. Input and output units are configured independently. Exact Duration
+output requires divisibility by the output unit; half-up rounding must be
+selected explicitly.
 
 With only the `duration` feature, `DurationTextOptions` selects suffixless and
 ASCII-versus-extended suffix policies, `parse_duration_text` performs checked

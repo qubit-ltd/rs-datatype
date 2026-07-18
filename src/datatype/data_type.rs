@@ -25,7 +25,7 @@ use strum::{
 
 /// Universal data type enumeration for cross-module type representation
 ///
-/// Defines all basic data types and composite types supported by the system.
+/// Defines the fixed runtime data types supported by the system.
 /// This enum provides a unified way to represent and work with different data
 /// types across various modules and components.
 ///
@@ -35,8 +35,8 @@ use strum::{
 ///
 /// # Features
 ///
-/// - **Comprehensive Coverage**: Supports all basic Rust types plus common
-///   third-party types
+/// - **Stable Coverage**: Supports fixed-width Rust primitives and common
+///   third-party types while intentionally omitting `isize` and `usize`
 /// - **String Representation**: Each variant has a consistent string
 ///   representation
 /// - **Serialization Support**: Implements `Serialize` and `Deserialize` for

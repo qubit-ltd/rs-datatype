@@ -129,7 +129,7 @@ fn test_data_converter_from_impls_cover_all_sources() {
     assert_data_type(DataConverter::from(&string), DataType::String);
     assert_data_type(DataConverter::from(string), DataType::String);
 
-    assert_data_type(DataConverter::Empty(DataType::Json), DataType::Json);
+    assert_data_type(DataConverter::Unset(DataType::Json), DataType::Json);
 }
 
 /// Test derived converter traits used by callers and assertions.
@@ -166,7 +166,7 @@ fn test_data_converter_string_sources_report_string_data_type() {
 #[test]
 fn test_data_converter_empty_and_unsupported_errors_include_types() {
     assert!(matches!(
-        DataConverter::Empty(DataType::Int32).to::<i32>(),
+        DataConverter::Unset(DataType::Int32).to::<i32>(),
         Err(ref error)
             if error == &DataConversionError::missing(DataType::Int32, DataType::Int32)
     ));

@@ -20,8 +20,9 @@ use super::blank_string_policy::BlankStringPolicy;
 use super::boolean_conversion_options::BooleanConversionOptions;
 use super::collection_conversion_options::CollectionConversionOptions;
 use super::duration_conversion_options::DurationConversionOptions;
+use super::duration_rounding_policy::DurationRoundingPolicy;
 use super::empty_item_policy::EmptyItemPolicy;
-use super::numeric_conversion_policy::NumericConversionPolicy;
+use super::numeric_conversion_options::NumericConversionOptions;
 use super::string_conversion_options::StringConversionOptions;
 
 /// Aggregates all policies used by the conversion engine.
@@ -46,15 +47,15 @@ use super::string_conversion_options::StringConversionOptions;
 #[serde(default, deny_unknown_fields)]
 pub struct DataConversionOptions {
     /// Numeric precision and rounding behavior.
-    pub numeric_policy: NumericConversionPolicy,
+    numeric: NumericConversionOptions,
     /// String source conversion behavior.
-    pub string: StringConversionOptions,
+    string: StringConversionOptions,
     /// Boolean string literal conversion behavior.
-    pub boolean: BooleanConversionOptions,
+    boolean: BooleanConversionOptions,
     /// Scalar string collection conversion behavior.
-    pub collection: CollectionConversionOptions,
+    collection: CollectionConversionOptions,
     /// Duration conversion behavior.
-    pub duration: DurationConversionOptions,
+    duration: DurationConversionOptions,
 }
 
 impl DataConversionOptions {
@@ -81,7 +82,7 @@ impl DataConversionOptions {
     /// ```
     pub fn strict() -> Self {
         Self {
-            numeric_policy: NumericConversionPolicy::Exact,
+            numeric: NumericConversionOptions::strict(),
             string: StringConversionOptions::default(),
             boolean: BooleanConversionOptions::strict(),
             collection: CollectionConversionOptions::default(),
@@ -91,13 +92,10 @@ impl DataConversionOptions {
 
     /// Creates a profile that permits precision loss and trims string input.
     ///
-    /// Compared with [`Self::strict`], this profile changes exactly two rules:
-    /// [`Self::numeric_policy`] becomes [`NumericConversionPolicy::Lossy`], and
-    /// [`StringConversionOptions::trim`] becomes `true`. Blank strings remain
-    /// preserved, Boolean and collection rules remain strict, and Duration
-    /// units and suffix formatting retain their defaults. The lossy numeric
-    /// policy permits documented numeric truncation, floating-point rounding,
-    /// and Duration unit rounding.
+    /// Compared with [`Self::strict`], this profile permits fractional
+    /// truncation, floating-point rounding, and Duration half-up rounding, and
+    /// trims string input. Blank strings remain preserved while Boolean and
+    /// collection rules remain strict.
     ///
     /// # Returns
     ///
@@ -112,10 +110,14 @@ impl DataConversionOptions {
     /// assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&options), Ok(3));
     /// ```
     pub fn lossy() -> Self {
-        let mut options = Self::strict();
-        options.numeric_policy = NumericConversionPolicy::Lossy;
-        options.string.trim = true;
-        options
+        Self {
+            numeric: NumericConversionOptions::lossy(),
+            string: StringConversionOptions::default().with_trim(true),
+            boolean: BooleanConversionOptions::strict(),
+            collection: CollectionConversionOptions::default(),
+            duration: DurationConversionOptions::default()
+                .with_rounding_policy(DurationRoundingPolicy::HalfUp),
+        }
     }
 
     /// Creates options suitable for environment variable style values.
@@ -124,10 +126,12 @@ impl DataConversionOptions {
     ///
     /// Options that trim strings, treat blank scalar strings as missing, accept
     /// common boolean aliases, and split scalar strings on commas while
-    /// skipping empty collection items.
+    /// skipping empty collection items. Text-to-float conversion permits IEEE
+    /// nearest-even rounding, while fractional-to-integer and
+    /// existing-numeric-to-float conversions remain exact.
     pub fn env_friendly() -> Self {
         Self {
-            numeric_policy: NumericConversionPolicy::env_friendly(),
+            numeric: NumericConversionOptions::env_friendly(),
             string: StringConversionOptions::env_friendly(),
             boolean: BooleanConversionOptions::env_friendly(),
             collection: CollectionConversionOptions::env_friendly(),
@@ -147,21 +151,51 @@ impl DataConversionOptions {
         &DEFAULT
     }
 
-    /// Returns a copy with a different numeric conversion policy.
+    /// Returns the numeric conversion options.
+    #[inline(always)]
+    pub const fn numeric(&self) -> &NumericConversionOptions {
+        &self.numeric
+    }
+
+    /// Returns a copy with different numeric conversion options.
     ///
     /// # Parameters
     ///
-    /// * `numeric_policy` - Precision policy used for every numeric target.
+    /// * `numeric` - New numeric conversion options.
     ///
     /// # Returns
     ///
     /// Returns the updated options value.
     #[inline(always)]
-    pub fn with_numeric_policy(
+    pub fn with_numeric_options(
         mut self,
-        numeric_policy: NumericConversionPolicy,
+        numeric: NumericConversionOptions,
     ) -> Self {
-        self.numeric_policy = numeric_policy;
+        self.numeric = numeric;
+        self
+    }
+
+    /// Returns the string conversion options.
+    #[inline(always)]
+    pub const fn string(&self) -> &StringConversionOptions {
+        &self.string
+    }
+
+    /// Returns a copy with different string conversion options.
+    ///
+    /// # Parameters
+    ///
+    /// * `string` - New string conversion options.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline(always)]
+    pub fn with_string_options(
+        mut self,
+        string: StringConversionOptions,
+    ) -> Self {
+        self.string = string;
         self
     }
 
@@ -183,40 +217,13 @@ impl DataConversionOptions {
         self
     }
 
-    /// Returns a copy with a different empty collection item policy.
-    ///
-    /// # Parameters
-    ///
-    /// * `policy` - New empty item policy.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
+    /// Returns the Boolean conversion options.
     #[inline(always)]
-    pub fn with_empty_item_policy(mut self, policy: EmptyItemPolicy) -> Self {
-        self.collection = self.collection.with_empty_item_policy(policy);
-        self
+    pub const fn boolean(&self) -> &BooleanConversionOptions {
+        &self.boolean
     }
 
-    /// Returns a copy with different string conversion options.
-    ///
-    /// # Parameters
-    ///
-    /// * `string` - New string conversion options.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    #[inline(always)]
-    pub fn with_string_options(
-        mut self,
-        string: StringConversionOptions,
-    ) -> Self {
-        self.string = string;
-        self
-    }
-
-    /// Returns a copy with different boolean conversion options.
+    /// Returns a copy with different Boolean conversion options.
     ///
     /// # Parameters
     ///
@@ -232,6 +239,12 @@ impl DataConversionOptions {
     ) -> Self {
         self.boolean = boolean;
         self
+    }
+
+    /// Returns the collection conversion options.
+    #[inline(always)]
+    pub const fn collection(&self) -> &CollectionConversionOptions {
+        &self.collection
     }
 
     /// Returns a copy with different collection conversion options.
@@ -250,6 +263,27 @@ impl DataConversionOptions {
     ) -> Self {
         self.collection = collection;
         self
+    }
+
+    /// Returns a copy with a different empty collection item policy.
+    ///
+    /// # Parameters
+    ///
+    /// * `policy` - New empty item policy.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline(always)]
+    pub fn with_empty_item_policy(mut self, policy: EmptyItemPolicy) -> Self {
+        self.collection = self.collection.with_empty_item_policy(policy);
+        self
+    }
+
+    /// Returns the Duration conversion options.
+    #[inline(always)]
+    pub const fn duration(&self) -> &DurationConversionOptions {
+        &self.duration
     }
 
     /// Returns a copy with different duration conversion options.

@@ -18,21 +18,22 @@ use num_traits::{
 
 use crate::converter::{
     DataConversionError,
+    FloatRoundingPolicy,
     InvalidValueReason,
-    NumericConversionPolicy,
 };
 use crate::datatype::DataType;
 
-/// Converts an integer exactly or lossily to a float.
+/// Converts an integer to a float under an explicit rounding policy.
 ///
-/// Lossy mode accepts finite IEEE rounding. Exact mode additionally requires
-/// converting the result back to reproduce `value`. Non-finite results are
-/// reported as out of range using `from` and `to`.
+/// [`FloatRoundingPolicy::NearestEven`] accepts finite IEEE rounding.
+/// [`FloatRoundingPolicy::Exact`] additionally requires converting the result
+/// back to reproduce `value`. Non-finite results are reported as out of range
+/// using `from` and `to`.
 ///
 /// # Parameters
 ///
 /// * `value` - Arbitrary-precision integer to convert.
-/// * `policy` - Exact or lossy conversion policy.
+/// * `policy` - Exact or nearest-even float rounding policy.
 /// * `from` - Source type retained in conversion errors.
 /// * `to` - Target type retained in conversion errors.
 ///
@@ -47,7 +48,7 @@ use crate::datatype::DataType;
 #[cfg(feature = "big-integer")]
 pub(super) fn bigint_to_f64(
     value: &BigInt,
-    policy: NumericConversionPolicy,
+    policy: FloatRoundingPolicy,
     from: DataType,
     to: DataType,
 ) -> Result<f64, DataConversionError> {
@@ -59,7 +60,7 @@ pub(super) fn bigint_to_f64(
             InvalidValueReason::OutOfRange,
         ));
     }
-    if policy == NumericConversionPolicy::Exact
+    if policy == FloatRoundingPolicy::Exact
         && BigInt::from_f64(converted).as_ref() != Some(value)
     {
         Err(DataConversionError::invalid(
@@ -77,7 +78,7 @@ pub(super) fn bigint_to_f64(
 /// # Parameters
 ///
 /// * `value` - Arbitrary-precision integer to convert.
-/// * `policy` - Exact or lossy conversion policy.
+/// * `policy` - Exact or nearest-even float rounding policy.
 /// * `from` - Source type retained in conversion errors.
 /// * `to` - Target type retained in conversion errors.
 ///
@@ -92,7 +93,7 @@ pub(super) fn bigint_to_f64(
 #[cfg(feature = "big-integer")]
 pub(super) fn bigint_to_f32(
     value: &BigInt,
-    policy: NumericConversionPolicy,
+    policy: FloatRoundingPolicy,
     from: DataType,
     to: DataType,
 ) -> Result<f32, DataConversionError> {
@@ -104,7 +105,7 @@ pub(super) fn bigint_to_f32(
             InvalidValueReason::OutOfRange,
         ));
     }
-    if policy == NumericConversionPolicy::Exact
+    if policy == FloatRoundingPolicy::Exact
         && BigInt::from_f32(converted).as_ref() != Some(value)
     {
         Err(DataConversionError::invalid(
@@ -117,16 +118,17 @@ pub(super) fn bigint_to_f32(
     }
 }
 
-/// Converts a decimal exactly or lossily to a float.
+/// Converts a decimal to a float under an explicit rounding policy.
 ///
-/// Lossy mode accepts finite IEEE rounding. Exact mode additionally requires
-/// converting the result back to reproduce `value`. Non-finite results are
-/// reported as out of range using `from` and `to`.
+/// [`FloatRoundingPolicy::NearestEven`] accepts finite IEEE rounding.
+/// [`FloatRoundingPolicy::Exact`] additionally requires converting the result
+/// back to reproduce `value`. Non-finite results are reported as out of range
+/// using `from` and `to`.
 ///
 /// # Parameters
 ///
 /// * `value` - Arbitrary-precision decimal to convert.
-/// * `policy` - Exact or lossy conversion policy.
+/// * `policy` - Exact or nearest-even float rounding policy.
 /// * `from` - Source type retained in conversion errors.
 /// * `to` - Target type retained in conversion errors.
 ///
@@ -141,7 +143,7 @@ pub(super) fn bigint_to_f32(
 #[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_f64(
     value: &BigDecimal,
-    policy: NumericConversionPolicy,
+    policy: FloatRoundingPolicy,
     from: DataType,
     to: DataType,
 ) -> Result<f64, DataConversionError> {
@@ -153,7 +155,7 @@ pub(super) fn decimal_to_f64(
             InvalidValueReason::OutOfRange,
         ));
     }
-    if policy == NumericConversionPolicy::Exact
+    if policy == FloatRoundingPolicy::Exact
         && BigDecimal::from_f64(converted).as_ref() != Some(value)
     {
         Err(DataConversionError::invalid(
@@ -171,7 +173,7 @@ pub(super) fn decimal_to_f64(
 /// # Parameters
 ///
 /// * `value` - Arbitrary-precision decimal to convert.
-/// * `policy` - Exact or lossy conversion policy.
+/// * `policy` - Exact or nearest-even float rounding policy.
 /// * `from` - Source type retained in conversion errors.
 /// * `to` - Target type retained in conversion errors.
 ///
@@ -186,7 +188,7 @@ pub(super) fn decimal_to_f64(
 #[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_f32(
     value: &BigDecimal,
-    policy: NumericConversionPolicy,
+    policy: FloatRoundingPolicy,
     from: DataType,
     to: DataType,
 ) -> Result<f32, DataConversionError> {
@@ -198,7 +200,7 @@ pub(super) fn decimal_to_f32(
             InvalidValueReason::OutOfRange,
         ));
     }
-    if policy == NumericConversionPolicy::Exact
+    if policy == FloatRoundingPolicy::Exact
         && BigDecimal::from_f32(converted).as_ref() != Some(value)
     {
         Err(DataConversionError::invalid(

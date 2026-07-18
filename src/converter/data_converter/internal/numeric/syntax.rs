@@ -15,14 +15,60 @@ use bigdecimal::BigDecimal;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_bigint::BigInt;
 
+use super::super::super::string_source::normalize;
 #[cfg(feature = "big-decimal")]
 use super::parsed_number::ParsedNumber;
 use crate::converter::{
+    ConversionLimit,
     DataConversionError,
+    DataConversionOptions,
+    FractionalToIntegerPolicy,
     InvalidValueReason,
-    NumericConversionPolicy,
 };
 use crate::datatype::DataType;
+
+/// Normalizes numeric text and enforces its configured byte limit.
+///
+/// # Parameters
+///
+/// * `value` - Raw textual source.
+/// * `options` - String and numeric conversion options.
+/// * `to` - Numeric target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The normalized source text within the configured byte limit.
+///
+/// # Errors
+///
+/// Returns a normalization error or a numeric-text resource limit error.
+pub(super) fn normalize_numeric_text<'a>(
+    value: &'a str,
+    options: &DataConversionOptions,
+    to: DataType,
+) -> Result<&'a str, DataConversionError> {
+    let value = normalize(value, options, to)?;
+    check_numeric_text_limit(value, options, to)?;
+    Ok(value)
+}
+
+/// Enforces the configured normalized numeric text byte limit.
+pub(in crate::converter::data_converter) fn check_numeric_text_limit(
+    value: &str,
+    options: &DataConversionOptions,
+    to: DataType,
+) -> Result<(), DataConversionError> {
+    let maximum = options.numeric().limits().max_text_bytes();
+    if value.len() > maximum {
+        Err(DataConversionError::limit_exceeded(
+            DataType::String,
+            to,
+            ConversionLimit::NumericTextBytes { maximum },
+        ))
+    } else {
+        Ok(())
+    }
+}
 
 /// Parses a normalized number without selecting a target primitive first.
 ///
@@ -324,14 +370,14 @@ fn parse_integer_magnitude(
 
 /// Parses decimal text into a platform-independent integer intermediate.
 ///
-/// Exact mode rejects a non-zero fractional part. Lossy mode truncates toward
-/// zero. Exponents are processed structurally, so extreme values are rejected
-/// without allocating an exponent-sized buffer.
+/// Reject mode rejects a non-zero fractional part. Truncate mode discards it
+/// toward zero. Exponents are processed structurally, so extreme values are
+/// rejected without allocating an exponent-sized buffer.
 ///
 /// # Parameters
 ///
 /// * `value` - Normalized decimal text to parse.
-/// * `policy` - Exact or lossy fractional-value policy.
+/// * `policy` - Fractional-value conversion policy.
 /// * `to` - Target type retained in conversion errors.
 ///
 /// # Returns
@@ -344,7 +390,7 @@ fn parse_integer_magnitude(
 /// with `to` when the input cannot be converted under `policy`.
 pub(super) fn parse_text_integer(
     value: &str,
-    policy: NumericConversionPolicy,
+    policy: FractionalToIntegerPolicy,
     to: DataType,
 ) -> Result<(bool, u128), DataConversionError> {
     if is_explicit_non_finite(value) {
@@ -370,7 +416,7 @@ pub(super) fn parse_text_integer(
             .unwrap_or(usize::MAX)
             .min(digit_count)
     };
-    if policy == NumericConversionPolicy::Exact
+    if policy == FractionalToIntegerPolicy::Reject
         && fractional_part_is_non_zero(
             mantissa,
             integer_digit_count,
@@ -416,14 +462,16 @@ pub(super) fn parse_text_integer(
 
 /// Parses decimal text into an arbitrary-precision integer.
 ///
-/// Exact mode rejects a non-zero fractional part. Lossy mode truncates toward
-/// zero. Exponents are processed structurally and the resulting allocation is
-/// capped to prevent compact inputs from causing unbounded memory growth.
+/// Reject mode rejects a non-zero fractional part. Truncate mode discards it
+/// toward zero. Exponents are processed structurally and the resulting
+/// allocation is capped to prevent compact inputs from causing unbounded
+/// memory growth.
 ///
 /// # Parameters
 ///
 /// * `value` - Normalized decimal text to parse.
-/// * `policy` - Exact or lossy fractional-value policy.
+/// * `policy` - Fractional-value conversion policy.
+/// * `maximum_digits` - Maximum decimal digits in the materialized result.
 /// * `to` - Target type retained in conversion errors.
 ///
 /// # Returns
@@ -432,16 +480,16 @@ pub(super) fn parse_text_integer(
 ///
 /// # Errors
 ///
-/// Returns a syntax, non-finite, precision-loss, or range error associated
-/// with `to` when the input cannot be converted under `policy`.
+/// Returns a syntax, non-finite, precision-loss, resource-limit, or range error
+/// associated with `to` when the input cannot be converted under `policy` and
+/// `maximum_digits`.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 pub(super) fn parse_text_bigint(
     value: &str,
-    policy: NumericConversionPolicy,
+    policy: FractionalToIntegerPolicy,
+    maximum_digits: usize,
     to: DataType,
 ) -> Result<BigInt, DataConversionError> {
-    const MAX_DECIMAL_DIGITS: usize = 1_000_000;
-
     if is_explicit_non_finite(value) {
         return Err(DataConversionError::invalid(
             DataType::String,
@@ -464,7 +512,7 @@ pub(super) fn parse_text_bigint(
             .unwrap_or(usize::MAX)
             .min(digit_count)
     };
-    if policy == NumericConversionPolicy::Exact
+    if policy == FractionalToIntegerPolicy::Reject
         && fractional_part_is_non_zero(
             mantissa,
             integer_digit_count,
@@ -479,17 +527,21 @@ pub(super) fn parse_text_bigint(
     }
     let appended_zeros =
         decimal_position.saturating_sub(digit_count as i128).max(0);
-    let result_digits =
-        (integer_digit_count as i128).saturating_add(appended_zeros);
-    let is_non_zero = mantissa
+    let first_non_zero = mantissa
         .bytes()
         .filter(u8::is_ascii_digit)
-        .any(|digit| digit != b'0');
-    if is_non_zero && result_digits > MAX_DECIMAL_DIGITS as i128 {
-        return Err(DataConversionError::invalid(
+        .take(integer_digit_count)
+        .position(|digit| digit != b'0');
+    let result_digits = first_non_zero.map_or(0_i128, |index| {
+        (integer_digit_count - index) as i128 + appended_zeros
+    });
+    if result_digits > maximum_digits as i128 {
+        return Err(DataConversionError::limit_exceeded(
             DataType::String,
             to,
-            InvalidValueReason::OutOfRange,
+            ConversionLimit::BigIntegerDigits {
+                maximum: maximum_digits,
+            },
         ));
     }
     let mut integer = mantissa
@@ -500,7 +552,14 @@ pub(super) fn parse_text_bigint(
             value * 10_u8 + (digit - b'0')
         });
     if appended_zeros > 0 && integer != BigInt::from(0_u8) {
-        integer *= BigInt::from(10_u8).pow(appended_zeros as u32);
+        let exponent = u32::try_from(appended_zeros).map_err(|_| {
+            DataConversionError::invalid(
+                DataType::String,
+                to,
+                InvalidValueReason::OutOfRange,
+            )
+        })?;
+        integer *= BigInt::from(10_u8).pow(exponent);
     }
     Ok(if negative { -integer } else { integer })
 }

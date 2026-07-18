@@ -49,7 +49,7 @@ impl DataConversionTarget for char {
                     )),
                 }
             }
-            DataConverter::Empty(_) => Err(source.missing(DataType::Char)),
+            DataConverter::Unset(_) => Err(source.missing(DataType::Char)),
             _ => Err(source.unsupported(DataType::Char)),
         }
     }
@@ -61,7 +61,7 @@ impl DataConversionTarget for String {
         options: &DataConversionOptions,
     ) -> Result<Self, DataConversionError> {
         match source {
-            DataConverter::Empty(_) => Err(source.missing(DataType::String)),
+            DataConverter::Unset(_) => Err(source.missing(DataType::String)),
             DataConverter::String(value) => {
                 normalize(value, options, DataType::String).map(str::to_owned)
             }
@@ -140,7 +140,7 @@ macro_rules! impl_text_or_copy_target {
                             )),
                         }
                     }
-                    DataConverter::Empty(_) => Err(source.missing($data_type)),
+                    DataConverter::Unset(_) => Err(source.missing($data_type)),
                     _ => Err(source.unsupported($data_type)),
                 }
             }
@@ -256,7 +256,7 @@ impl DataConversionTarget for DateTime<Utc> {
                     )),
                 }
             }
-            DataConverter::Empty(_) => Err(source.missing(DataType::Instant)),
+            DataConverter::Unset(_) => Err(source.missing(DataType::Instant)),
             _ => Err(source.unsupported(DataType::Instant)),
         }
     }
@@ -282,7 +282,7 @@ impl DataConversionTarget for Url {
                     )),
                 }
             }
-            DataConverter::Empty(_) => Err(source.missing(DataType::Url)),
+            DataConverter::Unset(_) => Err(source.missing(DataType::Url)),
             _ => Err(source.unsupported(DataType::Url)),
         }
     }

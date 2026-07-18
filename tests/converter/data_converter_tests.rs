@@ -65,7 +65,7 @@ fn test_data_converter_source_target_matrix_classifies_results() {
         (DataConverter::from(date), MatrixOutcome::Unsupported),
         (DataConverter::from("bad"), MatrixOutcome::InvalidSyntax),
         (
-            DataConverter::Empty(DataType::Int32),
+            DataConverter::Unset(DataType::Int32),
             MatrixOutcome::Missing,
         ),
     ];
@@ -73,4 +73,19 @@ fn test_data_converter_source_target_matrix_classifies_results() {
     for (converter, expected) in cases {
         assert_i32_matrix_outcome(converter, expected);
     }
+}
+
+/// Test an unset source retains its declared type and reports missing.
+#[test]
+fn test_data_converter_unset_retains_declared_type() {
+    let source = DataConverter::Unset(DataType::UInt64);
+
+    assert_eq!(source.data_type(), DataType::UInt64);
+    assert_eq!(
+        source.to::<String>(),
+        Err(DataConversionError::missing(
+            DataType::UInt64,
+            DataType::String,
+        )),
+    );
 }

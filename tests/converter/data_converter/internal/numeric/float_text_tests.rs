@@ -10,7 +10,9 @@
 use qubit_datatype::{
     DataConversionOptions,
     DataConverter,
+    FloatRoundingPolicy,
     InvalidValueReason,
+    NumericConversionOptions,
 };
 
 /// Returns the decimal digits of five raised to `exponent`.
@@ -50,6 +52,43 @@ fn test_lossy_text_to_f32_avoids_double_rounding() {
         .to_with::<f32>(&options)
         .expect("finite decimal text should convert lossily to f32");
     assert_eq!(converted.to_bits(), 0x3f80_0001);
+}
+
+/// Verifies text-to-float rounding can be enabled independently.
+#[test]
+fn test_text_to_float_rounding_is_independent() {
+    let options = DataConversionOptions::strict().with_numeric_options(
+        NumericConversionOptions::strict()
+            .with_text_to_float(FloatRoundingPolicy::NearestEven),
+    );
+
+    assert_eq!(
+        DataConverter::from("0.1").to_with::<f32>(&options),
+        Ok(0.1_f32),
+    );
+    assert!(
+        DataConverter::from(16_777_217_u32)
+            .to_with::<f32>(&options)
+            .is_err()
+    );
+    assert!(DataConverter::from("3.9").to_with::<i32>(&options).is_err());
+}
+
+/// Verifies the environment profile relaxes only textual float parsing.
+#[test]
+fn test_env_friendly_numeric_profile_relaxes_only_text_float() {
+    let options = DataConversionOptions::env_friendly();
+
+    assert_eq!(
+        DataConverter::from("0.1").to_with::<f32>(&options),
+        Ok(0.1_f32),
+    );
+    assert!(
+        DataConverter::from(16_777_217_u32)
+            .to_with::<f32>(&options)
+            .is_err()
+    );
+    assert!(DataConverter::from("3.9").to_with::<i32>(&options).is_err());
 }
 
 /// Verifies that redundant decimal zeros do not defeat exact conversion.

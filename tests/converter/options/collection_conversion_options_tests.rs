@@ -20,10 +20,10 @@ use qubit_datatype::converter::{
 #[test]
 fn test_collection_conversion_options_env_friendly_profile() {
     let options = CollectionConversionOptions::env_friendly();
-    assert!(options.split_scalar_strings);
-    assert_eq!(options.delimiters, vec![',']);
-    assert!(options.trim_items);
-    assert_eq!(options.empty_item_policy, EmptyItemPolicy::Skip);
+    assert!(options.split_scalar_strings());
+    assert_eq!(options.delimiters(), &[',']);
+    assert!(options.trim_items());
+    assert_eq!(options.empty_item_policy(), EmptyItemPolicy::Skip);
 }
 
 /// Test that misspelled collection option fields are rejected.

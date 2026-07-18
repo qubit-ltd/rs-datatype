@@ -247,7 +247,7 @@ fn test_data_converter_url_and_json_conversions() {
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
     assert!(matches!(
-        DataConverter::Empty(DataType::Url).to::<Url>(),
+        DataConverter::Unset(DataType::Url).to::<Url>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
@@ -284,7 +284,7 @@ fn test_data_converter_url_and_json_conversions() {
             })
     )));
     assert!(matches!(
-        DataConverter::Empty(DataType::Json).to::<serde_json::Value>(),
+        DataConverter::Unset(DataType::Json).to::<serde_json::Value>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(

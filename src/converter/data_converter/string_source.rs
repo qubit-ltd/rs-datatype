@@ -36,7 +36,7 @@ pub(super) fn normalize<'a>(
     to: DataType,
 ) -> Result<&'a str, DataConversionError> {
     options
-        .string
+        .string()
         .normalize(value)
         .map_err(|error| error.into_data_conversion_error(to))
 }

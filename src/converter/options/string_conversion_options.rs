@@ -37,9 +37,9 @@ use serde::{
 #[serde(default, deny_unknown_fields)]
 pub struct StringConversionOptions {
     /// Whether strings are trimmed before conversion.
-    pub trim: bool,
+    trim: bool,
     /// How blank strings are interpreted after optional trimming.
-    pub blank_string_policy: BlankStringPolicy,
+    blank_string_policy: BlankStringPolicy,
 }
 
 impl Default for StringConversionOptions {
@@ -69,6 +69,12 @@ impl StringConversionOptions {
         }
     }
 
+    /// Returns whether strings are trimmed before conversion.
+    #[inline(always)]
+    pub const fn trim(&self) -> bool {
+        self.trim
+    }
+
     /// Returns a copy with string trimming enabled or disabled.
     ///
     /// # Parameters
@@ -82,6 +88,12 @@ impl StringConversionOptions {
     pub fn with_trim(mut self, trim: bool) -> Self {
         self.trim = trim;
         self
+    }
+
+    /// Returns the blank string policy.
+    #[inline(always)]
+    pub const fn blank_string_policy(&self) -> BlankStringPolicy {
+        self.blank_string_policy
     }
 
     /// Returns a copy with a different blank string policy.
