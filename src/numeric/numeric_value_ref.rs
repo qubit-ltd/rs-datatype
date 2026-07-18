@@ -34,133 +34,48 @@ pub struct NumericValueRef<'a> {
     inner: NumericValue<'a>,
 }
 
-impl From<i8> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: i8) -> Self {
-        Self {
-            inner: NumericValue::Int8(value),
+macro_rules! impl_from_copy {
+    ($source:ty, $variant:ident) => {
+        impl From<$source> for NumericValueRef<'_> {
+            #[inline(always)]
+            fn from(value: $source) -> Self {
+                Self {
+                    inner: NumericValue::$variant(value),
+                }
+            }
         }
-    }
+    };
 }
 
-impl From<i16> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: i16) -> Self {
-        Self {
-            inner: NumericValue::Int16(value),
+macro_rules! impl_from_ref {
+    ($source:ty, $variant:ident) => {
+        impl<'a> From<&'a $source> for NumericValueRef<'a> {
+            #[inline(always)]
+            fn from(value: &'a $source) -> Self {
+                Self {
+                    inner: NumericValue::$variant(value),
+                }
+            }
         }
-    }
+    };
 }
 
-impl From<i32> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: i32) -> Self {
-        Self {
-            inner: NumericValue::Int32(value),
-        }
-    }
-}
-
-impl From<i64> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: i64) -> Self {
-        Self {
-            inner: NumericValue::Int64(value),
-        }
-    }
-}
-
-impl From<i128> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: i128) -> Self {
-        Self {
-            inner: NumericValue::Int128(value),
-        }
-    }
-}
-
-impl From<u8> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: u8) -> Self {
-        Self {
-            inner: NumericValue::UInt8(value),
-        }
-    }
-}
-
-impl From<u16> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: u16) -> Self {
-        Self {
-            inner: NumericValue::UInt16(value),
-        }
-    }
-}
-
-impl From<u32> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: u32) -> Self {
-        Self {
-            inner: NumericValue::UInt32(value),
-        }
-    }
-}
-
-impl From<u64> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: u64) -> Self {
-        Self {
-            inner: NumericValue::UInt64(value),
-        }
-    }
-}
-
-impl From<u128> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: u128) -> Self {
-        Self {
-            inner: NumericValue::UInt128(value),
-        }
-    }
-}
-
-impl From<f32> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: f32) -> Self {
-        Self {
-            inner: NumericValue::Float32(value),
-        }
-    }
-}
-
-impl From<f64> for NumericValueRef<'_> {
-    #[inline(always)]
-    fn from(value: f64) -> Self {
-        Self {
-            inner: NumericValue::Float64(value),
-        }
-    }
-}
-
+impl_from_copy!(i8, Int8);
+impl_from_copy!(i16, Int16);
+impl_from_copy!(i32, Int32);
+impl_from_copy!(i64, Int64);
+impl_from_copy!(i128, Int128);
+impl_from_copy!(u8, UInt8);
+impl_from_copy!(u16, UInt16);
+impl_from_copy!(u32, UInt32);
+impl_from_copy!(u64, UInt64);
+impl_from_copy!(u128, UInt128);
+impl_from_copy!(f32, Float32);
+impl_from_copy!(f64, Float64);
 #[cfg(feature = "big-integer")]
-impl<'a> From<&'a BigInt> for NumericValueRef<'a> {
-    #[inline(always)]
-    fn from(value: &'a BigInt) -> Self {
-        Self {
-            inner: NumericValue::BigInteger(value),
-        }
-    }
-}
-
+impl_from_ref!(BigInt, BigInteger);
 #[cfg(feature = "big-decimal")]
-impl<'a> From<&'a BigDecimal> for NumericValueRef<'a> {
-    #[inline(always)]
-    fn from(value: &'a BigDecimal) -> Self {
-        Self {
-            inner: NumericValue::BigDecimal(value),
-        }
-    }
-}
+impl_from_ref!(BigDecimal, BigDecimal);
 
 impl<'a> NumericValueRef<'a> {
     /// Returns the private representation for numeric algorithms.
