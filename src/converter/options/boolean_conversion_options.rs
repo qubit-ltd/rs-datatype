@@ -10,11 +10,7 @@
 //! Defines options that control string-to-boolean conversion.
 
 use serde::de::Error as DeError;
-use serde::{
-    Deserialize,
-    Deserializer,
-    Serialize,
-};
+use serde::{Deserialize, Deserializer, Serialize};
 
 use super::super::error::BooleanLiteralConflictError;
 use super::boolean_numeric_policy::BooleanNumericPolicy;
@@ -121,16 +117,8 @@ impl BooleanConversionOptions {
     #[inline]
     pub fn env_friendly() -> Self {
         Self {
-            true_literals: vec![
-                "true".to_string(),
-                "yes".to_string(),
-                "on".to_string(),
-            ],
-            false_literals: vec![
-                "false".to_string(),
-                "no".to_string(),
-                "off".to_string(),
-            ],
+            true_literals: vec!["true".to_string(), "yes".to_string(), "on".to_string()],
+            false_literals: vec!["false".to_string(), "no".to_string(), "off".to_string()],
             case_sensitive: false,
             numeric_policy: BooleanNumericPolicy::default(),
         }
@@ -205,10 +193,7 @@ impl BooleanConversionOptions {
     ///
     /// Returns the updated options value.
     #[inline(always)]
-    pub fn with_numeric_policy(
-        mut self,
-        numeric_policy: BooleanNumericPolicy,
-    ) -> Self {
+    pub fn with_numeric_policy(mut self, numeric_policy: BooleanNumericPolicy) -> Self {
         self.numeric_policy = numeric_policy;
         self
     }
@@ -228,10 +213,7 @@ impl BooleanConversionOptions {
     /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
     /// false literal under the configured case-sensitivity rule.
     #[inline(always)]
-    pub fn with_true_literal(
-        mut self,
-        literal: &str,
-    ) -> Result<Self, BooleanLiteralConflictError> {
+    pub fn with_true_literal(mut self, literal: &str) -> Result<Self, BooleanLiteralConflictError> {
         self.true_literals.push(literal.to_string());
         self.validate()?;
         Ok(self)
@@ -275,8 +257,7 @@ impl BooleanConversionOptions {
         if self.case_sensitive {
             if self.true_literals.iter().any(|literal| literal == value) {
                 Some(true)
-            } else if self.false_literals.iter().any(|literal| literal == value)
-            {
+            } else if self.false_literals.iter().any(|literal| literal == value) {
                 Some(false)
             } else {
                 None
@@ -336,8 +317,7 @@ impl<'de> Deserialize<'de> for BooleanConversionOptions {
     where
         D: Deserializer<'de>,
     {
-        let definition =
-            UncheckedBooleanConversionOptions::deserialize(deserializer)?;
+        let definition = UncheckedBooleanConversionOptions::deserialize(deserializer)?;
         Self::try_new(
             definition.true_literals,
             definition.false_literals,

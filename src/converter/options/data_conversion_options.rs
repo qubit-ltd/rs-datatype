@@ -11,10 +11,7 @@
 
 use std::sync::LazyLock;
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 use super::blank_string_policy::BlankStringPolicy;
 use super::boolean_conversion_options::BooleanConversionOptions;
@@ -157,10 +154,7 @@ impl DataConversionOptions {
     ///
     /// Returns the updated options value.
     #[inline(always)]
-    pub fn with_numeric_policy(
-        mut self,
-        numeric_policy: NumericConversionPolicy,
-    ) -> Self {
+    pub fn with_numeric_policy(mut self, numeric_policy: NumericConversionPolicy) -> Self {
         self.numeric_policy = numeric_policy;
         self
     }
@@ -175,10 +169,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_blank_string_policy(
-        mut self,
-        policy: BlankStringPolicy,
-    ) -> Self {
+    pub fn with_blank_string_policy(mut self, policy: BlankStringPolicy) -> Self {
         self.string = self.string.with_blank_string_policy(policy);
         self
     }
@@ -208,10 +199,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_string_options(
-        mut self,
-        string: StringConversionOptions,
-    ) -> Self {
+    pub fn with_string_options(mut self, string: StringConversionOptions) -> Self {
         self.string = string;
         self
     }
@@ -226,10 +214,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_boolean_options(
-        mut self,
-        boolean: BooleanConversionOptions,
-    ) -> Self {
+    pub fn with_boolean_options(mut self, boolean: BooleanConversionOptions) -> Self {
         self.boolean = boolean;
         self
     }
@@ -244,10 +229,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_collection_options(
-        mut self,
-        collection: CollectionConversionOptions,
-    ) -> Self {
+    pub fn with_collection_options(mut self, collection: CollectionConversionOptions) -> Self {
         self.collection = collection;
         self
     }
@@ -262,10 +244,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_duration_options(
-        mut self,
-        duration: DurationConversionOptions,
-    ) -> Self {
+    pub fn with_duration_options(mut self, duration: DurationConversionOptions) -> Self {
         self.duration = duration;
         self
     }

@@ -7,11 +7,7 @@
 // =============================================================================
 //! Floating-point text conversion regression tests.
 
-use qubit_datatype::{
-    DataConversionOptions,
-    DataConverter,
-    InvalidValueReason,
-};
+use qubit_datatype::{DataConversionOptions, DataConverter, InvalidValueReason};
 
 /// Returns the decimal digits of five raised to `exponent`.
 ///
@@ -55,8 +51,7 @@ fn test_lossy_text_to_f32_avoids_double_rounding() {
 /// Verifies that redundant decimal zeros do not defeat exact conversion.
 #[test]
 fn test_exact_float_text_normalizes_redundant_zeros() {
-    let source =
-        DataConverter::from("1.000000000000000000000000000000000000000");
+    let source = DataConverter::from("1.000000000000000000000000000000000000000");
     assert_eq!(
         source
             .to::<f32>()

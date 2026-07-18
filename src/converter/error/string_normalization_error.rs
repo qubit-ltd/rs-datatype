@@ -47,10 +47,7 @@ impl StringNormalizationError {
     /// A missing-value or rejected-blank conversion error whose source type is
     /// [`DataType::String`] and whose target type is `to`.
     #[inline(always)]
-    pub const fn into_data_conversion_error(
-        self,
-        to: DataType,
-    ) -> DataConversionError {
+    pub const fn into_data_conversion_error(self, to: DataType) -> DataConversionError {
         match self {
             Self::Missing => DataConversionError::missing(DataType::String, to),
             Self::BlankRejected => DataConversionError::invalid(

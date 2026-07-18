@@ -7,10 +7,7 @@
 // =============================================================================
 //! Policy for Duration text without a unit suffix.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 use super::DurationUnit;
 

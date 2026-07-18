@@ -7,15 +7,9 @@
 // =============================================================================
 //! Options for Duration text parsing.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
-use super::{
-    DurationUnitSuffixSet,
-    SuffixlessDurationPolicy,
-};
+use super::{DurationUnitSuffixSet, SuffixlessDurationPolicy};
 
 /// Controls suffixless input and supported unit suffixes.
 #[must_use]
@@ -78,10 +72,7 @@ impl DurationTextOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_unit_suffix_set(
-        mut self,
-        unit_suffix_set: DurationUnitSuffixSet,
-    ) -> Self {
+    pub const fn with_unit_suffix_set(mut self, unit_suffix_set: DurationUnitSuffixSet) -> Self {
         self.unit_suffix_set = unit_suffix_set;
         self
     }
