@@ -12,10 +12,20 @@ use crate::datatype::DataType;
 
 /// Normalizes a textual source and attaches target context to policy errors.
 ///
-/// `value` is normalized with the string group in `options`; `to` is attached
-/// to any resulting error. The returned slice borrows `value` and may exclude
-/// surrounding whitespace. Missing and rejected blank outcomes become the
-/// corresponding [`DataConversionError`] variants.
+/// # Parameters
+///
+/// * `value` - Textual source to normalize.
+/// * `options` - String normalization policies.
+/// * `to` - Target type attached to normalization errors.
+///
+/// # Returns
+///
+/// A slice borrowing `value`, possibly without surrounding whitespace.
+///
+/// # Errors
+///
+/// Returns the corresponding [`DataConversionError`] for missing or rejected
+/// blank input.
 #[inline(always)]
 pub(super) fn normalize<'a>(
     value: &'a str,

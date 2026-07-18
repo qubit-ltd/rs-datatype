@@ -38,10 +38,21 @@ const MAX_SYNTHESIZED_BIGINT_DECIMAL_DIGITS: u64 = 1_000_000;
 
 /// Converts a decimal to an integer with exactness checks.
 ///
-/// `from` and `to` are used only as error context. Returns the integral value;
-/// exact mode rejects any fractional remainder, while lossy mode truncates
-/// toward zero. Values that cannot reasonably fit a primitive target are
-/// rejected before constructing an impractically large power of ten.
+/// # Parameters
+///
+/// * `value` - Decimal value to convert.
+/// * `policy` - Exactness policy for fractional values.
+/// * `from` - Source type retained in conversion errors.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The integral value; lossy mode truncates toward zero.
+///
+/// # Errors
+///
+/// Returns a precision error for a fractional value in exact mode, or a range
+/// error before constructing an impractically large power of ten.
 #[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_bigint(
     value: &BigDecimal,
@@ -100,9 +111,21 @@ pub(super) fn decimal_to_bigint(
 
 /// Converts a finite float to an integer with exactness checks.
 ///
-/// Returns a `BigInt` after truncation toward zero. Exact mode rejects a
-/// fractional source, and every policy rejects non-finite values. `from` and
-/// `to` are retained in those errors.
+/// # Parameters
+///
+/// * `value` - Floating-point value to convert.
+/// * `policy` - Exactness policy for fractional values.
+/// * `from` - Source type retained in conversion errors.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// A `BigInt` after truncation toward zero.
+///
+/// # Errors
+///
+/// Returns a non-finite error for NaN or infinity, or a precision error for a
+/// fractional value in exact mode.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 fn float_to_bigint(
     value: f64,
@@ -132,9 +155,20 @@ fn float_to_bigint(
 
 /// Extracts an arbitrary-precision integer from a supported source.
 ///
-/// `options` controls decimal/float exactness and duration units; `to` supplies
-/// the final target context. Returns missing, unsupported, syntax, range, or
-/// precision errors with the original source type when extraction fails.
+/// # Parameters
+///
+/// * `source` - Borrowed source representation to convert.
+/// * `options` - Decimal, float, string, and duration conversion policies.
+/// * `to` - Final target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The source represented as an arbitrary-precision integer.
+///
+/// # Errors
+///
+/// Returns missing, unsupported, syntax, range, or precision errors with the
+/// original source type when extraction fails.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 pub(super) fn source_to_bigint(
     source: &DataConverter<'_>,
@@ -183,6 +217,21 @@ pub(super) fn source_to_bigint(
 }
 
 /// Converts a duration to arbitrary-precision integer units.
+///
+/// # Parameters
+///
+/// * `duration` - Duration to convert to configured units.
+/// * `options` - Duration unit and numeric exactness policies.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The configured unit count as a `BigInt`.
+///
+/// # Errors
+///
+/// Returns a precision error when exact conversion would lose a sub-unit
+/// remainder.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 #[inline(always)]
 pub(super) fn duration_to_bigint(

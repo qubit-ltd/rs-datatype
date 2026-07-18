@@ -22,6 +22,15 @@ use crate::converter::{
 use crate::datatype::DataType;
 
 /// Tests whether an unsigned integer fits a floating-point mantissa exactly.
+///
+/// # Parameters
+///
+/// * `value` - Unsigned integer to inspect.
+/// * `mantissa_digits` - Number of significant binary digits in the target.
+///
+/// # Returns
+///
+/// `true` when the target mantissa represents `value` exactly.
 fn unsigned_integer_is_exact(value: u128, mantissa_digits: u32) -> bool {
     if value == 0 {
         return true;
@@ -32,6 +41,21 @@ fn unsigned_integer_is_exact(value: u128, mantissa_digits: u32) -> bool {
 }
 
 /// Converts an integer intermediate to `f64` under the numeric policy.
+///
+/// # Parameters
+///
+/// * `value` - Sign and magnitude of the integer.
+/// * `policy` - Exact or lossy conversion policy.
+/// * `from` - Source type retained in conversion errors.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The represented `f64` value.
+///
+/// # Errors
+///
+/// Returns a precision error when exact conversion would round the integer.
 fn integer_to_f64(
     value: (bool, u128),
     policy: NumericConversionPolicy,
@@ -57,6 +81,22 @@ fn integer_to_f64(
 }
 
 /// Converts an integer intermediate to `f32` under the numeric policy.
+///
+/// # Parameters
+///
+/// * `value` - Sign and magnitude of the integer.
+/// * `policy` - Exact or lossy conversion policy.
+/// * `from` - Source type retained in conversion errors.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The represented finite `f32` value.
+///
+/// # Errors
+///
+/// Returns a range error for overflow or a precision error when exact
+/// conversion would round the integer.
 fn integer_to_f32(
     value: (bool, u128),
     policy: NumericConversionPolicy,
@@ -90,9 +130,20 @@ fn integer_to_f32(
 
 /// Converts a source to f64 before target-width validation.
 ///
-/// `options` controls exactness and `to` identifies the eventual float target.
+/// # Parameters
+///
+/// * `source` - Borrowed source representation to convert.
+/// * `options` - Numeric and string conversion policies.
+/// * `to` - Eventual floating-point target type.
+///
+/// # Returns
+///
+/// An `f64` intermediate for target-width validation.
+///
+/// # Errors
+///
 /// Returns contextual missing, unsupported, syntax, range, non-finite, or
-/// precision errors when an `f64` intermediate cannot be produced.
+/// precision errors when an intermediate cannot be produced.
 fn source_to_f64(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,

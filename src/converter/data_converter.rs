@@ -241,8 +241,13 @@ impl DataConverter<'_> {
 
     /// Builds a missing-value error for this source and target.
     ///
-    /// `to` is the requested target type. The returned error derives its
-    /// source type from [`Self::data_type`].
+    /// # Parameters
+    ///
+    /// * `to` - Requested target type.
+    ///
+    /// # Returns
+    ///
+    /// A missing-value error whose source type comes from [`Self::data_type`].
     #[inline(always)]
     fn missing(&self, to: DataType) -> DataConversionError {
         DataConversionError::missing(self.data_type(), to)
@@ -250,8 +255,14 @@ impl DataConverter<'_> {
 
     /// Builds an unsupported-pair error for this source and target.
     ///
-    /// `to` is the requested target type. The returned error derives its
-    /// source type from [`Self::data_type`].
+    /// # Parameters
+    ///
+    /// * `to` - Requested target type.
+    ///
+    /// # Returns
+    ///
+    /// An unsupported-pair error whose source type comes from
+    /// [`Self::data_type`].
     #[inline(always)]
     fn unsupported(&self, to: DataType) -> DataConversionError {
         DataConversionError::unsupported(self.data_type(), to)
@@ -259,9 +270,14 @@ impl DataConverter<'_> {
 
     /// Builds an invalid-value error for this source and target.
     ///
-    /// `to` identifies the requested target, while `reason` explains the
-    /// value-independent rejection. The returned error records this source's
-    /// runtime type.
+    /// # Parameters
+    ///
+    /// * `to` - Requested target type.
+    /// * `reason` - Stable, value-independent rejection reason.
+    ///
+    /// # Returns
+    ///
+    /// An invalid-value error recording this source's runtime type.
     #[inline(always)]
     fn invalid(&self, to: DataType, reason: InvalidValueReason) -> DataConversionError {
         DataConversionError::invalid(self.data_type(), to, reason)

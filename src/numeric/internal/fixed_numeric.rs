@@ -14,6 +14,10 @@ use crate::NumericValueRef;
 /// Converts a finite fixed-width value into sign, significand, and power of
 /// two.
 ///
+/// # Parameters
+///
+/// * `value` - Fixed-width numeric representation to decompose.
+///
 /// # Returns
 ///
 /// A tuple representing `(-1)^sign * significand * 2^exponent`, or `None`
@@ -37,12 +41,28 @@ fn finite_parts(value: NumericValueRef<'_>) -> Option<(bool, u128, i32)> {
 }
 
 /// Converts a signed integer into finite binary parts.
+///
+/// # Parameters
+///
+/// * `value` - Signed integer to decompose.
+///
+/// # Returns
+///
+/// Its sign, unsigned magnitude, and zero binary exponent.
 #[inline(always)]
 fn signed_parts(value: i128) -> Option<(bool, u128, i32)> {
     Some((value.is_negative(), value.unsigned_abs(), 0))
 }
 
 /// Decodes a finite `f32` into exact binary parts.
+///
+/// # Parameters
+///
+/// * `value` - Finite `f32` to decode.
+///
+/// # Returns
+///
+/// Its sign, integer significand, and signed binary exponent.
 fn f32_parts(value: f32) -> (bool, u128, i32) {
     let bits = value.to_bits();
     let negative = bits >> 31 != 0;
@@ -56,6 +76,14 @@ fn f32_parts(value: f32) -> (bool, u128, i32) {
 }
 
 /// Decodes a finite `f64` into exact binary parts.
+///
+/// # Parameters
+///
+/// * `value` - Finite `f64` to decode.
+///
+/// # Returns
+///
+/// Its sign, integer significand, and signed binary exponent.
 fn f64_parts(value: f64) -> (bool, u128, i32) {
     let bits = value.to_bits();
     let negative = bits >> 63 != 0;
@@ -69,6 +97,17 @@ fn f64_parts(value: f64) -> (bool, u128, i32) {
 }
 
 /// Compares two non-negative binary rationals without overflowing `u128`.
+///
+/// # Parameters
+///
+/// * `left_significand` - Left integer significand.
+/// * `left_exponent` - Left signed binary exponent.
+/// * `right_significand` - Right integer significand.
+/// * `right_exponent` - Right signed binary exponent.
+///
+/// # Returns
+///
+/// The exact magnitude ordering.
 fn compare_magnitude(
     left_significand: u128,
     left_exponent: i32,
@@ -95,6 +134,11 @@ fn compare_magnitude(
 }
 
 /// Compares two finite fixed-width numeric values exactly.
+///
+/// # Parameters
+///
+/// * `left` - Left fixed-width operand.
+/// * `right` - Right fixed-width operand.
 ///
 /// # Returns
 ///

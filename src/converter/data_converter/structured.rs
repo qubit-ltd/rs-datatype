@@ -56,9 +56,18 @@ impl DataConversionTarget for serde_json::Value {
 
 /// Deserializes a string map through the duplicate-aware visitor.
 ///
-/// `value` must contain exactly one JSON object with unique keys and string
-/// values. The returned map owns all keys and values. Syntax errors, trailing
-/// data, duplicate keys, and non-string values return `serde_json::Error`.
+/// # Parameters
+///
+/// * `value` - JSON text containing exactly one object.
+///
+/// # Returns
+///
+/// A map owning every unique string key and string value.
+///
+/// # Errors
+///
+/// Returns [`serde_json::Error`] for syntax errors, trailing data, duplicate
+/// keys, or non-string values.
 #[cfg(feature = "json")]
 fn deserialize_string_map(value: &str) -> Result<HashMap<String, String>, serde_json::Error> {
     let mut deserializer = serde_json::Deserializer::from_str(value);

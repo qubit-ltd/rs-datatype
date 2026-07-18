@@ -170,6 +170,10 @@ macro_rules! define_data_type_names {
             pub const ALL: [DataType; 25] = [$( DataType::$variant, )+];
 
             /// Returns the stable lowercase name of this data type.
+            ///
+            /// # Returns
+            ///
+            /// The stable lowercase serialization and display name.
             #[must_use]
             #[inline(always)]
             pub const fn as_str(self) -> &'static str {
@@ -211,6 +215,10 @@ define_data_type_names! {
 
 impl DataType {
     /// Tests whether this type belongs to the numeric family.
+    ///
+    /// # Returns
+    ///
+    /// `true` for fixed-width integers, primitive floats, and big numbers.
     #[must_use]
     #[inline(always)]
     pub const fn is_numeric(self) -> bool {
@@ -218,6 +226,10 @@ impl DataType {
     }
 
     /// Tests whether this type is a fixed-width integer.
+    ///
+    /// # Returns
+    ///
+    /// `true` for signed or unsigned fixed-width integer variants.
     #[must_use]
     #[inline(always)]
     pub const fn is_integer(self) -> bool {
@@ -225,6 +237,10 @@ impl DataType {
     }
 
     /// Tests whether this type is a signed integer.
+    ///
+    /// # Returns
+    ///
+    /// `true` for `Int8` through `Int128`.
     #[must_use]
     #[inline(always)]
     pub const fn is_signed_integer(self) -> bool {
@@ -235,6 +251,10 @@ impl DataType {
     }
 
     /// Tests whether this type is an unsigned integer.
+    ///
+    /// # Returns
+    ///
+    /// `true` for `UInt8` through `UInt128`.
     #[must_use]
     #[inline(always)]
     pub const fn is_unsigned_integer(self) -> bool {
@@ -249,6 +269,10 @@ impl DataType {
     }
 
     /// Tests whether this type is a primitive floating-point type.
+    ///
+    /// # Returns
+    ///
+    /// `true` for [`Self::Float32`] or [`Self::Float64`].
     #[must_use]
     #[inline(always)]
     pub const fn is_float(self) -> bool {
@@ -256,6 +280,10 @@ impl DataType {
     }
 
     /// Tests whether this type is an arbitrary-precision number.
+    ///
+    /// # Returns
+    ///
+    /// `true` for [`Self::BigInteger`] or [`Self::BigDecimal`].
     #[must_use]
     #[inline(always)]
     pub const fn is_big_number(self) -> bool {

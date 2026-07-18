@@ -21,6 +21,22 @@ use crate::datatype::DataType;
 /// Lossy mode accepts finite IEEE rounding. Exact mode additionally requires
 /// converting the result back to reproduce `value`. Non-finite results are
 /// reported as out of range using `from` and `to`.
+///
+/// # Parameters
+///
+/// * `value` - Arbitrary-precision integer to convert.
+/// * `policy` - Exact or lossy conversion policy.
+/// * `from` - Source type retained in conversion errors.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The finite `f64` representation.
+///
+/// # Errors
+///
+/// Returns a range error for overflow or a precision error when exact
+/// conversion would round the integer.
 #[cfg(feature = "big-integer")]
 pub(super) fn bigint_to_f64(
     value: &BigInt,
@@ -50,6 +66,22 @@ pub(super) fn bigint_to_f64(
 }
 
 /// Converts an integer exactly or lossily to an `f32`.
+///
+/// # Parameters
+///
+/// * `value` - Arbitrary-precision integer to convert.
+/// * `policy` - Exact or lossy conversion policy.
+/// * `from` - Source type retained in conversion errors.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The finite `f32` representation.
+///
+/// # Errors
+///
+/// Returns a range error for overflow or a precision error when exact
+/// conversion would round the integer.
 #[cfg(feature = "big-integer")]
 pub(super) fn bigint_to_f32(
     value: &BigInt,
@@ -83,6 +115,22 @@ pub(super) fn bigint_to_f32(
 /// Lossy mode accepts finite IEEE rounding. Exact mode additionally requires
 /// converting the result back to reproduce `value`. Non-finite results are
 /// reported as out of range using `from` and `to`.
+///
+/// # Parameters
+///
+/// * `value` - Arbitrary-precision decimal to convert.
+/// * `policy` - Exact or lossy conversion policy.
+/// * `from` - Source type retained in conversion errors.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The finite `f64` representation.
+///
+/// # Errors
+///
+/// Returns a range error for overflow or a precision error when exact
+/// conversion would round the decimal.
 #[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_f64(
     value: &BigDecimal,
@@ -112,6 +160,22 @@ pub(super) fn decimal_to_f64(
 }
 
 /// Converts a decimal exactly or lossily to an `f32`.
+///
+/// # Parameters
+///
+/// * `value` - Arbitrary-precision decimal to convert.
+/// * `policy` - Exact or lossy conversion policy.
+/// * `from` - Source type retained in conversion errors.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The finite `f32` representation.
+///
+/// # Errors
+///
+/// Returns a range error for overflow or a precision error when exact
+/// conversion would round the decimal.
 #[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_f32(
     value: &BigDecimal,

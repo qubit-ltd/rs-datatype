@@ -24,12 +24,36 @@ use crate::converter::{
 use crate::datatype::DataType;
 
 /// Returns a platform-independent `(negative, magnitude)` representation.
+///
+/// # Parameters
+///
+/// * `value` - Signed integer to decompose.
+///
+/// # Returns
+///
+/// Whether `value` is negative and its unsigned absolute magnitude.
 #[inline(always)]
 pub(super) fn signed_magnitude(value: i128) -> (bool, u128) {
     (value.is_negative(), value.unsigned_abs())
 }
 
 /// Converts a finite primitive float to an integer intermediate.
+///
+/// # Parameters
+///
+/// * `value` - Floating-point value to convert.
+/// * `policy` - Exact or lossy numeric conversion policy.
+/// * `from` - Source type retained in conversion errors.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The sign and magnitude of the integer result.
+///
+/// # Errors
+///
+/// Returns a non-finite, precision, or range error when the conversion cannot
+/// satisfy `policy`.
 fn float_to_integer(
     value: f64,
     policy: NumericConversionPolicy,
@@ -67,6 +91,21 @@ fn float_to_integer(
 }
 
 /// Extracts an integer intermediate from a supported source.
+///
+/// # Parameters
+///
+/// * `source` - Borrowed source representation to convert.
+/// * `options` - Numeric, string, and duration conversion policies.
+/// * `to` - Final integer target type.
+///
+/// # Returns
+///
+/// The source integer as a sign and unsigned magnitude.
+///
+/// # Errors
+///
+/// Returns contextual missing, unsupported, syntax, range, or precision errors
+/// when extraction fails.
 pub(in crate::converter::data_converter) fn source_to_integer(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
@@ -136,8 +175,19 @@ pub(in crate::converter::data_converter) fn source_to_integer(
 
 /// Converts a duration to unsigned integer units under the numeric policy.
 ///
-/// The duration unit comes from `options`. Exact mode rejects a remainder;
-/// lossy mode uses half-up rounding. `to` is retained as target context.
+/// # Parameters
+///
+/// * `duration` - Duration to express in configured output units.
+/// * `options` - Duration unit and numeric exactness policies.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The exact unit count, or the half-up rounded count in lossy mode.
+///
+/// # Errors
+///
+/// Returns a precision error when exact mode encounters a sub-unit remainder.
 pub(in crate::converter::data_converter) fn duration_to_u128(
     duration: Duration,
     options: &DataConversionOptions,
@@ -162,8 +212,20 @@ pub(in crate::converter::data_converter) fn duration_to_u128(
 
 /// Converts a supported source to a signed primitive range.
 ///
-/// Returns an `i128` intermediate or an out-of-range error associated with
-/// `to`. Source parsing and policy errors are propagated unchanged.
+/// # Parameters
+///
+/// * `source` - Borrowed source representation to convert.
+/// * `options` - Conversion policies applied to the source.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The represented `i128` intermediate.
+///
+/// # Errors
+///
+/// Returns an out-of-range error for an unrepresentable magnitude and
+/// propagates source parsing or policy errors unchanged.
 fn to_i128(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
@@ -188,8 +250,20 @@ fn to_i128(
 
 /// Converts a supported source to an unsigned primitive range.
 ///
-/// Returns a `u128` intermediate or an out-of-range error associated with
-/// `to`. Negative and otherwise unrepresentable values are rejected.
+/// # Parameters
+///
+/// * `source` - Borrowed source representation to convert.
+/// * `options` - Conversion policies applied to the source.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The represented `u128` intermediate.
+///
+/// # Errors
+///
+/// Returns an out-of-range error for negative or otherwise unrepresentable
+/// values and propagates source parsing or policy errors unchanged.
 fn to_u128(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
@@ -209,8 +283,19 @@ fn to_u128(
 
 /// Checks a signed target range.
 ///
-/// `T` must support checked conversion from `i128`. Returns the converted value
-/// or an out-of-range error containing `source` and `to` type context.
+/// # Parameters
+///
+/// * `value` - Signed intermediate to narrow.
+/// * `source` - Original source used for error context.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The checked conversion of `value` to `T`.
+///
+/// # Errors
+///
+/// Returns an out-of-range error when `value` cannot be represented by `T`.
 fn checked_signed<T>(
     value: i128,
     source: &DataConverter<'_>,
@@ -231,8 +316,19 @@ where
 
 /// Checks an unsigned target range.
 ///
-/// `T` must support checked conversion from `u128`. Returns the converted value
-/// or an out-of-range error containing `source` and `to` type context.
+/// # Parameters
+///
+/// * `value` - Unsigned intermediate to narrow.
+/// * `source` - Original source used for error context.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// The checked conversion of `value` to `T`.
+///
+/// # Errors
+///
+/// Returns an out-of-range error when `value` cannot be represented by `T`.
 fn checked_unsigned<T>(
     value: u128,
     source: &DataConverter<'_>,

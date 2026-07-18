@@ -18,6 +18,10 @@ use crate::NumericValueRef;
 /// `BigDecimal`'s primitive-float conversion decodes the IEEE significand and
 /// exponent exactly; it does not use display formatting.
 ///
+/// # Parameters
+///
+/// * `value` - Finite numeric representation to convert.
+///
 /// # Returns
 ///
 /// The exact decimal value, or `None` for a non-finite or marker value.
@@ -43,6 +47,11 @@ fn to_exact_decimal(value: NumericValueRef<'_>) -> Option<BigDecimal> {
 }
 
 /// Compares values through exact arbitrary-precision decimal representations.
+///
+/// # Parameters
+///
+/// * `left` - Left numeric operand.
+/// * `right` - Right numeric operand.
 ///
 /// # Returns
 ///

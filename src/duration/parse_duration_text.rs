@@ -53,6 +53,20 @@ pub fn parse_duration_text(
 }
 
 /// Resolves an explicit or omitted suffix using the configured policies.
+///
+/// # Parameters
+///
+/// * `suffix` - Explicit suffix text, or an empty string when omitted.
+/// * `options` - Suffixless and accepted-suffix policies.
+///
+/// # Returns
+///
+/// The resolved duration unit.
+///
+/// # Errors
+///
+/// Returns invalid syntax for a rejected omission or malformed suffix, and
+/// unsupported unit for an unknown alphabetic suffix.
 fn resolve_unit(
     suffix: &str,
     options: &DurationTextOptions,
@@ -80,6 +94,15 @@ fn resolve_unit(
 }
 
 /// Matches a suffix from the selected supported set.
+///
+/// # Parameters
+///
+/// * `suffix` - Explicit suffix to match.
+/// * `suffix_set` - Accepted ASCII or extended suffix profile.
+///
+/// # Returns
+///
+/// The matching unit, or `None` for an unsupported suffix.
 fn explicit_unit(suffix: &str, suffix_set: DurationUnitSuffixSet) -> Option<DurationUnit> {
     match suffix {
         "ns" => Some(DurationUnit::Nanoseconds),
