@@ -97,7 +97,6 @@ impl<'a> NumberRef<'a> {
     ///
     /// `true` for fixed-width integers and `BigInt` values.
     #[must_use]
-    #[inline(always)]
     pub fn is_integer(self) -> bool {
         match self.inner {
             NumberRepr::Int8(_)
@@ -171,7 +170,7 @@ impl<'a> NumberRef<'a> {
     ///
     /// `true` only for a primitive NaN payload.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub fn is_nan(self) -> bool {
         match self.inner {
             NumberRepr::Float32(value) => value.is_nan(),
@@ -186,7 +185,7 @@ impl<'a> NumberRef<'a> {
     ///
     /// `true` for positive or negative infinity; otherwise, `false`.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub fn is_infinite(self) -> bool {
         match self.inner {
             NumberRepr::Float32(value) => value.is_infinite(),
@@ -214,7 +213,6 @@ impl<'a> NumberRef<'a> {
     /// `true` for integer zero and both positive and negative floating-point
     /// zero; otherwise, `false`.
     #[must_use]
-    #[inline(always)]
     pub fn is_zero(self) -> bool {
         match self.inner {
             NumberRepr::Int8(value) => value == 0,
