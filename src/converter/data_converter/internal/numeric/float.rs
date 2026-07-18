@@ -9,23 +9,14 @@
 
 use super::super::super::DataConverter;
 use super::super::super::string_source::normalize;
-#[cfg(feature = "big-number")]
-use super::float_big_number::{
-    bigint_to_f32,
-    bigint_to_f64,
-    decimal_to_f32,
-    decimal_to_f64,
-};
-use super::float_text::{
-    parse_text_f32,
-    parse_text_f64,
-};
+#[cfg(feature = "big-integer")]
+use super::float_big_number::{bigint_to_f32, bigint_to_f64};
+#[cfg(feature = "big-decimal")]
+use super::float_big_number::{decimal_to_f32, decimal_to_f64};
+use super::float_text::{parse_text_f32, parse_text_f64};
 use super::integer::signed_magnitude;
 use crate::converter::{
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    InvalidValueReason,
+    DataConversionError, DataConversionOptions, DataConversionTarget, InvalidValueReason,
     NumericConversionPolicy,
 };
 use crate::datatype::DataType;
@@ -172,20 +163,14 @@ fn source_to_f64(
             DataType::UInt128,
             to,
         ),
-        #[cfg(feature = "big-number")]
-        DataConverter::BigInteger(value) => bigint_to_f64(
-            value,
-            options.numeric_policy,
-            DataType::BigInteger,
-            to,
-        ),
-        #[cfg(feature = "big-number")]
-        DataConverter::BigDecimal(value) => decimal_to_f64(
-            value,
-            options.numeric_policy,
-            DataType::BigDecimal,
-            to,
-        ),
+        #[cfg(feature = "big-integer")]
+        DataConverter::BigInteger(value) => {
+            bigint_to_f64(value, options.numeric_policy, DataType::BigInteger, to)
+        }
+        #[cfg(feature = "big-decimal")]
+        DataConverter::BigDecimal(value) => {
+            decimal_to_f64(value, options.numeric_policy, DataType::BigDecimal, to)
+        }
         DataConverter::String(value) => {
             let value = normalize(value, options, to)?;
             parse_text_f64(value, options, to)
@@ -225,9 +210,7 @@ impl DataConversionTarget for f32 {
                 }
                 let converted = *value as f32;
                 if !converted.is_finite() {
-                    return Err(
-                        source.invalid(to, InvalidValueReason::OutOfRange)
-                    );
+                    return Err(source.invalid(to, InvalidValueReason::OutOfRange));
                 }
                 if options.numeric_policy == NumericConversionPolicy::Exact
                     && f64::from(converted) != *value
@@ -299,20 +282,14 @@ impl DataConversionTarget for f32 {
                 DataType::UInt128,
                 to,
             ),
-            #[cfg(feature = "big-number")]
-            DataConverter::BigInteger(value) => bigint_to_f32(
-                value,
-                options.numeric_policy,
-                DataType::BigInteger,
-                to,
-            ),
-            #[cfg(feature = "big-number")]
-            DataConverter::BigDecimal(value) => decimal_to_f32(
-                value,
-                options.numeric_policy,
-                DataType::BigDecimal,
-                to,
-            ),
+            #[cfg(feature = "big-integer")]
+            DataConverter::BigInteger(value) => {
+                bigint_to_f32(value, options.numeric_policy, DataType::BigInteger, to)
+            }
+            #[cfg(feature = "big-decimal")]
+            DataConverter::BigDecimal(value) => {
+                decimal_to_f32(value, options.numeric_policy, DataType::BigDecimal, to)
+            }
             DataConverter::String(value) => {
                 let value = normalize(value, options, to)?;
                 parse_text_f32(value, options, to)

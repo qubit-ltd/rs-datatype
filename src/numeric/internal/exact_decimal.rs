@@ -35,9 +35,8 @@ fn to_exact_decimal(value: NumericValueRef<'_>) -> Option<BigDecimal> {
         NumericValueRef::UInt128(value) => Some(BigDecimal::from(value)),
         NumericValueRef::Float32(value) => BigDecimal::try_from(value).ok(),
         NumericValueRef::Float64(value) => BigDecimal::try_from(value).ok(),
-        NumericValueRef::BigInteger(value) => {
-            Some(BigDecimal::from(value.clone()))
-        }
+        #[cfg(feature = "big-integer")]
+        NumericValueRef::BigInteger(value) => Some(BigDecimal::from(value.clone())),
         NumericValueRef::BigDecimal(value) => Some(value.clone()),
         NumericValueRef::__Lifetime(_) => None,
     }
@@ -48,6 +47,7 @@ fn to_exact_decimal(value: NumericValueRef<'_>) -> Option<BigDecimal> {
 /// # Returns
 ///
 /// Their mathematical ordering, or `None` for a non-finite or marker value.
+#[inline(always)]
 pub(in crate::numeric) fn compare_exact_decimal(
     left: NumericValueRef<'_>,
     right: NumericValueRef<'_>,

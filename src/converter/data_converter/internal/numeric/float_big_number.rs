@@ -7,18 +7,13 @@
 // =============================================================================
 //! Arbitrary-precision source conversions to primitive floating-point targets.
 
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-use num_traits::{
-    FromPrimitive,
-    ToPrimitive,
-};
+use num_traits::{FromPrimitive, ToPrimitive};
 
-use crate::converter::{
-    DataConversionError,
-    InvalidValueReason,
-    NumericConversionPolicy,
-};
+use crate::converter::{DataConversionError, InvalidValueReason, NumericConversionPolicy};
 use crate::datatype::DataType;
 
 /// Converts an integer exactly or lossily to a float.
@@ -26,6 +21,7 @@ use crate::datatype::DataType;
 /// Lossy mode accepts finite IEEE rounding. Exact mode additionally requires
 /// converting the result back to reproduce `value`. Non-finite results are
 /// reported as out of range using `from` and `to`.
+#[cfg(feature = "big-integer")]
 pub(super) fn bigint_to_f64(
     value: &BigInt,
     policy: NumericConversionPolicy,
@@ -54,6 +50,7 @@ pub(super) fn bigint_to_f64(
 }
 
 /// Converts an integer exactly or lossily to an `f32`.
+#[cfg(feature = "big-integer")]
 pub(super) fn bigint_to_f32(
     value: &BigInt,
     policy: NumericConversionPolicy,
@@ -86,6 +83,7 @@ pub(super) fn bigint_to_f32(
 /// Lossy mode accepts finite IEEE rounding. Exact mode additionally requires
 /// converting the result back to reproduce `value`. Non-finite results are
 /// reported as out of range using `from` and `to`.
+#[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_f64(
     value: &BigDecimal,
     policy: NumericConversionPolicy,
@@ -114,6 +112,7 @@ pub(super) fn decimal_to_f64(
 }
 
 /// Converts a decimal exactly or lossily to an `f32`.
+#[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_f32(
     value: &BigDecimal,
     policy: NumericConversionPolicy,

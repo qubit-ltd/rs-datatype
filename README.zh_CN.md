@@ -42,7 +42,9 @@ qubit-datatype = { version = "0.7", features = ["converter", "chrono"] }
 | `duration` | Duration 单位、带检查运算、文本解析和精确格式化 |
 | `converter` | 标量、字符串、Duration、StringMap、批量和配置 API；包含 `duration` |
 | `chrono` | Chrono 类型映射及转换 |
-| `big-number` | `BigInt`、`BigDecimal` 映射及转换 |
+| `big-integer` | `BigInt` 映射及转换 |
+| `big-decimal` | `BigDecimal` 映射及转换 |
+| `big-number` | `big-integer` 与 `big-decimal` 的兼容别名 |
 | `url` | `Url` 映射及转换 |
 | `json` | `serde_json::Value`、JSON 文本和 StringMap JSON 转换 |
 | `all` | `converter` 与全部富类型 feature |
@@ -214,10 +216,10 @@ assert_eq!(DataConverter::from("8080").to::<Port>(), Ok(Port(8080)));
 ## 测试
 
 ```bash
-# 使用默认的空 feature 集测试核心 API
-cargo test --no-default-features
+# 使用默认 feature 集运行测试
+cargo test
 
-# 测试核心 API 和全部可选 feature
+# 使用项目声明的全部 feature 运行测试
 cargo test --all-features
 
 # 运行项目 CI 检查

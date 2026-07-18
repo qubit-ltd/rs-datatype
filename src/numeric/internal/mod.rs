@@ -7,12 +7,12 @@
 // =============================================================================
 //! Private numeric comparison algorithms.
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 mod exact_decimal;
-#[cfg(feature = "big-number")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 mod exact_rational;
 mod fixed_numeric;
 
-#[cfg(feature = "big-number")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 pub(super) use exact_rational::compare_exact_rational;
 pub(super) use fixed_numeric::compare_fixed;

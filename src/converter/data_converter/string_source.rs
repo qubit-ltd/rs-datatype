@@ -16,6 +16,7 @@ use crate::datatype::DataType;
 /// to any resulting error. The returned slice borrows `value` and may exclude
 /// surrounding whitespace. Missing and rejected blank outcomes become the
 /// corresponding [`DataConversionError`] variants.
+#[inline(always)]
 pub(super) fn normalize<'a>(
     value: &'a str,
     options: &DataConversionOptions,

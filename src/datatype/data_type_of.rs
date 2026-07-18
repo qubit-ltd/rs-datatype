@@ -11,17 +11,11 @@
 //! `DataType`.
 
 use super::data_type::DataType;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "chrono")]
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
-#[cfg(feature = "big-number")]
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -128,11 +122,11 @@ impl DataTypeOf for NaiveDateTime {
 impl DataTypeOf for DateTime<Utc> {
     const DATA_TYPE: DataType = DataType::Instant;
 }
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-integer")]
 impl DataTypeOf for BigInt {
     const DATA_TYPE: DataType = DataType::BigInteger;
 }
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 impl DataTypeOf for BigDecimal {
     const DATA_TYPE: DataType = DataType::BigDecimal;
 }
