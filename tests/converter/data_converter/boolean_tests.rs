@@ -13,10 +13,14 @@ use qubit_datatype::converter::DataConversionErrorKind;
 use num_bigint::BigInt;
 use proptest::proptest;
 use qubit_datatype::{
+    ConversionLimit,
     DataConversionError,
+    DataConversionOptions,
     DataConverter,
     DataType,
     InvalidValueReason,
+    NumericConversionLimits,
+    NumericConversionOptions,
 };
 
 /// Test bool target conversions for all supported source variants.
@@ -92,7 +96,7 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
         )
     ));
     assert!(matches!(
-        DataConverter::Empty(DataType::Bool).to::<bool>(),
+        DataConverter::Unset(DataType::Bool).to::<bool>(),
         Err(ref error) if error == &DataConversionError::missing(DataType::Bool, DataType::Bool)
     ));
     #[cfg(feature = "big-number")]
@@ -104,6 +108,30 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
         DataConverter::from('x').to::<bool>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
+}
+
+/// Test numeric Boolean fallback honors numeric text limits without limiting
+/// configured Boolean literals.
+#[test]
+fn test_data_converter_bool_numeric_text_limit() {
+    let options = DataConversionOptions::strict().with_numeric_options(
+        NumericConversionOptions::strict().with_limits(
+            NumericConversionLimits::default().with_max_text_bytes(1),
+        ),
+    );
+
+    assert_eq!(
+        DataConverter::from("true").to_with::<bool>(&options),
+        Ok(true),
+    );
+    let error = DataConverter::from("10")
+        .to_with::<bool>(&options)
+        .expect_err("numeric Boolean text should honor the byte limit");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(
+        error.limit(),
+        Some(&ConversionLimit::NumericTextBytes { maximum: 1 }),
+    );
 }
 
 proptest! {

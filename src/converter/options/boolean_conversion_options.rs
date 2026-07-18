@@ -147,6 +147,30 @@ impl BooleanConversionOptions {
         &self.true_literals
     }
 
+    /// Returns a copy that accepts an additional true literal.
+    ///
+    /// # Parameters
+    ///
+    /// * `literal` - Literal to parse as `true`.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
+    /// false literal under the configured case-sensitivity rule.
+    #[inline(always)]
+    pub fn with_true_literal(
+        mut self,
+        literal: &str,
+    ) -> Result<Self, BooleanLiteralConflictError> {
+        self.true_literals.push(literal.to_string());
+        self.validate()?;
+        Ok(self)
+    }
+
     /// Gets the accepted false literals.
     ///
     /// # Returns
@@ -158,6 +182,30 @@ impl BooleanConversionOptions {
         &self.false_literals
     }
 
+    /// Returns a copy that accepts an additional false literal.
+    ///
+    /// # Parameters
+    ///
+    /// * `literal` - Literal to parse as `false`.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
+    /// true literal under the configured case-sensitivity rule.
+    #[inline(always)]
+    pub fn with_false_literal(
+        mut self,
+        literal: &str,
+    ) -> Result<Self, BooleanLiteralConflictError> {
+        self.false_literals.push(literal.to_string());
+        self.validate()?;
+        Ok(self)
+    }
+
     /// Returns whether literal matching is case-sensitive.
     ///
     /// # Returns
@@ -167,16 +215,6 @@ impl BooleanConversionOptions {
     #[inline(always)]
     pub const fn case_sensitive(&self) -> bool {
         self.case_sensitive
-    }
-
-    /// Returns the integer-to-boolean policy.
-    ///
-    /// # Returns
-    ///
-    /// The configured numeric boolean policy.
-    #[inline(always)]
-    pub const fn numeric_policy(&self) -> BooleanNumericPolicy {
-        self.numeric_policy
     }
 
     /// Returns a copy with boolean literal matching case sensitivity changed.
@@ -203,6 +241,16 @@ impl BooleanConversionOptions {
         Ok(self)
     }
 
+    /// Returns the integer-to-boolean policy.
+    ///
+    /// # Returns
+    ///
+    /// The configured numeric boolean policy.
+    #[inline(always)]
+    pub const fn numeric_policy(&self) -> BooleanNumericPolicy {
+        self.numeric_policy
+    }
+
     /// Returns a copy with a different integer-to-boolean policy.
     ///
     /// # Parameters
@@ -219,54 +267,6 @@ impl BooleanConversionOptions {
     ) -> Self {
         self.numeric_policy = numeric_policy;
         self
-    }
-
-    /// Returns a copy that accepts an additional true literal.
-    ///
-    /// # Parameters
-    ///
-    /// * `literal` - Literal to parse as `true`.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
-    /// false literal under the configured case-sensitivity rule.
-    #[inline(always)]
-    pub fn with_true_literal(
-        mut self,
-        literal: &str,
-    ) -> Result<Self, BooleanLiteralConflictError> {
-        self.true_literals.push(literal.to_string());
-        self.validate()?;
-        Ok(self)
-    }
-
-    /// Returns a copy that accepts an additional false literal.
-    ///
-    /// # Parameters
-    ///
-    /// * `literal` - Literal to parse as `false`.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
-    /// true literal under the configured case-sensitivity rule.
-    #[inline(always)]
-    pub fn with_false_literal(
-        mut self,
-        literal: &str,
-    ) -> Result<Self, BooleanLiteralConflictError> {
-        self.false_literals.push(literal.to_string());
-        self.validate()?;
-        Ok(self)
     }
 
     /// Parses a boolean literal using these options.

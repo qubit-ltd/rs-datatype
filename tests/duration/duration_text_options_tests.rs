@@ -28,6 +28,9 @@ fn test_duration_text_options_builders() {
     let options = DurationTextOptions::default()
         .with_suffixless_policy(SuffixlessDurationPolicy::Reject)
         .with_unit_suffix_set(DurationUnitSuffixSet::Ascii);
-    assert_eq!(options.suffixless_policy, SuffixlessDurationPolicy::Reject,);
-    assert_eq!(options.unit_suffix_set, DurationUnitSuffixSet::Ascii);
+    assert_eq!(
+        options.suffixless_policy(),
+        SuffixlessDurationPolicy::Reject,
+    );
+    assert_eq!(options.unit_suffix_set(), DurationUnitSuffixSet::Ascii);
 }

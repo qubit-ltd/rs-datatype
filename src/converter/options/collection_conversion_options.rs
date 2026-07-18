@@ -43,13 +43,13 @@ use serde::{
 #[serde(default, deny_unknown_fields)]
 pub struct CollectionConversionOptions {
     /// Whether a scalar string can be split into collection items.
-    pub split_scalar_strings: bool,
+    split_scalar_strings: bool,
     /// Delimiters used to split scalar strings.
-    pub delimiters: Vec<char>,
+    delimiters: Vec<char>,
     /// Whether split items are trimmed before element conversion.
-    pub trim_items: bool,
+    trim_items: bool,
     /// How empty split items are interpreted.
-    pub empty_item_policy: EmptyItemPolicy,
+    empty_item_policy: EmptyItemPolicy,
 }
 
 impl Default for CollectionConversionOptions {
@@ -84,6 +84,12 @@ impl CollectionConversionOptions {
         }
     }
 
+    /// Returns whether scalar strings are split into collection items.
+    #[inline(always)]
+    pub const fn split_scalar_strings(&self) -> bool {
+        self.split_scalar_strings
+    }
+
     /// Returns a copy with scalar string splitting enabled or disabled.
     ///
     /// # Parameters
@@ -100,6 +106,12 @@ impl CollectionConversionOptions {
     ) -> Self {
         self.split_scalar_strings = split_scalar_strings;
         self
+    }
+
+    /// Returns the delimiters used to split scalar strings.
+    #[inline(always)]
+    pub fn delimiters(&self) -> &[char] {
+        &self.delimiters
     }
 
     /// Returns a copy with different scalar string delimiters.
@@ -122,6 +134,12 @@ impl CollectionConversionOptions {
         self
     }
 
+    /// Returns whether collection items are trimmed before conversion.
+    #[inline(always)]
+    pub const fn trim_items(&self) -> bool {
+        self.trim_items
+    }
+
     /// Returns a copy with per-item trimming enabled or disabled.
     ///
     /// # Parameters
@@ -135,6 +153,12 @@ impl CollectionConversionOptions {
     pub fn with_trim_items(mut self, trim_items: bool) -> Self {
         self.trim_items = trim_items;
         self
+    }
+
+    /// Returns the empty collection item policy.
+    #[inline(always)]
+    pub const fn empty_item_policy(&self) -> EmptyItemPolicy {
+        self.empty_item_policy
     }
 
     /// Returns a copy with a different empty item policy.

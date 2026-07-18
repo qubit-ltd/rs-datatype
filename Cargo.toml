@@ -48,7 +48,7 @@ big-decimal = [
 big-number = ["big-integer", "big-decimal"]
 url = ["dep:url"]
 json = ["dep:serde_json"]
-converter = ["duration", "dep:num-bigint"]
+converter = ["duration"]
 all = ["converter", "chrono", "big-number", "url", "json"]
 
 [dependencies]

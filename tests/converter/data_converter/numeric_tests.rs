@@ -24,10 +24,14 @@ use chrono::{
 use num_bigint::BigInt;
 use proptest::proptest;
 use qubit_datatype::{
+    ConversionLimit,
     DataConversionOptions,
     DataConverter,
     DataType,
     InvalidValueReason,
+    NumericConversionLimits,
+    NumericConversionOptions,
+    StringConversionOptions,
 };
 use url::Url;
 
@@ -35,6 +39,15 @@ use url::Url;
 fn create_huge_bigint() -> BigInt {
     BigInt::parse_bytes(b"10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", 10)
         .expect("huge BigInt literal should parse")
+}
+
+/// Creates strict options with the supplied numeric resource limits.
+fn options_with_limits(
+    limits: NumericConversionLimits,
+) -> DataConversionOptions {
+    DataConversionOptions::strict().with_numeric_options(
+        NumericConversionOptions::strict().with_limits(limits),
+    )
 }
 
 /// Test conversions from borrowed and owned string values.
@@ -112,7 +125,7 @@ fn test_data_converter_signed_integer_targets_accept_supported_sources() {
         1_000_000
     );
     assert!(matches!(
-        DataConverter::Empty(DataType::Int128).to::<i128>(),
+        DataConverter::Unset(DataType::Int128).to::<i128>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
@@ -192,7 +205,7 @@ fn test_data_converter_unsigned_integer_targets_accept_supported_sources() {
         1_000_000
     );
     assert!(matches!(
-        DataConverter::Empty(DataType::UInt128).to::<u128>(),
+        DataConverter::Unset(DataType::UInt128).to::<u128>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
@@ -283,11 +296,11 @@ fn test_data_converter_float_targets_accept_supported_sources() {
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
     assert!(matches!(
-        DataConverter::Empty(DataType::Float32).to::<f32>(),
+        DataConverter::Unset(DataType::Float32).to::<f32>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
-        DataConverter::Empty(DataType::Float64).to::<f64>(),
+        DataConverter::Unset(DataType::Float64).to::<f64>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
@@ -425,7 +438,12 @@ fn test_data_converter_bigint_exponent_expansion_is_bounded() {
         assert!(matches!(
             result,
             Err(conversion_error)
-                if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)),
+                if conversion_error.kind() == DataConversionErrorKind::LimitExceeded
+                    && conversion_error.limit() == Some(
+                        &ConversionLimit::BigIntegerDigits {
+                            maximum: NumericConversionLimits::DEFAULT_MAX_BIG_INTEGER_DIGITS,
+                        },
+                    ),
         ));
     }
 }
@@ -603,7 +621,7 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
     ));
 }
 
-/// Test decimal text follows the numeric policy for BigInt targets.
+/// Test decimal text follows the fractional policy for BigInt targets.
 #[test]
 fn test_data_converter_big_integer_target_applies_policy_to_decimal_text() {
     assert_eq!(
@@ -669,7 +687,7 @@ fn test_data_converter_numeric_boundary_branches() {
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::NonFinite)),
     ));
     assert!(matches!(
-        DataConverter::Empty(DataType::Float32).to::<f32>(),
+        DataConverter::Unset(DataType::Float32).to::<f32>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing,
     ));
     assert!(matches!(
@@ -725,4 +743,119 @@ fn test_data_converter_numeric_boundary_branches() {
     assert!(DataConverter::from(&url).to::<BigDecimal>().is_err());
     assert!(DataConverter::from(&map).to::<BigDecimal>().is_err());
     assert!(DataConverter::from(&json).to::<BigDecimal>().is_err());
+}
+
+/// Test numeric text byte limits after string normalization.
+#[test]
+fn test_numeric_text_byte_limit_boundaries() {
+    let limits = NumericConversionLimits::default().with_max_text_bytes(3);
+    let options = options_with_limits(limits).with_string_options(
+        StringConversionOptions::default().with_trim(true),
+    );
+
+    assert_eq!(
+        DataConverter::from(" 123 ").to_with::<u32>(&options),
+        Ok(123),
+    );
+    let error = DataConverter::from("1234")
+        .to_with::<u32>(&options)
+        .expect_err("one byte over the configured limit must fail");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(error.from_type(), Some(DataType::String));
+    assert_eq!(error.to_type(), DataType::UInt32);
+    assert_eq!(
+        error.limit(),
+        Some(&ConversionLimit::NumericTextBytes { maximum: 3 }),
+    );
+    assert_eq!(error.reason(), None);
+}
+
+/// Test text-to-float rounding still enforces its text byte budget.
+#[test]
+fn test_numeric_text_limit_applies_before_float_parsing() {
+    let options = DataConversionOptions::strict().with_numeric_options(
+        NumericConversionOptions::env_friendly().with_limits(
+            NumericConversionLimits::default().with_max_text_bytes(3),
+        ),
+    );
+
+    assert_eq!(
+        DataConverter::from("0.1").to_with::<f32>(&options),
+        Ok(0.1_f32),
+    );
+    let error = DataConverter::from("0.10")
+        .to_with::<f32>(&options)
+        .expect_err("limit checking must precede target float parsing");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(
+        error.limit(),
+        Some(&ConversionLimit::NumericTextBytes { maximum: 3 }),
+    );
+}
+
+/// Test BigInteger decimal digit limits for text materialization.
+#[test]
+fn test_big_integer_digit_limit_text_boundaries() {
+    let at_limit = options_with_limits(
+        NumericConversionLimits::default().with_max_big_integer_digits(4),
+    );
+    assert_eq!(
+        DataConverter::from("1e3").to_with::<BigInt>(&at_limit),
+        Ok(BigInt::from(1_000)),
+    );
+
+    let over_limit = options_with_limits(
+        NumericConversionLimits::default().with_max_big_integer_digits(3),
+    );
+    let error = DataConverter::from("1e3")
+        .to_with::<BigInt>(&over_limit)
+        .expect_err("four result digits must exceed a three-digit limit");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(
+        error.limit(),
+        Some(&ConversionLimit::BigIntegerDigits { maximum: 3 }),
+    );
+
+    let zero_limit = options_with_limits(
+        NumericConversionLimits::default().with_max_big_integer_digits(0),
+    );
+    assert_eq!(
+        DataConverter::from("0e999").to_with::<BigInt>(&zero_limit),
+        Ok(BigInt::from(0)),
+    );
+    assert_eq!(
+        DataConverter::from("0001").to_with::<BigInt>(&options_with_limits(
+            NumericConversionLimits::default().with_max_big_integer_digits(1),
+        )),
+        Ok(BigInt::from(1)),
+    );
+    assert!(matches!(
+        DataConverter::from("1").to_with::<BigInt>(&zero_limit),
+        Err(error) if error.kind() == DataConversionErrorKind::LimitExceeded,
+    ));
+}
+
+/// Test BigDecimal expansion uses the configurable BigInteger digit limit.
+#[test]
+fn test_big_integer_digit_limit_big_decimal_expansion() {
+    let decimal = BigDecimal::new(BigInt::from(1), -3);
+    let at_limit = options_with_limits(
+        NumericConversionLimits::default().with_max_big_integer_digits(4),
+    );
+    assert_eq!(
+        DataConverter::from(&decimal).to_with::<BigInt>(&at_limit),
+        Ok(BigInt::from(1_000)),
+    );
+
+    let over_limit = options_with_limits(
+        NumericConversionLimits::default().with_max_big_integer_digits(3),
+    );
+    let error = DataConverter::from(&decimal)
+        .to_with::<BigInt>(&over_limit)
+        .expect_err("BigDecimal expansion must honor the digit limit");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(
+        error.limit(),
+        Some(&ConversionLimit::BigIntegerDigits { maximum: 3 }),
+    );
 }

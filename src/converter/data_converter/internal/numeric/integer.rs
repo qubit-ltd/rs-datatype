@@ -13,16 +13,19 @@ use std::time::Duration;
 use num_traits::ToPrimitive;
 
 use super::super::super::DataConverter;
-use super::super::super::string_source::normalize;
 #[cfg(feature = "big-decimal")]
 use super::big_number::decimal_to_bigint;
-use super::syntax::parse_text_integer;
+use super::syntax::{
+    normalize_numeric_text,
+    parse_text_integer,
+};
 use crate::converter::{
     DataConversionError,
     DataConversionOptions,
     DataConversionTarget,
+    DurationRoundingPolicy,
+    FractionalToIntegerPolicy,
     InvalidValueReason,
-    NumericConversionPolicy,
 };
 use crate::datatype::DataType;
 
@@ -45,7 +48,7 @@ pub(super) fn signed_magnitude(value: i128) -> (bool, u128) {
 /// # Parameters
 ///
 /// * `value` - Floating-point value to convert.
-/// * `policy` - Exact or lossy numeric conversion policy.
+/// * `policy` - Fractional-to-integer conversion policy.
 /// * `from` - Source type retained in conversion errors.
 /// * `to` - Target type retained in conversion errors.
 ///
@@ -59,7 +62,7 @@ pub(super) fn signed_magnitude(value: i128) -> (bool, u128) {
 /// satisfy `policy`.
 fn float_to_integer(
     value: f64,
-    policy: NumericConversionPolicy,
+    policy: FractionalToIntegerPolicy,
     from: DataType,
     to: DataType,
 ) -> Result<(bool, u128), DataConversionError> {
@@ -70,7 +73,7 @@ fn float_to_integer(
             InvalidValueReason::NonFinite,
         ));
     }
-    if policy == NumericConversionPolicy::Exact && value.fract() != 0.0 {
+    if policy == FractionalToIntegerPolicy::Reject && value.fract() != 0.0 {
         return Err(DataConversionError::invalid(
             from,
             to,
@@ -79,7 +82,7 @@ fn float_to_integer(
     }
     match parse_text_integer(
         &value.trunc().to_string(),
-        NumericConversionPolicy::Lossy,
+        FractionalToIntegerPolicy::Truncate,
         to,
     ) {
         Ok(value) => Ok(value),
@@ -131,13 +134,13 @@ pub(in crate::converter::data_converter) fn source_to_integer(
         DataConverter::UInt128(value) => Ok((false, *value)),
         DataConverter::Float32(value) => float_to_integer(
             f64::from(*value),
-            options.numeric_policy,
+            options.numeric().fractional_to_integer(),
             DataType::Float32,
             to,
         ),
         DataConverter::Float64(value) => float_to_integer(
             *value,
-            options.numeric_policy,
+            options.numeric().fractional_to_integer(),
             DataType::Float64,
             to,
         ),
@@ -159,7 +162,8 @@ pub(in crate::converter::data_converter) fn source_to_integer(
         DataConverter::BigDecimal(value) => {
             let integer = decimal_to_bigint(
                 value,
-                options.numeric_policy,
+                options.numeric().fractional_to_integer(),
+                options.numeric().limits().max_big_integer_digits(),
                 DataType::BigDecimal,
                 to,
             )?;
@@ -176,41 +180,46 @@ pub(in crate::converter::data_converter) fn source_to_integer(
             }
         }
         DataConverter::String(value) => {
-            let value = normalize(value, options, to)?;
-            parse_text_integer(value, options.numeric_policy, to)
+            let value = normalize_numeric_text(value, options, to)?;
+            parse_text_integer(
+                value,
+                options.numeric().fractional_to_integer(),
+                to,
+            )
         }
         DataConverter::Duration(value) => {
             Ok((false, duration_to_u128(*value, options, to)?))
         }
-        DataConverter::Empty(_) => Err(source.missing(to)),
+        DataConverter::Unset(_) => Err(source.missing(to)),
         _ => Err(source.unsupported(to)),
     }
 }
 
-/// Converts a duration to unsigned integer units under the numeric policy.
+/// Converts a Duration to unsigned integer units under its rounding policy.
 ///
 /// # Parameters
 ///
 /// * `duration` - Duration to express in configured output units.
-/// * `options` - Duration unit and numeric exactness policies.
+/// * `options` - Duration output unit and rounding policy.
 /// * `to` - Target type retained in conversion errors.
 ///
 /// # Returns
 ///
-/// The exact unit count, or the half-up rounded count in lossy mode.
+/// The exact unit count, or the half-up rounded count when configured.
 ///
 /// # Errors
 ///
-/// Returns a precision error when exact mode encounters a sub-unit remainder.
+/// Returns a precision error when the reject policy encounters a sub-unit
+/// remainder.
 pub(in crate::converter::data_converter) fn duration_to_u128(
     duration: Duration,
     options: &DataConversionOptions,
     to: DataType,
 ) -> Result<u128, DataConversionError> {
-    if options.numeric_policy == NumericConversionPolicy::Exact {
+    if options.duration().rounding_policy() == DurationRoundingPolicy::Reject {
         options
-            .duration
-            .output_unit
+            .duration()
+            .output_unit()
             .exact_units(duration)
             .ok_or_else(|| {
                 DataConversionError::invalid(
@@ -220,7 +229,7 @@ pub(in crate::converter::data_converter) fn duration_to_u128(
                 )
             })
     } else {
-        Ok(options.duration.output_unit.rounded_units(duration))
+        Ok(options.duration().output_unit().rounded_units(duration))
     }
 }
 

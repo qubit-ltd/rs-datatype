@@ -8,6 +8,7 @@
 //! Tests for variant-specific data conversion error details.
 
 use qubit_datatype::{
+    ConversionLimit,
     DataConversionError,
     DataType,
     InvalidValueReason,
@@ -38,5 +39,14 @@ fn test_data_conversion_error_inner_display() {
         )
         .to_string(),
         "Invalid conversion from string to int32: precision loss",
+    );
+    assert_eq!(
+        DataConversionError::limit_exceeded(
+            DataType::String,
+            DataType::BigInteger,
+            ConversionLimit::BigIntegerDigits { maximum: 12 },
+        )
+        .to_string(),
+        "Conversion limit exceeded from string to biginteger: BigInteger result exceeds the 12-decimal-digit limit",
     );
 }

@@ -22,4 +22,6 @@ pub enum DataConversionErrorKind {
     Unsupported,
     /// The type pair is supported but the source value is invalid.
     InvalidValue,
+    /// A configured conversion resource limit was exceeded.
+    LimitExceeded,
 }

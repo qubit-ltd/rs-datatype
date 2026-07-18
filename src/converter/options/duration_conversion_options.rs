@@ -11,12 +11,15 @@
 
 use crate::duration::{
     DurationUnit,
+    DurationUnitSuffixSet,
     SuffixlessDurationPolicy,
 };
 use serde::{
     Deserialize,
     Serialize,
 };
+
+use super::DurationRoundingPolicy;
 
 /// Controls scalar conversions to and from [`std::time::Duration`].
 ///
@@ -59,13 +62,17 @@ use serde::{
 #[serde(default, deny_unknown_fields)]
 pub struct DurationConversionOptions {
     /// Unit assigned to integer sources converted to [`std::time::Duration`].
-    pub numeric_input_unit: DurationUnit,
+    numeric_input_unit: DurationUnit,
     /// Policy for Duration strings that omit an explicit unit suffix.
-    pub suffixless_string_policy: SuffixlessDurationPolicy,
+    suffixless_string_policy: SuffixlessDurationPolicy,
+    /// Set of explicit unit suffixes accepted in Duration text.
+    unit_suffix_set: DurationUnitSuffixSet,
     /// Unit used when converting a Duration to an integer or string.
-    pub output_unit: DurationUnit,
+    output_unit: DurationUnit,
     /// Whether formatted duration strings include the unit suffix.
-    pub append_unit_suffix: bool,
+    append_unit_suffix: bool,
+    /// Policy for Duration output that has a remainder in the selected unit.
+    rounding_policy: DurationRoundingPolicy,
 }
 
 impl DurationConversionOptions {
@@ -83,6 +90,12 @@ impl DurationConversionOptions {
         Self::default()
     }
 
+    /// Returns the unit assigned to integer sources.
+    #[inline(always)]
+    pub const fn numeric_input_unit(&self) -> DurationUnit {
+        self.numeric_input_unit
+    }
+
     /// Returns a copy with a different numeric input unit.
     ///
     /// # Parameters
@@ -96,6 +109,12 @@ impl DurationConversionOptions {
     pub fn with_numeric_input_unit(mut self, unit: DurationUnit) -> Self {
         self.numeric_input_unit = unit;
         self
+    }
+
+    /// Returns the policy for Duration text without an explicit suffix.
+    #[inline(always)]
+    pub const fn suffixless_string_policy(&self) -> SuffixlessDurationPolicy {
+        self.suffixless_string_policy
     }
 
     /// Returns a copy with a different suffixless string policy.
@@ -116,6 +135,28 @@ impl DurationConversionOptions {
         self
     }
 
+    /// Returns the set of explicit suffixes accepted in Duration text.
+    #[inline(always)]
+    pub const fn unit_suffix_set(&self) -> DurationUnitSuffixSet {
+        self.unit_suffix_set
+    }
+
+    /// Returns a copy with a different accepted Duration suffix set.
+    #[inline(always)]
+    pub const fn with_unit_suffix_set(
+        mut self,
+        unit_suffix_set: DurationUnitSuffixSet,
+    ) -> Self {
+        self.unit_suffix_set = unit_suffix_set;
+        self
+    }
+
+    /// Returns the unit used for Duration output.
+    #[inline(always)]
+    pub const fn output_unit(&self) -> DurationUnit {
+        self.output_unit
+    }
+
     /// Returns a copy with a different Duration output unit.
     ///
     /// # Parameters
@@ -130,6 +171,12 @@ impl DurationConversionOptions {
     pub fn with_output_unit(mut self, unit: DurationUnit) -> Self {
         self.output_unit = unit;
         self
+    }
+
+    /// Returns whether formatted Duration text includes a unit suffix.
+    #[inline(always)]
+    pub const fn append_unit_suffix(&self) -> bool {
+        self.append_unit_suffix
     }
 
     /// Returns a copy with suffix formatting enabled or disabled.
@@ -147,6 +194,22 @@ impl DurationConversionOptions {
         self.append_unit_suffix = append_unit_suffix;
         self
     }
+
+    /// Returns the Duration output rounding policy.
+    #[inline(always)]
+    pub const fn rounding_policy(&self) -> DurationRoundingPolicy {
+        self.rounding_policy
+    }
+
+    /// Returns a copy with a different Duration output rounding policy.
+    #[inline(always)]
+    pub const fn with_rounding_policy(
+        mut self,
+        rounding_policy: DurationRoundingPolicy,
+    ) -> Self {
+        self.rounding_policy = rounding_policy;
+        self
+    }
 }
 
 impl Default for DurationConversionOptions {
@@ -155,8 +218,10 @@ impl Default for DurationConversionOptions {
         Self {
             numeric_input_unit: DurationUnit::default(),
             suffixless_string_policy: SuffixlessDurationPolicy::default(),
+            unit_suffix_set: DurationUnitSuffixSet::default(),
             output_unit: DurationUnit::default(),
             append_unit_suffix: true,
+            rounding_policy: DurationRoundingPolicy::default(),
         }
     }
 }

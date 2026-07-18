@@ -57,7 +57,7 @@ impl DataConversionTarget for serde_json::Value {
                     })
                     .collect(),
             )),
-            DataConverter::Empty(_) => Err(source.missing(DataType::Json)),
+            DataConverter::Unset(_) => Err(source.missing(DataType::Json)),
             _ => Err(source.unsupported(DataType::Json)),
         }
     }
@@ -109,7 +109,7 @@ impl DataConversionTarget for HashMap<String, String> {
                     )),
                 }
             }
-            DataConverter::Empty(_) => Err(source.missing(DataType::StringMap)),
+            DataConverter::Unset(_) => Err(source.missing(DataType::StringMap)),
             _ => Err(source.unsupported(DataType::StringMap)),
         }
     }

@@ -7,14 +7,12 @@
 // =============================================================================
 //! Exact decimal-text parsing for primitive floating-point targets.
 
-use num_bigint::BigUint;
-
 use super::syntax::invalid_numeric_syntax;
 use crate::converter::{
     DataConversionError,
     DataConversionOptions,
+    FloatRoundingPolicy,
     InvalidValueReason,
-    NumericConversionPolicy,
 };
 use crate::datatype::DataType;
 
@@ -28,9 +26,9 @@ use crate::datatype::DataType;
 /// # Returns
 ///
 /// The unsigned significand and its signed binary exponent.
-fn finite_float_parts(value: f64) -> (u128, i128) {
+fn finite_float_parts(value: f64) -> (u128, i32) {
     let bits = value.abs().to_bits();
-    let exponent = i128::from(((bits >> 52) & 0x7ff) as u16);
+    let exponent = i32::from(((bits >> 52) & 0x7ff) as u16);
     let fraction = u128::from(bits & 0x000f_ffff_ffff_ffff);
     if exponent == 0 {
         (fraction, -1074)
@@ -39,95 +37,73 @@ fn finite_float_parts(value: f64) -> (u128, i128) {
     }
 }
 
-/// Removes factors of two and five from an unsigned integer.
+/// Returns the little-endian decimal digits of a positive integer.
 ///
 /// # Parameters
 ///
-/// * `value` - Non-zero integer to factor.
+/// * `value` - Positive integer to expand.
 ///
 /// # Returns
 ///
-/// The remaining coprime value, the number of factors of two, and the number
-/// of factors of five.
-fn factor_u128(mut value: u128) -> (u128, i128, i128) {
-    let twos = value.trailing_zeros();
-    value >>= twos;
-    let mut fives = 0i128;
-    while value.is_multiple_of(5) {
-        value /= 5;
-        fives += 1;
+/// Decimal digits with the least significant digit first.
+fn decimal_digits(mut value: u128) -> Vec<u8> {
+    let mut digits = Vec::new();
+    while value != 0 {
+        digits.push((value % 10) as u8);
+        value /= 10;
     }
-    (value, i128::from(twos), fives)
+    digits
 }
 
-/// Compares a bounded decimal coefficient with a parsed finite float.
+/// Multiplies little-endian decimal digits by a small factor.
 ///
 /// # Parameters
 ///
-/// * `coefficient` - Non-zero coefficient before the decimal scale.
-/// * `scale` - Signed number of base-ten fractional digits.
-/// * `converted` - Non-zero finite float parsed from the source text.
-///
-/// # Returns
-///
-/// `true` if both values have identical prime-factor decompositions.
-fn bounded_coefficient_is_exact_float(
-    coefficient: u128,
-    scale: i128,
-    converted: f64,
-) -> bool {
-    let (decimal_residual, decimal_twos, decimal_fives) =
-        factor_u128(coefficient);
-    let (float_significand, float_exponent) = finite_float_parts(converted);
-    let (float_residual, float_twos, float_fives) =
-        factor_u128(float_significand);
-    decimal_residual == float_residual
-        && decimal_twos - scale == float_twos + float_exponent
-        && decimal_fives - scale == float_fives
+/// * `digits` - Mutable little-endian decimal digits.
+/// * `factor` - Single decimal multiplication factor.
+fn multiply_decimal_digits(digits: &mut Vec<u8>, factor: u8) {
+    let mut carry = 0_u16;
+    for digit in digits.iter_mut() {
+        let product = u16::from(*digit) * u16::from(factor) + carry;
+        *digit = (product % 10) as u8;
+        carry = product / 10;
+    }
+    while carry != 0 {
+        digits.push((carry % 10) as u8);
+        carry /= 10;
+    }
 }
 
-/// Compares an unbounded decimal coefficient with a parsed finite float.
+/// Expands a non-zero finite float into a canonical decimal coefficient.
 ///
 /// # Parameters
 ///
-/// * `mantissa` - Decimal mantissa containing digits and at most one point.
-/// * `significant_digit_count` - Number of coefficient digits to retain.
-/// * `scale` - Signed number of base-ten fractional digits.
-/// * `converted` - Non-zero finite float parsed from the source text.
+/// * `value` - Non-zero finite floating-point value.
 ///
 /// # Returns
 ///
-/// `true` if both values have identical prime-factor decompositions.
-fn unbounded_coefficient_is_exact_float(
-    mantissa: &str,
-    significant_digit_count: usize,
-    scale: i128,
-    converted: f64,
-) -> bool {
-    let digits = mantissa
-        .bytes()
-        .filter(u8::is_ascii_digit)
-        .take(significant_digit_count)
-        .collect::<Vec<_>>();
-    let Some(mut coefficient) = BigUint::parse_bytes(&digits, 10) else {
-        return false;
+/// Little-endian coefficient digits, the number of low decimal zero digits to
+/// ignore, and the signed decimal scale after canonicalization.
+fn exact_float_decimal(value: f64) -> (Vec<u8>, usize, i128) {
+    let (mut significand, exponent) = finite_float_parts(value);
+    let (factor, multiplication_count, mut scale) = if exponent >= 0 {
+        (2_u8, exponent.unsigned_abs(), 0_i128)
+    } else {
+        let denominator_power = exponent.unsigned_abs();
+        let cancelled = significand.trailing_zeros().min(denominator_power);
+        significand >>= cancelled;
+        let remaining = denominator_power - cancelled;
+        (5_u8, remaining, i128::from(remaining))
     };
-    let decimal_twos = coefficient.trailing_zeros().unwrap_or(0);
-    let (float_significand, float_exponent) = finite_float_parts(converted);
-    let (float_residual, float_twos, float_fives) =
-        factor_u128(float_significand);
-    if i128::from(decimal_twos) - scale != float_twos + float_exponent {
-        return false;
-    }
-    coefficient >>= decimal_twos;
-    let mut decimal_fives = 0i128;
-    while (&coefficient % 5_u8).bits() == 0 {
-        coefficient /= 5_u8;
-        decimal_fives += 1;
-    }
 
-    coefficient == BigUint::from(float_residual)
-        && decimal_fives - scale == float_fives
+    let mut digits = decimal_digits(significand);
+    for _ in 0..multiplication_count {
+        multiply_decimal_digits(&mut digits, factor);
+    }
+    let trailing_zeros = digits.iter().take_while(|digit| **digit == 0).count();
+    scale -= i128::try_from(trailing_zeros)
+        .expect("a finite float expansion fits in i128");
+    (digits, trailing_zeros, scale)
 }
 
 /// Tests whether decimal text denotes an exactly representable finite float.
@@ -154,11 +130,20 @@ fn text_is_exact_float(value: &str, converted: f64) -> bool {
     let mut decimal_seen = false;
     let mut fractional_digits = 0i128;
     let mut digit_count = 0usize;
+    let mut leading_zeros = 0usize;
     let mut trailing_zeros = 0usize;
+    let mut non_zero_seen = false;
     for byte in mantissa.bytes() {
         match byte {
             b'0'..=b'9' => {
                 digit_count += 1;
+                if !non_zero_seen {
+                    if byte == b'0' {
+                        leading_zeros += 1;
+                    } else {
+                        non_zero_seen = true;
+                    }
+                }
                 trailing_zeros =
                     if byte == b'0' { trailing_zeros + 1 } else { 0 };
                 if decimal_seen {
@@ -173,9 +158,12 @@ fn text_is_exact_float(value: &str, converted: f64) -> bool {
         return false;
     }
 
-    let significant_digit_count = digit_count - trailing_zeros;
-    if significant_digit_count == 0 {
+    if !non_zero_seen {
         return converted == 0.0;
+    }
+    let significant_digit_count = digit_count - leading_zeros - trailing_zeros;
+    if converted == 0.0 {
+        return false;
     }
     let exponent = if let Some(exponent_text) = exponent_text {
         let Ok(exponent) = exponent_text.parse::<i64>() else {
@@ -188,32 +176,20 @@ fn text_is_exact_float(value: &str, converted: f64) -> bool {
     let scale = fractional_digits
         - i128::from(exponent)
         - i128::try_from(trailing_zeros).unwrap_or(i128::MAX);
-    let mut coefficient = 0u128;
-    for (digit_index, byte) in
-        mantissa.bytes().filter(u8::is_ascii_digit).enumerate()
+    let (float_digits, float_trailing_zeros, float_scale) =
+        exact_float_decimal(converted);
+    if scale != float_scale
+        || significant_digit_count != float_digits.len() - float_trailing_zeros
     {
-        if digit_index == significant_digit_count {
-            break;
-        }
-        let Some(next) = coefficient
-            .checked_mul(10)
-            .and_then(|value| value.checked_add(u128::from(byte - b'0')))
-        else {
-            return converted != 0.0
-                && unbounded_coefficient_is_exact_float(
-                    mantissa,
-                    significant_digit_count,
-                    scale,
-                    converted,
-                );
-        };
-        coefficient = next;
+        return false;
     }
-    if coefficient == 0 {
-        return converted == 0.0;
-    }
-    converted != 0.0
-        && bounded_coefficient_is_exact_float(coefficient, scale, converted)
+    mantissa
+        .bytes()
+        .filter(u8::is_ascii_digit)
+        .skip(leading_zeros)
+        .take(significant_digit_count)
+        .map(|digit| digit - b'0')
+        .eq(float_digits[float_trailing_zeros..].iter().rev().copied())
 }
 
 /// Returns the sign of an explicitly named IEEE infinity.
@@ -285,7 +261,7 @@ pub(super) fn parse_text_f64(
             InvalidValueReason::OutOfRange,
         ));
     }
-    if options.numeric_policy == NumericConversionPolicy::Exact
+    if options.numeric().text_to_float() == FloatRoundingPolicy::Exact
         && converted.is_finite()
         && !text_is_exact_float(value, converted)
     {
@@ -342,7 +318,7 @@ pub(super) fn parse_text_f32(
             InvalidValueReason::OutOfRange,
         ));
     }
-    if options.numeric_policy == NumericConversionPolicy::Exact
+    if options.numeric().text_to_float() == FloatRoundingPolicy::Exact
         && converted.is_finite()
         && !text_is_exact_float(value, f64::from(converted))
     {

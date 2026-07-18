@@ -8,7 +8,6 @@
 //! Primitive floating-point target dispatch.
 
 use super::super::super::DataConverter;
-use super::super::super::string_source::normalize;
 #[cfg(feature = "big-integer")]
 use super::float_big_number::{
     bigint_to_f32,
@@ -24,12 +23,13 @@ use super::float_text::{
     parse_text_f64,
 };
 use super::integer::signed_magnitude;
+use super::syntax::normalize_numeric_text;
 use crate::converter::{
     DataConversionError,
     DataConversionOptions,
     DataConversionTarget,
+    FloatRoundingPolicy,
     InvalidValueReason,
-    NumericConversionPolicy,
 };
 use crate::datatype::DataType;
 
@@ -52,12 +52,12 @@ fn unsigned_integer_is_exact(value: u128, mantissa_digits: u32) -> bool {
         || value.trailing_zeros() >= significant_bits - mantissa_digits
 }
 
-/// Converts an integer intermediate to `f64` under the numeric policy.
+/// Converts an integer intermediate to `f64` under a float rounding policy.
 ///
 /// # Parameters
 ///
 /// * `value` - Sign and magnitude of the integer.
-/// * `policy` - Exact or lossy conversion policy.
+/// * `policy` - Exact or nearest-even float rounding policy.
 /// * `from` - Source type retained in conversion errors.
 /// * `to` - Target type retained in conversion errors.
 ///
@@ -70,7 +70,7 @@ fn unsigned_integer_is_exact(value: u128, mantissa_digits: u32) -> bool {
 /// Returns a precision error when exact conversion would round the integer.
 fn integer_to_f64(
     value: (bool, u128),
-    policy: NumericConversionPolicy,
+    policy: FloatRoundingPolicy,
     from: DataType,
     to: DataType,
 ) -> Result<f64, DataConversionError> {
@@ -81,7 +81,7 @@ fn integer_to_f64(
         magnitude as f64
     };
     let exact = unsigned_integer_is_exact(magnitude, f64::MANTISSA_DIGITS);
-    if policy == NumericConversionPolicy::Exact && !exact {
+    if policy == FloatRoundingPolicy::Exact && !exact {
         Err(DataConversionError::invalid(
             from,
             to,
@@ -92,12 +92,12 @@ fn integer_to_f64(
     }
 }
 
-/// Converts an integer intermediate to `f32` under the numeric policy.
+/// Converts an integer intermediate to `f32` under a float rounding policy.
 ///
 /// # Parameters
 ///
 /// * `value` - Sign and magnitude of the integer.
-/// * `policy` - Exact or lossy conversion policy.
+/// * `policy` - Exact or nearest-even float rounding policy.
 /// * `from` - Source type retained in conversion errors.
 /// * `to` - Target type retained in conversion errors.
 ///
@@ -111,7 +111,7 @@ fn integer_to_f64(
 /// conversion would round the integer.
 fn integer_to_f32(
     value: (bool, u128),
-    policy: NumericConversionPolicy,
+    policy: FloatRoundingPolicy,
     from: DataType,
     to: DataType,
 ) -> Result<f32, DataConversionError> {
@@ -129,7 +129,7 @@ fn integer_to_f32(
         ));
     }
     let exact = unsigned_integer_is_exact(magnitude, f32::MANTISSA_DIGITS);
-    if policy == NumericConversionPolicy::Exact && !exact {
+    if policy == FloatRoundingPolicy::Exact && !exact {
         Err(DataConversionError::invalid(
             from,
             to,
@@ -168,83 +168,83 @@ fn source_to_f64(
         DataConverter::Char(value) => Ok(f64::from(*value as u32)),
         DataConverter::Int8(value) => integer_to_f64(
             signed_magnitude(i128::from(*value)),
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::Int8,
             to,
         ),
         DataConverter::Int16(value) => integer_to_f64(
             signed_magnitude(i128::from(*value)),
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::Int16,
             to,
         ),
         DataConverter::Int32(value) => integer_to_f64(
             signed_magnitude(i128::from(*value)),
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::Int32,
             to,
         ),
         DataConverter::Int64(value) => integer_to_f64(
             signed_magnitude(i128::from(*value)),
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::Int64,
             to,
         ),
         DataConverter::Int128(value) => integer_to_f64(
             signed_magnitude(*value),
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::Int128,
             to,
         ),
         DataConverter::UInt8(value) => integer_to_f64(
             (false, u128::from(*value)),
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::UInt8,
             to,
         ),
         DataConverter::UInt16(value) => integer_to_f64(
             (false, u128::from(*value)),
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::UInt16,
             to,
         ),
         DataConverter::UInt32(value) => integer_to_f64(
             (false, u128::from(*value)),
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::UInt32,
             to,
         ),
         DataConverter::UInt64(value) => integer_to_f64(
             (false, u128::from(*value)),
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::UInt64,
             to,
         ),
         DataConverter::UInt128(value) => integer_to_f64(
             (false, *value),
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::UInt128,
             to,
         ),
         #[cfg(feature = "big-integer")]
         DataConverter::BigInteger(value) => bigint_to_f64(
             value,
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::BigInteger,
             to,
         ),
         #[cfg(feature = "big-decimal")]
         DataConverter::BigDecimal(value) => decimal_to_f64(
             value,
-            options.numeric_policy,
+            options.numeric().numeric_to_float(),
             DataType::BigDecimal,
             to,
         ),
         DataConverter::String(value) => {
-            let value = normalize(value, options, to)?;
+            let value = normalize_numeric_text(value, options, to)?;
             parse_text_f64(value, options, to)
         }
-        DataConverter::Empty(_) => Err(source.missing(to)),
+        DataConverter::Unset(_) => Err(source.missing(to)),
         _ => Err(source.unsupported(to)),
     }
 }
@@ -283,7 +283,8 @@ impl DataConversionTarget for f32 {
                         source.invalid(to, InvalidValueReason::OutOfRange)
                     );
                 }
-                if options.numeric_policy == NumericConversionPolicy::Exact
+                if options.numeric().numeric_to_float()
+                    == FloatRoundingPolicy::Exact
                     && f64::from(converted) != *value
                 {
                     Err(source.invalid(to, InvalidValueReason::PrecisionLoss))
@@ -295,83 +296,83 @@ impl DataConversionTarget for f32 {
             DataConverter::Char(value) => Ok(*value as u32 as f32),
             DataConverter::Int8(value) => integer_to_f32(
                 signed_magnitude(i128::from(*value)),
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::Int8,
                 to,
             ),
             DataConverter::Int16(value) => integer_to_f32(
                 signed_magnitude(i128::from(*value)),
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::Int16,
                 to,
             ),
             DataConverter::Int32(value) => integer_to_f32(
                 signed_magnitude(i128::from(*value)),
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::Int32,
                 to,
             ),
             DataConverter::Int64(value) => integer_to_f32(
                 signed_magnitude(i128::from(*value)),
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::Int64,
                 to,
             ),
             DataConverter::Int128(value) => integer_to_f32(
                 signed_magnitude(*value),
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::Int128,
                 to,
             ),
             DataConverter::UInt8(value) => integer_to_f32(
                 (false, u128::from(*value)),
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::UInt8,
                 to,
             ),
             DataConverter::UInt16(value) => integer_to_f32(
                 (false, u128::from(*value)),
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::UInt16,
                 to,
             ),
             DataConverter::UInt32(value) => integer_to_f32(
                 (false, u128::from(*value)),
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::UInt32,
                 to,
             ),
             DataConverter::UInt64(value) => integer_to_f32(
                 (false, u128::from(*value)),
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::UInt64,
                 to,
             ),
             DataConverter::UInt128(value) => integer_to_f32(
                 (false, *value),
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::UInt128,
                 to,
             ),
             #[cfg(feature = "big-integer")]
             DataConverter::BigInteger(value) => bigint_to_f32(
                 value,
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::BigInteger,
                 to,
             ),
             #[cfg(feature = "big-decimal")]
             DataConverter::BigDecimal(value) => decimal_to_f32(
                 value,
-                options.numeric_policy,
+                options.numeric().numeric_to_float(),
                 DataType::BigDecimal,
                 to,
             ),
             DataConverter::String(value) => {
-                let value = normalize(value, options, to)?;
+                let value = normalize_numeric_text(value, options, to)?;
                 parse_text_f32(value, options, to)
             }
-            DataConverter::Empty(_) => Err(source.missing(to)),
+            DataConverter::Unset(_) => Err(source.missing(to)),
             _ => Err(source.unsupported(to)),
         }
     }

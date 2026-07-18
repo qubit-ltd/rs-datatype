@@ -19,6 +19,7 @@ fn test_data_conversion_error_kind_is_copyable_and_comparable() {
         DataConversionErrorKind::EmptyCollection,
         DataConversionErrorKind::Unsupported,
         DataConversionErrorKind::InvalidValue,
+        DataConversionErrorKind::LimitExceeded,
     ];
     for kind in kinds {
         let copied = kind;

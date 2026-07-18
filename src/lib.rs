@@ -27,11 +27,14 @@
 //! enables StringMap parsing and formatting. Other type pairs return
 //! `DataConversionErrorKind::Unsupported`.
 //!
-//! Numeric conversion defaults to `NumericConversionPolicy::Exact`, which
-//! rejects truncation, rounding, and precision loss. Explicit `Lossy` mode
-//! permits finite decimal/float truncation toward zero, integer-to-float IEEE
-//! rounding, and Duration half-up rounding. Duration-to-integer and
-//! Duration-to-String require exact divisibility in Exact mode.
+//! [`NumericConversionOptions`] configures fractional-to-integer conversion,
+//! existing-numeric-to-float rounding, text-to-float rounding, and resource
+//! limits independently. The strict/default profile rejects truncation and
+//! precision loss. [`DataConversionOptions::lossy`] permits finite
+//! decimal/float truncation toward zero, IEEE nearest-even float rounding, and
+//! Duration half-up rounding. Duration-to-integer and Duration-to-String
+//! require exact divisibility unless [`DurationRoundingPolicy::HalfUp`] is
+//! selected explicitly.
 //!
 //! Strings are not trimmed by default and are normalized exactly once.
 //! Boolean text defaults to `true` and `false`; numeric 0/1 handling is
@@ -80,6 +83,7 @@ pub use converter::{
     BooleanLiteralConflictError,
     BooleanNumericPolicy,
     CollectionConversionOptions,
+    ConversionLimit,
     DataConversionError,
     DataConversionErrorKind,
     DataConversionOptions,
@@ -89,9 +93,13 @@ pub use converter::{
     DataFormat,
     DataListConversionError,
     DurationConversionOptions,
+    DurationRoundingPolicy,
     EmptyItemPolicy,
+    FloatRoundingPolicy,
+    FractionalToIntegerPolicy,
     InvalidValueReason,
-    NumericConversionPolicy,
+    NumericConversionLimits,
+    NumericConversionOptions,
     ScalarItem,
     ScalarItemError,
     ScalarItems,

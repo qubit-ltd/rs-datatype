@@ -88,7 +88,7 @@ mod text;
 #[non_exhaustive]
 pub enum DataConverter<'a> {
     /// Missing source whose declared type remains known.
-    Empty(DataType),
+    Unset(DataType),
     /// Boolean source value.
     Bool(bool),
     /// Unicode scalar source value.
@@ -205,7 +205,7 @@ impl DataConverter<'_> {
 
     /// Returns the runtime type of the wrapped source.
     ///
-    /// For [`Self::Empty`], this returns the declared type stored in the
+    /// For [`Self::Unset`], this returns the declared type stored in the
     /// variant rather than a generic missing-value type.
     ///
     /// # Returns
@@ -213,7 +213,7 @@ impl DataConverter<'_> {
     /// Returns the [`DataType`] corresponding to this enum variant.
     pub const fn data_type(&self) -> DataType {
         match self {
-            Self::Empty(data_type) => *data_type,
+            Self::Unset(data_type) => *data_type,
             Self::Bool(_) => DataType::Bool,
             Self::Char(_) => DataType::Char,
             Self::Int8(_) => DataType::Int8,

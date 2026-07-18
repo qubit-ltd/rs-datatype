@@ -16,7 +16,6 @@ use super::error::{
     DataListConversionError,
 };
 use super::options::DataConversionOptions;
-use crate::datatype::DataTypeOf;
 
 /// Converts a scalar string as a configurable collection source.
 ///
@@ -64,7 +63,6 @@ impl<'a> ScalarStringDataConverters<'a> {
     #[inline(always)]
     pub fn to_vec<T>(self) -> Result<Vec<T>, DataListConversionError>
     where
-        T: DataTypeOf,
         T: DataConversionTarget,
     {
         self.to_vec_with(DataConversionOptions::default_ref())
@@ -95,19 +93,9 @@ impl<'a> ScalarStringDataConverters<'a> {
     ) -> Result<Vec<T>, DataListConversionError>
     where
         'a: 'b,
-        T: DataTypeOf,
         T: DataConversionTarget,
     {
-        let text = match options.string.normalize(self.source) {
-            Ok(text) => text,
-            Err(error) => {
-                return Err(DataListConversionError::new(
-                    0,
-                    error.into_data_conversion_error(T::DATA_TYPE),
-                ));
-            }
-        };
-        let items = options.collection.scalar_items(text);
+        let items = options.collection().scalar_items(self.source);
         let mut converted = Vec::new();
         for item in items {
             let item = item.map_err(|error| {
@@ -145,7 +133,6 @@ impl<'a> ScalarStringDataConverters<'a> {
     #[inline(always)]
     pub fn to_first<T>(self) -> Result<T, DataConversionError>
     where
-        T: DataTypeOf,
         T: DataConversionTarget,
     {
         self.to_first_with(DataConversionOptions::default_ref())
@@ -176,16 +163,11 @@ impl<'a> ScalarStringDataConverters<'a> {
     ) -> Result<T, DataConversionError>
     where
         'a: 'b,
-        T: DataTypeOf,
         T: DataConversionTarget,
     {
-        let text = options
-            .string
-            .normalize(self.source)
-            .map_err(|error| error.into_data_conversion_error(T::DATA_TYPE))?;
         let first = options
-            .collection
-            .scalar_items(text)
+            .collection()
+            .scalar_items(self.source)
             .next()
             .ok_or(DataConversionError::empty_collection(T::DATA_TYPE))?
             .map_err(|error| error.into_data_conversion_error(T::DATA_TYPE))?;

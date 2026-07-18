@@ -75,17 +75,17 @@ fn resolve_unit(
     options: &DurationTextOptions,
 ) -> Result<DurationUnit, DurationParseError> {
     if suffix.is_empty() {
-        return match options.suffixless_policy {
+        return match options.suffixless_policy() {
             SuffixlessDurationPolicy::Reject => {
                 Err(DurationParseError::InvalidSyntax)
             }
             SuffixlessDurationPolicy::Assume(unit) => Ok(unit),
         };
     }
-    if let Some(unit) = explicit_unit(suffix, options.unit_suffix_set) {
+    if let Some(unit) = explicit_unit(suffix, options.unit_suffix_set()) {
         return Ok(unit);
     }
-    let alphabetic = match options.unit_suffix_set {
+    let alphabetic = match options.unit_suffix_set() {
         DurationUnitSuffixSet::Ascii => {
             suffix.bytes().all(|byte| byte.is_ascii_alphabetic())
         }

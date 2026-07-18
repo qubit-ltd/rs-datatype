@@ -220,3 +220,22 @@ fn test_scalar_string_data_converters_rejects_blank_scalar() {
         conversion_error if matches!(conversion_error.reason(), Some(InvalidValueReason::BlankRejected)),
     ));
 }
+
+/// Test collection empty-item policy runs before string blank policy.
+#[test]
+fn test_scalar_string_data_converters_env_blank_list_is_empty() {
+    let options = DataConversionOptions::env_friendly();
+
+    assert_eq!(
+        ScalarStringDataConverters::from("   ").to_vec_with::<u16>(&options),
+        Ok(Vec::new()),
+    );
+    assert_eq!(
+        ScalarStringDataConverters::from(" , \t,").to_vec_with::<u16>(&options),
+        Ok(Vec::new()),
+    );
+    assert_eq!(
+        ScalarStringDataConverters::from("   ").to_first_with::<u16>(&options),
+        Err(DataConversionError::empty_collection(DataType::UInt16)),
+    );
+}

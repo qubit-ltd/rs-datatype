@@ -27,9 +27,11 @@ use qubit_datatype::{
     DataConverter,
     DataType,
     DurationConversionOptions,
+    DurationRoundingPolicy,
     DurationUnit,
+    DurationUnitSuffixSet,
     InvalidValueReason,
-    NumericConversionPolicy,
+    NumericConversionOptions,
     SuffixlessDurationPolicy,
 };
 
@@ -104,15 +106,21 @@ fn test_data_converter_duration_string_conversion() {
         DurationConversionOptions::default()
             .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject),
     );
-    assert!(matches!(
-        DataConverter::from("10").to_with::<Duration>(&reject_bare),
-        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::InvalidSyntax { .. })),
-    ));
+    let error = DataConverter::from("10")
+        .to_with::<Duration>(&reject_bare)
+        .expect_err("suffixless input should be rejected");
+    assert_eq!(
+        error.reason(),
+        Some(&InvalidValueReason::InvalidSyntax {
+            expected: "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)",
+        }),
+    );
 
     let no_suffix = DataConversionOptions::lossy().with_duration_options(
         DurationConversionOptions::default()
             .with_output_unit(DurationUnit::Seconds)
-            .with_append_unit_suffix(false),
+            .with_append_unit_suffix(false)
+            .with_rounding_policy(DurationRoundingPolicy::HalfUp),
     );
     let text: String = DataConverter::from(Duration::from_millis(1500))
         .to_with(&no_suffix)
@@ -143,7 +151,7 @@ fn test_data_converter_duration_string_conversion() {
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
     assert!(matches!(
-        DataConverter::Empty(DataType::Duration).to::<Duration>(),
+        DataConverter::Unset(DataType::Duration).to::<Duration>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert!(matches!(
@@ -221,9 +229,12 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
         .expect("BigInteger should convert to Duration");
     assert_eq!(duration, Duration::from_secs(3));
 
-    let lossy_options = options
-        .clone()
-        .with_numeric_policy(NumericConversionPolicy::Lossy);
+    let lossy_options = options.clone().with_duration_options(
+        options
+            .duration()
+            .clone()
+            .with_rounding_policy(DurationRoundingPolicy::HalfUp),
+    );
     let units: u64 = DataConverter::from(Duration::from_millis(1499))
         .to_with(&lossy_options)
         .expect("Duration should round to configured integer unit");
@@ -299,9 +310,9 @@ fn test_data_converter_duration_text() {
     );
 }
 
-/// Test duration formatting and integer conversion honor numeric exactness.
+/// Test duration formatting and integer conversion honor Duration rounding.
 #[test]
-fn test_data_converter_duration_targets_honor_numeric_policy() {
+fn test_data_converter_duration_targets_honor_rounding_policy() {
     let exact = DataConversionOptions::default().with_duration_options(
         DurationConversionOptions::default()
             .with_output_unit(DurationUnit::Seconds),
@@ -316,12 +327,80 @@ fn test_data_converter_duration_targets_honor_numeric_policy() {
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)),
     ));
 
-    let lossy = exact.with_numeric_policy(NumericConversionPolicy::Lossy);
+    let lossy = exact.clone().with_duration_options(
+        exact
+            .duration()
+            .clone()
+            .with_rounding_policy(DurationRoundingPolicy::HalfUp),
+    );
     assert_eq!(
         DataConverter::from(duration).to_with::<String>(&lossy),
         Ok("2s".to_string()),
     );
     assert_eq!(DataConverter::from(duration).to_with::<u64>(&lossy), Ok(2));
+}
+
+/// Test Duration rounding remains independent of all numeric policies.
+#[test]
+fn test_data_converter_duration_rounding_is_independent() {
+    let duration = Duration::from_millis(1_500);
+    let numeric_lossy = DataConversionOptions::strict()
+        .with_numeric_options(NumericConversionOptions::lossy())
+        .with_duration_options(
+            DurationConversionOptions::default()
+                .with_output_unit(DurationUnit::Seconds),
+        );
+    assert!(
+        DataConverter::from(duration)
+            .to_with::<u64>(&numeric_lossy)
+            .is_err()
+    );
+
+    let duration_lossy = DataConversionOptions::strict().with_duration_options(
+        DurationConversionOptions::default()
+            .with_output_unit(DurationUnit::Seconds)
+            .with_rounding_policy(DurationRoundingPolicy::HalfUp),
+    );
+    assert_eq!(
+        DataConverter::from(duration).to_with::<u64>(&duration_lossy),
+        Ok(2),
+    );
+    assert!(
+        DataConverter::from("3.9")
+            .to_with::<i32>(&duration_lossy)
+            .is_err()
+    );
+}
+
+/// Test Duration text honors the configured explicit suffix set.
+#[test]
+fn test_data_converter_duration_text_honors_suffix_set() {
+    let ascii = DataConversionOptions::strict().with_duration_options(
+        DurationConversionOptions::default()
+            .with_unit_suffix_set(DurationUnitSuffixSet::Ascii),
+    );
+    assert_eq!(
+        DataConverter::from("2us").to_with::<Duration>(&ascii),
+        Ok(Duration::from_micros(2)),
+    );
+    let error = DataConverter::from("2µs")
+        .to_with::<Duration>(&ascii)
+        .expect_err("Unicode microsecond suffix should be rejected");
+    assert_eq!(
+        error.reason(),
+        Some(&InvalidValueReason::InvalidSyntax {
+            expected: "[0-9]+(ns|us|ms|s|m|h|d)?",
+        }),
+    );
+    assert!(
+        DataConverter::from("2μs")
+            .to_with::<Duration>(&ascii)
+            .is_err()
+    );
+    assert_eq!(
+        DataConverter::from("2µs").to::<Duration>(),
+        Ok(Duration::from_micros(2)),
+    );
 }
 
 /// Test large unit counts that still fit in `Duration` after decomposition.

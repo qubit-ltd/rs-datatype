@@ -104,9 +104,10 @@ let lossy = DataConversionOptions::lossy();
 assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 ```
 
-严格数值策略拒绝截断、舍入和精度损失。有损模式允许有限浮点/十进制向零截断、
-整数到浮点的 IEEE 舍入以及 Duration 的 half-up 舍入。十进制与科学计数法字符串
-转换到定长整数或 `BigInt` 时遵循同一数值策略。
+严格 profile 分别拒绝小数转整数截断、已有数值转浮点舍入、文本转浮点舍入以及
+不精确的 Duration 输出。有损 profile 允许有限浮点/十进制向零截断、nearest-even
+浮点舍入以及 Duration 的 half-up 舍入。十进制与科学计数法字符串转换到定长整数
+或 `BigInt` 时共享配置的小数转整数规则。
 
 ## 6. 转换矩阵
 
@@ -123,22 +124,24 @@ assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 | StringMap | StringMap；启用 `json` 后支持 JSON 和 `String` |
 | JSON | `String` |
 
-表外组合返回 `DataConversionError::Unsupported`，typed empty 返回 `Missing`，
-格式或策略不合法返回 `InvalidValue`。错误只保留类型上下文，不保留原始值。
+表外组合返回 `DataConversionError::Unsupported`，typed unset 返回 `Missing`，
+格式或策略不合法返回 `InvalidValue`，触及配置的资源上限返回 `LimitExceeded`。
+错误只保留类型上下文，不保留原始值。
 
 ## 7. 配置与输入 profile
 
 `DataConversionOptions` 包含相互独立的策略：
 
-- `numeric_policy`：精确或有损数值转换。
+- `numeric`：小数转整数、已有数值转浮点、文本转浮点三组策略，以及资源上限。
 - `string`：trim 和空白字符串处理。
 - `boolean`：文字集合、大小写和数值布尔策略。
 - `collection`：标量拆分、分隔符、trim 和空元素处理。
-- `duration`：数值输入单位、无后缀输入、输出单位和后缀。
+- `duration`：数值输入单位、无后缀输入、可接受后缀集、输出单位、后缀格式和舍入。
 
 `strict()` 是默认值。`env_friendly()` 会 trim 字符串、接受常见布尔文字，并开启
-逗号分隔的标量集合。Serde 对省略字段使用默认值，同时拒绝未知字段，因此配置键
-拼写错误会立即失败。
+逗号分隔的标量集合；它只把文本转浮点放宽为 nearest-even，不会开启小数转整数
+截断或已有数值转浮点舍入。Serde 对省略字段使用默认值，同时拒绝未知字段，因此
+配置键拼写错误会立即失败。
 
 ```rust
 use qubit_datatype::{DataConversionOptions, DataConverter};
@@ -147,13 +150,29 @@ let options = DataConversionOptions::env_friendly();
 assert_eq!(DataConverter::from(" yes ").to_with::<bool>(&options), Ok(true));
 ```
 
+数值资源上限属于 options，并在所有 profile 中保持启用。它们在字符串规范化之后、
+昂贵解析或 `BigInt` 物化之前生效：
+
+```rust
+use qubit_datatype::{
+    DataConversionOptions, NumericConversionLimits, NumericConversionOptions,
+};
+
+let limits = NumericConversionLimits::default()
+    .with_max_text_bytes(4096)
+    .with_max_big_integer_digits(10_000);
+let options = DataConversionOptions::strict().with_numeric_options(
+    NumericConversionOptions::strict().with_limits(limits),
+);
+```
+
 布尔文字 builder 返回 `Result`，保证在选定大小写规则下 true/false 集合互不重叠。
 
 ## 8. 字符串、Duration 与富格式
 
-默认不 trim 字符串。空白值可保留、视为缺失或拒绝。Duration 输入格式为
-`[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`，输入和输出单位分别配置；精确输出要求按
-输出单位整除。
+默认不 trim 字符串。空白值可保留、视为缺失或拒绝。默认扩展 Duration 后缀集接受
+`[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`；ASCII 后缀集不接受 `µs` 和 `μs`。
+输入和输出单位分别配置；精确输出要求按输出单位整除，half-up 舍入必须显式开启。
 
 仅启用 `duration` feature 时，`DurationTextOptions` 可选择无后缀策略以及 ASCII
 或扩展后缀集合；`parse_duration_text` 在不隐式 trim 的情况下执行带范围检查的

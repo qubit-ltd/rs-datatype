@@ -51,6 +51,7 @@ impl DataListConversionError {
     /// # Returns
     ///
     /// The position in the original source, before any items were skipped.
+    #[must_use]
     #[inline(always)]
     pub const fn source_index(&self) -> usize {
         self.source_index

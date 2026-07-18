@@ -23,17 +23,17 @@ use num_traits::{
 };
 
 use super::NumericComparisonPolicy;
-#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-use super::internal::{
-    f32_rational,
-    f64_rational,
-};
 #[cfg(feature = "big-decimal")]
 use super::internal::decimal_rational;
 use super::internal::{
     NumberRepr,
     compare_magnitude,
     finite_parts,
+};
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use super::internal::{
+    f32_rational,
+    f64_rational,
 };
 
 /// Borrows or copies a numeric value without depending on a runtime value enum.
@@ -377,6 +377,17 @@ impl<'a> NumberRef<'a> {
         self.compare_fixed(right)
     }
 
+    /// Returns the private representation for numeric algorithms.
+    ///
+    /// # Returns
+    ///
+    /// The crate-private `NumberRepr` payload borrowed or copied by this value.
+    #[inline(always)]
+    #[must_use]
+    pub(in crate::numeric) const fn inner(self) -> NumberRepr<'a> {
+        self.inner
+    }
+
     /// Compares arbitrary-precision pairs through exact rational values.
     ///
     /// Decimal scales that cannot be materialized as a practical power of ten
@@ -391,10 +402,7 @@ impl<'a> NumberRef<'a> {
     /// Their exact mathematical ordering, or `None` for non-finite values.
     #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
     #[must_use]
-    pub fn compare_exact_rational(
-        self,
-        right: NumberRef<'_>,
-    ) -> Option<Ordering> {
+    fn compare_exact_rational(self, right: NumberRef<'_>) -> Option<Ordering> {
         #[cfg(feature = "big-integer")]
         if let (NumberRepr::BigInteger(left), NumberRepr::BigInteger(right)) =
             (self.inner, right.inner)
@@ -430,10 +438,7 @@ impl<'a> NumberRef<'a> {
     #[cfg(feature = "big-decimal")]
     #[inline(always)]
     #[must_use]
-    pub fn compare_exact_decimal(
-        self,
-        right: NumberRef<'_>,
-    ) -> Option<Ordering> {
+    fn compare_exact_decimal(self, right: NumberRef<'_>) -> Option<Ordering> {
         Some(self.to_exact_decimal()?.cmp(&right.to_exact_decimal()?))
     }
 
@@ -448,7 +453,7 @@ impl<'a> NumberRef<'a> {
     /// Their mathematical ordering, or `None` for a non-finite or unsupported
     /// input.
     #[must_use]
-    pub fn compare_fixed(self, right: NumberRef<'_>) -> Option<Ordering> {
+    fn compare_fixed(self, right: NumberRef<'_>) -> Option<Ordering> {
         let (left_negative, left_significand, left_exponent) =
             finite_parts(self)?;
         let (right_negative, right_significand, right_exponent) =
@@ -487,7 +492,7 @@ impl<'a> NumberRef<'a> {
     /// The approximate `f64` projection, or `None` when an arbitrary-precision
     /// value cannot be represented as `f64`.
     #[must_use]
-    pub fn to_approximate_f64(self) -> Option<f64> {
+    fn to_approximate_f64(self) -> Option<f64> {
         match self.inner {
             NumberRepr::Int8(value) => Some(f64::from(value)),
             NumberRepr::Int16(value) => Some(f64::from(value)),
@@ -518,7 +523,7 @@ impl<'a> NumberRef<'a> {
     /// impractically large decimal scale.
     #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
     #[must_use]
-    pub fn to_exact_rational(self) -> Option<BigRational> {
+    fn to_exact_rational(self) -> Option<BigRational> {
         match self.inner {
             NumberRepr::Int8(value) => {
                 Some(BigRational::from_integer(BigInt::from(value)))
@@ -572,7 +577,7 @@ impl<'a> NumberRef<'a> {
     /// The exact decimal value, or `None` for a non-finite primitive float.
     #[cfg(feature = "big-decimal")]
     #[must_use]
-    pub fn to_exact_decimal(self) -> Option<BigDecimal> {
+    fn to_exact_decimal(self) -> Option<BigDecimal> {
         match self.inner {
             NumberRepr::Int8(value) => Some(BigDecimal::from(value)),
             NumberRepr::Int16(value) => Some(BigDecimal::from(value)),
@@ -592,16 +597,5 @@ impl<'a> NumberRef<'a> {
             }
             NumberRepr::BigDecimal(value) => Some(value.clone()),
         }
-    }
-
-    /// Returns the private representation for numeric algorithms.
-    ///
-    /// # Returns
-    ///
-    /// The crate-private `NumberRepr` payload borrowed or copied by this value.
-    #[inline(always)]
-    #[must_use]
-    pub(in crate::numeric) const fn inner(self) -> NumberRepr<'a> {
-        self.inner
     }
 }

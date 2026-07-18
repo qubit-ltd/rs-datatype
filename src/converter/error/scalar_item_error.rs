@@ -41,6 +41,7 @@ impl ScalarItemError {
     /// # Returns
     ///
     /// The original source position of the rejected scalar item.
+    #[must_use]
     #[inline(always)]
     pub const fn source_index(&self) -> usize {
         self.source_index

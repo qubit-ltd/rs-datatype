@@ -8,6 +8,7 @@
 //! Numeric conversion integration for sibling target families.
 
 pub(super) use super::internal::numeric::{
+    check_numeric_text_limit,
     duration_to_u128,
     is_integer_syntax,
     source_to_integer,

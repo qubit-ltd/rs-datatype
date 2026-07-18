@@ -23,9 +23,9 @@ use super::{
 #[serde(default, deny_unknown_fields)]
 pub struct DurationTextOptions {
     /// Policy applied when text omits a unit suffix.
-    pub suffixless_policy: SuffixlessDurationPolicy,
+    suffixless_policy: SuffixlessDurationPolicy,
     /// Set of explicit unit suffixes accepted by the parser.
-    pub unit_suffix_set: DurationUnitSuffixSet,
+    unit_suffix_set: DurationUnitSuffixSet,
 }
 
 impl DurationTextOptions {
@@ -50,6 +50,12 @@ impl DurationTextOptions {
         }
     }
 
+    /// Returns the policy applied when text omits a unit suffix.
+    #[inline(always)]
+    pub const fn suffixless_policy(&self) -> SuffixlessDurationPolicy {
+        self.suffixless_policy
+    }
+
     /// Returns a copy with a different suffixless-input policy.
     ///
     /// # Parameters
@@ -66,6 +72,12 @@ impl DurationTextOptions {
     ) -> Self {
         self.suffixless_policy = suffixless_policy;
         self
+    }
+
+    /// Returns the set of explicit unit suffixes accepted by the parser.
+    #[inline(always)]
+    pub const fn unit_suffix_set(&self) -> DurationUnitSuffixSet {
+        self.unit_suffix_set
     }
 
     /// Returns a copy with a different accepted suffix set.
