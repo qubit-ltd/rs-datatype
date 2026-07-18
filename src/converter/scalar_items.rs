@@ -27,6 +27,10 @@ pub struct ScalarItems<'a> {
     value: &'a str,
     /// Delimiters borrowed from the conversion options.
     delimiters: &'a [char],
+    /// ASCII lookup table used for large delimiter sets.
+    ascii_delimiters: Option<[bool; 128]>,
+    /// Sorted non-ASCII lookup used for large delimiter sets.
+    non_ascii_delimiters: Option<Vec<char>>,
     /// Whether delimiter-based splitting is enabled.
     split_scalar_strings: bool,
     /// Whether each raw item is trimmed.
@@ -55,9 +59,29 @@ impl<'a> ScalarItems<'a> {
         options: &'a CollectionConversionOptions,
         value: &'a str,
     ) -> Self {
+        let delimiters = options.delimiters();
+        let (ascii_delimiters, non_ascii_delimiters) =
+            if delimiters.len() > 8 {
+                let mut ascii = [false; 128];
+                let mut non_ascii = Vec::new();
+                for &delimiter in delimiters {
+                    if delimiter.is_ascii() {
+                        ascii[delimiter as usize] = true;
+                    } else {
+                        non_ascii.push(delimiter);
+                    }
+                }
+                non_ascii.sort_unstable();
+                non_ascii.dedup();
+                (Some(ascii), Some(non_ascii))
+            } else {
+                (None, None)
+            };
         Self {
             value,
-            delimiters: options.delimiters(),
+            delimiters,
+            ascii_delimiters,
+            non_ascii_delimiters,
             split_scalar_strings: options.split_scalar_strings(),
             trim_items: options.trim_items(),
             empty_item_policy: options.empty_item_policy(),
@@ -86,9 +110,23 @@ impl<'a> ScalarItems<'a> {
         }
 
         let remaining = &self.value[start..];
+        let ascii_delimiters = self.ascii_delimiters.as_ref();
+        let non_ascii_delimiters = self.non_ascii_delimiters.as_deref();
+        let delimiters = self.delimiters;
         match remaining
             .char_indices()
-            .find(|(_, character)| self.delimiters.contains(character))
+            .find(|(_, character)| {
+                let Some(ascii) = ascii_delimiters else {
+                    return delimiters.contains(character);
+                };
+                if character.is_ascii() {
+                    ascii[*character as usize]
+                } else {
+                    non_ascii_delimiters.is_some_and(|sorted| {
+                        sorted.binary_search(character).is_ok()
+                    })
+                }
+            })
         {
             Some((relative_end, delimiter)) => {
                 let end = start + relative_end;

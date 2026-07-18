@@ -10,6 +10,7 @@
 #[cfg(feature = "chrono")]
 use chrono::{
     DateTime,
+    Datelike,
     NaiveDate,
     NaiveDateTime,
     NaiveTime,
@@ -28,6 +29,33 @@ use crate::converter::{
     InvalidValueReason,
 };
 use crate::datatype::DataType;
+
+/// Validates the four-digit year required by canonical temporal text.
+///
+/// # Parameters
+///
+/// * `source` - Temporal source retained in a conversion error.
+/// * `year` - Proleptic Gregorian year to validate.
+///
+/// # Returns
+///
+/// `Ok(())` when `year` is in the canonical `0000..=9999` range.
+///
+/// # Errors
+///
+/// Returns an out-of-range conversion error for a negative year or a year
+/// greater than 9999.
+#[cfg(feature = "chrono")]
+fn validate_canonical_temporal_year(
+    source: &DataConverter<'_>,
+    year: i32,
+) -> Result<(), DataConversionError> {
+    if (0..=9_999).contains(&year) {
+        Ok(())
+    } else {
+        Err(source.invalid(DataType::String, InvalidValueReason::OutOfRange))
+    }
+}
 
 impl DataConversionTarget for char {
     fn convert_from(
@@ -85,16 +113,21 @@ impl DataConversionTarget for String {
             DataConverter::BigDecimal(value) => Ok(value.to_string()),
             #[cfg(feature = "chrono")]
             DataConverter::Date(value) => {
+                validate_canonical_temporal_year(source, value.year())?;
                 Ok(value.format("%Y-%m-%d").to_string())
             }
             #[cfg(feature = "chrono")]
             DataConverter::Time(value) => Ok(value.to_string()),
             #[cfg(feature = "chrono")]
             DataConverter::DateTime(value) => {
+                validate_canonical_temporal_year(source, value.year())?;
                 Ok(value.format("%Y-%m-%dT%H:%M:%S%.f").to_string())
             }
             #[cfg(feature = "chrono")]
-            DataConverter::Instant(value) => Ok(value.to_rfc3339()),
+            DataConverter::Instant(value) => {
+                validate_canonical_temporal_year(source, value.year())?;
+                Ok(value.to_rfc3339())
+            }
             DataConverter::Duration(value) => format_duration(*value, options),
             #[cfg(feature = "url")]
             DataConverter::Url(value) => Ok(value.to_string()),

@@ -16,6 +16,7 @@ use criterion::{
     criterion_main,
 };
 use qubit_datatype::{
+    CollectionConversionOptions,
     DataConversionOptions,
     DataConverters,
     ScalarStringDataConverters,
@@ -109,10 +110,31 @@ fn benchmark_materialized_slice(c: &mut Criterion) {
     group.finish();
 }
 
+/// Benchmarks scanning text with a large configured delimiter set.
+fn benchmark_large_delimiter_set(c: &mut Criterion) {
+    let input = format!("{},tail", "a".repeat(16 * 1024));
+    let delimiters = std::iter::once(',')
+        .chain((0x100..0x13f).filter_map(char::from_u32));
+    let options = CollectionConversionOptions::default()
+        .with_split_scalar_strings(true)
+        .with_delimiters(delimiters);
+
+    c.bench_function("scalar_collection_large_delimiter_set", |b| {
+        b.iter(|| {
+            black_box(
+                black_box(&options)
+                    .scalar_items(black_box(input.as_str()))
+                    .count(),
+            )
+        });
+    });
+}
+
 criterion_group!(
     benches,
     benchmark_scalar_first,
     benchmark_scalar_complete,
     benchmark_materialized_slice,
+    benchmark_large_delimiter_set,
 );
 criterion_main!(benches);

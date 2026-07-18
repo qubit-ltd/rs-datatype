@@ -7,21 +7,20 @@
 // =============================================================================
 //! Arbitrary-precision source to primitive float tests.
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use std::str::FromStr;
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-#[cfg(feature = "big-number")]
-use qubit_datatype::{
-    DataConversionOptions,
-    DataConverter,
-};
+#[cfg(feature = "big-integer")]
+use qubit_datatype::DataConversionOptions;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use qubit_datatype::DataConverter;
 
 /// Verifies that BigInt-to-f32 conversion applies the target precision policy.
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-integer")]
 #[test]
 fn test_bigint_to_f32_applies_target_width_precision() {
     let value = BigInt::from(16_777_217_u32);
@@ -34,7 +33,7 @@ fn test_bigint_to_f32_applies_target_width_precision() {
 }
 
 /// Verifies exact BigDecimal-to-f32 conversion rejects rounded values.
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 #[test]
 fn test_big_decimal_to_f32_rejects_precision_loss() {
     let value = BigDecimal::from_str("0.1").expect("test decimal");

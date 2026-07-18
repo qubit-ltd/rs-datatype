@@ -34,6 +34,79 @@ use crate::converter::{
 };
 use crate::datatype::DataType;
 
+/// Tests whether a non-zero BigInteger exceeds a decimal digit budget.
+///
+/// The bit-length checks avoid formatting values that are clearly far below or
+/// above the limit. Values near the boundary use an exact decimal count whose
+/// temporary allocation remains proportional to the configured budget.
+///
+/// # Parameters
+///
+/// * `value` - BigInteger value whose magnitude is inspected.
+/// * `maximum_digits` - Largest permitted significant decimal digit count.
+///
+/// # Returns
+///
+/// `true` when the non-zero magnitude has more than `maximum_digits` decimal
+/// digits; zero never exceeds the budget.
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+fn exceeds_big_integer_digit_limit(
+    value: &BigInt,
+    maximum_digits: usize,
+) -> bool {
+    let bits = u128::from(value.bits());
+    if bits == 0 {
+        return false;
+    }
+    let maximum_digits = maximum_digits as u128;
+    if bits <= maximum_digits.saturating_mul(3) {
+        return false;
+    }
+    if bits > maximum_digits.saturating_mul(4) {
+        return true;
+    }
+    value.to_str_radix(10).trim_start_matches('-').len() as u128
+        > maximum_digits
+}
+
+/// Enforces the configured BigInteger result digit limit.
+///
+/// # Parameters
+///
+/// * `value` - Candidate BigInteger result.
+/// * `maximum_digits` - Largest permitted significant decimal digit count.
+/// * `from` - Source type retained in a limit error.
+/// * `to` - Target type retained in a limit error.
+///
+/// # Returns
+///
+/// `Ok(())` when the target is not BigInteger or the result fits the budget.
+///
+/// # Errors
+///
+/// Returns [`DataConversionErrorKind::LimitExceeded`](crate::converter::DataConversionErrorKind::LimitExceeded)
+/// when a BigInteger target would exceed `maximum_digits`.
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+fn enforce_big_integer_digit_limit(
+    value: &BigInt,
+    maximum_digits: usize,
+    from: DataType,
+    to: DataType,
+) -> Result<(), DataConversionError> {
+    if to != DataType::BigInteger
+        || !exceeds_big_integer_digit_limit(value, maximum_digits)
+    {
+        return Ok(());
+    }
+    Err(DataConversionError::limit_exceeded(
+        from,
+        to,
+        ConversionLimit::BigIntegerDigits {
+            maximum: maximum_digits,
+        },
+    ))
+}
+
 /// Converts a decimal to an integer with exactness checks.
 ///
 /// # Parameters
@@ -95,9 +168,9 @@ pub(super) fn decimal_to_bigint(
         return Ok(coefficient * BigInt::from(10u8).pow(exponent as u32));
     }
 
-    let coefficient_digits =
-        coefficient.to_str_radix(10).trim_start_matches('-').len() as u64;
-    if scale as u64 >= coefficient_digits {
+    let coefficient_text = coefficient.to_str_radix(10);
+    let coefficient_digits = coefficient_text.trim_start_matches('-').len();
+    if scale as u64 >= coefficient_digits as u64 {
         return if policy == FractionalToIntegerPolicy::Reject {
             Err(DataConversionError::invalid(
                 from,
@@ -108,20 +181,32 @@ pub(super) fn decimal_to_bigint(
             Ok(BigInt::from(0u8))
         };
     }
-    let divisor = BigInt::from(10u8).pow(scale as u32);
-    let quotient = &coefficient / &divisor;
-    let remainder = coefficient % divisor;
+    let scale = scale as usize;
+    let magnitude = coefficient_text.trim_start_matches('-');
     if policy == FractionalToIntegerPolicy::Reject
-        && remainder != BigInt::from(0u8)
+        && magnitude[magnitude.len() - scale..]
+            .bytes()
+            .any(|digit| digit != b'0')
     {
-        Err(DataConversionError::invalid(
+        return Err(DataConversionError::invalid(
             from,
             to,
             InvalidValueReason::PrecisionLoss,
-        ))
-    } else {
-        Ok(quotient)
+        ));
     }
+    let result_digits = coefficient_digits - scale;
+    if to == DataType::BigInteger && result_digits > maximum_digits {
+        return Err(DataConversionError::limit_exceeded(
+            from,
+            to,
+            ConversionLimit::BigIntegerDigits {
+                maximum: maximum_digits,
+            },
+        ));
+    }
+    let divisor = BigInt::from(10u8).pow(scale as u32);
+    let quotient = &coefficient / &divisor;
+    Ok(quotient)
 }
 
 /// Converts a finite float to an integer with exactness checks.
@@ -190,7 +275,21 @@ pub(super) fn source_to_bigint(
     options: &DataConversionOptions,
     to: DataType,
 ) -> Result<BigInt, DataConversionError> {
-    match source {
+    let maximum_digits = options.numeric().limits().max_big_integer_digits();
+    #[cfg(feature = "big-integer")]
+    if to == DataType::BigInteger
+        && let DataConverter::BigInteger(value) = source
+    {
+        enforce_big_integer_digit_limit(
+            value.as_ref(),
+            maximum_digits,
+            DataType::BigInteger,
+            to,
+        )?;
+        return Ok(value.as_ref().clone());
+    }
+
+    let result = match source {
         DataConverter::Bool(value) => Ok(BigInt::from(u8::from(*value))),
         DataConverter::Char(value) => Ok(BigInt::from(*value as u32)),
         DataConverter::Int8(value) => Ok(BigInt::from(*value)),
@@ -239,7 +338,14 @@ pub(super) fn source_to_bigint(
         }
         DataConverter::Unset(_) => Err(source.missing(to)),
         _ => Err(source.unsupported(to)),
-    }
+    }?;
+    enforce_big_integer_digit_limit(
+        &result,
+        maximum_digits,
+        source.data_type(),
+        to,
+    )?;
+    Ok(result)
 }
 
 /// Converts a duration to arbitrary-precision integer units.

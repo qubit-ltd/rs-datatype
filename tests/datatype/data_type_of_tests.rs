@@ -71,14 +71,10 @@ fn test_data_type_of_big_decimal_type() {
     assert_eq!(bigdecimal::BigDecimal::DATA_TYPE, DataType::BigDecimal);
 }
 
-/// Test DataTypeOf for v0.4.0 new types
+/// Test JSON mapping when the feature is enabled.
 #[test]
-#[cfg(all(feature = "url", feature = "json"))]
-fn test_data_type_of_v040_types() {
-    use std::time::Duration;
-
-    assert_eq!(Duration::DATA_TYPE, DataType::Duration);
-    assert_eq!(url::Url::DATA_TYPE, DataType::Url);
+#[cfg(feature = "json")]
+fn test_data_type_of_json_type() {
     assert_eq!(serde_json::Value::DATA_TYPE, DataType::Json);
 }
 

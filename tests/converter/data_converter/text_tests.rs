@@ -49,6 +49,26 @@ fn assert_invalid_syntax<T>(
     assert!(matches_expected, "unexpected result: {:?}", result.err());
 }
 
+/// Asserts that rich-value formatting rejected a non-canonical year.
+///
+/// # Parameters
+///
+/// * `result` - String conversion result to inspect.
+/// * `from` - Expected temporal source type.
+fn assert_non_canonical_year_rejected(
+    result: Result<String, DataConversionError>,
+    from: DataType,
+) {
+    assert_eq!(
+        result,
+        Err(DataConversionError::invalid(
+            from,
+            DataType::String,
+            InvalidValueReason::OutOfRange,
+        )),
+    );
+}
+
 /// Test the canonical textual formats for rich target types.
 #[test]
 fn test_data_converter_rich_targets_use_canonical_text_formats() {
@@ -390,4 +410,50 @@ fn test_data_converter_temporal_and_complex_conversions() {
             .expect("date should convert to string"),
         "2026-05-01"
     );
+}
+
+/// Verifies date formatting rejects years outside the canonical four digits.
+#[test]
+fn test_date_to_string_rejects_non_canonical_years() {
+    for year in [-1, 10_000] {
+        let date = NaiveDate::from_ymd_opt(year, 1, 1)
+            .expect("test date should be valid in Chrono");
+        assert_non_canonical_year_rejected(
+            DataConverter::from(date).to::<String>(),
+            DataType::Date,
+        );
+    }
+}
+
+/// Verifies local date-time formatting rejects non-canonical years.
+#[test]
+fn test_datetime_to_string_rejects_non_canonical_years() {
+    let time = NaiveTime::from_hms_opt(0, 0, 0)
+        .expect("test time should be valid");
+    for year in [-1, 10_000] {
+        let date = NaiveDate::from_ymd_opt(year, 1, 1)
+            .expect("test date should be valid in Chrono");
+        let datetime = NaiveDateTime::new(date, time);
+        assert_non_canonical_year_rejected(
+            DataConverter::from(datetime).to::<String>(),
+            DataType::DateTime,
+        );
+    }
+}
+
+/// Verifies UTC instant formatting rejects non-canonical years.
+#[test]
+fn test_instant_to_string_rejects_non_canonical_years() {
+    let time = NaiveTime::from_hms_opt(0, 0, 0)
+        .expect("test time should be valid");
+    for year in [-1, 10_000] {
+        let date = NaiveDate::from_ymd_opt(year, 1, 1)
+            .expect("test date should be valid in Chrono");
+        let datetime = NaiveDateTime::new(date, time);
+        let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
+        assert_non_canonical_year_rejected(
+            DataConverter::from(instant).to::<String>(),
+            DataType::Instant,
+        );
+    }
 }
