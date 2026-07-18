@@ -28,8 +28,8 @@ fn test_exact_rational_matches_binary_fraction() {
     let decimal = BigDecimal::from_str("0.5").expect("test decimal");
     assert_eq!(
         compare_numeric(
-            NumericValueRef::BigDecimal(&decimal),
-            NumericValueRef::Float64(0.5),
+            NumericValueRef::from(&decimal),
+            NumericValueRef::from(0.5_f64),
             NumericComparisonPolicy::Exact,
         ),
         Some(Ordering::Equal),

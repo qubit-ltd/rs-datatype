@@ -42,11 +42,11 @@ fuzz_target!(|data: &[u8]| {
     let scale = i64::from(u16::from_le_bytes(scale_bytes) % 257) - 128;
     let decimal = BigDecimal::new(coefficient.clone(), scale);
     let values = [
-        NumericValueRef::Int128(signed),
-        NumericValueRef::UInt128(unsigned),
-        NumericValueRef::Float64(float),
-        NumericValueRef::BigInteger(&coefficient),
-        NumericValueRef::BigDecimal(&decimal),
+        NumericValueRef::from(signed),
+        NumericValueRef::from(unsigned),
+        NumericValueRef::from(float),
+        NumericValueRef::from(&coefficient),
+        NumericValueRef::from(&decimal),
     ];
 
     for policy in [

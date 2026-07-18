@@ -11,3 +11,4 @@ mod compare_numeric_tests;
 mod internal;
 mod numeric_comparison_policy_tests;
 mod numeric_value_ref_tests;
+mod numeric_value_tests;

@@ -7,7 +7,6 @@
 // =============================================================================
 
 use std::cmp::Ordering;
-use std::marker::PhantomData;
 
 #[cfg(feature = "big-number")]
 use bigdecimal::BigDecimal;
@@ -136,85 +135,85 @@ fn decimal_parts_to_rational(coefficient: i64, scale: i64) -> BigRational {
 #[test]
 fn test_compare_numeric_exact_fixed_boundaries() {
     assert_exact(
-        NumericValueRef::Int128(i128::MIN),
-        NumericValueRef::UInt128(u128::MAX),
+        NumericValueRef::from(i128::MIN),
+        NumericValueRef::from(u128::MAX),
         Some(Ordering::Less),
     );
     assert_exact(
-        NumericValueRef::UInt64((1_u64 << 53) + 1),
-        NumericValueRef::Float64((1_u64 << 53) as f64),
+        NumericValueRef::from((1_u64 << 53) + 1),
+        NumericValueRef::from((1_u64 << 53) as f64),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::UInt32((1_u32 << 24) + 1),
-        NumericValueRef::Float32((1_u32 << 24) as f32),
+        NumericValueRef::from((1_u32 << 24) + 1),
+        NumericValueRef::from((1_u32 << 24) as f32),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::Int32(1),
-        NumericValueRef::Float64(1.5),
+        NumericValueRef::from(1_i32),
+        NumericValueRef::from(1.5_f64),
         Some(Ordering::Less),
     );
     assert_exact(
-        NumericValueRef::Float64(-0.0),
-        NumericValueRef::Float64(0.0),
+        NumericValueRef::from(-0.0_f64),
+        NumericValueRef::from(0.0_f64),
         Some(Ordering::Equal),
     );
     assert_exact(
-        NumericValueRef::Float64(f64::NEG_INFINITY),
-        NumericValueRef::Int8(i8::MIN),
+        NumericValueRef::from(f64::NEG_INFINITY),
+        NumericValueRef::from(i8::MIN),
         Some(Ordering::Less),
     );
     assert_exact(
-        NumericValueRef::Float32(f32::INFINITY),
-        NumericValueRef::UInt128(u128::MAX),
+        NumericValueRef::from(f32::INFINITY),
+        NumericValueRef::from(u128::MAX),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::Float32(f32::NEG_INFINITY),
-        NumericValueRef::Float64(f64::INFINITY),
+        NumericValueRef::from(f32::NEG_INFINITY),
+        NumericValueRef::from(f64::INFINITY),
         Some(Ordering::Less),
     );
     assert_exact(
-        NumericValueRef::Float32(f32::INFINITY),
-        NumericValueRef::Float64(f64::INFINITY),
+        NumericValueRef::from(f32::INFINITY),
+        NumericValueRef::from(f64::INFINITY),
         Some(Ordering::Equal),
     );
 
     for value in [
-        NumericValueRef::Int8(1),
-        NumericValueRef::Int16(1),
-        NumericValueRef::Int32(1),
-        NumericValueRef::Int64(1),
-        NumericValueRef::Int128(1),
-        NumericValueRef::UInt8(1),
-        NumericValueRef::UInt16(1),
-        NumericValueRef::UInt32(1),
-        NumericValueRef::UInt64(1),
-        NumericValueRef::UInt128(1),
-        NumericValueRef::Float32(1.0),
-        NumericValueRef::Float64(1.0),
+        NumericValueRef::from(1_i8),
+        NumericValueRef::from(1_i16),
+        NumericValueRef::from(1_i32),
+        NumericValueRef::from(1_i64),
+        NumericValueRef::from(1_i128),
+        NumericValueRef::from(1_u8),
+        NumericValueRef::from(1_u16),
+        NumericValueRef::from(1_u32),
+        NumericValueRef::from(1_u64),
+        NumericValueRef::from(1_u128),
+        NumericValueRef::from(1.0_f32),
+        NumericValueRef::from(1.0_f64),
     ] {
-        assert_exact(value, NumericValueRef::Int8(1), Some(Ordering::Equal));
+        assert_exact(value, NumericValueRef::from(1_i8), Some(Ordering::Equal));
     }
     assert_exact(
-        NumericValueRef::Float32(f32::from_bits(1)),
-        NumericValueRef::Int8(0),
+        NumericValueRef::from(f32::from_bits(1)),
+        NumericValueRef::from(0_i8),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::Float64(-f64::from_bits(1)),
-        NumericValueRef::Int8(0),
+        NumericValueRef::from(-f64::from_bits(1)),
+        NumericValueRef::from(0_i8),
         Some(Ordering::Less),
     );
     assert_exact(
-        NumericValueRef::Float64(4.0),
-        NumericValueRef::Float64(2.0),
+        NumericValueRef::from(4.0_f64),
+        NumericValueRef::from(2.0_f64),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::Float64(-4.0),
-        NumericValueRef::Float64(-2.0),
+        NumericValueRef::from(-4.0_f64),
+        NumericValueRef::from(-2.0_f64),
         Some(Ordering::Less),
     );
 }
@@ -227,13 +226,13 @@ fn test_compare_numeric_rejects_nan() {
         f64::from_bits(0x7fff_ffff_ffff_ffff),
     ] {
         assert_exact(
-            NumericValueRef::Float64(nan),
-            NumericValueRef::Float64(nan),
+            NumericValueRef::from(nan),
+            NumericValueRef::from(nan),
             None,
         );
         assert_exact(
-            NumericValueRef::Float64(nan),
-            NumericValueRef::Int8(0),
+            NumericValueRef::from(nan),
+            NumericValueRef::from(0_i8),
             None,
         );
     }
@@ -244,60 +243,52 @@ fn test_compare_numeric_rejects_nan() {
 fn test_compare_numeric_approximate_policy() {
     assert_eq!(
         compare_numeric(
-            NumericValueRef::UInt64((1_u64 << 53) + 1),
-            NumericValueRef::Float64((1_u64 << 53) as f64),
+            NumericValueRef::from((1_u64 << 53) + 1),
+            NumericValueRef::from((1_u64 << 53) as f64),
             NumericComparisonPolicy::Approximate,
         ),
         Some(Ordering::Equal)
     );
     assert_eq!(
         compare_numeric(
-            NumericValueRef::UInt128(u128::MAX - 1),
-            NumericValueRef::UInt128(u128::MAX),
+            NumericValueRef::from(u128::MAX - 1),
+            NumericValueRef::from(u128::MAX),
             NumericComparisonPolicy::Approximate,
         ),
         Some(Ordering::Less)
     );
 
     for value in [
-        NumericValueRef::Int8(0),
-        NumericValueRef::Int16(0),
-        NumericValueRef::Int32(0),
-        NumericValueRef::Int64(0),
-        NumericValueRef::Int128(0),
-        NumericValueRef::UInt8(0),
-        NumericValueRef::UInt16(0),
-        NumericValueRef::UInt32(0),
-        NumericValueRef::UInt64(0),
-        NumericValueRef::UInt128(0),
-        NumericValueRef::Float32(0.0),
-        NumericValueRef::Float64(0.0),
+        NumericValueRef::from(0_i8),
+        NumericValueRef::from(0_i16),
+        NumericValueRef::from(0_i32),
+        NumericValueRef::from(0_i64),
+        NumericValueRef::from(0_i128),
+        NumericValueRef::from(0_u8),
+        NumericValueRef::from(0_u16),
+        NumericValueRef::from(0_u32),
+        NumericValueRef::from(0_u64),
+        NumericValueRef::from(0_u128),
+        NumericValueRef::from(0.0_f32),
+        NumericValueRef::from(0.0_f64),
     ] {
         assert_eq!(
             compare_numeric(
                 value,
-                NumericValueRef::Float64(0.0),
+                NumericValueRef::from(0.0_f64),
                 NumericComparisonPolicy::Approximate,
             ),
             Some(Ordering::Equal)
         );
     }
-    assert_eq!(
-        compare_numeric(
-            NumericValueRef::__Lifetime(PhantomData),
-            NumericValueRef::Float64(0.0),
-            NumericComparisonPolicy::Approximate,
-        ),
-        None
-    );
 }
 
 /// Characterizes the pair-dependent, non-transitive approximate projection.
 #[test]
 fn test_compare_numeric_approximate_is_not_transitive() {
-    let lower = NumericValueRef::UInt64(1_u64 << 53);
-    let projected = NumericValueRef::Float64((1_u64 << 53) as f64);
-    let upper = NumericValueRef::UInt64((1_u64 << 53) + 1);
+    let lower = NumericValueRef::from(1_u64 << 53);
+    let projected = NumericValueRef::from((1_u64 << 53) as f64);
+    let upper = NumericValueRef::from((1_u64 << 53) + 1);
     assert_eq!(
         compare_numeric(lower, projected, NumericComparisonPolicy::Approximate),
         Some(Ordering::Equal)
@@ -328,8 +319,8 @@ proptest! {
         };
         prop_assert_eq!(
             compare_numeric(
-                NumericValueRef::Int128(signed),
-                NumericValueRef::UInt128(unsigned),
+                NumericValueRef::from(signed),
+                NumericValueRef::from(unsigned),
                 NumericComparisonPolicy::Exact,
             ),
             Some(expected),
@@ -346,13 +337,13 @@ proptest! {
     ) {
         let float = finite_f64(sign, exponent, fraction);
         let forward = compare_numeric(
-            NumericValueRef::Int128(integer),
-            NumericValueRef::Float64(float),
+            NumericValueRef::from(integer),
+            NumericValueRef::from(float),
             NumericComparisonPolicy::Exact,
         );
         let reverse = compare_numeric(
-            NumericValueRef::Float64(float),
-            NumericValueRef::Int128(integer),
+            NumericValueRef::from(float),
+            NumericValueRef::from(integer),
             NumericComparisonPolicy::Exact,
         );
         prop_assert_eq!(forward, reverse.map(Ordering::reverse));
@@ -368,9 +359,9 @@ proptest! {
         fraction in 0_u64..(1_u64 << 52),
     ) {
         let float = finite_f64(sign, exponent, fraction);
-        let left = NumericValueRef::Int128(signed);
-        let middle = NumericValueRef::Float64(float);
-        let right = NumericValueRef::UInt128(unsigned);
+        let left = NumericValueRef::from(signed);
+        let middle = NumericValueRef::from(float);
+        let right = NumericValueRef::from(unsigned);
         let left_middle = compare_numeric(left, middle, NumericComparisonPolicy::Exact)
             .expect("generated finite values must be ordered");
         let middle_right = compare_numeric(middle, right, NumericComparisonPolicy::Exact)
@@ -401,24 +392,24 @@ proptest! {
         let right_float = finite_f64(right_sign, right_exponent, right_fraction);
         prop_assert_eq!(
             compare_numeric(
-                NumericValueRef::Int128(left_signed),
-                NumericValueRef::Int128(right_signed),
+                NumericValueRef::from(left_signed),
+                NumericValueRef::from(right_signed),
                 NumericComparisonPolicy::Exact,
             ),
             Some(left_signed.cmp(&right_signed)),
         );
         prop_assert_eq!(
             compare_numeric(
-                NumericValueRef::UInt128(left_unsigned),
-                NumericValueRef::UInt128(right_unsigned),
+                NumericValueRef::from(left_unsigned),
+                NumericValueRef::from(right_unsigned),
                 NumericComparisonPolicy::Exact,
             ),
             Some(left_unsigned.cmp(&right_unsigned)),
         );
         prop_assert_eq!(
             compare_numeric(
-                NumericValueRef::Float64(left_float),
-                NumericValueRef::Float64(right_float),
+                NumericValueRef::from(left_float),
+                NumericValueRef::from(right_float),
                 NumericComparisonPolicy::Exact,
             ),
             left_float.partial_cmp(&right_float),
@@ -439,8 +430,8 @@ proptest! {
             .cmp(&finite_f64_to_rational(float));
         prop_assert_eq!(
             compare_numeric(
-                NumericValueRef::Int128(integer),
-                NumericValueRef::Float64(float),
+                NumericValueRef::from(integer),
+                NumericValueRef::from(float),
                 NumericComparisonPolicy::Exact,
             ),
             Some(expected),
@@ -461,8 +452,8 @@ proptest! {
             .cmp(&decimal_parts_to_rational(decimal_coefficient, decimal_scale));
         prop_assert_eq!(
             compare_numeric(
-                NumericValueRef::BigInteger(&integer),
-                NumericValueRef::BigDecimal(&decimal),
+                NumericValueRef::from(&integer),
+                NumericValueRef::from(&decimal),
                 NumericComparisonPolicy::Exact,
             ),
             Some(expected),
@@ -495,20 +486,20 @@ proptest! {
             decimal_scale,
         );
         let values = [
-            NumericValueRef::Int8(signed as i8),
-            NumericValueRef::Int16(signed as i16),
-            NumericValueRef::Int32(signed as i32),
-            NumericValueRef::Int64(signed as i64),
-            NumericValueRef::Int128(signed),
-            NumericValueRef::UInt8(unsigned as u8),
-            NumericValueRef::UInt16(unsigned as u16),
-            NumericValueRef::UInt32(unsigned as u32),
-            NumericValueRef::UInt64(unsigned as u64),
-            NumericValueRef::UInt128(unsigned),
-            NumericValueRef::Float32(float32),
-            NumericValueRef::Float64(float64),
-            NumericValueRef::BigInteger(&integer),
-            NumericValueRef::BigDecimal(&decimal),
+            NumericValueRef::from(signed as i8),
+            NumericValueRef::from(signed as i16),
+            NumericValueRef::from(signed as i32),
+            NumericValueRef::from(signed as i64),
+            NumericValueRef::from(signed),
+            NumericValueRef::from(unsigned as u8),
+            NumericValueRef::from(unsigned as u16),
+            NumericValueRef::from(unsigned as u32),
+            NumericValueRef::from(unsigned as u64),
+            NumericValueRef::from(unsigned),
+            NumericValueRef::from(float32),
+            NumericValueRef::from(float64),
+            NumericValueRef::from(&integer),
+            NumericValueRef::from(&decimal),
         ];
 
         for policy in [
@@ -533,61 +524,61 @@ proptest! {
 fn test_compare_numeric_big_number_paths() {
     let integer = BigInt::from(u128::MAX) + BigInt::from(1_u8);
     assert_exact(
-        NumericValueRef::BigInteger(&integer),
-        NumericValueRef::UInt128(u128::MAX),
+        NumericValueRef::from(&integer),
+        NumericValueRef::from(u128::MAX),
         Some(Ordering::Greater),
     );
 
     let decimal = BigDecimal::from_str("0.1").unwrap();
     assert_eq!(
         compare_numeric(
-            NumericValueRef::BigDecimal(&decimal),
-            NumericValueRef::Float64(0.1),
+            NumericValueRef::from(&decimal),
+            NumericValueRef::from(0.1_f64),
             NumericComparisonPolicy::Exact,
         ),
         Some(Ordering::Less)
     );
     assert_eq!(
         compare_numeric(
-            NumericValueRef::BigDecimal(&decimal),
-            NumericValueRef::Float64(0.1),
+            NumericValueRef::from(&decimal),
+            NumericValueRef::from(0.1_f64),
             NumericComparisonPolicy::Approximate,
         ),
         Some(Ordering::Equal)
     );
 
     for value in [
-        NumericValueRef::Int8(1),
-        NumericValueRef::Int16(1),
-        NumericValueRef::Int32(1),
-        NumericValueRef::Int64(1),
-        NumericValueRef::Int128(1),
-        NumericValueRef::UInt8(1),
-        NumericValueRef::UInt16(1),
-        NumericValueRef::UInt32(1),
-        NumericValueRef::UInt64(1),
-        NumericValueRef::UInt128(1),
-        NumericValueRef::Float32(1.0),
-        NumericValueRef::Float64(1.0),
+        NumericValueRef::from(1_i8),
+        NumericValueRef::from(1_i16),
+        NumericValueRef::from(1_i32),
+        NumericValueRef::from(1_i64),
+        NumericValueRef::from(1_i128),
+        NumericValueRef::from(1_u8),
+        NumericValueRef::from(1_u16),
+        NumericValueRef::from(1_u32),
+        NumericValueRef::from(1_u64),
+        NumericValueRef::from(1_u128),
+        NumericValueRef::from(1.0_f32),
+        NumericValueRef::from(1.0_f64),
     ] {
         assert_exact(
-            NumericValueRef::BigInteger(&BigInt::from(1)),
+            NumericValueRef::from(&BigInt::from(1)),
             value,
             Some(Ordering::Equal),
         );
     }
 
     assert_exact(
-        NumericValueRef::BigInteger(&BigInt::from(0)),
-        NumericValueRef::Float32(-f32::from_bits(1)),
+        NumericValueRef::from(&BigInt::from(0)),
+        NumericValueRef::from(-f32::from_bits(1)),
         Some(Ordering::Greater),
     );
     for value in [
-        NumericValueRef::Float64(f64::from_bits(1)),
-        NumericValueRef::Float64(f64::MAX),
+        NumericValueRef::from(f64::from_bits(1)),
+        NumericValueRef::from(f64::MAX),
     ] {
         assert_exact(
-            NumericValueRef::BigInteger(&BigInt::from(0)),
+            NumericValueRef::from(&BigInt::from(0)),
             value,
             Some(Ordering::Less),
         );
@@ -595,8 +586,8 @@ fn test_compare_numeric_big_number_paths() {
 
     let negative_scale = BigDecimal::new(BigInt::from(12), -2);
     assert_exact(
-        NumericValueRef::BigDecimal(&negative_scale),
-        NumericValueRef::BigInteger(&BigInt::from(1_200)),
+        NumericValueRef::from(&negative_scale),
+        NumericValueRef::from(&BigInt::from(1_200)),
         Some(Ordering::Equal),
     );
 
@@ -605,63 +596,58 @@ fn test_compare_numeric_big_number_paths() {
     let extreme_negative_scale =
         BigDecimal::new(BigInt::from(0), -(i64::from(u32::MAX) + 1));
     assert_exact(
-        NumericValueRef::BigDecimal(&extreme_negative_scale),
-        NumericValueRef::BigDecimal(&extreme_scale),
+        NumericValueRef::from(&extreme_negative_scale),
+        NumericValueRef::from(&extreme_scale),
         Some(Ordering::Equal),
     );
     let large_scale = BigDecimal::new(BigInt::from(1), 1_000_000);
     let large_negative_scale = BigDecimal::new(BigInt::from(1), -1_000_000);
     assert_exact(
-        NumericValueRef::BigDecimal(&large_scale),
-        NumericValueRef::BigInteger(&BigInt::from(0)),
+        NumericValueRef::from(&large_scale),
+        NumericValueRef::from(&BigInt::from(0)),
         Some(Ordering::Greater),
     );
     assert_exact(
-        NumericValueRef::BigDecimal(&large_negative_scale),
-        NumericValueRef::BigInteger(&BigInt::from(0)),
+        NumericValueRef::from(&large_negative_scale),
+        NumericValueRef::from(&BigInt::from(0)),
         Some(Ordering::Greater),
     );
     for value in [
-        NumericValueRef::Int8(0),
-        NumericValueRef::Int16(0),
-        NumericValueRef::Int32(0),
-        NumericValueRef::Int64(0),
-        NumericValueRef::Int128(0),
-        NumericValueRef::UInt8(0),
-        NumericValueRef::UInt16(0),
-        NumericValueRef::UInt32(0),
-        NumericValueRef::UInt64(0),
-        NumericValueRef::UInt128(0),
-        NumericValueRef::Float32(0.0),
-        NumericValueRef::Float64(0.0),
-        NumericValueRef::BigInteger(&integer),
-        NumericValueRef::BigDecimal(&decimal),
+        NumericValueRef::from(0_i8),
+        NumericValueRef::from(0_i16),
+        NumericValueRef::from(0_i32),
+        NumericValueRef::from(0_i64),
+        NumericValueRef::from(0_i128),
+        NumericValueRef::from(0_u8),
+        NumericValueRef::from(0_u16),
+        NumericValueRef::from(0_u32),
+        NumericValueRef::from(0_u64),
+        NumericValueRef::from(0_u128),
+        NumericValueRef::from(0.0_f32),
+        NumericValueRef::from(0.0_f64),
     ] {
-        let expected = if matches!(
-            value,
-            NumericValueRef::BigInteger(_) | NumericValueRef::BigDecimal(_)
-        ) {
-            Some(Ordering::Less)
-        } else {
-            Some(Ordering::Equal)
-        };
         assert_exact(
-            NumericValueRef::BigDecimal(&extreme_scale),
+            NumericValueRef::from(&extreme_scale),
             value,
-            expected,
+            Some(Ordering::Equal),
         );
     }
-    assert_exact(
-        NumericValueRef::BigInteger(&BigInt::from(0)),
-        NumericValueRef::__Lifetime(PhantomData),
-        None,
-    );
+    for value in [
+        NumericValueRef::from(&integer),
+        NumericValueRef::from(&decimal),
+    ] {
+        assert_exact(
+            NumericValueRef::from(&extreme_scale),
+            value,
+            Some(Ordering::Less),
+        );
+    }
 
     let too_large_for_f64 = BigInt::from(1_u8) << 20_000;
     assert_eq!(
         compare_numeric(
-            NumericValueRef::BigInteger(&too_large_for_f64),
-            NumericValueRef::Float64(1.0),
+            NumericValueRef::from(&too_large_for_f64),
+            NumericValueRef::from(1.0_f64),
             NumericComparisonPolicy::Approximate,
         ),
         Some(Ordering::Greater)

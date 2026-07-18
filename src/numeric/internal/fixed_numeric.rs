@@ -10,6 +10,7 @@
 use std::cmp::Ordering;
 
 use crate::NumericValueRef;
+use crate::numeric::numeric_value::NumericValue;
 
 /// Converts a finite fixed-width value into sign, significand, and power of
 /// two.
@@ -21,23 +22,23 @@ use crate::NumericValueRef;
 /// # Returns
 ///
 /// A tuple representing `(-1)^sign * significand * 2^exponent`, or `None`
-/// for non-finite and non-numeric marker values.
+/// for non-finite values or arbitrary-precision representations.
 fn finite_parts(value: NumericValueRef<'_>) -> Option<(bool, u128, i32)> {
-    match value {
-        NumericValueRef::Int8(value) => signed_parts(i128::from(value)),
-        NumericValueRef::Int16(value) => signed_parts(i128::from(value)),
-        NumericValueRef::Int32(value) => signed_parts(i128::from(value)),
-        NumericValueRef::Int64(value) => signed_parts(i128::from(value)),
-        NumericValueRef::Int128(value) => signed_parts(value),
-        NumericValueRef::UInt8(value) => Some((false, u128::from(value), 0)),
-        NumericValueRef::UInt16(value) => Some((false, u128::from(value), 0)),
-        NumericValueRef::UInt32(value) => Some((false, u128::from(value), 0)),
-        NumericValueRef::UInt64(value) => Some((false, u128::from(value), 0)),
-        NumericValueRef::UInt128(value) => Some((false, value, 0)),
-        NumericValueRef::Float32(value) if value.is_finite() => {
+    match value.inner() {
+        NumericValue::Int8(value) => signed_parts(i128::from(value)),
+        NumericValue::Int16(value) => signed_parts(i128::from(value)),
+        NumericValue::Int32(value) => signed_parts(i128::from(value)),
+        NumericValue::Int64(value) => signed_parts(i128::from(value)),
+        NumericValue::Int128(value) => signed_parts(value),
+        NumericValue::UInt8(value) => Some((false, u128::from(value), 0)),
+        NumericValue::UInt16(value) => Some((false, u128::from(value), 0)),
+        NumericValue::UInt32(value) => Some((false, u128::from(value), 0)),
+        NumericValue::UInt64(value) => Some((false, u128::from(value), 0)),
+        NumericValue::UInt128(value) => Some((false, value, 0)),
+        NumericValue::Float32(value) if value.is_finite() => {
             Some(f32_parts(value))
         }
-        NumericValueRef::Float64(value) if value.is_finite() => {
+        NumericValue::Float64(value) if value.is_finite() => {
             Some(f64_parts(value))
         }
         _ => None,

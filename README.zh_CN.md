@@ -77,8 +77,8 @@ assert_eq!("INT32".parse::<DataType>(), Ok(DataType::Int32));
 use std::cmp::Ordering;
 use qubit_datatype::{compare_numeric, NumericComparisonPolicy, NumericValueRef};
 
-let integer = NumericValueRef::UInt64((1_u64 << 53) + 1);
-let float = NumericValueRef::Float64((1_u64 << 53) as f64);
+let integer = NumericValueRef::from((1_u64 << 53) + 1);
+let float = NumericValueRef::from((1_u64 << 53) as f64);
 assert_eq!(
     compare_numeric(integer, float, NumericComparisonPolicy::Exact),
     Some(Ordering::Greater),
