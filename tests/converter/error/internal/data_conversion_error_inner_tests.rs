@@ -7,13 +7,18 @@
 // =============================================================================
 //! Tests for variant-specific data conversion error details.
 
-use qubit_datatype::{DataConversionError, DataType, InvalidValueReason};
+use qubit_datatype::{
+    DataConversionError,
+    DataType,
+    InvalidValueReason,
+};
 
 /// Tests the public diagnostics produced by every private error variant.
 #[test]
 fn test_data_conversion_error_inner_display() {
     assert_eq!(
-        DataConversionError::missing(DataType::String, DataType::Int32).to_string(),
+        DataConversionError::missing(DataType::String, DataType::Int32)
+            .to_string(),
         "Missing value for conversion from string to int32",
     );
     assert_eq!(
@@ -21,7 +26,8 @@ fn test_data_conversion_error_inner_display() {
         "Cannot convert the first value of an empty collection to int32",
     );
     assert_eq!(
-        DataConversionError::unsupported(DataType::String, DataType::Int32).to_string(),
+        DataConversionError::unsupported(DataType::String, DataType::Int32)
+            .to_string(),
         "Unsupported conversion from string to int32",
     );
     assert_eq!(

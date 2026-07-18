@@ -9,7 +9,10 @@
 //!
 //! Defines whether numeric conversions may lose information.
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 /// Controls whether numeric conversions must preserve the source value.
 ///
@@ -18,7 +21,9 @@ use serde::{Deserialize, Serialize};
 /// conversion for each target family but still rejects non-finite or
 /// out-of-range results where no target value exists.
 #[must_use]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum NumericConversionPolicy {
     /// Reject conversions that require truncation, rounding, or precision

@@ -12,7 +12,10 @@ use std::cmp::Ordering;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use super::internal::compare_exact_rational;
 use super::internal::compare_fixed;
-use super::{NumericComparisonPolicy, NumericValueRef};
+use super::{
+    NumericComparisonPolicy,
+    NumericValueRef,
+};
 
 /// Compares two numeric representations under an explicit policy.
 ///

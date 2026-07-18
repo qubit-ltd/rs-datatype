@@ -15,7 +15,10 @@ use std::str::FromStr;
 
 use super::data_type_parse_error::DataTypeParseError;
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 /// Universal data type enumeration for cross-module type representation
 ///
@@ -246,7 +249,11 @@ impl DataType {
     pub const fn is_signed_integer(self) -> bool {
         matches!(
             self,
-            DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64 | DataType::Int128
+            DataType::Int8
+                | DataType::Int16
+                | DataType::Int32
+                | DataType::Int64
+                | DataType::Int128
         )
     }
 

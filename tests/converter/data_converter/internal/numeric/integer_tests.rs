@@ -7,7 +7,10 @@
 // =============================================================================
 //! Fixed-width integer conversion tests.
 
-use qubit_datatype::{DataConversionOptions, DataConverter};
+use qubit_datatype::{
+    DataConversionOptions,
+    DataConverter,
+};
 
 /// Verifies exact and lossy integer-to-f32 conversion at the mantissa boundary.
 #[test]

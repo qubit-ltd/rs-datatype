@@ -13,11 +13,24 @@ use std::time::Duration;
 
 use chrono::NaiveDate;
 use num_bigint::BigInt;
-use proptest::strategy::{Just, Strategy};
-use proptest::{prop_assert_eq, prop_oneof, proptest};
+use proptest::strategy::{
+    Just,
+    Strategy,
+};
+use proptest::{
+    prop_assert_eq,
+    prop_oneof,
+    proptest,
+};
 use qubit_datatype::{
-    DataConversionOptions, DataConverter, DataType, DurationConversionOptions, DurationUnit,
-    InvalidValueReason, NumericConversionPolicy, SuffixlessDurationPolicy,
+    DataConversionOptions,
+    DataConverter,
+    DataType,
+    DurationConversionOptions,
+    DurationUnit,
+    InvalidValueReason,
+    NumericConversionPolicy,
+    SuffixlessDurationPolicy,
 };
 
 /// Test Duration string formatting and parsing.
@@ -78,8 +91,9 @@ fn test_data_converter_duration_string_conversion() {
     assert_eq!(bare_default, Duration::from_millis(10));
 
     let options = DataConversionOptions::default().with_duration_options(
-        DurationConversionOptions::default()
-            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(DurationUnit::Seconds)),
+        DurationConversionOptions::default().with_suffixless_string_policy(
+            SuffixlessDurationPolicy::Assume(DurationUnit::Seconds),
+        ),
     );
     let bare_seconds: Duration = DataConverter::from("10")
         .to_with(&options)
@@ -117,7 +131,8 @@ fn test_data_converter_duration_string_conversion() {
         DataConverter::from("10fortnights").to::<Duration>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::UnsupportedDurationUnit)
     )));
-    let overflowing_duration = format!("{}ns", (u64::MAX as u128 + 1) * 1_000_000_000);
+    let overflowing_duration =
+        format!("{}ns", (u64::MAX as u128 + 1) * 1_000_000_000);
     assert!(matches!(
         DataConverter::from(overflowing_duration).to::<Duration>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
@@ -144,7 +159,9 @@ fn test_data_converter_duration_uses_independent_unit_policies() {
     let options = DataConversionOptions::strict().with_duration_options(
         DurationConversionOptions::default()
             .with_numeric_input_unit(DurationUnit::Seconds)
-            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(DurationUnit::Minutes))
+            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(
+                DurationUnit::Minutes,
+            ))
             .with_output_unit(DurationUnit::Hours),
     );
 
@@ -157,7 +174,8 @@ fn test_data_converter_duration_uses_independent_unit_policies() {
         Ok(Duration::from_secs(120)),
     );
     assert_eq!(
-        DataConverter::from(Duration::from_secs(7_200)).to_with::<String>(&options),
+        DataConverter::from(Duration::from_secs(7_200))
+            .to_with::<String>(&options),
         Ok("2h".to_string()),
     );
 }
@@ -231,9 +249,11 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
             .is_ok()
     );
 
-    let overflowing_options = DataConversionOptions::default().with_duration_options(
-        DurationConversionOptions::default().with_numeric_input_unit(DurationUnit::Days),
-    );
+    let overflowing_options = DataConversionOptions::default()
+        .with_duration_options(
+            DurationConversionOptions::default()
+                .with_numeric_input_unit(DurationUnit::Days),
+        );
     assert!(matches!(
         DataConverter::from(u64::MAX).to_with::<Duration>(&overflowing_options),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
@@ -249,7 +269,8 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
         DataConverter::from(&negative_big_integer).to::<Duration>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::NegativeDuration)
     )));
-    let huge_negative_big_integer = -(BigInt::from(u128::MAX) + BigInt::from(1u8));
+    let huge_negative_big_integer =
+        -(BigInt::from(u128::MAX) + BigInt::from(1u8));
     assert!(matches!(
         DataConverter::from(&huge_negative_big_integer).to::<Duration>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::NegativeDuration)
@@ -282,7 +303,8 @@ fn test_data_converter_duration_text() {
 #[test]
 fn test_data_converter_duration_targets_honor_numeric_policy() {
     let exact = DataConversionOptions::default().with_duration_options(
-        DurationConversionOptions::default().with_output_unit(DurationUnit::Seconds),
+        DurationConversionOptions::default()
+            .with_output_unit(DurationUnit::Seconds),
     );
     let duration = Duration::from_millis(1_500);
     assert!(matches!(
@@ -343,7 +365,9 @@ fn test_data_converter_duration_rejects_unrepresentable_counts() {
     let seconds = DataConversionOptions::default().with_duration_options(
         DurationConversionOptions::default()
             .with_numeric_input_unit(DurationUnit::Seconds)
-            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(DurationUnit::Seconds)),
+            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(
+                DurationUnit::Seconds,
+            )),
     );
     let above_u128 = BigInt::from(u128::MAX) + BigInt::from(1u8);
     for result in [

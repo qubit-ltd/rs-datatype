@@ -11,9 +11,19 @@
 
 use qubit_datatype::DataType;
 use qubit_datatype::converter::{
-    BlankStringPolicy, BooleanConversionOptions, BooleanNumericPolicy, DataConversionError,
-    DataConversionOptions, DataConverter, DurationConversionOptions, DurationUnit, EmptyItemPolicy,
-    InvalidValueReason, NumericConversionPolicy, StringConversionOptions, SuffixlessDurationPolicy,
+    BlankStringPolicy,
+    BooleanConversionOptions,
+    BooleanNumericPolicy,
+    DataConversionError,
+    DataConversionOptions,
+    DataConverter,
+    DurationConversionOptions,
+    DurationUnit,
+    EmptyItemPolicy,
+    InvalidValueReason,
+    NumericConversionPolicy,
+    StringConversionOptions,
+    SuffixlessDurationPolicy,
 };
 
 /// Test the complete strict and lossy profile contracts.
@@ -192,8 +202,8 @@ fn test_duration_unit_suffixes_and_rounding_cover_all_units() {
 /// Test exact and lossy numeric policies for typed and textual sources.
 #[test]
 fn test_data_conversion_options_numeric_policy_is_source_independent() {
-    let exact =
-        DataConversionOptions::default().with_numeric_policy(NumericConversionPolicy::Exact);
+    let exact = DataConversionOptions::default()
+        .with_numeric_policy(NumericConversionPolicy::Exact);
     for (converter, from) in [
         (DataConverter::from(3.9f64), DataType::Float64),
         (DataConverter::from("3.9"), DataType::String),
@@ -215,11 +225,12 @@ fn test_data_conversion_options_numeric_policy_is_source_independent() {
             3,
         );
     }
-    for converter in [DataConverter::from(-3.9f64), DataConverter::from("-3.9")] {
+    for converter in [DataConverter::from(-3.9f64), DataConverter::from("-3.9")]
+    {
         assert_eq!(
-            converter
-                .to_with::<i32>(&lossy)
-                .expect("lossy negative conversion should truncate toward zero"),
+            converter.to_with::<i32>(&lossy).expect(
+                "lossy negative conversion should truncate toward zero"
+            ),
             -3,
         );
     }
@@ -229,7 +240,8 @@ fn test_data_conversion_options_numeric_policy_is_source_independent() {
 #[test]
 fn test_data_conversion_options_boolean_numeric_policy_is_source_independent() {
     let zero_or_one = DataConversionOptions::default().with_boolean_options(
-        BooleanConversionOptions::default().with_numeric_policy(BooleanNumericPolicy::ZeroOrOne),
+        BooleanConversionOptions::default()
+            .with_numeric_policy(BooleanNumericPolicy::ZeroOrOne),
     );
     for (converter, from) in [
         (DataConverter::from(2i32), DataType::Int32),
@@ -258,7 +270,8 @@ fn test_data_conversion_options_boolean_numeric_policy_is_source_independent() {
     }
 
     let non_zero = DataConversionOptions::default().with_boolean_options(
-        BooleanConversionOptions::default().with_numeric_policy(BooleanNumericPolicy::NonZero),
+        BooleanConversionOptions::default()
+            .with_numeric_policy(BooleanNumericPolicy::NonZero),
     );
     for converter in [DataConverter::from(2i32), DataConverter::from("2")] {
         assert!(
@@ -283,7 +296,8 @@ fn test_data_conversion_options_boolean_numeric_policy_is_source_independent() {
     }
 
     let reject = DataConversionOptions::default().with_boolean_options(
-        BooleanConversionOptions::default().with_numeric_policy(BooleanNumericPolicy::Reject),
+        BooleanConversionOptions::default()
+            .with_numeric_policy(BooleanNumericPolicy::Reject),
     );
     for (converter, from) in [
         (DataConverter::from(1i32), DataType::Int32),
@@ -316,7 +330,8 @@ fn test_data_conversion_options_serde_and_default_ref() {
             .expect("empty options object should use defaults"),
         defaults,
     );
-    let wire = serde_json::to_string(&defaults).expect("conversion options should serialize");
+    let wire = serde_json::to_string(&defaults)
+        .expect("conversion options should serialize");
     assert_eq!(
         serde_json::from_str::<DataConversionOptions>(&wire)
             .expect("conversion options should deserialize"),

@@ -12,8 +12,15 @@
 use proptest::arbitrary::any;
 use proptest::collection;
 use proptest::strategy::Just;
-use proptest::{prop_assert_eq, prop_oneof, proptest};
-use qubit_datatype::converter::{BooleanConversionOptions, BooleanNumericPolicy};
+use proptest::{
+    prop_assert_eq,
+    prop_oneof,
+    proptest,
+};
+use qubit_datatype::converter::{
+    BooleanConversionOptions,
+    BooleanNumericPolicy,
+};
 
 /// Test boolean option literals and case-sensitive parsing.
 #[test]
@@ -111,7 +118,8 @@ fn test_boolean_conversion_options_serde_and_defaults() {
     assert_eq!(BooleanConversionOptions::DEFAULT_FALSE_LITERALS, &["false"],);
     assert_eq!(defaults.true_literals(), &["true".to_string()]);
     assert_eq!(defaults.false_literals(), &["false".to_string()]);
-    let wire = serde_json::to_string(&defaults).expect("boolean options should serialize");
+    let wire = serde_json::to_string(&defaults)
+        .expect("boolean options should serialize");
     assert_eq!(
         serde_json::from_str::<BooleanConversionOptions>(&wire)
             .expect("boolean options should deserialize"),

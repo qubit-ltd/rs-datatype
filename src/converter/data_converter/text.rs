@@ -8,7 +8,13 @@
 //! Textual and temporal conversion implementations.
 
 #[cfg(feature = "chrono")]
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{
+    DateTime,
+    NaiveDate,
+    NaiveDateTime,
+    NaiveTime,
+    Utc,
+};
 #[cfg(feature = "url")]
 use url::Url;
 
@@ -16,7 +22,10 @@ use super::DataConverter;
 use super::duration::format_duration;
 use super::string_source::normalize;
 use crate::converter::{
-    DataConversionError, DataConversionOptions, DataConversionTarget, InvalidValueReason,
+    DataConversionError,
+    DataConversionOptions,
+    DataConversionTarget,
+    InvalidValueReason,
 };
 use crate::datatype::DataType;
 
@@ -75,11 +84,15 @@ impl DataConversionTarget for String {
             #[cfg(feature = "big-decimal")]
             DataConverter::BigDecimal(value) => Ok(value.to_string()),
             #[cfg(feature = "chrono")]
-            DataConverter::Date(value) => Ok(value.format("%Y-%m-%d").to_string()),
+            DataConverter::Date(value) => {
+                Ok(value.format("%Y-%m-%d").to_string())
+            }
             #[cfg(feature = "chrono")]
             DataConverter::Time(value) => Ok(value.to_string()),
             #[cfg(feature = "chrono")]
-            DataConverter::DateTime(value) => Ok(value.format("%Y-%m-%dT%H:%M:%S%.f").to_string()),
+            DataConverter::DateTime(value) => {
+                Ok(value.format("%Y-%m-%dT%H:%M:%S%.f").to_string())
+            }
             #[cfg(feature = "chrono")]
             DataConverter::Instant(value) => Ok(value.to_rfc3339()),
             DataConverter::Duration(value) => format_duration(*value, options),
@@ -89,12 +102,16 @@ impl DataConversionTarget for String {
             DataConverter::StringMap(value) => Ok(serde_json::Value::Object(
                 value
                     .iter()
-                    .map(|(key, value)| (key.clone(), serde_json::Value::String(value.clone())))
+                    .map(|(key, value)| {
+                        (key.clone(), serde_json::Value::String(value.clone()))
+                    })
                     .collect(),
             )
             .to_string()),
             #[cfg(not(feature = "json"))]
-            DataConverter::StringMap(_) => Err(source.unsupported(DataType::String)),
+            DataConverter::StringMap(_) => {
+                Err(source.unsupported(DataType::String))
+            }
             #[cfg(feature = "json")]
             DataConverter::Json(value) => Ok(value.to_string()),
         }
@@ -117,7 +134,9 @@ macro_rules! impl_text_or_copy_target {
                             Some(value) => Ok(value),
                             None => Err(source.invalid(
                                 $data_type,
-                                InvalidValueReason::InvalidSyntax { expected: $format },
+                                InvalidValueReason::InvalidSyntax {
+                                    expected: $format,
+                                },
                             )),
                         }
                     }
@@ -193,7 +212,13 @@ fn parse_datetime(value: &str) -> Option<NaiveDateTime> {
 }
 
 #[cfg(feature = "chrono")]
-impl_text_or_copy_target!(NaiveDate, Date, DataType::Date, "YYYY-MM-DD", parse_date);
+impl_text_or_copy_target!(
+    NaiveDate,
+    Date,
+    DataType::Date,
+    "YYYY-MM-DD",
+    parse_date
+);
 #[cfg(feature = "chrono")]
 impl_text_or_copy_target!(
     NaiveTime,

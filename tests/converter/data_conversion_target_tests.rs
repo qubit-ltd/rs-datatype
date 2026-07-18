@@ -7,7 +7,11 @@
 // =============================================================================
 
 use qubit_datatype::{
-    DataConversionError, DataConversionOptions, DataConversionTarget, DataConverter, DataType,
+    DataConversionError,
+    DataConversionOptions,
+    DataConversionTarget,
+    DataConverter,
+    DataType,
     DataTypeOf,
 };
 

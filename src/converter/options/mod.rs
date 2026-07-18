@@ -18,7 +18,10 @@ mod internal;
 mod numeric_conversion_policy;
 mod string_conversion_options;
 
-pub use crate::duration::{DurationUnit, SuffixlessDurationPolicy};
+pub use crate::duration::{
+    DurationUnit,
+    SuffixlessDurationPolicy,
+};
 pub use blank_string_policy::BlankStringPolicy;
 pub use boolean_conversion_options::BooleanConversionOptions;
 pub use boolean_numeric_policy::BooleanNumericPolicy;

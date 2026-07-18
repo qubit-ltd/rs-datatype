@@ -37,7 +37,13 @@ use bigdecimal::BigDecimal;
     feature = "url",
     feature = "json"
 ))]
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{
+    DateTime,
+    NaiveDate,
+    NaiveDateTime,
+    NaiveTime,
+    Utc,
+};
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",
@@ -52,7 +58,12 @@ use qubit_datatype::DataConverter;
     feature = "url",
     feature = "json"
 ))]
-use qubit_datatype::{DataConversionError, DataFormat, DataType, InvalidValueReason};
+use qubit_datatype::{
+    DataConversionError,
+    DataFormat,
+    DataType,
+    InvalidValueReason,
+};
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",
@@ -180,7 +191,8 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
         },
     );
     assert_invalid_reason(
-        DataConverter::from(r#"{"key":"value"} []"#).to::<HashMap<String, String>>(),
+        DataConverter::from(r#"{"key":"value"} []"#)
+            .to::<HashMap<String, String>>(),
         DataType::StringMap,
         InvalidValueReason::Deserialization {
             format: DataFormat::Json,

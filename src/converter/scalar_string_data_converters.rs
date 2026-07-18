@@ -11,9 +11,16 @@
 
 use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
-use super::error::{DataConversionError, DataListConversionError, InvalidValueReason};
+use super::error::{
+    DataConversionError,
+    DataListConversionError,
+    InvalidValueReason,
+};
 use super::options::DataConversionOptions;
-use crate::datatype::{DataType, DataTypeOf};
+use crate::datatype::{
+    DataType,
+    DataTypeOf,
+};
 
 /// Converts a scalar string as a configurable collection source.
 ///
@@ -121,7 +128,10 @@ impl<'a> ScalarStringDataConverters<'a> {
             let value = match DataConverter::from(item.value).to_with(options) {
                 Ok(value) => value,
                 Err(source) => {
-                    return Err(DataListConversionError::new(item.source_index, source));
+                    return Err(DataListConversionError::new(
+                        item.source_index,
+                        source,
+                    ));
                 }
             };
             converted.push(value);
