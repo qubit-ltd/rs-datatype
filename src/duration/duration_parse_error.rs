@@ -12,7 +12,7 @@
 #[non_exhaustive]
 pub enum DurationParseError {
     /// The input does not match the configured non-negative integer grammar.
-    #[error("invalid duration syntax; expected [0-9]+(ns|us|ms|s|m|h|d)?")]
+    #[error("invalid duration syntax")]
     InvalidSyntax,
     /// The input has a syntactically valid but unsupported unit suffix.
     #[error("unsupported duration unit `{unit}`")]
