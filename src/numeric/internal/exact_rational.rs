@@ -16,8 +16,8 @@ use num_rational::BigRational;
 
 #[cfg(feature = "big-decimal")]
 use super::exact_decimal::compare_exact_decimal;
-use crate::NumericValueRef;
-use crate::numeric::numeric_value::NumericValue;
+use crate::NumberRef;
+use crate::numeric::internal::NumberRepr;
 
 /// Largest decimal scale materialized as an explicit power of ten.
 ///
@@ -138,46 +138,46 @@ fn decimal_rational(value: &BigDecimal) -> Option<BigRational> {
 ///
 /// The exact mathematical value, or `None` for non-finite values or an
 /// impractically large decimal scale.
-fn to_exact_rational(value: NumericValueRef<'_>) -> Option<BigRational> {
+fn to_exact_rational(value: NumberRef<'_>) -> Option<BigRational> {
     match value.inner() {
-        NumericValue::Int8(value) => {
+        NumberRepr::Int8(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValue::Int16(value) => {
+        NumberRepr::Int16(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValue::Int32(value) => {
+        NumberRepr::Int32(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValue::Int64(value) => {
+        NumberRepr::Int64(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValue::Int128(value) => {
+        NumberRepr::Int128(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValue::UInt8(value) => {
+        NumberRepr::UInt8(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValue::UInt16(value) => {
+        NumberRepr::UInt16(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValue::UInt32(value) => {
+        NumberRepr::UInt32(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValue::UInt64(value) => {
+        NumberRepr::UInt64(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValue::UInt128(value) => {
+        NumberRepr::UInt128(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValue::Float32(value) => Some(f32_rational(value)),
-        NumericValue::Float64(value) => Some(f64_rational(value)),
+        NumberRepr::Float32(value) => Some(f32_rational(value)),
+        NumberRepr::Float64(value) => Some(f64_rational(value)),
         #[cfg(feature = "big-integer")]
-        NumericValue::BigInteger(value) => {
+        NumberRepr::BigInteger(value) => {
             Some(BigRational::from_integer(value.clone()))
         }
         #[cfg(feature = "big-decimal")]
-        NumericValue::BigDecimal(value) => decimal_rational(value),
+        NumberRepr::BigDecimal(value) => decimal_rational(value),
     }
 }
 
@@ -195,17 +195,17 @@ fn to_exact_rational(value: NumericValueRef<'_>) -> Option<BigRational> {
 ///
 /// Their exact mathematical ordering, or `None` for non-finite values.
 pub(in crate::numeric) fn compare_exact_rational(
-    left: NumericValueRef<'_>,
-    right: NumericValueRef<'_>,
+    left: NumberRef<'_>,
+    right: NumberRef<'_>,
 ) -> Option<Ordering> {
     #[cfg(feature = "big-integer")]
-    if let (NumericValue::BigInteger(left), NumericValue::BigInteger(right)) =
+    if let (NumberRepr::BigInteger(left), NumberRepr::BigInteger(right)) =
         (left.inner(), right.inner())
     {
         return Some(left.cmp(right));
     }
     #[cfg(feature = "big-decimal")]
-    if let (NumericValue::BigDecimal(left), NumericValue::BigDecimal(right)) =
+    if let (NumberRepr::BigDecimal(left), NumberRepr::BigDecimal(right)) =
         (left.inner(), right.inner())
     {
         return Some(left.cmp(right));

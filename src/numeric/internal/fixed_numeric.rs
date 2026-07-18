@@ -9,8 +9,8 @@
 
 use std::cmp::Ordering;
 
-use crate::NumericValueRef;
-use crate::numeric::numeric_value::NumericValue;
+use crate::NumberRef;
+use crate::numeric::internal::NumberRepr;
 
 /// Converts a finite fixed-width value into sign, significand, and power of
 /// two.
@@ -23,22 +23,22 @@ use crate::numeric::numeric_value::NumericValue;
 ///
 /// A tuple representing `(-1)^sign * significand * 2^exponent`, or `None`
 /// for non-finite values or arbitrary-precision representations.
-fn finite_parts(value: NumericValueRef<'_>) -> Option<(bool, u128, i32)> {
+fn finite_parts(value: NumberRef<'_>) -> Option<(bool, u128, i32)> {
     match value.inner() {
-        NumericValue::Int8(value) => signed_parts(i128::from(value)),
-        NumericValue::Int16(value) => signed_parts(i128::from(value)),
-        NumericValue::Int32(value) => signed_parts(i128::from(value)),
-        NumericValue::Int64(value) => signed_parts(i128::from(value)),
-        NumericValue::Int128(value) => signed_parts(value),
-        NumericValue::UInt8(value) => Some((false, u128::from(value), 0)),
-        NumericValue::UInt16(value) => Some((false, u128::from(value), 0)),
-        NumericValue::UInt32(value) => Some((false, u128::from(value), 0)),
-        NumericValue::UInt64(value) => Some((false, u128::from(value), 0)),
-        NumericValue::UInt128(value) => Some((false, value, 0)),
-        NumericValue::Float32(value) if value.is_finite() => {
+        NumberRepr::Int8(value) => signed_parts(i128::from(value)),
+        NumberRepr::Int16(value) => signed_parts(i128::from(value)),
+        NumberRepr::Int32(value) => signed_parts(i128::from(value)),
+        NumberRepr::Int64(value) => signed_parts(i128::from(value)),
+        NumberRepr::Int128(value) => signed_parts(value),
+        NumberRepr::UInt8(value) => Some((false, u128::from(value), 0)),
+        NumberRepr::UInt16(value) => Some((false, u128::from(value), 0)),
+        NumberRepr::UInt32(value) => Some((false, u128::from(value), 0)),
+        NumberRepr::UInt64(value) => Some((false, u128::from(value), 0)),
+        NumberRepr::UInt128(value) => Some((false, value, 0)),
+        NumberRepr::Float32(value) if value.is_finite() => {
             Some(f32_parts(value))
         }
-        NumericValue::Float64(value) if value.is_finite() => {
+        NumberRepr::Float64(value) if value.is_finite() => {
             Some(f64_parts(value))
         }
         _ => None,
@@ -151,8 +151,8 @@ fn compare_magnitude(
 /// Their mathematical ordering, or `None` for a non-finite or unsupported
 /// input.
 pub(in crate::numeric) fn compare_fixed(
-    left: NumericValueRef<'_>,
-    right: NumericValueRef<'_>,
+    left: NumberRef<'_>,
+    right: NumberRef<'_>,
 ) -> Option<Ordering> {
     let (left_negative, left_significand, left_exponent) = finite_parts(left)?;
     let (right_negative, right_significand, right_exponent) =
