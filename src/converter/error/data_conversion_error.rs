@@ -144,6 +144,15 @@ impl DataConversionError {
     /// # Returns
     ///
     /// `true` only for a missing-value error; otherwise, `false`.
+    ///
+    /// ```compile_fail
+    /// #![deny(unused_must_use)]
+    /// use qubit_datatype::{DataConversionError, DataType};
+    ///
+    /// let error = DataConversionError::missing(DataType::String, DataType::Bool);
+    /// error.is_missing();
+    /// ```
+    #[must_use]
     #[inline(always)]
     pub const fn is_missing(&self) -> bool {
         matches!(&self.inner, DataConversionErrorInner::Missing { .. })

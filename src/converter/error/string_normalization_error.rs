@@ -31,6 +31,14 @@ impl StringNormalizationError {
     /// # Returns
     ///
     /// `true` only for [`Self::Missing`]; otherwise, `false`.
+    ///
+    /// ```compile_fail
+    /// #![deny(unused_must_use)]
+    /// use qubit_datatype::StringNormalizationError;
+    ///
+    /// StringNormalizationError::Missing.is_missing();
+    /// ```
+    #[must_use]
     #[inline(always)]
     pub const fn is_missing(&self) -> bool {
         matches!(self, Self::Missing)
