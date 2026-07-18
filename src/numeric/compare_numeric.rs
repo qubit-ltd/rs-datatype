@@ -12,6 +12,8 @@ use std::cmp::Ordering;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use super::internal::compare_exact_rational;
 use super::internal::compare_fixed;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use super::numeric_value::NumericValue;
 use super::{
     NumericComparisonPolicy,
     NumericValueRef,
@@ -36,8 +38,7 @@ use super::{
 ///
 /// # Returns
 ///
-/// The numeric ordering, or `None` when either operand is NaN or is the hidden
-/// lifetime marker.
+/// The numeric ordering, or `None` when either operand is NaN.
 pub fn compare_numeric(
     left: NumericValueRef<'_>,
     right: NumericValueRef<'_>,
@@ -69,13 +70,15 @@ pub fn compare_numeric(
     #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
     {
         #[cfg(feature = "big-integer")]
-        let has_big_integer = matches!(left, NumericValueRef::BigInteger(_))
-            || matches!(right, NumericValueRef::BigInteger(_));
+        let has_big_integer =
+            matches!(left.inner(), NumericValue::BigInteger(_))
+                || matches!(right.inner(), NumericValue::BigInteger(_));
         #[cfg(not(feature = "big-integer"))]
         let has_big_integer = false;
         #[cfg(feature = "big-decimal")]
-        let has_big_decimal = matches!(left, NumericValueRef::BigDecimal(_))
-            || matches!(right, NumericValueRef::BigDecimal(_));
+        let has_big_decimal =
+            matches!(left.inner(), NumericValue::BigDecimal(_))
+                || matches!(right.inner(), NumericValue::BigDecimal(_));
         #[cfg(not(feature = "big-decimal"))]
         let has_big_decimal = false;
         if has_big_integer || has_big_decimal {

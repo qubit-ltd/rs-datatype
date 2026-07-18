@@ -12,6 +12,7 @@ use std::cmp::Ordering;
 use bigdecimal::BigDecimal;
 
 use crate::NumericValueRef;
+use crate::numeric::numeric_value::NumericValue;
 
 /// Converts a finite numeric value into an exact arbitrary-precision decimal.
 ///
@@ -24,27 +25,26 @@ use crate::NumericValueRef;
 ///
 /// # Returns
 ///
-/// The exact decimal value, or `None` for a non-finite or marker value.
+/// The exact decimal value, or `None` for a non-finite value.
 fn to_exact_decimal(value: NumericValueRef<'_>) -> Option<BigDecimal> {
-    match value {
-        NumericValueRef::Int8(value) => Some(BigDecimal::from(value)),
-        NumericValueRef::Int16(value) => Some(BigDecimal::from(value)),
-        NumericValueRef::Int32(value) => Some(BigDecimal::from(value)),
-        NumericValueRef::Int64(value) => Some(BigDecimal::from(value)),
-        NumericValueRef::Int128(value) => Some(BigDecimal::from(value)),
-        NumericValueRef::UInt8(value) => Some(BigDecimal::from(value)),
-        NumericValueRef::UInt16(value) => Some(BigDecimal::from(value)),
-        NumericValueRef::UInt32(value) => Some(BigDecimal::from(value)),
-        NumericValueRef::UInt64(value) => Some(BigDecimal::from(value)),
-        NumericValueRef::UInt128(value) => Some(BigDecimal::from(value)),
-        NumericValueRef::Float32(value) => BigDecimal::try_from(value).ok(),
-        NumericValueRef::Float64(value) => BigDecimal::try_from(value).ok(),
+    match value.inner() {
+        NumericValue::Int8(value) => Some(BigDecimal::from(value)),
+        NumericValue::Int16(value) => Some(BigDecimal::from(value)),
+        NumericValue::Int32(value) => Some(BigDecimal::from(value)),
+        NumericValue::Int64(value) => Some(BigDecimal::from(value)),
+        NumericValue::Int128(value) => Some(BigDecimal::from(value)),
+        NumericValue::UInt8(value) => Some(BigDecimal::from(value)),
+        NumericValue::UInt16(value) => Some(BigDecimal::from(value)),
+        NumericValue::UInt32(value) => Some(BigDecimal::from(value)),
+        NumericValue::UInt64(value) => Some(BigDecimal::from(value)),
+        NumericValue::UInt128(value) => Some(BigDecimal::from(value)),
+        NumericValue::Float32(value) => BigDecimal::try_from(value).ok(),
+        NumericValue::Float64(value) => BigDecimal::try_from(value).ok(),
         #[cfg(feature = "big-integer")]
-        NumericValueRef::BigInteger(value) => {
+        NumericValue::BigInteger(value) => {
             Some(BigDecimal::from(value.clone()))
         }
-        NumericValueRef::BigDecimal(value) => Some(value.clone()),
-        NumericValueRef::__Lifetime(_) => None,
+        NumericValue::BigDecimal(value) => Some(value.clone()),
     }
 }
 
@@ -57,7 +57,7 @@ fn to_exact_decimal(value: NumericValueRef<'_>) -> Option<BigDecimal> {
 ///
 /// # Returns
 ///
-/// Their mathematical ordering, or `None` for a non-finite or marker value.
+/// Their mathematical ordering, or `None` for a non-finite value.
 #[inline(always)]
 pub(in crate::numeric) fn compare_exact_decimal(
     left: NumericValueRef<'_>,

@@ -5,7 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Fixed-width exact comparison tests.
+//! Tests for internal numeric representation behavior through the public API.
 
 use std::cmp::Ordering;
 
@@ -15,15 +15,15 @@ use qubit_datatype::{
     compare_numeric,
 };
 
-/// Verifies fixed signed and unsigned values retain exact ordering.
+/// Verifies that distinct internal primitive representations compare exactly.
 #[test]
-fn test_fixed_numeric_compares_signed_and_unsigned_values() {
+fn test_numeric_value_representations_preserve_exact_values() {
     assert_eq!(
         compare_numeric(
-            NumericValueRef::from(-1_i64),
-            NumericValueRef::from(0_u64),
+            NumericValueRef::from(42_i8),
+            NumericValueRef::from(42_u128),
             NumericComparisonPolicy::Exact,
         ),
-        Some(Ordering::Less),
+        Some(Ordering::Equal),
     );
 }

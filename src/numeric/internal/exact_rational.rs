@@ -17,6 +17,7 @@ use num_rational::BigRational;
 #[cfg(feature = "big-decimal")]
 use super::exact_decimal::compare_exact_decimal;
 use crate::NumericValueRef;
+use crate::numeric::numeric_value::NumericValue;
 
 /// Largest decimal scale materialized as an explicit power of ten.
 ///
@@ -135,49 +136,48 @@ fn decimal_rational(value: &BigDecimal) -> Option<BigRational> {
 ///
 /// # Returns
 ///
-/// The exact mathematical value, or `None` for non-finite values, the hidden
-/// marker, or an impractically large decimal scale.
+/// The exact mathematical value, or `None` for non-finite values or an
+/// impractically large decimal scale.
 fn to_exact_rational(value: NumericValueRef<'_>) -> Option<BigRational> {
-    match value {
-        NumericValueRef::Int8(value) => {
+    match value.inner() {
+        NumericValue::Int8(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValueRef::Int16(value) => {
+        NumericValue::Int16(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValueRef::Int32(value) => {
+        NumericValue::Int32(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValueRef::Int64(value) => {
+        NumericValue::Int64(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValueRef::Int128(value) => {
+        NumericValue::Int128(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValueRef::UInt8(value) => {
+        NumericValue::UInt8(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValueRef::UInt16(value) => {
+        NumericValue::UInt16(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValueRef::UInt32(value) => {
+        NumericValue::UInt32(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValueRef::UInt64(value) => {
+        NumericValue::UInt64(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValueRef::UInt128(value) => {
+        NumericValue::UInt128(value) => {
             Some(BigRational::from_integer(BigInt::from(value)))
         }
-        NumericValueRef::Float32(value) => Some(f32_rational(value)),
-        NumericValueRef::Float64(value) => Some(f64_rational(value)),
+        NumericValue::Float32(value) => Some(f32_rational(value)),
+        NumericValue::Float64(value) => Some(f64_rational(value)),
         #[cfg(feature = "big-integer")]
-        NumericValueRef::BigInteger(value) => {
+        NumericValue::BigInteger(value) => {
             Some(BigRational::from_integer(value.clone()))
         }
         #[cfg(feature = "big-decimal")]
-        NumericValueRef::BigDecimal(value) => decimal_rational(value),
-        NumericValueRef::__Lifetime(_) => None,
+        NumericValue::BigDecimal(value) => decimal_rational(value),
     }
 }
 
@@ -193,25 +193,20 @@ fn to_exact_rational(value: NumericValueRef<'_>) -> Option<BigRational> {
 ///
 /// # Returns
 ///
-/// Their exact mathematical ordering, or `None` for non-finite and marker
-/// values.
+/// Their exact mathematical ordering, or `None` for non-finite values.
 pub(in crate::numeric) fn compare_exact_rational(
     left: NumericValueRef<'_>,
     right: NumericValueRef<'_>,
 ) -> Option<Ordering> {
     #[cfg(feature = "big-integer")]
-    if let (
-        NumericValueRef::BigInteger(left),
-        NumericValueRef::BigInteger(right),
-    ) = (left, right)
+    if let (NumericValue::BigInteger(left), NumericValue::BigInteger(right)) =
+        (left.inner(), right.inner())
     {
         return Some(left.cmp(right));
     }
     #[cfg(feature = "big-decimal")]
-    if let (
-        NumericValueRef::BigDecimal(left),
-        NumericValueRef::BigDecimal(right),
-    ) = (left, right)
+    if let (NumericValue::BigDecimal(left), NumericValue::BigDecimal(right)) =
+        (left.inner(), right.inner())
     {
         return Some(left.cmp(right));
     }

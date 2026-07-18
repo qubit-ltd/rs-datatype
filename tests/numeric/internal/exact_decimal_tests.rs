@@ -28,8 +28,8 @@ fn test_exact_decimal_ignores_redundant_scale() {
     let decimal = BigDecimal::from_str("1.00").expect("test decimal");
     assert_eq!(
         compare_numeric(
-            NumericValueRef::BigDecimal(&decimal),
-            NumericValueRef::UInt8(1),
+            NumericValueRef::from(&decimal),
+            NumericValueRef::from(1_u8),
             NumericComparisonPolicy::Exact,
         ),
         Some(Ordering::Equal),

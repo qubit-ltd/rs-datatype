@@ -10,6 +10,7 @@
 mod compare_numeric;
 mod internal;
 mod numeric_comparison_policy;
+mod numeric_value;
 mod numeric_value_ref;
 
 pub use compare_numeric::compare_numeric;
