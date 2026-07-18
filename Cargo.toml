@@ -32,7 +32,7 @@ test = false
 
 [features]
 default = []
-duration = ["dep:thiserror"]
+duration = []
 chrono = ["dep:chrono"]
 big-integer = [
     "dep:num-bigint",
@@ -59,7 +59,8 @@ num-rational = { version = "0.4", optional = true }
 num-traits = { version = "0.2", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
-thiserror = { version = "2.0", optional = true }
+strum = { version = "0.28", features = ["derive"] }
+thiserror = "2.0"
 url = { version = "2.5", optional = true }
 
 [dev-dependencies]

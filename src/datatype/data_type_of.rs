@@ -67,86 +67,49 @@ pub trait DataTypeOf {
     const DATA_TYPE: DataType;
 }
 
-impl DataTypeOf for bool {
-    const DATA_TYPE: DataType = DataType::Bool;
+macro_rules! impl_data_type_of {
+    ($( $(#[$meta:meta])* $ty:ty => $variant:ident ),+ $(,)?) => {
+        $(
+            $(#[$meta])*
+            impl DataTypeOf for $ty {
+                const DATA_TYPE: DataType = DataType::$variant;
+            }
+        )+
+    };
 }
-impl DataTypeOf for char {
-    const DATA_TYPE: DataType = DataType::Char;
-}
-impl DataTypeOf for i8 {
-    const DATA_TYPE: DataType = DataType::Int8;
-}
-impl DataTypeOf for i16 {
-    const DATA_TYPE: DataType = DataType::Int16;
-}
-impl DataTypeOf for i32 {
-    const DATA_TYPE: DataType = DataType::Int32;
-}
-impl DataTypeOf for i64 {
-    const DATA_TYPE: DataType = DataType::Int64;
-}
-impl DataTypeOf for i128 {
-    const DATA_TYPE: DataType = DataType::Int128;
-}
-impl DataTypeOf for u8 {
-    const DATA_TYPE: DataType = DataType::UInt8;
-}
-impl DataTypeOf for u16 {
-    const DATA_TYPE: DataType = DataType::UInt16;
-}
-impl DataTypeOf for u32 {
-    const DATA_TYPE: DataType = DataType::UInt32;
-}
-impl DataTypeOf for u64 {
-    const DATA_TYPE: DataType = DataType::UInt64;
-}
-impl DataTypeOf for u128 {
-    const DATA_TYPE: DataType = DataType::UInt128;
-}
-impl DataTypeOf for f32 {
-    const DATA_TYPE: DataType = DataType::Float32;
-}
-impl DataTypeOf for f64 {
-    const DATA_TYPE: DataType = DataType::Float64;
-}
-impl DataTypeOf for String {
-    const DATA_TYPE: DataType = DataType::String;
-}
-#[cfg(feature = "chrono")]
-impl DataTypeOf for NaiveDate {
-    const DATA_TYPE: DataType = DataType::Date;
-}
-#[cfg(feature = "chrono")]
-impl DataTypeOf for NaiveTime {
-    const DATA_TYPE: DataType = DataType::Time;
-}
-#[cfg(feature = "chrono")]
-impl DataTypeOf for NaiveDateTime {
-    const DATA_TYPE: DataType = DataType::DateTime;
-}
-#[cfg(feature = "chrono")]
-impl DataTypeOf for DateTime<Utc> {
-    const DATA_TYPE: DataType = DataType::Instant;
-}
-#[cfg(feature = "big-integer")]
-impl DataTypeOf for BigInt {
-    const DATA_TYPE: DataType = DataType::BigInteger;
-}
-#[cfg(feature = "big-decimal")]
-impl DataTypeOf for BigDecimal {
-    const DATA_TYPE: DataType = DataType::BigDecimal;
-}
-impl DataTypeOf for Duration {
-    const DATA_TYPE: DataType = DataType::Duration;
-}
-#[cfg(feature = "url")]
-impl DataTypeOf for Url {
-    const DATA_TYPE: DataType = DataType::Url;
-}
-impl DataTypeOf for HashMap<String, String> {
-    const DATA_TYPE: DataType = DataType::StringMap;
-}
-#[cfg(feature = "json")]
-impl DataTypeOf for serde_json::Value {
-    const DATA_TYPE: DataType = DataType::Json;
+
+impl_data_type_of! {
+    bool => Bool,
+    char => Char,
+    i8 => Int8,
+    i16 => Int16,
+    i32 => Int32,
+    i64 => Int64,
+    i128 => Int128,
+    u8 => UInt8,
+    u16 => UInt16,
+    u32 => UInt32,
+    u64 => UInt64,
+    u128 => UInt128,
+    f32 => Float32,
+    f64 => Float64,
+    String => String,
+    #[cfg(feature = "chrono")]
+    NaiveDate => Date,
+    #[cfg(feature = "chrono")]
+    NaiveTime => Time,
+    #[cfg(feature = "chrono")]
+    NaiveDateTime => DateTime,
+    #[cfg(feature = "chrono")]
+    DateTime<Utc> => Instant,
+    #[cfg(feature = "big-integer")]
+    BigInt => BigInteger,
+    #[cfg(feature = "big-decimal")]
+    BigDecimal => BigDecimal,
+    Duration => Duration,
+    #[cfg(feature = "url")]
+    Url => Url,
+    HashMap<String, String> => StringMap,
+    #[cfg(feature = "json")]
+    serde_json::Value => Json,
 }

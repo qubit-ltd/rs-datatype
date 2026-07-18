@@ -9,10 +9,9 @@
 //!
 //! Provides the error returned when parsing `DataType` from text fails.
 
-use std::fmt;
-
 /// Error returned when parsing a `DataType` from text fails.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("invalid data type: {input}")]
 pub struct DataTypeParseError {
     /// The rejected data type name.
     input: String,
@@ -31,18 +30,10 @@ impl DataTypeParseError {
     /// # Returns
     ///
     /// A parse error owning a copy of `input`.
+    #[inline(always)]
     pub(crate) fn new(input: &str) -> Self {
         Self {
             input: input.to_string(),
         }
     }
 }
-
-impl fmt::Display for DataTypeParseError {
-    #[inline(always)]
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "invalid data type: {}", self.input)
-    }
-}
-
-impl std::error::Error for DataTypeParseError {}

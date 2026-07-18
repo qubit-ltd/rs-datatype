@@ -47,7 +47,11 @@ fn all_data_types() -> [DataType; 25] {
 /// Verifies that the public catalog contains only platform-independent types.
 #[test]
 fn test_data_type_catalog_excludes_platform_sized_integers() {
-    let names = DataType::ALL.map(DataType::as_str);
+    let names: Vec<&str> = DataType::ALL
+        .iter()
+        .copied()
+        .map(DataType::as_str)
+        .collect();
 
     assert_eq!(names.len(), 25);
     assert!(!names.contains(&"intsize"));
@@ -58,7 +62,7 @@ fn test_data_type_catalog_excludes_platform_sized_integers() {
 #[test]
 fn test_data_type_all_and_numeric_classifications() {
     assert_eq!(DataType::ALL.len(), 25);
-    assert_eq!(DataType::ALL, all_data_types());
+    assert_eq!(DataType::ALL, all_data_types().as_slice());
 
     let cases = [
         (DataType::Bool, false, false, false, false, false, false),
