@@ -86,6 +86,7 @@ impl CollectionConversionOptions {
 
     /// Returns whether scalar strings are split into collection items.
     #[inline(always)]
+    #[must_use]
     pub const fn split_scalar_strings(&self) -> bool {
         self.split_scalar_strings
     }
@@ -136,6 +137,7 @@ impl CollectionConversionOptions {
 
     /// Returns whether collection items are trimmed before conversion.
     #[inline(always)]
+    #[must_use]
     pub const fn trim_items(&self) -> bool {
         self.trim_items
     }

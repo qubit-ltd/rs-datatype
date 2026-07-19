@@ -71,6 +71,7 @@ impl StringConversionOptions {
 
     /// Returns whether strings are trimmed before conversion.
     #[inline(always)]
+    #[must_use]
     pub const fn trim(&self) -> bool {
         self.trim
     }
