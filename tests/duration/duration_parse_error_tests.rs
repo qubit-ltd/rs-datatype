@@ -17,3 +17,12 @@ fn test_duration_parse_error_invalid_syntax_display() {
         "invalid duration syntax",
     );
 }
+
+/// Verifies that resource-limit errors do not include the source value.
+#[test]
+fn test_duration_parse_error_limit_exceeded_display() {
+    assert_eq!(
+        DurationParseError::LimitExceeded { maximum: 12 }.to_string(),
+        "duration text exceeds the 12-byte limit",
+    );
+}

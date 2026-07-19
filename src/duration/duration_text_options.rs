@@ -26,9 +26,14 @@ pub struct DurationTextOptions {
     suffixless_policy: SuffixlessDurationPolicy,
     /// Set of explicit unit suffixes accepted by the parser.
     unit_suffix_set: DurationUnitSuffixSet,
+    /// Maximum accepted source text length in bytes.
+    max_text_bytes: usize,
 }
 
 impl DurationTextOptions {
+    /// Default maximum accepted Duration source text length in bytes.
+    pub const DEFAULT_MAX_TEXT_BYTES: usize = 1_048_576;
+
     /// Creates Duration text options from independent parsing policies.
     ///
     /// # Parameters
@@ -47,6 +52,7 @@ impl DurationTextOptions {
         Self {
             suffixless_policy,
             unit_suffix_set,
+            max_text_bytes: Self::DEFAULT_MAX_TEXT_BYTES,
         }
     }
 
@@ -95,6 +101,27 @@ impl DurationTextOptions {
         unit_suffix_set: DurationUnitSuffixSet,
     ) -> Self {
         self.unit_suffix_set = unit_suffix_set;
+        self
+    }
+
+    /// Returns the maximum accepted source text length in bytes.
+    #[inline(always)]
+    pub const fn max_text_bytes(&self) -> usize {
+        self.max_text_bytes
+    }
+
+    /// Returns a copy with a different source text byte limit.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum accepted source text length in bytes.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline(always)]
+    pub const fn with_max_text_bytes(mut self, maximum: usize) -> Self {
+        self.max_text_bytes = maximum;
         self
     }
 }

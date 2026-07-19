@@ -161,7 +161,6 @@ impl BooleanConversionOptions {
     ///
     /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
     /// false literal under the configured case-sensitivity rule.
-    #[inline(always)]
     pub fn with_true_literal(
         mut self,
         literal: &str,
@@ -196,7 +195,6 @@ impl BooleanConversionOptions {
     ///
     /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
     /// true literal under the configured case-sensitivity rule.
-    #[inline(always)]
     pub fn with_false_literal(
         mut self,
         literal: &str,
@@ -231,7 +229,6 @@ impl BooleanConversionOptions {
     ///
     /// Returns [`BooleanLiteralConflictError`] when changing the matching rule
     /// makes a true literal equal to a false literal.
-    #[inline(always)]
     pub fn with_case_sensitive(
         mut self,
         case_sensitive: bool,

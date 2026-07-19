@@ -32,13 +32,20 @@ use super::{
 ///
 /// # Errors
 ///
-/// Returns [`DurationParseError::InvalidSyntax`] for malformed text,
-/// [`DurationParseError::UnsupportedUnit`] for an unknown alphabetic suffix,
-/// and [`DurationParseError::OutOfRange`] for numeric or Duration overflow.
+/// Returns [`DurationParseError::LimitExceeded`] when the source text exceeds
+/// the configured byte limit, [`DurationParseError::InvalidSyntax`] for
+/// malformed text, [`DurationParseError::UnsupportedUnit`] for an unknown
+/// alphabetic suffix, and [`DurationParseError::OutOfRange`] for numeric or
+/// Duration overflow.
 pub fn parse_duration_text(
     text: &str,
     options: &DurationTextOptions,
 ) -> Result<Duration, DurationParseError> {
+    if text.len() > options.max_text_bytes() {
+        return Err(DurationParseError::LimitExceeded {
+            maximum: options.max_text_bytes(),
+        });
+    }
     let split_at = text
         .bytes()
         .position(|byte| !byte.is_ascii_digit())

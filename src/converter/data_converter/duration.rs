@@ -21,6 +21,7 @@ use super::numeric::{
 };
 use super::string_source::normalize;
 use crate::converter::{
+    ConversionLimit,
     DataConversionError,
     DataConversionOptions,
     DataConversionTarget,
@@ -101,9 +102,17 @@ fn parse_duration(
     let text_options = DurationTextOptions::new(
         options.duration().suffixless_string_policy(),
         options.duration().unit_suffix_set(),
-    );
+    )
+    .with_max_text_bytes(options.duration().max_text_bytes());
     match parse_duration_text(value, &text_options) {
         Ok(duration) => Ok(duration),
+        Err(DurationParseError::LimitExceeded { maximum }) => {
+            Err(DataConversionError::limit_exceeded(
+                DataType::String,
+                to,
+                ConversionLimit::DurationTextBytes { maximum },
+            ))
+        }
         Err(DurationParseError::InvalidSyntax) => {
             let suffix_required = !value.is_empty()
                 && value.bytes().all(|byte| byte.is_ascii_digit())

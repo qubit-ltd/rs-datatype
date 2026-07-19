@@ -76,4 +76,14 @@ impl DataListConversionError {
     pub fn into_conversion_error(self) -> DataConversionError {
         self.source
     }
+
+    /// Consumes this error and returns its source index and conversion error.
+    ///
+    /// # Returns
+    ///
+    /// The original zero-based source position and owned conversion error.
+    #[inline(always)]
+    pub fn into_parts(self) -> (usize, DataConversionError) {
+        (self.source_index, self.source)
+    }
 }

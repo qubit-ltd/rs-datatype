@@ -43,6 +43,46 @@ pub(super) fn signed_magnitude(value: i128) -> (bool, u128) {
     (value.is_negative(), value.unsigned_abs())
 }
 
+/// Extracts the exact sign and magnitude of a fixed-width scalar integer.
+///
+/// Boolean and character sources are represented by their numeric values.
+/// Non-integer sources return `None` for target-specific handling.
+///
+/// # Parameters
+///
+/// * `source` - Borrowed source representation to inspect.
+///
+/// # Returns
+///
+/// The exact sign and magnitude for a supported scalar integer source.
+pub(super) fn scalar_integer_magnitude(
+    source: &DataConverter<'_>,
+) -> Option<(bool, u128)> {
+    match source {
+        DataConverter::Bool(value) => Some((false, u128::from(*value))),
+        DataConverter::Char(value) => Some((false, u128::from(*value as u32))),
+        DataConverter::Int8(value) => {
+            Some(signed_magnitude(i128::from(*value)))
+        }
+        DataConverter::Int16(value) => {
+            Some(signed_magnitude(i128::from(*value)))
+        }
+        DataConverter::Int32(value) => {
+            Some(signed_magnitude(i128::from(*value)))
+        }
+        DataConverter::Int64(value) => {
+            Some(signed_magnitude(i128::from(*value)))
+        }
+        DataConverter::Int128(value) => Some(signed_magnitude(*value)),
+        DataConverter::UInt8(value) => Some((false, u128::from(*value))),
+        DataConverter::UInt16(value) => Some((false, u128::from(*value))),
+        DataConverter::UInt32(value) => Some((false, u128::from(*value))),
+        DataConverter::UInt64(value) => Some((false, u128::from(*value))),
+        DataConverter::UInt128(value) => Some((false, *value)),
+        _ => None,
+    }
+}
+
 /// Converts a finite primitive float to an integer intermediate.
 ///
 /// # Parameters
@@ -119,19 +159,10 @@ pub(in crate::converter::data_converter) fn source_to_integer(
     options: &DataConversionOptions,
     to: DataType,
 ) -> Result<(bool, u128), DataConversionError> {
+    if let Some(value) = scalar_integer_magnitude(source) {
+        return Ok(value);
+    }
     match source {
-        DataConverter::Bool(value) => Ok((false, u128::from(*value))),
-        DataConverter::Char(value) => Ok((false, u128::from(*value as u32))),
-        DataConverter::Int8(value) => Ok(signed_magnitude(i128::from(*value))),
-        DataConverter::Int16(value) => Ok(signed_magnitude(i128::from(*value))),
-        DataConverter::Int32(value) => Ok(signed_magnitude(i128::from(*value))),
-        DataConverter::Int64(value) => Ok(signed_magnitude(i128::from(*value))),
-        DataConverter::Int128(value) => Ok(signed_magnitude(*value)),
-        DataConverter::UInt8(value) => Ok((false, u128::from(*value))),
-        DataConverter::UInt16(value) => Ok((false, u128::from(*value))),
-        DataConverter::UInt32(value) => Ok((false, u128::from(*value))),
-        DataConverter::UInt64(value) => Ok((false, u128::from(*value))),
-        DataConverter::UInt128(value) => Ok((false, *value)),
         DataConverter::Float32(value) => float_to_integer(
             f64::from(*value),
             options.numeric().fractional_to_integer(),

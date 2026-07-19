@@ -5,12 +5,15 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-use qubit_datatype::DurationUnitSuffixSet;
 use qubit_datatype::converter::{
     DurationConversionOptions,
     DurationRoundingPolicy,
     DurationUnit,
     SuffixlessDurationPolicy,
+};
+use qubit_datatype::{
+    DurationTextOptions,
+    DurationUnitSuffixSet,
 };
 use serde_json::json;
 
@@ -34,6 +37,10 @@ fn test_duration_conversion_options_builders_update_fields() {
         SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds),
     );
     assert_eq!(defaults.unit_suffix_set(), DurationUnitSuffixSet::Extended,);
+    assert_eq!(
+        defaults.max_text_bytes(),
+        DurationTextOptions::DEFAULT_MAX_TEXT_BYTES,
+    );
     assert_eq!(defaults.output_unit(), DurationUnit::Milliseconds);
     assert!(defaults.append_unit_suffix());
     assert_eq!(defaults.rounding_policy(), DurationRoundingPolicy::Reject,);
@@ -42,6 +49,7 @@ fn test_duration_conversion_options_builders_update_fields() {
         .with_numeric_input_unit(DurationUnit::Seconds)
         .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject)
         .with_unit_suffix_set(DurationUnitSuffixSet::Ascii)
+        .with_max_text_bytes(4_096)
         .with_output_unit(DurationUnit::Minutes)
         .with_append_unit_suffix(false)
         .with_rounding_policy(DurationRoundingPolicy::HalfUp);
@@ -52,6 +60,7 @@ fn test_duration_conversion_options_builders_update_fields() {
         SuffixlessDurationPolicy::Reject,
     );
     assert_eq!(options.unit_suffix_set(), DurationUnitSuffixSet::Ascii);
+    assert_eq!(options.max_text_bytes(), 4_096);
     assert_eq!(options.output_unit(), DurationUnit::Minutes);
     assert!(!options.append_unit_suffix());
     assert_eq!(options.rounding_policy(), DurationRoundingPolicy::HalfUp,);
@@ -66,7 +75,7 @@ fn test_duration_conversion_options_env_friendly_profile() {
     );
 }
 
-/// Test the exact six-field JSON wire format and its round trip.
+/// Test the exact seven-field JSON wire format and its round trip.
 #[test]
 fn test_duration_conversion_options_exact_json_wire_and_round_trip() {
     let options = DurationConversionOptions::default()
@@ -75,6 +84,7 @@ fn test_duration_conversion_options_exact_json_wire_and_round_trip() {
             DurationUnit::Minutes,
         ))
         .with_unit_suffix_set(DurationUnitSuffixSet::Ascii)
+        .with_max_text_bytes(4_096)
         .with_output_unit(DurationUnit::Hours)
         .with_append_unit_suffix(false)
         .with_rounding_policy(DurationRoundingPolicy::HalfUp);
@@ -83,7 +93,7 @@ fn test_duration_conversion_options_exact_json_wire_and_round_trip() {
         .expect("duration options should serialize");
     assert_eq!(
         wire,
-        r#"{"numeric_input_unit":"seconds","suffixless_string_policy":{"assume":"minutes"},"unit_suffix_set":"ascii","output_unit":"hours","append_unit_suffix":false,"rounding_policy":"half_up"}"#,
+        r#"{"numeric_input_unit":"seconds","suffixless_string_policy":{"assume":"minutes"},"unit_suffix_set":"ascii","max_text_bytes":4096,"output_unit":"hours","append_unit_suffix":false,"rounding_policy":"half_up"}"#,
     );
     assert_eq!(
         serde_json::from_str::<DurationConversionOptions>(&wire)
@@ -105,6 +115,10 @@ fn test_duration_conversion_options_partial_json_uses_defaults() {
         SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds),
     );
     assert_eq!(options.unit_suffix_set(), DurationUnitSuffixSet::Extended,);
+    assert_eq!(
+        options.max_text_bytes(),
+        DurationTextOptions::DEFAULT_MAX_TEXT_BYTES,
+    );
     assert_eq!(options.output_unit(), DurationUnit::Seconds);
     assert!(options.append_unit_suffix());
     assert_eq!(options.rounding_policy(), DurationRoundingPolicy::Reject,);
@@ -129,6 +143,7 @@ fn test_duration_conversion_options_all_serde_values() {
                 "numeric_input_unit": wire_name,
                 "suffixless_string_policy": { "assume": wire_name },
                 "unit_suffix_set": "extended",
+                "max_text_bytes": DurationTextOptions::DEFAULT_MAX_TEXT_BYTES,
                 "output_unit": wire_name,
                 "append_unit_suffix": true,
                 "rounding_policy": "reject",

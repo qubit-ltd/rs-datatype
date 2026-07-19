@@ -89,3 +89,26 @@ fn test_parse_duration_text_classifies_errors() {
         Err(DurationParseError::OutOfRange),
     );
 }
+
+/// Tests that duration input is bounded before syntax and suffix processing.
+#[test]
+fn test_parse_duration_text_enforces_byte_limit() {
+    let options = DurationTextOptions::default().with_max_text_bytes(3);
+
+    assert_eq!(
+        parse_duration_text("2ms", &options),
+        Ok(Duration::from_millis(2)),
+    );
+    assert_eq!(
+        parse_duration_text("20ms", &options),
+        Err(DurationParseError::LimitExceeded { maximum: 3 }),
+    );
+    assert_eq!(
+        parse_duration_text("2µs", &options),
+        Err(DurationParseError::LimitExceeded { maximum: 3 }),
+    );
+    assert_eq!(
+        parse_duration_text("1fortnights", &options),
+        Err(DurationParseError::LimitExceeded { maximum: 3 }),
+    );
+}
