@@ -27,6 +27,9 @@ fn test_data_list_conversion_error_constructors_and_accessors() {
     assert_eq!(error.source_index(), 3);
     assert_eq!(error.conversion_error(), &source);
     assert_eq!(error.clone().into_conversion_error(), source);
+
+    let error = DataListConversionError::new(3, source.clone());
+    assert_eq!(error.into_parts(), (3, source));
 }
 
 /// Test display text and source propagation for list conversion errors.

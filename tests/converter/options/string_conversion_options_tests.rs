@@ -94,3 +94,30 @@ fn test_string_conversion_options_reports_missing_normalization() {
 
     assert_eq!(error, StringNormalizationError::Missing);
 }
+
+/// Test the optional normalization adapter for value-or-missing flows.
+#[test]
+fn test_string_conversion_options_normalize_optional() {
+    let input = String::from("  value  ");
+    let normalized = StringConversionOptions::default()
+        .with_trim(true)
+        .normalize_optional(&input)
+        .expect("non-blank input should normalize");
+    assert_eq!(normalized, Some("value"));
+    assert_eq!(
+        normalized
+            .expect("normalized value should be present")
+            .as_ptr(),
+        input[2..].as_ptr(),
+    );
+
+    let missing = StringConversionOptions::default()
+        .with_blank_string_policy(BlankStringPolicy::TreatAsMissing)
+        .normalize_optional("   ");
+    assert_eq!(missing, Ok(None));
+
+    let rejected = StringConversionOptions::default()
+        .with_blank_string_policy(BlankStringPolicy::Reject)
+        .normalize_optional("   ");
+    assert_eq!(rejected, Err(StringNormalizationError::BlankRejected));
+}

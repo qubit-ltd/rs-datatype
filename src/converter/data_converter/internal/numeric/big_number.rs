@@ -15,7 +15,10 @@ use num_bigint::BigInt;
 use num_traits::FromPrimitive;
 
 use super::super::super::DataConverter;
-use super::integer::duration_to_u128;
+use super::integer::{
+    duration_to_u128,
+    scalar_integer_magnitude,
+};
 #[cfg(feature = "big-decimal")]
 use super::parsed_number::ParsedNumber;
 #[cfg(feature = "big-decimal")]
@@ -289,56 +292,50 @@ pub(super) fn source_to_bigint(
         return Ok(value.as_ref().clone());
     }
 
-    let result = match source {
-        DataConverter::Bool(value) => Ok(BigInt::from(u8::from(*value))),
-        DataConverter::Char(value) => Ok(BigInt::from(*value as u32)),
-        DataConverter::Int8(value) => Ok(BigInt::from(*value)),
-        DataConverter::Int16(value) => Ok(BigInt::from(*value)),
-        DataConverter::Int32(value) => Ok(BigInt::from(*value)),
-        DataConverter::Int64(value) => Ok(BigInt::from(*value)),
-        DataConverter::Int128(value) => Ok(BigInt::from(*value)),
-        DataConverter::UInt8(value) => Ok(BigInt::from(*value)),
-        DataConverter::UInt16(value) => Ok(BigInt::from(*value)),
-        DataConverter::UInt32(value) => Ok(BigInt::from(*value)),
-        DataConverter::UInt64(value) => Ok(BigInt::from(*value)),
-        DataConverter::UInt128(value) => Ok(BigInt::from(*value)),
-        DataConverter::Float32(value) => float_to_bigint(
-            f64::from(*value),
-            options.numeric().fractional_to_integer(),
-            DataType::Float32,
-            to,
-        ),
-        DataConverter::Float64(value) => float_to_bigint(
-            *value,
-            options.numeric().fractional_to_integer(),
-            DataType::Float64,
-            to,
-        ),
-        #[cfg(feature = "big-integer")]
-        DataConverter::BigInteger(value) => Ok(value.as_ref().clone()),
-        #[cfg(feature = "big-decimal")]
-        DataConverter::BigDecimal(value) => decimal_to_bigint(
-            value.as_ref(),
-            options.numeric().fractional_to_integer(),
-            options.numeric().limits().max_big_integer_digits(),
-            DataType::BigDecimal,
-            to,
-        ),
-        DataConverter::String(value) => {
-            let value = normalize_numeric_text(value, options, to)?;
-            parse_text_bigint(
-                value,
-                options.numeric().fractional_to_integer(),
-                options.numeric().limits().max_big_integer_digits(),
-                to,
-            )
-        }
-        DataConverter::Duration(value) => {
-            duration_to_bigint(*value, options, to)
-        }
-        DataConverter::Unset(_) => Err(source.missing(to)),
-        _ => Err(source.unsupported(to)),
-    }?;
+    let result =
+        if let Some((negative, magnitude)) = scalar_integer_magnitude(source) {
+            let value = BigInt::from(magnitude);
+            Ok(if negative { -value } else { value })
+        } else {
+            match source {
+                DataConverter::Float32(value) => float_to_bigint(
+                    f64::from(*value),
+                    options.numeric().fractional_to_integer(),
+                    DataType::Float32,
+                    to,
+                ),
+                DataConverter::Float64(value) => float_to_bigint(
+                    *value,
+                    options.numeric().fractional_to_integer(),
+                    DataType::Float64,
+                    to,
+                ),
+                #[cfg(feature = "big-integer")]
+                DataConverter::BigInteger(value) => Ok(value.as_ref().clone()),
+                #[cfg(feature = "big-decimal")]
+                DataConverter::BigDecimal(value) => decimal_to_bigint(
+                    value.as_ref(),
+                    options.numeric().fractional_to_integer(),
+                    options.numeric().limits().max_big_integer_digits(),
+                    DataType::BigDecimal,
+                    to,
+                ),
+                DataConverter::String(value) => {
+                    let value = normalize_numeric_text(value, options, to)?;
+                    parse_text_bigint(
+                        value,
+                        options.numeric().fractional_to_integer(),
+                        options.numeric().limits().max_big_integer_digits(),
+                        to,
+                    )
+                }
+                DataConverter::Duration(value) => {
+                    duration_to_bigint(*value, options, to)
+                }
+                DataConverter::Unset(_) => Err(source.missing(to)),
+                _ => Err(source.unsupported(to)),
+            }
+        }?;
     enforce_big_integer_digit_limit(
         &result,
         maximum_digits,

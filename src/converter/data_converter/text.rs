@@ -57,6 +57,49 @@ fn validate_canonical_temporal_year(
     }
 }
 
+/// Formats source variants whose canonical string form is their `Display`
+/// representation.
+///
+/// Sources requiring normalization, validation, or structured conversion are
+/// left to the target implementation.
+///
+/// # Parameters
+///
+/// * `source` - Borrowed source representation to inspect.
+///
+/// # Returns
+///
+/// The formatted value for a directly displayable source, otherwise `None`.
+fn format_display_source(source: &DataConverter<'_>) -> Option<String> {
+    match source {
+        DataConverter::Bool(value) => Some(value.to_string()),
+        DataConverter::Char(value) => Some(value.to_string()),
+        DataConverter::Int8(value) => Some(value.to_string()),
+        DataConverter::Int16(value) => Some(value.to_string()),
+        DataConverter::Int32(value) => Some(value.to_string()),
+        DataConverter::Int64(value) => Some(value.to_string()),
+        DataConverter::Int128(value) => Some(value.to_string()),
+        DataConverter::UInt8(value) => Some(value.to_string()),
+        DataConverter::UInt16(value) => Some(value.to_string()),
+        DataConverter::UInt32(value) => Some(value.to_string()),
+        DataConverter::UInt64(value) => Some(value.to_string()),
+        DataConverter::UInt128(value) => Some(value.to_string()),
+        DataConverter::Float32(value) => Some(value.to_string()),
+        DataConverter::Float64(value) => Some(value.to_string()),
+        #[cfg(feature = "big-integer")]
+        DataConverter::BigInteger(value) => Some(value.to_string()),
+        #[cfg(feature = "big-decimal")]
+        DataConverter::BigDecimal(value) => Some(value.to_string()),
+        #[cfg(feature = "chrono")]
+        DataConverter::Time(value) => Some(value.to_string()),
+        #[cfg(feature = "url")]
+        DataConverter::Url(value) => Some(value.to_string()),
+        #[cfg(feature = "json")]
+        DataConverter::Json(value) => Some(value.to_string()),
+        _ => None,
+    }
+}
+
 impl DataConversionTarget for char {
     fn convert_from(
         source: &DataConverter<'_>,
@@ -88,36 +131,19 @@ impl DataConversionTarget for String {
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
     ) -> Result<Self, DataConversionError> {
+        if let Some(value) = format_display_source(source) {
+            return Ok(value);
+        }
         match source {
             DataConverter::Unset(_) => Err(source.missing(DataType::String)),
             DataConverter::String(value) => {
                 normalize(value, options, DataType::String).map(str::to_owned)
             }
-            DataConverter::Bool(value) => Ok(value.to_string()),
-            DataConverter::Char(value) => Ok(value.to_string()),
-            DataConverter::Int8(value) => Ok(value.to_string()),
-            DataConverter::Int16(value) => Ok(value.to_string()),
-            DataConverter::Int32(value) => Ok(value.to_string()),
-            DataConverter::Int64(value) => Ok(value.to_string()),
-            DataConverter::Int128(value) => Ok(value.to_string()),
-            DataConverter::UInt8(value) => Ok(value.to_string()),
-            DataConverter::UInt16(value) => Ok(value.to_string()),
-            DataConverter::UInt32(value) => Ok(value.to_string()),
-            DataConverter::UInt64(value) => Ok(value.to_string()),
-            DataConverter::UInt128(value) => Ok(value.to_string()),
-            DataConverter::Float32(value) => Ok(value.to_string()),
-            DataConverter::Float64(value) => Ok(value.to_string()),
-            #[cfg(feature = "big-integer")]
-            DataConverter::BigInteger(value) => Ok(value.to_string()),
-            #[cfg(feature = "big-decimal")]
-            DataConverter::BigDecimal(value) => Ok(value.to_string()),
             #[cfg(feature = "chrono")]
             DataConverter::Date(value) => {
                 validate_canonical_temporal_year(source, value.year())?;
                 Ok(value.format("%Y-%m-%d").to_string())
             }
-            #[cfg(feature = "chrono")]
-            DataConverter::Time(value) => Ok(value.to_string()),
             #[cfg(feature = "chrono")]
             DataConverter::DateTime(value) => {
                 validate_canonical_temporal_year(source, value.year())?;
@@ -129,8 +155,6 @@ impl DataConversionTarget for String {
                 Ok(value.to_rfc3339())
             }
             DataConverter::Duration(value) => format_duration(*value, options),
-            #[cfg(feature = "url")]
-            DataConverter::Url(value) => Ok(value.to_string()),
             #[cfg(feature = "json")]
             DataConverter::StringMap(value) => Ok(serde_json::Value::Object(
                 value
@@ -145,8 +169,7 @@ impl DataConversionTarget for String {
             DataConverter::StringMap(_) => {
                 Err(source.unsupported(DataType::String))
             }
-            #[cfg(feature = "json")]
-            DataConverter::Json(value) => Ok(value.to_string()),
+            _ => Err(source.unsupported(DataType::String)),
         }
     }
 }

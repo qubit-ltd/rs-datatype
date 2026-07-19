@@ -126,7 +126,6 @@ impl CollectionConversionOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
     pub fn with_delimiters(
         mut self,
         delimiters: impl IntoIterator<Item = char>,

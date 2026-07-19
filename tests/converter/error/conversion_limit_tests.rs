@@ -20,4 +20,8 @@ fn test_conversion_limit_display() {
         ConversionLimit::BigIntegerDigits { maximum: 34 }.to_string(),
         "BigInteger result exceeds the 34-decimal-digit limit",
     );
+    assert_eq!(
+        ConversionLimit::DurationTextBytes { maximum: 56 }.to_string(),
+        "duration text exceeds the 56-byte limit",
+    );
 }

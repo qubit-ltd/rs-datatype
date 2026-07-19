@@ -27,14 +27,14 @@
 
 ```toml
 [dependencies]
-qubit-datatype = "0.7"
+qubit-datatype = "0.8"
 ```
 
 按需启用转换器和富类型：
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.7", features = ["converter", "chrono"] }
+qubit-datatype = { version = "0.8", default-features = false, features = ["converter", "chrono"] }
 ```
 
 | Feature | 能力 |
@@ -139,7 +139,7 @@ assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 - `string`：trim 和空白字符串处理。
 - `boolean`：文字集合、大小写和数值布尔策略。
 - `collection`：标量拆分、分隔符、trim 和空元素处理。
-- `duration`：数值输入单位、无后缀输入、可接受后缀集、输出单位、后缀格式和舍入。
+- `duration`：数值输入单位、无后缀输入、可接受后缀集、输出单位、后缀格式、舍入和源文本字节上限。
 
 `strict()` 是默认值。`env_friendly()` 会 trim 字符串、接受常见布尔文字，并开启
 逗号分隔的标量集合；它只把文本转浮点放宽为 nearest-even，不会开启小数转整数
@@ -177,9 +177,10 @@ let options = DataConversionOptions::strict().with_numeric_options(
 `[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`；ASCII 后缀集不接受 `µs` 和 `μs`。
 输入和输出单位分别配置；精确输出要求按输出单位整除，half-up 舍入必须显式开启。
 
-仅启用 `duration` feature 时，`DurationTextOptions` 可选择无后缀策略以及 ASCII
-或扩展后缀集合；`parse_duration_text` 在不隐式 trim 的情况下执行带范围检查的
-解析，`format_duration_exact` 自动选择最大的精确规范单位。
+仅启用 `duration` feature 时，`DurationTextOptions` 可选择无后缀策略、ASCII
+或扩展后缀集合，并默认把输入限制为 1 MiB；`parse_duration_text` 在处理后缀前
+先执行该字节上限，再在不隐式 trim 的情况下执行带范围检查的解析，
+`format_duration_exact` 自动选择最大的精确规范单位。
 
 富文本的规范格式包括：日期 `YYYY-MM-DD`、时间 `HH:MM:SS[.fraction]`、
 instant 的 RFC 3339、绝对 URL、标准 JSON，以及 key 唯一且 value 全为字符串的

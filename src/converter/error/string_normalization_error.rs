@@ -16,6 +16,7 @@ use super::invalid_value_reason::InvalidValueReason;
 
 /// Error returned while normalizing a string source.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
 pub enum StringNormalizationError {
     /// The blank source is treated as a missing value.
     #[error("missing string value")]

@@ -22,7 +22,7 @@ use super::float_text::{
     parse_text_f32,
     parse_text_f64,
 };
-use super::integer::signed_magnitude;
+use super::integer::scalar_integer_magnitude;
 use super::syntax::normalize_numeric_text;
 use crate::converter::{
     DataConversionError,
@@ -161,71 +161,17 @@ fn source_to_f64(
     options: &DataConversionOptions,
     to: DataType,
 ) -> Result<f64, DataConversionError> {
+    if let Some(value) = scalar_integer_magnitude(source) {
+        return integer_to_f64(
+            value,
+            options.numeric().numeric_to_float(),
+            source.data_type(),
+            to,
+        );
+    }
     match source {
         DataConverter::Float64(value) => Ok(*value),
         DataConverter::Float32(value) => Ok(f64::from(*value)),
-        DataConverter::Bool(value) => Ok(if *value { 1.0 } else { 0.0 }),
-        DataConverter::Char(value) => Ok(f64::from(*value as u32)),
-        DataConverter::Int8(value) => integer_to_f64(
-            signed_magnitude(i128::from(*value)),
-            options.numeric().numeric_to_float(),
-            DataType::Int8,
-            to,
-        ),
-        DataConverter::Int16(value) => integer_to_f64(
-            signed_magnitude(i128::from(*value)),
-            options.numeric().numeric_to_float(),
-            DataType::Int16,
-            to,
-        ),
-        DataConverter::Int32(value) => integer_to_f64(
-            signed_magnitude(i128::from(*value)),
-            options.numeric().numeric_to_float(),
-            DataType::Int32,
-            to,
-        ),
-        DataConverter::Int64(value) => integer_to_f64(
-            signed_magnitude(i128::from(*value)),
-            options.numeric().numeric_to_float(),
-            DataType::Int64,
-            to,
-        ),
-        DataConverter::Int128(value) => integer_to_f64(
-            signed_magnitude(*value),
-            options.numeric().numeric_to_float(),
-            DataType::Int128,
-            to,
-        ),
-        DataConverter::UInt8(value) => integer_to_f64(
-            (false, u128::from(*value)),
-            options.numeric().numeric_to_float(),
-            DataType::UInt8,
-            to,
-        ),
-        DataConverter::UInt16(value) => integer_to_f64(
-            (false, u128::from(*value)),
-            options.numeric().numeric_to_float(),
-            DataType::UInt16,
-            to,
-        ),
-        DataConverter::UInt32(value) => integer_to_f64(
-            (false, u128::from(*value)),
-            options.numeric().numeric_to_float(),
-            DataType::UInt32,
-            to,
-        ),
-        DataConverter::UInt64(value) => integer_to_f64(
-            (false, u128::from(*value)),
-            options.numeric().numeric_to_float(),
-            DataType::UInt64,
-            to,
-        ),
-        DataConverter::UInt128(value) => integer_to_f64(
-            (false, *value),
-            options.numeric().numeric_to_float(),
-            DataType::UInt128,
-            to,
-        ),
         #[cfg(feature = "big-integer")]
         DataConverter::BigInteger(value) => bigint_to_f64(
             value,
@@ -265,6 +211,14 @@ impl DataConversionTarget for f32 {
         options: &DataConversionOptions,
     ) -> Result<Self, DataConversionError> {
         let to = DataType::Float32;
+        if let Some(value) = scalar_integer_magnitude(source) {
+            return integer_to_f32(
+                value,
+                options.numeric().numeric_to_float(),
+                source.data_type(),
+                to,
+            );
+        }
         match source {
             DataConverter::Float32(value) => Ok(*value),
             DataConverter::Float64(value) => {
@@ -292,68 +246,6 @@ impl DataConversionTarget for f32 {
                     Ok(converted)
                 }
             }
-            DataConverter::Bool(value) => Ok(if *value { 1.0 } else { 0.0 }),
-            DataConverter::Char(value) => Ok(*value as u32 as f32),
-            DataConverter::Int8(value) => integer_to_f32(
-                signed_magnitude(i128::from(*value)),
-                options.numeric().numeric_to_float(),
-                DataType::Int8,
-                to,
-            ),
-            DataConverter::Int16(value) => integer_to_f32(
-                signed_magnitude(i128::from(*value)),
-                options.numeric().numeric_to_float(),
-                DataType::Int16,
-                to,
-            ),
-            DataConverter::Int32(value) => integer_to_f32(
-                signed_magnitude(i128::from(*value)),
-                options.numeric().numeric_to_float(),
-                DataType::Int32,
-                to,
-            ),
-            DataConverter::Int64(value) => integer_to_f32(
-                signed_magnitude(i128::from(*value)),
-                options.numeric().numeric_to_float(),
-                DataType::Int64,
-                to,
-            ),
-            DataConverter::Int128(value) => integer_to_f32(
-                signed_magnitude(*value),
-                options.numeric().numeric_to_float(),
-                DataType::Int128,
-                to,
-            ),
-            DataConverter::UInt8(value) => integer_to_f32(
-                (false, u128::from(*value)),
-                options.numeric().numeric_to_float(),
-                DataType::UInt8,
-                to,
-            ),
-            DataConverter::UInt16(value) => integer_to_f32(
-                (false, u128::from(*value)),
-                options.numeric().numeric_to_float(),
-                DataType::UInt16,
-                to,
-            ),
-            DataConverter::UInt32(value) => integer_to_f32(
-                (false, u128::from(*value)),
-                options.numeric().numeric_to_float(),
-                DataType::UInt32,
-                to,
-            ),
-            DataConverter::UInt64(value) => integer_to_f32(
-                (false, u128::from(*value)),
-                options.numeric().numeric_to_float(),
-                DataType::UInt64,
-                to,
-            ),
-            DataConverter::UInt128(value) => integer_to_f32(
-                (false, *value),
-                options.numeric().numeric_to_float(),
-                DataType::UInt128,
-                to,
-            ),
             #[cfg(feature = "big-integer")]
             DataConverter::BigInteger(value) => bigint_to_f32(
                 value,

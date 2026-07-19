@@ -149,4 +149,30 @@ impl StringConversionOptions {
             Ok(value)
         }
     }
+
+    /// Normalizes a string and represents a missing blank value as `None`.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Source string.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some` with the borrowed normalized string, or `None` when the
+    /// configured blank policy treats the value as missing.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StringNormalizationError::BlankRejected`] when the configured
+    /// blank policy rejects the value.
+    pub fn normalize_optional<'a>(
+        &self,
+        value: &'a str,
+    ) -> Result<Option<&'a str>, StringNormalizationError> {
+        match self.normalize(value) {
+            Ok(value) => Ok(Some(value)),
+            Err(StringNormalizationError::Missing) => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
 }

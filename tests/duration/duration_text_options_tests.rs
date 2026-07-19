@@ -24,13 +24,19 @@ fn test_duration_text_options_builders() {
             DurationUnitSuffixSet::Extended,
         ),
     );
+    assert_eq!(
+        DurationTextOptions::default().max_text_bytes(),
+        DurationTextOptions::DEFAULT_MAX_TEXT_BYTES,
+    );
 
     let options = DurationTextOptions::default()
         .with_suffixless_policy(SuffixlessDurationPolicy::Reject)
-        .with_unit_suffix_set(DurationUnitSuffixSet::Ascii);
+        .with_unit_suffix_set(DurationUnitSuffixSet::Ascii)
+        .with_max_text_bytes(4_096);
     assert_eq!(
         options.suffixless_policy(),
         SuffixlessDurationPolicy::Reject,
     );
     assert_eq!(options.unit_suffix_set(), DurationUnitSuffixSet::Ascii);
+    assert_eq!(options.max_text_bytes(), 4_096);
 }

@@ -12,6 +12,12 @@
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, thiserror::Error)]
 pub enum ConversionLimit {
+    /// Duration source text exceeded its configured byte limit.
+    #[error("duration text exceeds the {maximum}-byte limit")]
+    DurationTextBytes {
+        /// Configured maximum source text length in bytes.
+        maximum: usize,
+    },
     /// The normalized numeric source text exceeded its byte limit.
     #[error("numeric text exceeds the {maximum}-byte limit")]
     NumericTextBytes {

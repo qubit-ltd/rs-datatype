@@ -23,6 +23,7 @@ use proptest::{
     proptest,
 };
 use qubit_datatype::{
+    ConversionLimit,
     DataConversionOptions,
     DataConverter,
     DataType,
@@ -158,6 +159,27 @@ fn test_data_converter_duration_string_conversion() {
         DataConverter::from(1i32).to::<Duration>(),
         Ok(duration) if duration == Duration::from_millis(1)
     ));
+}
+
+/// Test that converter-level duration parsing exposes its resource limit.
+#[test]
+fn test_data_converter_duration_enforces_text_limit() {
+    let options = DataConversionOptions::default().with_duration_options(
+        DurationConversionOptions::default().with_max_text_bytes(3),
+    );
+
+    assert_eq!(
+        DataConverter::from("2ms").to_with::<Duration>(&options),
+        Ok(Duration::from_millis(2)),
+    );
+    let error = DataConverter::from("20ms")
+        .to_with::<Duration>(&options)
+        .expect_err("oversized duration text should be rejected");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(
+        error.limit(),
+        Some(&ConversionLimit::DurationTextBytes { maximum: 3 }),
+    );
 }
 
 /// Test that numeric input, suffixless strings, and output use independent

@@ -9,9 +9,9 @@
 //!
 //! Provides data type definitions, parse errors, and compile-time type mapping.
 
-pub mod data_type;
-pub mod data_type_of;
-pub mod data_type_parse_error;
+mod data_type;
+mod data_type_of;
+mod data_type_parse_error;
 
 pub use data_type::DataType;
 pub use data_type_of::DataTypeOf;

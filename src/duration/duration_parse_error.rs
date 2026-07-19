@@ -11,6 +11,12 @@
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum DurationParseError {
+    /// The source text exceeded the configured byte limit.
+    #[error("duration text exceeds the {maximum}-byte limit")]
+    LimitExceeded {
+        /// Configured maximum source text length in bytes.
+        maximum: usize,
+    },
     /// The input does not match the configured non-negative integer grammar.
     #[error("invalid duration syntax")]
     InvalidSyntax,

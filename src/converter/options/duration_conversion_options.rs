@@ -10,6 +10,7 @@
 //! Defines options that control duration conversion.
 
 use crate::duration::{
+    DurationTextOptions,
     DurationUnit,
     DurationUnitSuffixSet,
     SuffixlessDurationPolicy,
@@ -67,6 +68,8 @@ pub struct DurationConversionOptions {
     suffixless_string_policy: SuffixlessDurationPolicy,
     /// Set of explicit unit suffixes accepted in Duration text.
     unit_suffix_set: DurationUnitSuffixSet,
+    /// Maximum accepted Duration source text length in bytes.
+    max_text_bytes: usize,
     /// Unit used when converting a Duration to an integer or string.
     output_unit: DurationUnit,
     /// Whether formatted duration strings include the unit suffix.
@@ -151,6 +154,27 @@ impl DurationConversionOptions {
         self
     }
 
+    /// Returns the maximum accepted Duration source text length in bytes.
+    #[inline(always)]
+    pub const fn max_text_bytes(&self) -> usize {
+        self.max_text_bytes
+    }
+
+    /// Returns a copy with a different Duration source text byte limit.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum accepted source text length in bytes.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline(always)]
+    pub const fn with_max_text_bytes(mut self, maximum: usize) -> Self {
+        self.max_text_bytes = maximum;
+        self
+    }
+
     /// Returns the unit used for Duration output.
     #[inline(always)]
     pub const fn output_unit(&self) -> DurationUnit {
@@ -219,6 +243,7 @@ impl Default for DurationConversionOptions {
             numeric_input_unit: DurationUnit::default(),
             suffixless_string_policy: SuffixlessDurationPolicy::default(),
             unit_suffix_set: DurationUnitSuffixSet::default(),
+            max_text_bytes: DurationTextOptions::DEFAULT_MAX_TEXT_BYTES,
             output_unit: DurationUnit::default(),
             append_unit_suffix: true,
             rounding_policy: DurationRoundingPolicy::default(),

@@ -34,14 +34,14 @@ The minimum build has no optional dependencies:
 
 ```toml
 [dependencies]
-qubit-datatype = "0.7"
+qubit-datatype = "0.8"
 ```
 
 Enable conversion and only the rich families you need:
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.7", features = ["converter", "chrono"] }
+qubit-datatype = { version = "0.8", default-features = false, features = ["converter", "chrono"] }
 ```
 
 | Feature | Capability |
@@ -157,7 +157,7 @@ retain type context but never retain the source value.
 - `boolean`: accepted literals, case sensitivity, and numeric policy.
 - `collection`: scalar splitting, delimiters, trimming, and empty items.
 - `duration`: numeric input unit, suffixless input, accepted suffix set, output
-  unit, suffix formatting, and rounding.
+  unit, suffix formatting, rounding, and source-text byte limit.
 
 `strict()` is the default. `env_friendly()` trims strings, accepts common
 Boolean literals, enables comma-separated scalar collections, and relaxes only
@@ -203,9 +203,10 @@ output requires divisibility by the output unit; half-up rounding must be
 selected explicitly.
 
 With only the `duration` feature, `DurationTextOptions` selects suffixless and
-ASCII-versus-extended suffix policies, `parse_duration_text` performs checked
-parsing without implicit trimming, and `format_duration_exact` selects the
-largest exact canonical unit.
+ASCII-versus-extended suffix policies and bounds input to 1 MiB by default.
+`parse_duration_text` enforces that byte limit before suffix processing,
+performs checked parsing without implicit trimming, and `format_duration_exact`
+selects the largest exact canonical unit.
 
 Canonical rich strings are: `YYYY-MM-DD` for dates,
 `HH:MM:SS[.fraction]` for times, RFC 3339 for instants, absolute URLs, standard
