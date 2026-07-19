@@ -7,6 +7,10 @@
 // =============================================================================
 //! Fixed-width integer conversion tests.
 
+use proptest::{
+    prop_assert_eq,
+    proptest,
+};
 use qubit_datatype::{
     DataConversionOptions,
     DataConverter,
@@ -39,4 +43,40 @@ fn test_numeric_to_float_rounding_is_independent() {
     );
     assert!(DataConverter::from("0.1").to_with::<f32>(&options).is_err());
     assert!(DataConverter::from("3.9").to_with::<i32>(&options).is_err());
+}
+
+/// Verifies float sources preserve exact representable integer values.
+#[test]
+fn test_float_to_integer_preserves_exact_binary_integer() {
+    assert_eq!(
+        DataConverter::from(2_f64.powi(100)).to::<u128>(),
+        Ok(1_u128 << 100),
+    );
+    assert_eq!(
+        DataConverter::from(2_f32.powi(100)).to::<u128>(),
+        Ok(1_u128 << 100),
+    );
+    assert_eq!(
+        DataConverter::from(-2_f64.powi(100)).to::<i128>(),
+        Ok(-(1_i128 << 100)),
+    );
+    assert_eq!(
+        DataConverter::from(-2_f64.powi(127)).to::<i128>(),
+        Ok(i128::MIN),
+    );
+    assert!(DataConverter::from(2_f64.powi(128)).to::<u128>().is_err());
+}
+
+proptest! {
+    /// Verifies every representable integer power of two reaches `u128` exactly.
+    #[test]
+    fn test_float_to_integer_preserves_representable_powers_of_two(
+        exponent in 0_i32..128,
+    ) {
+        let expected = 1_u128 << exponent;
+        prop_assert_eq!(
+            DataConverter::from(2_f64.powi(exponent)).to::<u128>(),
+            Ok(expected),
+        );
+    }
 }
