@@ -11,4 +11,6 @@
 
 pub(crate) mod data_type_of_tests;
 pub(crate) mod data_type_parse_error_tests;
+#[cfg(feature = "converter")]
+pub(crate) mod data_type_table_tests;
 pub(crate) mod data_type_tests;

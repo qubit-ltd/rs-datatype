@@ -10,23 +10,10 @@
 //! Provides the `DataTypeOf` trait and implementations to map Rust types to
 //! `DataType`.
 
-use super::data_type::DataType;
-#[cfg(feature = "big-decimal")]
-use bigdecimal::BigDecimal;
-#[cfg(feature = "chrono")]
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
+use super::{
+    DataType,
+    for_each_data_type_mapping,
 };
-#[cfg(feature = "big-integer")]
-use num_bigint::BigInt;
-use std::collections::HashMap;
-use std::time::Duration;
-#[cfg(feature = "url")]
-use url::Url;
 
 /// Maps a concrete Rust type to its runtime [`DataType`] descriptor.
 ///
@@ -68,48 +55,14 @@ pub trait DataTypeOf {
 }
 
 macro_rules! impl_data_type_of {
-    ($( $(#[$meta:meta])* $ty:ty => $variant:ident ),+ $(,)?) => {
+    (; $( $(#[$meta:meta])* ($variant:ident, $source:ty, $strategy:ident) ),+ $(,)?) => {
         $(
             $(#[$meta])*
-            impl DataTypeOf for $ty {
+            impl DataTypeOf for $source {
                 const DATA_TYPE: DataType = DataType::$variant;
             }
         )+
     };
 }
 
-impl_data_type_of! {
-    bool => Bool,
-    char => Char,
-    i8 => Int8,
-    i16 => Int16,
-    i32 => Int32,
-    i64 => Int64,
-    i128 => Int128,
-    u8 => UInt8,
-    u16 => UInt16,
-    u32 => UInt32,
-    u64 => UInt64,
-    u128 => UInt128,
-    f32 => Float32,
-    f64 => Float64,
-    String => String,
-    #[cfg(feature = "chrono")]
-    NaiveDate => Date,
-    #[cfg(feature = "chrono")]
-    NaiveTime => Time,
-    #[cfg(feature = "chrono")]
-    NaiveDateTime => DateTime,
-    #[cfg(feature = "chrono")]
-    DateTime<Utc> => Instant,
-    #[cfg(feature = "big-integer")]
-    BigInt => BigInteger,
-    #[cfg(feature = "big-decimal")]
-    BigDecimal => BigDecimal,
-    Duration => Duration,
-    #[cfg(feature = "url")]
-    Url => Url,
-    HashMap<String, String> => StringMap,
-    #[cfg(feature = "json")]
-    serde_json::Value => Json,
-}
+for_each_data_type_mapping!(impl_data_type_of);

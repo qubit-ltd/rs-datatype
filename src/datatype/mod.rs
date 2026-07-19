@@ -12,7 +12,9 @@
 mod data_type;
 mod data_type_of;
 mod data_type_parse_error;
+mod data_type_table;
 
 pub use data_type::DataType;
 pub use data_type_of::DataTypeOf;
 pub use data_type_parse_error::DataTypeParseError;
+pub(crate) use data_type_table::for_each_data_type_mapping;
