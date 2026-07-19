@@ -211,6 +211,7 @@ impl DataConverter<'_> {
     /// # Returns
     ///
     /// Returns the [`DataType`] corresponding to this enum variant.
+    #[inline(always)]
     pub const fn data_type(&self) -> DataType {
         match self {
             Self::Unset(data_type) => *data_type,

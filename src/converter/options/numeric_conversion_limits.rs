@@ -35,6 +35,7 @@ impl NumericConversionLimits {
 
     /// Returns the maximum normalized numeric text length in bytes.
     #[inline(always)]
+    #[must_use]
     pub const fn max_text_bytes(&self) -> usize {
         self.max_text_bytes
     }
@@ -48,6 +49,7 @@ impl NumericConversionLimits {
 
     /// Returns the maximum decimal digits materialized for a BigInt result.
     #[inline(always)]
+    #[must_use]
     pub const fn max_big_integer_digits(&self) -> usize {
         self.max_big_integer_digits
     }
