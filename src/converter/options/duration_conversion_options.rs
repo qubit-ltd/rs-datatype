@@ -155,6 +155,14 @@ impl DurationConversionOptions {
     }
 
     /// Returns the maximum accepted Duration source text length in bytes.
+    ///
+    /// ```compile_fail
+    /// #![deny(unused_must_use)]
+    /// use qubit_datatype::DurationConversionOptions;
+    ///
+    /// DurationConversionOptions::default().max_text_bytes();
+    /// ```
+    #[must_use]
     #[inline(always)]
     pub const fn max_text_bytes(&self) -> usize {
         self.max_text_bytes
@@ -198,6 +206,14 @@ impl DurationConversionOptions {
     }
 
     /// Returns whether formatted Duration text includes a unit suffix.
+    ///
+    /// ```compile_fail
+    /// #![deny(unused_must_use)]
+    /// use qubit_datatype::DurationConversionOptions;
+    ///
+    /// DurationConversionOptions::default().append_unit_suffix();
+    /// ```
+    #[must_use]
     #[inline(always)]
     pub const fn append_unit_suffix(&self) -> bool {
         self.append_unit_suffix

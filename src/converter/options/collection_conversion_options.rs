@@ -110,6 +110,14 @@ impl CollectionConversionOptions {
     }
 
     /// Returns the delimiters used to split scalar strings.
+    ///
+    /// ```compile_fail
+    /// #![deny(unused_must_use)]
+    /// use qubit_datatype::CollectionConversionOptions;
+    ///
+    /// CollectionConversionOptions::default().delimiters();
+    /// ```
+    #[must_use]
     #[inline(always)]
     pub fn delimiters(&self) -> &[char] {
         &self.delimiters
