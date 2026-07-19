@@ -58,6 +58,9 @@ qubit-datatype = { version = "0.7", features = ["converter", "chrono"] }
 `DataType::ALL`。`DataTypeOf` 把 Rust 类型映射为该词汇。平台相关的 `isize`、
 `usize` 不提供映射，以免数据表示随目标平台变化。
 
+`DataType::as_str` 返回、Serde 接受且 `DataType::ALL` 列出的全小写拼写属于兼容性
+接口；非破坏性版本不会修改既有拼写，也不会把既有拼写复用于其他含义。
+
 ```rust
 use qubit_datatype::{DataType, DataTypeOf};
 
@@ -180,7 +183,8 @@ let options = DataConversionOptions::strict().with_numeric_options(
 
 富文本的规范格式包括：日期 `YYYY-MM-DD`、时间 `HH:MM:SS[.fraction]`、
 instant 的 RFC 3339、绝对 URL、标准 JSON，以及 key 唯一且 value 全为字符串的
-StringMap JSON object。
+StringMap JSON object。日期、date-time 与 instant 仅格式化 `0000` 至 `9999`
+年份；超出四位规范年份范围的值会被拒绝。
 
 ## 9. 批量与标量字符串集合
 

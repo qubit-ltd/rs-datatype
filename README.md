@@ -66,6 +66,10 @@ methods, and the exhaustive `DataType::ALL` slice. `DataTypeOf` maps supported
 Rust types to that vocabulary. Platform-sized `isize` and `usize` are omitted
 because their representation is target-dependent.
 
+The lowercase spellings returned by `DataType::as_str`, accepted by Serde, and
+listed by `DataType::ALL` form a compatibility surface. Existing spellings are
+not changed or reused for a different meaning in a non-breaking release.
+
 ```rust
 use qubit_datatype::{DataType, DataTypeOf};
 
@@ -205,7 +209,9 @@ largest exact canonical unit.
 
 Canonical rich strings are: `YYYY-MM-DD` for dates,
 `HH:MM:SS[.fraction]` for times, RFC 3339 for instants, absolute URLs, standard
-JSON, and JSON objects with unique keys and string values for StringMap.
+JSON, and JSON objects with unique keys and string values for StringMap. Date,
+date-time, and instant formatting accepts only years `0000` through `9999`;
+values outside that canonical four-digit domain are rejected.
 
 ## 9. Batch and scalar-string collections
 
