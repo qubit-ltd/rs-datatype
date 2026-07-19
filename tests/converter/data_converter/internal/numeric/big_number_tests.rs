@@ -14,6 +14,8 @@ use std::str::FromStr;
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use qubit_datatype::DataConverter;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::{
     ConversionLimit,
@@ -22,8 +24,6 @@ use qubit_datatype::{
     NumericConversionLimits,
     NumericConversionOptions,
 };
-#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-use qubit_datatype::DataConverter;
 
 /// Creates strict options with the supplied BigInteger digit limit.
 ///
@@ -108,8 +108,7 @@ fn test_positive_scale_decimal_to_bigint_enforces_result_digit_limit() {
     let source = BigDecimal::new(BigInt::from(12_345_u32), 1);
     let options = DataConversionOptions::lossy().with_numeric_options(
         NumericConversionOptions::lossy().with_limits(
-            NumericConversionLimits::default()
-                .with_max_big_integer_digits(3),
+            NumericConversionLimits::default().with_max_big_integer_digits(3),
         ),
     );
     let error = DataConverter::from(&source)
@@ -121,4 +120,16 @@ fn test_positive_scale_decimal_to_bigint_enforces_result_digit_limit() {
         error.limit(),
         Some(&ConversionLimit::BigIntegerDigits { maximum: 3 }),
     );
+}
+
+/// Verifies an exponent outside `BigInt::pow`'s range is rejected safely.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_text_to_bigint_rejects_unrepresentable_exponent() {
+    let options = options_with_big_integer_digit_limit(usize::MAX);
+    let error = DataConverter::from("1e4294967296")
+        .to_with::<BigInt>(&options)
+        .expect_err("an exponent above u32::MAX must be rejected");
+
+    assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
 }

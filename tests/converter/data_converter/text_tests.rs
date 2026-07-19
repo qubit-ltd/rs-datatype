@@ -428,8 +428,8 @@ fn test_date_to_string_rejects_non_canonical_years() {
 /// Verifies local date-time formatting rejects non-canonical years.
 #[test]
 fn test_datetime_to_string_rejects_non_canonical_years() {
-    let time = NaiveTime::from_hms_opt(0, 0, 0)
-        .expect("test time should be valid");
+    let time =
+        NaiveTime::from_hms_opt(0, 0, 0).expect("test time should be valid");
     for year in [-1, 10_000] {
         let date = NaiveDate::from_ymd_opt(year, 1, 1)
             .expect("test date should be valid in Chrono");
@@ -444,8 +444,8 @@ fn test_datetime_to_string_rejects_non_canonical_years() {
 /// Verifies UTC instant formatting rejects non-canonical years.
 #[test]
 fn test_instant_to_string_rejects_non_canonical_years() {
-    let time = NaiveTime::from_hms_opt(0, 0, 0)
-        .expect("test time should be valid");
+    let time =
+        NaiveTime::from_hms_opt(0, 0, 0).expect("test time should be valid");
     for year in [-1, 10_000] {
         let date = NaiveDate::from_ymd_opt(year, 1, 1)
             .expect("test date should be valid in Chrono");
