@@ -120,22 +120,26 @@ fn float_to_integer(
             InvalidValueReason::PrecisionLoss,
         ));
     }
-    match parse_text_integer(
-        &value.trunc().to_string(),
-        FractionalToIntegerPolicy::Truncate,
-        to,
-    ) {
-        Ok(value) => Ok(value),
-        Err(error) => {
-            let to = error.to_type();
-            match error.reason().cloned() {
-                Some(reason) => {
-                    Err(DataConversionError::invalid(from, to, reason))
-                }
-                None => Err(error),
-            }
-        }
+    let bits = value.trunc().to_bits();
+    let negative = bits >> 63 != 0;
+    let exponent = ((bits >> 52) & 0x7ff) as i32 - 1023;
+    if exponent < 0 {
+        return Ok((false, 0));
     }
+    if exponent > 127 {
+        return Err(DataConversionError::invalid(
+            from,
+            to,
+            InvalidValueReason::OutOfRange,
+        ));
+    }
+    let significand = (bits & ((1_u64 << 52) - 1)) | (1_u64 << 52);
+    let magnitude = if exponent < 52 {
+        u128::from(significand >> (52 - exponent))
+    } else {
+        u128::from(significand) << (exponent - 52)
+    };
+    Ok((negative && magnitude != 0, magnitude))
 }
 
 /// Extracts an integer intermediate from a supported source.
