@@ -76,8 +76,8 @@ fn test_scalar_items_reports_rejection_when_reached() {
 /// Test a large delimiter set preserves Unicode splitting semantics.
 #[test]
 fn test_scalar_items_supports_large_delimiter_sets() {
-    let delimiters = std::iter::once(',')
-        .chain((0x100..0x140).filter_map(char::from_u32));
+    let delimiters =
+        std::iter::once(',').chain((0x100..0x140).filter_map(char::from_u32));
     let options = CollectionConversionOptions::default()
         .with_split_scalar_strings(true)
         .with_delimiters(delimiters);
