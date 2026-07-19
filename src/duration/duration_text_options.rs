@@ -105,6 +105,14 @@ impl DurationTextOptions {
     }
 
     /// Returns the maximum accepted source text length in bytes.
+    ///
+    /// ```compile_fail
+    /// #![deny(unused_must_use)]
+    /// use qubit_datatype::DurationTextOptions;
+    ///
+    /// DurationTextOptions::default().max_text_bytes();
+    /// ```
+    #[must_use]
     #[inline(always)]
     pub const fn max_text_bytes(&self) -> usize {
         self.max_text_bytes
