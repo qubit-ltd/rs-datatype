@@ -27,13 +27,13 @@
 //! enables StringMap parsing and formatting. Other type pairs return
 //! `DataConversionErrorKind::Unsupported`.
 //!
-//! [`NumericConversionOptions`] configures fractional-to-integer conversion,
+//! `NumericConversionOptions` configures fractional-to-integer conversion,
 //! existing-numeric-to-float rounding, text-to-float rounding, and resource
 //! limits independently. The strict/default profile rejects truncation and
-//! precision loss. [`DataConversionOptions::lossy`] permits finite
+//! precision loss. `DataConversionOptions::lossy` permits finite
 //! decimal/float truncation toward zero, IEEE nearest-even float rounding, and
 //! Duration half-up rounding. Duration-to-integer and Duration-to-String
-//! require exact divisibility unless [`DurationRoundingPolicy::HalfUp`] is
+//! require exact divisibility unless `DurationRoundingPolicy::HalfUp` is
 //! selected explicitly.
 //!
 //! Strings are not trimmed by default and are normalized exactly once.
