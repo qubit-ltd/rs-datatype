@@ -35,7 +35,10 @@ use super::error::{
     InvalidValueReason,
 };
 use super::options::DataConversionOptions;
-use crate::datatype::DataType;
+use crate::datatype::{
+    DataType,
+    for_each_data_type_mapping,
+};
 
 mod boolean;
 mod duration;
@@ -45,6 +48,18 @@ mod source;
 mod string_source;
 mod structured;
 mod text;
+
+macro_rules! data_converter_data_type_match {
+    ($value:expr; $( $(#[$meta:meta])* ($variant:ident, $source:ty, $strategy:ident) ),+ $(,)?) => {
+        match $value {
+            Self::Unset(data_type) => *data_type,
+            $(
+                $(#[$meta])*
+                Self::$variant(_) => DataType::$variant,
+            )+
+        }
+    };
+}
 
 /// A borrowed-or-owned runtime source value for policy-driven conversion.
 ///
@@ -213,42 +228,7 @@ impl DataConverter<'_> {
     /// Returns the [`DataType`] corresponding to this enum variant.
     #[inline(always)]
     pub const fn data_type(&self) -> DataType {
-        match self {
-            Self::Unset(data_type) => *data_type,
-            Self::Bool(_) => DataType::Bool,
-            Self::Char(_) => DataType::Char,
-            Self::Int8(_) => DataType::Int8,
-            Self::Int16(_) => DataType::Int16,
-            Self::Int32(_) => DataType::Int32,
-            Self::Int64(_) => DataType::Int64,
-            Self::Int128(_) => DataType::Int128,
-            Self::UInt8(_) => DataType::UInt8,
-            Self::UInt16(_) => DataType::UInt16,
-            Self::UInt32(_) => DataType::UInt32,
-            Self::UInt64(_) => DataType::UInt64,
-            Self::UInt128(_) => DataType::UInt128,
-            Self::Float32(_) => DataType::Float32,
-            Self::Float64(_) => DataType::Float64,
-            #[cfg(feature = "big-integer")]
-            Self::BigInteger(_) => DataType::BigInteger,
-            #[cfg(feature = "big-decimal")]
-            Self::BigDecimal(_) => DataType::BigDecimal,
-            Self::String(_) => DataType::String,
-            #[cfg(feature = "chrono")]
-            Self::Date(_) => DataType::Date,
-            #[cfg(feature = "chrono")]
-            Self::Time(_) => DataType::Time,
-            #[cfg(feature = "chrono")]
-            Self::DateTime(_) => DataType::DateTime,
-            #[cfg(feature = "chrono")]
-            Self::Instant(_) => DataType::Instant,
-            Self::Duration(_) => DataType::Duration,
-            #[cfg(feature = "url")]
-            Self::Url(_) => DataType::Url,
-            Self::StringMap(_) => DataType::StringMap,
-            #[cfg(feature = "json")]
-            Self::Json(_) => DataType::Json,
-        }
+        for_each_data_type_mapping!(data_converter_data_type_match, self)
     }
 
     /// Builds a missing-value error for this source and target.
