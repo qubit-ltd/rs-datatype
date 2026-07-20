@@ -82,3 +82,8 @@ required-features = ["big-number"]
 name = "scalar_collection_bench"
 harness = false
 required-features = ["converter"]
+
+[[bench]]
+name = "owned_identity_conversion_bench"
+harness = false
+required-features = ["converter"]
