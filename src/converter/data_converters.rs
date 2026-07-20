@@ -20,7 +20,8 @@ use super::options::DataConversionOptions;
 ///
 /// `DataConverters` stores an iterator and converts each item through
 /// [`DataConverter`]. Borrowed inputs such as `&Vec<T>` and `&[T]` are
-/// converted by reference and do not clone the source collection.
+/// converted by reference and do not clone the source collection. Owned inputs
+/// are consumed, allowing matching target types to reuse their allocations.
 ///
 /// # Examples
 ///
@@ -144,7 +145,7 @@ where
         let (capacity, _) = sources.size_hint();
         let mut converted = Vec::with_capacity(capacity);
         for (index, source) in sources.enumerate() {
-            let value = match source.into().to_with::<T>(options) {
+            let value = match source.into().into_target_with::<T>(options) {
                 Ok(value) => value,
                 Err(source) => {
                     return Err(DataListConversionError::new(index, source));
@@ -222,7 +223,7 @@ where
     {
         let mut sources = self.sources;
         match sources.next() {
-            Some(source) => source.into().to_with::<T>(options),
+            Some(source) => source.into().into_target_with::<T>(options),
             None => Err(DataConversionError::empty_collection(T::DATA_TYPE)),
         }
     }

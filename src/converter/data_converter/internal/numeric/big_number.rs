@@ -348,6 +348,25 @@ impl DataConversionTarget for BigInt {
     ) -> Result<Self, DataConversionError> {
         source_to_bigint(source, options, DataType::BigInteger)
     }
+
+    fn convert_owned(
+        source: DataConverter<'_>,
+        options: &DataConversionOptions,
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::BigInteger(value) => {
+                let maximum_digits = options.numeric().limits().max_big_integer_digits();
+                enforce_big_integer_digit_limit(
+                    value.as_ref(),
+                    maximum_digits,
+                    DataType::BigInteger,
+                    DataType::BigInteger,
+                )?;
+                Ok(value.into_owned())
+            }
+            source => Self::convert_from(&source, options),
+        }
+    }
 }
 
 #[cfg(feature = "big-decimal")]
@@ -396,6 +415,16 @@ impl DataConversionTarget for BigDecimal {
                 options,
                 DataType::BigDecimal,
             )?)),
+        }
+    }
+
+    fn convert_owned(
+        source: DataConverter<'_>,
+        options: &DataConversionOptions,
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::BigDecimal(value) => Ok(value.into_owned()),
+            source => Self::convert_from(&source, options),
         }
     }
 }

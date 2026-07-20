@@ -16,7 +16,10 @@ use std::time::Duration;
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use num_bigint::BigInt;
-use qubit_datatype::{DataConversionError, DataConverter, DataType, InvalidValueReason};
+use qubit_datatype::{
+    DataConversionError, DataConversionOptions, DataConverter, DataType, InvalidValueReason,
+    StringConversionOptions,
+};
 use url::Url;
 
 /// Assert an invalid-syntax error with exact source and target types.
@@ -429,4 +432,43 @@ fn test_instant_to_string_rejects_non_canonical_years() {
             DataType::Instant,
         );
     }
+}
+
+/// Verifies consuming String conversion reuses owned storage and still applies
+/// normalization.
+#[test]
+fn test_data_converter_consuming_string_identity_reuses_owned_storage() {
+    let source = String::from("owned payload");
+    let source_pointer = source.as_ptr();
+    let converted = DataConverter::from(source)
+        .into_target::<String>()
+        .expect("owned String identity conversion should succeed");
+
+    assert_eq!(converted.as_ptr(), source_pointer);
+
+    let borrowed = String::from("borrowed payload");
+    let borrowed_pointer = borrowed.as_ptr();
+    let converted = DataConverter::from(&borrowed)
+        .into_target::<String>()
+        .expect("borrowed String identity conversion should succeed");
+    assert_ne!(converted.as_ptr(), borrowed_pointer);
+
+    let options = DataConversionOptions::default()
+        .with_string_options(StringConversionOptions::default().with_trim(true));
+    let trimmed = DataConverter::from(String::from("  payload  "))
+        .into_target_with::<String>(&options)
+        .expect("consuming String conversion should still trim text");
+    assert_eq!(trimmed, "payload");
+}
+
+/// Verifies consuming URL conversion reuses owned URL storage.
+#[test]
+fn test_data_converter_consuming_url_identity_reuses_owned_storage() {
+    let source = Url::parse("https://example.com/owned-payload").expect("test URL should parse");
+    let source_pointer = source.as_str().as_ptr();
+    let converted = DataConverter::from(source)
+        .into_target::<Url>()
+        .expect("owned URL identity conversion should succeed");
+
+    assert_eq!(converted.as_str().as_ptr(), source_pointer);
 }

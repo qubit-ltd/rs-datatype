@@ -61,4 +61,31 @@ pub trait DataConversionTarget: DataTypeOf + Sized {
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
     ) -> Result<Self, DataConversionError>;
+
+    /// Converts a consumed source into this target type using `options`.
+    ///
+    /// The default implementation preserves compatibility for downstream
+    /// targets by delegating to [`Self::convert_from`]. Targets that can reuse
+    /// an owned source allocation may override this method.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Runtime value consumed by the conversion.
+    /// * `options` - Policies controlling parsing and lossy conversion.
+    ///
+    /// # Returns
+    ///
+    /// The converted target value.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DataConversionError`] under the same conditions as
+    /// [`Self::convert_from`].
+    #[inline(always)]
+    fn convert_owned(
+        source: DataConverter<'_>,
+        options: &DataConversionOptions,
+    ) -> Result<Self, DataConversionError> {
+        Self::convert_from(&source, options)
+    }
 }

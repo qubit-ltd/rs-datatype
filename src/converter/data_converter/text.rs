@@ -158,6 +158,23 @@ impl DataConversionTarget for String {
             _ => Err(source.unsupported(DataType::String)),
         }
     }
+
+    fn convert_owned(
+        source: DataConverter<'_>,
+        options: &DataConversionOptions,
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::String(value) => {
+                let normalized = normalize(value.as_ref(), options, DataType::String)?;
+                if normalized.len() == value.len() {
+                    Ok(value.into_owned())
+                } else {
+                    Ok(normalized.to_owned())
+                }
+            }
+            source => Self::convert_from(&source, options),
+        }
+    }
 }
 
 #[cfg(feature = "chrono")]
@@ -318,6 +335,16 @@ impl DataConversionTarget for Url {
             }
             DataConverter::Unset(_) => Err(source.missing(DataType::Url)),
             _ => Err(source.unsupported(DataType::Url)),
+        }
+    }
+
+    fn convert_owned(
+        source: DataConverter<'_>,
+        options: &DataConversionOptions,
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::Url(value) => Ok(value.into_owned()),
+            source => Self::convert_from(&source, options),
         }
     }
 }

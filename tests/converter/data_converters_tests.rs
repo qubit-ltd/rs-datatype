@@ -54,6 +54,29 @@ fn test_data_converters_from_owned_vec_converts_all_values() {
     assert_eq!(converted, vec![1, 2, 3]);
 }
 
+/// Verifies owned identity batch conversion reuses each String allocation.
+#[test]
+fn test_data_converters_owned_string_identity_reuses_storage() {
+    let values = vec![
+        String::from("first payload"),
+        String::from("second payload"),
+    ];
+    let pointers = values
+        .iter()
+        .map(|value| value.as_ptr())
+        .collect::<Vec<_>>();
+
+    let converted = DataConverters::from(values)
+        .to_vec::<String>()
+        .expect("owned String batch identity conversion should succeed");
+    let converted_pointers = converted
+        .iter()
+        .map(|value| value.as_ptr())
+        .collect::<Vec<_>>();
+
+    assert_eq!(converted_pointers, pointers);
+}
+
 /// Test conversion from an owned vector containing borrowed string slices.
 #[test]
 fn test_data_converters_from_owned_vec_of_borrowed_values() {
