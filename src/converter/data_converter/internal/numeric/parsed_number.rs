@@ -14,9 +14,15 @@ use num_bigint::BigInt;
 #[must_use]
 pub(super) enum ParsedNumber {
     /// Arbitrary-precision integral value.
-    Integer(BigInt),
+    Integer(
+        /// Parsed arbitrary-precision integral value.
+        BigInt,
+    ),
     /// Arbitrary-precision decimal value.
-    Decimal(BigDecimal),
+    Decimal(
+        /// Parsed arbitrary-precision decimal value.
+        BigDecimal,
+    ),
     /// Not-a-number marker.
     NaN,
     /// Positive infinity marker.

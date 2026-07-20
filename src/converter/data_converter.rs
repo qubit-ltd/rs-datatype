@@ -17,28 +17,16 @@ use std::time::Duration;
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "chrono")]
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 #[cfg(feature = "url")]
 use url::Url;
 
 use super::data_conversion_target::DataConversionTarget;
-use super::error::{
-    DataConversionError,
-    InvalidValueReason,
-};
+use super::error::{DataConversionError, InvalidValueReason};
 use super::options::DataConversionOptions;
-use crate::datatype::{
-    DataType,
-    for_each_data_type_mapping,
-};
+use crate::datatype::{DataType, for_each_data_type_mapping};
 
 mod boolean;
 mod duration;
@@ -103,65 +91,143 @@ macro_rules! data_converter_data_type_match {
 #[non_exhaustive]
 pub enum DataConverter<'a> {
     /// Missing source whose declared type remains known.
-    Unset(DataType),
+    Unset(
+        /// Declared type retained for the missing source.
+        DataType,
+    ),
     /// Boolean source value.
-    Bool(bool),
+    Bool(
+        /// Boolean source value.
+        bool,
+    ),
     /// Unicode scalar source value.
-    Char(char),
+    Char(
+        /// Unicode scalar source value.
+        char,
+    ),
     /// 8-bit signed integer source value.
-    Int8(i8),
+    Int8(
+        /// 8-bit signed integer source value.
+        i8,
+    ),
     /// 16-bit signed integer source value.
-    Int16(i16),
+    Int16(
+        /// 16-bit signed integer source value.
+        i16,
+    ),
     /// 32-bit signed integer source value.
-    Int32(i32),
+    Int32(
+        /// 32-bit signed integer source value.
+        i32,
+    ),
     /// 64-bit signed integer source value.
-    Int64(i64),
+    Int64(
+        /// 64-bit signed integer source value.
+        i64,
+    ),
     /// 128-bit signed integer source value.
-    Int128(i128),
+    Int128(
+        /// 128-bit signed integer source value.
+        i128,
+    ),
     /// 8-bit unsigned integer source value.
-    UInt8(u8),
+    UInt8(
+        /// 8-bit unsigned integer source value.
+        u8,
+    ),
     /// 16-bit unsigned integer source value.
-    UInt16(u16),
+    UInt16(
+        /// 16-bit unsigned integer source value.
+        u16,
+    ),
     /// 32-bit unsigned integer source value.
-    UInt32(u32),
+    UInt32(
+        /// 32-bit unsigned integer source value.
+        u32,
+    ),
     /// 64-bit unsigned integer source value.
-    UInt64(u64),
+    UInt64(
+        /// 64-bit unsigned integer source value.
+        u64,
+    ),
     /// 128-bit unsigned integer source value.
-    UInt128(u128),
+    UInt128(
+        /// 128-bit unsigned integer source value.
+        u128,
+    ),
     /// 32-bit floating-point source value.
-    Float32(f32),
+    Float32(
+        /// 32-bit floating-point source value.
+        f32,
+    ),
     /// 64-bit floating-point source value.
-    Float64(f64),
+    Float64(
+        /// 64-bit floating-point source value.
+        f64,
+    ),
     /// Borrowed or owned arbitrary-precision integer source value.
     #[cfg(feature = "big-integer")]
-    BigInteger(Cow<'a, BigInt>),
+    BigInteger(
+        /// Borrowed or owned arbitrary-precision integer source value.
+        Cow<'a, BigInt>,
+    ),
     /// Borrowed or owned arbitrary-precision decimal source value.
     #[cfg(feature = "big-decimal")]
-    BigDecimal(Cow<'a, BigDecimal>),
+    BigDecimal(
+        /// Borrowed or owned arbitrary-precision decimal source value.
+        Cow<'a, BigDecimal>,
+    ),
     /// Borrowed or owned UTF-8 text source value.
-    String(Cow<'a, str>),
+    String(
+        /// Borrowed or owned UTF-8 text source value.
+        Cow<'a, str>,
+    ),
     /// Calendar date without a time zone.
     #[cfg(feature = "chrono")]
-    Date(NaiveDate),
+    Date(
+        /// Calendar date without a time zone.
+        NaiveDate,
+    ),
     /// Clock time without a date or time zone.
     #[cfg(feature = "chrono")]
-    Time(NaiveTime),
+    Time(
+        /// Clock time without a date or time zone.
+        NaiveTime,
+    ),
     /// Local date and time without a time zone.
     #[cfg(feature = "chrono")]
-    DateTime(NaiveDateTime),
+    DateTime(
+        /// Local date and time without a time zone.
+        NaiveDateTime,
+    ),
     /// UTC instant.
     #[cfg(feature = "chrono")]
-    Instant(DateTime<Utc>),
+    Instant(
+        /// UTC instant.
+        DateTime<Utc>,
+    ),
     /// Non-negative span represented by [`Duration`].
-    Duration(Duration),
+    Duration(
+        /// Non-negative span source value.
+        Duration,
+    ),
     /// Borrowed or owned absolute URL source value.
     #[cfg(feature = "url")]
-    Url(Cow<'a, Url>),
+    Url(
+        /// Borrowed or owned absolute URL source value.
+        Cow<'a, Url>,
+    ),
     /// Borrowed or owned string-to-string map source value.
-    StringMap(Cow<'a, HashMap<String, String>>),
+    StringMap(
+        /// Borrowed or owned string-to-string map source value.
+        Cow<'a, HashMap<String, String>>,
+    ),
     /// Borrowed or owned JSON source value.
     #[cfg(feature = "json")]
-    Json(Cow<'a, serde_json::Value>),
+    Json(
+        /// Borrowed or owned JSON source value.
+        Cow<'a, serde_json::Value>,
+    ),
 }
 
 impl DataConverter<'_> {
@@ -208,10 +274,7 @@ impl DataConverter<'_> {
     /// Returns a structured error containing source type, target type, and a
     /// value-free rejection reason.
     #[inline(always)]
-    pub fn to_with<T>(
-        &self,
-        options: &DataConversionOptions,
-    ) -> Result<T, DataConversionError>
+    pub fn to_with<T>(&self, options: &DataConversionOptions) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -271,11 +334,7 @@ impl DataConverter<'_> {
     ///
     /// An invalid-value error recording this source's runtime type.
     #[inline(always)]
-    fn invalid(
-        &self,
-        to: DataType,
-        reason: InvalidValueReason,
-    ) -> DataConversionError {
+    fn invalid(&self, to: DataType, reason: InvalidValueReason) -> DataConversionError {
         DataConversionError::invalid(self.data_type(), to, reason)
     }
 }

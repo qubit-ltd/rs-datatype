@@ -11,10 +11,7 @@
 
 use std::sync::LazyLock;
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 use super::blank_string_policy::BlankStringPolicy;
 use super::boolean_conversion_options::BooleanConversionOptions;
@@ -24,13 +21,14 @@ use super::duration_rounding_policy::DurationRoundingPolicy;
 use super::empty_item_policy::EmptyItemPolicy;
 use super::numeric_conversion_options::NumericConversionOptions;
 use super::string_conversion_options::StringConversionOptions;
+use super::structured_conversion_limits::StructuredConversionLimits;
 
 /// Aggregates all policies used by the conversion engine.
 ///
 /// Pass this value to [`crate::DataConverter::to_with`] when conversion rules
 /// need to differ from the strict defaults. The nested option groups keep
 /// string normalization, boolean literals, collection splitting, duration
-/// units, and numeric precision independently configurable. The type is
+/// units, numeric precision, and structured text limits independently configurable. The type is
 /// serializable with Serde and missing serialized fields receive their group
 /// defaults.
 ///
@@ -56,6 +54,8 @@ pub struct DataConversionOptions {
     collection: CollectionConversionOptions,
     /// Duration conversion behavior.
     duration: DurationConversionOptions,
+    /// Structured text conversion resource limits.
+    structured: StructuredConversionLimits,
 }
 
 impl DataConversionOptions {
@@ -64,8 +64,9 @@ impl DataConversionOptions {
     /// The profile requires exact numeric and duration conversions, preserves
     /// string whitespace and blank strings, accepts the default Boolean
     /// literals and numeric Boolean policy, does not split scalar strings into
-    /// collections, and uses the default millisecond Duration representation.
-    /// Use this profile for generic library conversions where changing or
+    /// collections, uses the default millisecond Duration representation, and
+    /// applies the default structured text limit. Use this profile for generic
+    /// library conversions where changing or
     /// discarding source information would be surprising.
     ///
     /// # Returns
@@ -87,6 +88,7 @@ impl DataConversionOptions {
             boolean: BooleanConversionOptions::strict(),
             collection: CollectionConversionOptions::default(),
             duration: DurationConversionOptions::default(),
+            structured: StructuredConversionLimits::default(),
         }
     }
 
@@ -95,7 +97,8 @@ impl DataConversionOptions {
     /// Compared with [`Self::strict`], this profile permits fractional
     /// truncation, floating-point rounding, and Duration half-up rounding, and
     /// trims string input. Blank strings remain preserved while Boolean and
-    /// collection rules remain strict.
+    /// collection rules remain strict and structured text keeps its default
+    /// limit.
     ///
     /// # Returns
     ///
@@ -117,6 +120,7 @@ impl DataConversionOptions {
             collection: CollectionConversionOptions::default(),
             duration: DurationConversionOptions::default()
                 .with_rounding_policy(DurationRoundingPolicy::HalfUp),
+            structured: StructuredConversionLimits::default(),
         }
     }
 
@@ -128,7 +132,8 @@ impl DataConversionOptions {
     /// common boolean aliases, and split scalar strings on commas while
     /// skipping empty collection items. Text-to-float conversion permits IEEE
     /// nearest-even rounding, while fractional-to-integer and
-    /// existing-numeric-to-float conversions remain exact.
+    /// existing-numeric-to-float conversions remain exact. Structured text
+    /// keeps its default limit.
     pub fn env_friendly() -> Self {
         Self {
             numeric: NumericConversionOptions::env_friendly(),
@@ -136,6 +141,7 @@ impl DataConversionOptions {
             boolean: BooleanConversionOptions::env_friendly(),
             collection: CollectionConversionOptions::env_friendly(),
             duration: DurationConversionOptions::env_friendly(),
+            structured: StructuredConversionLimits::default(),
         }
     }
 
@@ -167,10 +173,7 @@ impl DataConversionOptions {
     ///
     /// Returns the updated options value.
     #[inline(always)]
-    pub fn with_numeric_options(
-        mut self,
-        numeric: NumericConversionOptions,
-    ) -> Self {
+    pub fn with_numeric_options(mut self, numeric: NumericConversionOptions) -> Self {
         self.numeric = numeric;
         self
     }
@@ -191,10 +194,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_string_options(
-        mut self,
-        string: StringConversionOptions,
-    ) -> Self {
+    pub fn with_string_options(mut self, string: StringConversionOptions) -> Self {
         self.string = string;
         self
     }
@@ -209,10 +209,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_blank_string_policy(
-        mut self,
-        policy: BlankStringPolicy,
-    ) -> Self {
+    pub fn with_blank_string_policy(mut self, policy: BlankStringPolicy) -> Self {
         self.string = self.string.with_blank_string_policy(policy);
         self
     }
@@ -233,10 +230,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_boolean_options(
-        mut self,
-        boolean: BooleanConversionOptions,
-    ) -> Self {
+    pub fn with_boolean_options(mut self, boolean: BooleanConversionOptions) -> Self {
         self.boolean = boolean;
         self
     }
@@ -257,10 +251,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_collection_options(
-        mut self,
-        collection: CollectionConversionOptions,
-    ) -> Self {
+    pub fn with_collection_options(mut self, collection: CollectionConversionOptions) -> Self {
         self.collection = collection;
         self
     }
@@ -296,11 +287,29 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_duration_options(
-        mut self,
-        duration: DurationConversionOptions,
-    ) -> Self {
+    pub fn with_duration_options(mut self, duration: DurationConversionOptions) -> Self {
         self.duration = duration;
+        self
+    }
+
+    /// Returns the structured text conversion resource limits.
+    #[inline(always)]
+    pub const fn structured(&self) -> &StructuredConversionLimits {
+        &self.structured
+    }
+
+    /// Returns a copy with different structured text conversion resource limits.
+    ///
+    /// # Parameters
+    ///
+    /// * `structured` - New structured text resource limits.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline(always)]
+    pub fn with_structured_limits(mut self, structured: StructuredConversionLimits) -> Self {
+        self.structured = structured;
         self
     }
 }

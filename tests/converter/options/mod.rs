@@ -21,3 +21,4 @@ mod internal;
 mod numeric_conversion_limits_tests;
 mod numeric_conversion_options_tests;
 mod string_conversion_options_tests;
+mod structured_conversion_limits_tests;
