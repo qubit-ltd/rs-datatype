@@ -24,6 +24,12 @@ pub enum ConversionLimit {
         /// Configured maximum normalized text length in bytes.
         maximum: usize,
     },
+    /// The normalized structured source text exceeded its byte limit.
+    #[error("structured text exceeds the {maximum}-byte limit")]
+    StructuredTextBytes {
+        /// Configured maximum normalized text length in bytes.
+        maximum: usize,
+    },
     /// A conversion would materialize too many BigInteger decimal digits.
     #[error("BigInteger result exceeds the {maximum}-decimal-digit limit")]
     BigIntegerDigits {

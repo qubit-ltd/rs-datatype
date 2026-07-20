@@ -37,13 +37,7 @@ use bigdecimal::BigDecimal;
     feature = "url",
     feature = "json"
 ))]
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",
@@ -51,19 +45,21 @@ use chrono::{
     feature = "json"
 ))]
 use num_bigint::BigInt;
+#[cfg(all(
+    feature = "json",
+    not(all(feature = "big-number", feature = "chrono", feature = "url",)),
+))]
+use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConverter;
+#[cfg(feature = "json")]
+use qubit_datatype::{ConversionLimit, DataConversionOptions, StructuredConversionLimits};
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",
     feature = "url",
     feature = "json"
 ))]
-use qubit_datatype::{
-    DataConversionError,
-    DataFormat,
-    DataType,
-    InvalidValueReason,
-};
+use qubit_datatype::{DataConversionError, DataFormat, DataType, InvalidValueReason};
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",
@@ -114,6 +110,42 @@ fn assert_invalid_reason<T>(
         Err(error) if error.from_type() == Some(DataType::String)
             && error.to_type() == to && error.reason() == Some(&expected_reason),
     ));
+}
+
+/// Tests that structured text conversions enforce the configured byte limit.
+#[cfg(feature = "json")]
+#[test]
+fn test_data_converter_rejects_oversize_structured_text() {
+    let options = DataConversionOptions::default()
+        .with_structured_limits(StructuredConversionLimits::default().with_max_text_bytes(2));
+
+    assert!(
+        DataConverter::from("[]")
+            .to_with::<serde_json::Value>(&options)
+            .is_ok()
+    );
+    assert_eq!(
+        DataConverter::from("[0]").to_with::<serde_json::Value>(&options),
+        Err(DataConversionError::limit_exceeded(
+            qubit_datatype::DataType::String,
+            qubit_datatype::DataType::Json,
+            ConversionLimit::StructuredTextBytes { maximum: 2 },
+        )),
+    );
+
+    assert!(
+        DataConverter::from("{}")
+            .to_with::<HashMap<String, String>>(&options)
+            .is_ok()
+    );
+    assert_eq!(
+        DataConverter::from(r#"{"a":"b"}"#).to_with::<HashMap<String, String>>(&options),
+        Err(DataConversionError::limit_exceeded(
+            qubit_datatype::DataType::String,
+            qubit_datatype::DataType::StringMap,
+            ConversionLimit::StructuredTextBytes { maximum: 2 },
+        )),
+    );
 }
 
 /// Test rejection boundaries for every canonical rich textual format.
@@ -191,8 +223,7 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
         },
     );
     assert_invalid_reason(
-        DataConverter::from(r#"{"key":"value"} []"#)
-            .to::<HashMap<String, String>>(),
+        DataConverter::from(r#"{"key":"value"} []"#).to::<HashMap<String, String>>(),
         DataType::StringMap,
         InvalidValueReason::Deserialization {
             format: DataFormat::Json,

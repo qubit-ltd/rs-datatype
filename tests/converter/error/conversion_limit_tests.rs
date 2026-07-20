@@ -25,6 +25,10 @@ fn test_conversion_limit_display() {
         "duration text exceeds the 56-byte limit",
     );
     assert_eq!(
+        ConversionLimit::StructuredTextBytes { maximum: 67 }.to_string(),
+        "structured text exceeds the 67-byte limit",
+    );
+    assert_eq!(
         ConversionLimit::CollectionItems { maximum: 78 }.to_string(),
         "collection result exceeds the 78-item limit",
     );

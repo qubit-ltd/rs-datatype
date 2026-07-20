@@ -21,11 +21,9 @@ mod internal;
 mod numeric_conversion_limits;
 mod numeric_conversion_options;
 mod string_conversion_options;
+mod structured_conversion_limits;
 
-pub use crate::duration::{
-    DurationUnit,
-    SuffixlessDurationPolicy,
-};
+pub use crate::duration::{DurationUnit, SuffixlessDurationPolicy};
 pub use blank_string_policy::BlankStringPolicy;
 pub use boolean_conversion_options::BooleanConversionOptions;
 pub use boolean_numeric_policy::BooleanNumericPolicy;
@@ -39,3 +37,4 @@ pub use fractional_to_integer_policy::FractionalToIntegerPolicy;
 pub use numeric_conversion_limits::NumericConversionLimits;
 pub use numeric_conversion_options::NumericConversionOptions;
 pub use string_conversion_options::StringConversionOptions;
+pub use structured_conversion_limits::StructuredConversionLimits;

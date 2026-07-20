@@ -7,10 +7,7 @@
 // =============================================================================
 //! Resource limits for numeric conversions.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 /// Bounds allocations and work introduced by numeric conversion.
 ///
@@ -22,7 +19,9 @@ use serde::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct NumericConversionLimits {
+    /// Maximum normalized numeric source text length in bytes.
     max_text_bytes: usize,
+    /// Maximum decimal digits materialized for a BigInt result.
     max_big_integer_digits: usize,
 }
 

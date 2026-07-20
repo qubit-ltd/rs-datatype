@@ -7,10 +7,7 @@
 // =============================================================================
 //! Policy for Duration text without a unit suffix.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 use super::DurationUnit;
 
@@ -24,7 +21,10 @@ pub enum SuffixlessDurationPolicy {
     /// Reject Duration text without an explicit unit suffix.
     Reject,
     /// Interpret suffixless integers using the contained unit.
-    Assume(DurationUnit),
+    Assume(
+        /// Unit used to interpret suffixless duration text.
+        DurationUnit,
+    ),
 }
 
 impl Default for SuffixlessDurationPolicy {
