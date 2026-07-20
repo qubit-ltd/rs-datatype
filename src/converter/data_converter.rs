@@ -58,6 +58,10 @@ macro_rules! data_converter_data_type_match {
 /// when possible, so wrapping a string, big number, URL, map, or JSON value
 /// does not require cloning it.
 ///
+/// When the wrapper does not need to be reused, [`Self::into_target`] and
+/// [`Self::into_target_with`] can move an owned value into a matching target
+/// instead of cloning its allocation.
+///
 /// Use this type when the source type is known at run time, such as values read
 /// from configuration, command-line arguments, or heterogeneous metadata. For
 /// homogeneous collections, [`super::DataConverters`] provides indexed batch
@@ -279,6 +283,61 @@ impl DataConverter<'_> {
         T: DataConversionTarget,
     {
         T::convert_from(self, options)
+    }
+
+    /// Consumes this source and converts it using the shared default options.
+    ///
+    /// Consuming the wrapper allows targets to reuse owned source allocations
+    /// when the source and target types match. Borrowed sources retain the same
+    /// behavior as [`Self::to`].
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Requested target type.
+    ///
+    /// # Returns
+    ///
+    /// Returns the converted target value.
+    ///
+    /// # Errors
+    ///
+    /// Returns a structured error under the same conditions as [`Self::to`].
+    #[inline(always)]
+    pub fn into_target<T>(self) -> Result<T, DataConversionError>
+    where
+        T: DataConversionTarget,
+    {
+        self.into_target_with(DataConversionOptions::default_ref())
+    }
+
+    /// Consumes this source and converts it using explicit options.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Requested target type.
+    ///
+    /// # Parameters
+    ///
+    /// * `options` - Policies for string normalization, numeric precision,
+    ///   booleans, collections, and durations.
+    ///
+    /// # Returns
+    ///
+    /// Returns the converted target value.
+    ///
+    /// # Errors
+    ///
+    /// Returns a structured error containing source type, target type, and a
+    /// value-free rejection reason.
+    #[inline(always)]
+    pub fn into_target_with<T>(
+        self,
+        options: &DataConversionOptions,
+    ) -> Result<T, DataConversionError>
+    where
+        T: DataConversionTarget,
+    {
+        T::convert_owned(self, options)
     }
 
     /// Returns the runtime type of the wrapped source.

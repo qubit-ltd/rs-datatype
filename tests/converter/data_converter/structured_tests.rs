@@ -254,6 +254,65 @@ fn test_data_converter_string_map_identity_without_json() {
     assert_eq!(converted, source);
 }
 
+/// Verifies consuming string-map conversion reuses owned value storage while
+/// a borrowed source remains independently owned.
+#[test]
+fn test_data_converter_consuming_string_map_identity_reuses_owned_storage() {
+    let source = HashMap::from([("key".to_owned(), "owned payload".to_owned())]);
+    let source_pointer = source
+        .get("key")
+        .expect("test map should contain key")
+        .as_ptr();
+    let converted = DataConverter::from(source)
+        .into_target::<HashMap<String, String>>()
+        .expect("owned string map identity conversion should succeed");
+    assert_eq!(
+        converted
+            .get("key")
+            .expect("converted map should contain key")
+            .as_ptr(),
+        source_pointer,
+    );
+
+    let borrowed = HashMap::from([("key".to_owned(), "borrowed payload".to_owned())]);
+    let borrowed_pointer = borrowed
+        .get("key")
+        .expect("test map should contain key")
+        .as_ptr();
+    let converted = DataConverter::from(&borrowed)
+        .into_target::<HashMap<String, String>>()
+        .expect("borrowed string map identity conversion should succeed");
+    assert_ne!(
+        converted
+            .get("key")
+            .expect("converted map should contain key")
+            .as_ptr(),
+        borrowed_pointer,
+    );
+}
+
+/// Verifies consuming JSON conversion reuses owned string storage.
+#[test]
+#[cfg(feature = "json")]
+fn test_data_converter_consuming_json_identity_reuses_owned_storage() {
+    let source = serde_json::Value::String("owned payload".to_owned());
+    let source_pointer = source
+        .as_str()
+        .expect("test JSON should contain a string")
+        .as_ptr();
+    let converted = DataConverter::from(source)
+        .into_target::<serde_json::Value>()
+        .expect("owned JSON identity conversion should succeed");
+
+    assert_eq!(
+        converted
+            .as_str()
+            .expect("converted JSON should contain a string")
+            .as_ptr(),
+        source_pointer,
+    );
+}
+
 /// Test URL and JSON conversion behavior.
 #[test]
 #[cfg(all(

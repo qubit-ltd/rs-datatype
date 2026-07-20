@@ -834,3 +834,31 @@ fn test_big_integer_digit_limit_big_decimal_expansion() {
         Some(&ConversionLimit::BigIntegerDigits { maximum: 3 }),
     );
 }
+
+/// Verifies consuming big-number identity conversion preserves values and
+/// continues to enforce the BigInteger digit limit.
+#[test]
+fn test_data_converter_consuming_big_number_identity_preserves_limits() {
+    let integer = BigInt::from(12_345_u32);
+    assert_eq!(
+        DataConverter::from(integer.clone()).into_target::<BigInt>(),
+        Ok(integer),
+    );
+
+    let decimal = BigDecimal::from_str("12345.6789").expect("test BigDecimal literal should parse");
+    assert_eq!(
+        DataConverter::from(decimal.clone()).into_target::<BigDecimal>(),
+        Ok(decimal),
+    );
+
+    let options =
+        options_with_limits(NumericConversionLimits::default().with_max_big_integer_digits(4));
+    let error = DataConverter::from(BigInt::from(12_345_u32))
+        .into_target_with::<BigInt>(&options)
+        .expect_err("consuming BigInteger identity must honor the digit limit");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(
+        error.limit(),
+        Some(&ConversionLimit::BigIntegerDigits { maximum: 4 }),
+    );
+}

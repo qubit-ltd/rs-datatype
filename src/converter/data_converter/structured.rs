@@ -60,6 +60,16 @@ impl DataConversionTarget for serde_json::Value {
             _ => Err(source.unsupported(DataType::Json)),
         }
     }
+
+    fn convert_owned(
+        source: DataConverter<'_>,
+        options: &DataConversionOptions,
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::Json(value) => Ok(value.into_owned()),
+            source => Self::convert_from(&source, options),
+        }
+    }
 }
 
 /// Deserializes a string map through the duplicate-aware visitor.
@@ -116,6 +126,16 @@ impl DataConversionTarget for HashMap<String, String> {
             }
             DataConverter::Unset(_) => Err(source.missing(DataType::StringMap)),
             _ => Err(source.unsupported(DataType::StringMap)),
+        }
+    }
+
+    fn convert_owned(
+        source: DataConverter<'_>,
+        options: &DataConversionOptions,
+    ) -> Result<Self, DataConversionError> {
+        match source {
+            DataConverter::StringMap(value) => Ok(value.into_owned()),
+            source => Self::convert_from(&source, options),
         }
     }
 }
