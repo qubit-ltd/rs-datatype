@@ -8,10 +8,7 @@
 //! Lazy scalar collection item iterator.
 
 use super::error::ScalarItemError;
-use super::options::{
-    CollectionConversionOptions,
-    EmptyItemPolicy,
-};
+use super::options::{CollectionConversionOptions, EmptyItemPolicy};
 use super::scalar_item::ScalarItem;
 
 /// A lazy iterator over scalar collection items.
@@ -63,10 +60,7 @@ impl<'a> ScalarItems<'a> {
     ///
     /// An iterator borrowing both inputs and deferring all processing until
     /// iteration.
-    pub(super) fn new(
-        options: &'a CollectionConversionOptions,
-        value: &'a str,
-    ) -> Self {
+    pub(super) fn new(options: &'a CollectionConversionOptions, value: &'a str) -> Self {
         let delimiters = options.delimiters();
         let (ascii_delimiters, non_ascii_delimiters) = if delimiters.len() > 8 {
             let mut ascii = [false; 128];
@@ -129,9 +123,7 @@ impl<'a> ScalarItems<'a> {
             if character.is_ascii() {
                 ascii[*character as usize]
             } else {
-                non_ascii_delimiters.is_some_and(|sorted| {
-                    sorted.binary_search(character).is_ok()
-                })
+                non_ascii_delimiters.is_some_and(|sorted| sorted.binary_search(character).is_ok())
             }
         }) {
             Some((relative_end, delimiter)) => {
@@ -166,10 +158,7 @@ impl<'a> ScalarItems<'a> {
     ///
     /// Returns [`ScalarItemError::ItemLimitExceeded`] for the first item beyond
     /// `max_items`. The iterator is exhausted before returning that error.
-    fn retain_item(
-        &mut self,
-        item: ScalarItem<'a>,
-    ) -> Result<ScalarItem<'a>, ScalarItemError> {
+    fn retain_item(&mut self, item: ScalarItem<'a>) -> Result<ScalarItem<'a>, ScalarItemError> {
         if self.retained_items >= self.max_items {
             self.next_start = None;
             return Err(ScalarItemError::item_limit_exceeded(

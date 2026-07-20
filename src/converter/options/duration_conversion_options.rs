@@ -10,15 +10,9 @@
 //! Defines options that control duration conversion.
 
 use crate::duration::{
-    DurationTextOptions,
-    DurationUnit,
-    DurationUnitSuffixSet,
-    SuffixlessDurationPolicy,
+    DurationTextOptions, DurationUnit, DurationUnitSuffixSet, SuffixlessDurationPolicy,
 };
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 use super::DurationRoundingPolicy;
 
@@ -130,10 +124,7 @@ impl DurationConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_suffixless_string_policy(
-        mut self,
-        policy: SuffixlessDurationPolicy,
-    ) -> Self {
+    pub fn with_suffixless_string_policy(mut self, policy: SuffixlessDurationPolicy) -> Self {
         self.suffixless_string_policy = policy;
         self
     }
@@ -146,10 +137,7 @@ impl DurationConversionOptions {
 
     /// Returns a copy with a different accepted Duration suffix set.
     #[inline(always)]
-    pub const fn with_unit_suffix_set(
-        mut self,
-        unit_suffix_set: DurationUnitSuffixSet,
-    ) -> Self {
+    pub const fn with_unit_suffix_set(mut self, unit_suffix_set: DurationUnitSuffixSet) -> Self {
         self.unit_suffix_set = unit_suffix_set;
         self
     }
@@ -243,10 +231,7 @@ impl DurationConversionOptions {
 
     /// Returns a copy with a different Duration output rounding policy.
     #[inline(always)]
-    pub const fn with_rounding_policy(
-        mut self,
-        rounding_policy: DurationRoundingPolicy,
-    ) -> Self {
+    pub const fn with_rounding_policy(mut self, rounding_policy: DurationRoundingPolicy) -> Self {
         self.rounding_policy = rounding_policy;
         self
     }

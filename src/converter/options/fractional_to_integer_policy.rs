@@ -7,16 +7,11 @@
 // =============================================================================
 //! Policy for converting fractional values to integers.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 /// Controls whether a fractional numeric value may be converted to an integer.
 #[must_use]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FractionalToIntegerPolicy {
     /// Reject values with a non-zero fractional component.

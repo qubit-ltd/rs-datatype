@@ -25,9 +25,7 @@ pub enum ScalarItemError {
         source_index: usize,
     },
     /// Retaining another item would exceed the configured limit.
-    #[error(
-        "scalar collection exceeds the {maximum}-item limit at source index {source_index}"
-    )]
+    #[error("scalar collection exceeds the {maximum}-item limit at source index {source_index}")]
     ItemLimitExceeded {
         /// Zero-based index before empty-item filtering.
         source_index: usize,
@@ -62,10 +60,7 @@ impl ScalarItemError {
     ///
     /// An item-limit error containing the source position and limit.
     #[inline(always)]
-    pub(crate) const fn item_limit_exceeded(
-        source_index: usize,
-        maximum: usize,
-    ) -> Self {
+    pub(crate) const fn item_limit_exceeded(source_index: usize, maximum: usize) -> Self {
         Self::ItemLimitExceeded {
             source_index,
             maximum,
@@ -81,8 +76,9 @@ impl ScalarItemError {
     #[inline(always)]
     pub const fn source_index(&self) -> usize {
         match *self {
-            Self::BlankRejected { source_index }
-            | Self::ItemLimitExceeded { source_index, .. } => source_index,
+            Self::BlankRejected { source_index } | Self::ItemLimitExceeded { source_index, .. } => {
+                source_index
+            }
         }
     }
 
@@ -112,23 +108,18 @@ impl ScalarItemError {
     /// A rejected-blank or resource-limit conversion error from
     /// [`DataType::String`] to `to`.
     #[inline(always)]
-    pub const fn into_data_conversion_error(
-        self,
-        to: DataType,
-    ) -> DataConversionError {
+    pub const fn into_data_conversion_error(self, to: DataType) -> DataConversionError {
         match self {
             Self::BlankRejected { .. } => DataConversionError::invalid(
                 DataType::String,
                 to,
                 InvalidValueReason::BlankRejected,
             ),
-            Self::ItemLimitExceeded { maximum, .. } => {
-                DataConversionError::limit_exceeded(
-                    DataType::String,
-                    to,
-                    ConversionLimit::CollectionItems { maximum },
-                )
-            }
+            Self::ItemLimitExceeded { maximum, .. } => DataConversionError::limit_exceeded(
+                DataType::String,
+                to,
+                ConversionLimit::CollectionItems { maximum },
+            ),
         }
     }
 
@@ -143,14 +134,8 @@ impl ScalarItemError {
     /// A list conversion error preserving the original source index and
     /// carrying the target-aware rejected-blank or resource-limit error.
     #[inline(always)]
-    pub const fn into_list_conversion_error(
-        self,
-        to: DataType,
-    ) -> DataListConversionError {
+    pub const fn into_list_conversion_error(self, to: DataType) -> DataListConversionError {
         let source_index = self.source_index();
-        DataListConversionError::new(
-            source_index,
-            self.into_data_conversion_error(to),
-        )
+        DataListConversionError::new(source_index, self.into_data_conversion_error(to))
     }
 }

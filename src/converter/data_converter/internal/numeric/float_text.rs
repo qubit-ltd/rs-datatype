@@ -9,10 +9,7 @@
 
 use super::syntax::invalid_numeric_syntax;
 use crate::converter::{
-    DataConversionError,
-    DataConversionOptions,
-    FloatRoundingPolicy,
-    InvalidValueReason,
+    DataConversionError, DataConversionOptions, FloatRoundingPolicy, InvalidValueReason,
 };
 use crate::datatype::DataType;
 
@@ -101,8 +98,7 @@ fn exact_float_decimal(value: f64) -> (Vec<u8>, usize, i128) {
         multiply_decimal_digits(&mut digits, factor);
     }
     let trailing_zeros = digits.iter().take_while(|digit| **digit == 0).count();
-    scale -= i128::try_from(trailing_zeros)
-        .expect("a finite float expansion fits in i128");
+    scale -= i128::try_from(trailing_zeros).expect("a finite float expansion fits in i128");
     (digits, trailing_zeros, scale)
 }
 
@@ -144,8 +140,7 @@ fn text_is_exact_float(value: &str, converted: f64) -> bool {
                         non_zero_seen = true;
                     }
                 }
-                trailing_zeros =
-                    if byte == b'0' { trailing_zeros + 1 } else { 0 };
+                trailing_zeros = if byte == b'0' { trailing_zeros + 1 } else { 0 };
                 if decimal_seen {
                     fractional_digits += 1;
                 }
@@ -176,10 +171,8 @@ fn text_is_exact_float(value: &str, converted: f64) -> bool {
     let scale = fractional_digits
         - i128::from(exponent)
         - i128::try_from(trailing_zeros).unwrap_or(i128::MAX);
-    let (float_digits, float_trailing_zeros, float_scale) =
-        exact_float_decimal(converted);
-    if scale != float_scale
-        || significant_digit_count != float_digits.len() - float_trailing_zeros
+    let (float_digits, float_trailing_zeros, float_scale) = exact_float_decimal(converted);
+    if scale != float_scale || significant_digit_count != float_digits.len() - float_trailing_zeros
     {
         return false;
     }

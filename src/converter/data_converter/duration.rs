@@ -15,24 +15,15 @@ use num_bigint::Sign;
 use num_traits::ToPrimitive;
 
 use super::DataConverter;
-use super::numeric::{
-    duration_to_u128,
-    source_to_integer,
-};
+use super::numeric::{duration_to_u128, source_to_integer};
 use super::string_source::normalize;
 use crate::converter::{
-    ConversionLimit,
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
+    ConversionLimit, DataConversionError, DataConversionOptions, DataConversionTarget,
     InvalidValueReason,
 };
 use crate::datatype::DataType;
 use crate::duration::{
-    DurationParseError,
-    DurationTextOptions,
-    DurationUnitSuffixSet,
-    SuffixlessDurationPolicy,
+    DurationParseError, DurationTextOptions, DurationUnitSuffixSet, SuffixlessDurationPolicy,
     parse_duration_text,
 };
 
@@ -124,40 +115,28 @@ fn parse_duration(
                 InvalidValueReason::InvalidSyntax {
                     expected: if suffix_required {
                         match options.duration().unit_suffix_set() {
-                            DurationUnitSuffixSet::Ascii => {
-                                "[0-9]+(ns|us|ms|s|m|h|d)"
-                            }
-                            DurationUnitSuffixSet::Extended => {
-                                "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)"
-                            }
+                            DurationUnitSuffixSet::Ascii => "[0-9]+(ns|us|ms|s|m|h|d)",
+                            DurationUnitSuffixSet::Extended => "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)",
                         }
                     } else {
                         match options.duration().unit_suffix_set() {
-                            DurationUnitSuffixSet::Ascii => {
-                                "[0-9]+(ns|us|ms|s|m|h|d)?"
-                            }
-                            DurationUnitSuffixSet::Extended => {
-                                "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?"
-                            }
+                            DurationUnitSuffixSet::Ascii => "[0-9]+(ns|us|ms|s|m|h|d)?",
+                            DurationUnitSuffixSet::Extended => "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?",
                         }
                     },
                 },
             ))
         }
-        Err(DurationParseError::UnsupportedUnit { .. }) => {
-            Err(DataConversionError::invalid(
-                DataType::String,
-                to,
-                InvalidValueReason::UnsupportedDurationUnit,
-            ))
-        }
-        Err(DurationParseError::OutOfRange) => {
-            Err(DataConversionError::invalid(
-                DataType::String,
-                to,
-                InvalidValueReason::OutOfRange,
-            ))
-        }
+        Err(DurationParseError::UnsupportedUnit { .. }) => Err(DataConversionError::invalid(
+            DataType::String,
+            to,
+            InvalidValueReason::UnsupportedDurationUnit,
+        )),
+        Err(DurationParseError::OutOfRange) => Err(DataConversionError::invalid(
+            DataType::String,
+            to,
+            InvalidValueReason::OutOfRange,
+        )),
     }
 }
 
@@ -187,22 +166,14 @@ impl DataConversionTarget for Duration {
             #[cfg(feature = "big-integer")]
             DataConverter::BigInteger(value) => {
                 if value.sign() == Sign::Minus {
-                    return Err(source.invalid(
-                        DataType::Duration,
-                        InvalidValueReason::NegativeDuration,
-                    ));
+                    return Err(
+                        source.invalid(DataType::Duration, InvalidValueReason::NegativeDuration)
+                    );
                 }
                 let Some(value) = value.to_u128() else {
-                    return Err(source.invalid(
-                        DataType::Duration,
-                        InvalidValueReason::OutOfRange,
-                    ));
+                    return Err(source.invalid(DataType::Duration, InvalidValueReason::OutOfRange));
                 };
-                integer_to_duration(
-                    (false, value),
-                    DataType::BigInteger,
-                    options,
-                )
+                integer_to_duration((false, value), DataType::BigInteger, options)
             }
             _ => Err(source.unsupported(DataType::Duration)),
         }

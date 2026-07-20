@@ -7,16 +7,11 @@
 // =============================================================================
 //! Policy for rounding Duration output units.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 /// Controls Duration conversion when the selected output unit has a remainder.
 #[must_use]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DurationRoundingPolicy {
     /// Reject a Duration that is not an exact multiple of the output unit.

@@ -7,15 +7,9 @@
 // =============================================================================
 //! Fixed-width integer conversion tests.
 
-use proptest::{
-    prop_assert_eq,
-    proptest,
-};
+use proptest::{prop_assert_eq, proptest};
 use qubit_datatype::{
-    DataConversionOptions,
-    DataConverter,
-    FloatRoundingPolicy,
-    NumericConversionOptions,
+    DataConversionOptions, DataConverter, FloatRoundingPolicy, NumericConversionOptions,
 };
 
 /// Verifies exact and lossy integer-to-f32 conversion at the mantissa boundary.
@@ -33,8 +27,7 @@ fn test_integer_to_f32_checks_target_mantissa() {
 #[test]
 fn test_numeric_to_float_rounding_is_independent() {
     let options = DataConversionOptions::strict().with_numeric_options(
-        NumericConversionOptions::strict()
-            .with_numeric_to_float(FloatRoundingPolicy::NearestEven),
+        NumericConversionOptions::strict().with_numeric_to_float(FloatRoundingPolicy::NearestEven),
     );
 
     assert_eq!(

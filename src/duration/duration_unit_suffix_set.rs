@@ -7,16 +7,11 @@
 // =============================================================================
 //! Supported suffix sets for Duration text parsing.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 /// Selects the unit suffixes accepted by Duration text parsing.
 #[must_use]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DurationUnitSuffixSet {
     /// Accept only ASCII suffixes, including `us` for microseconds.

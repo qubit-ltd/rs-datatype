@@ -7,16 +7,11 @@
 // =============================================================================
 //! Policy for conversions that may round to a floating-point value.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 /// Controls whether floating-point rounding is permitted.
 #[must_use]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FloatRoundingPolicy {
     /// Reject a conversion unless the target float represents the source

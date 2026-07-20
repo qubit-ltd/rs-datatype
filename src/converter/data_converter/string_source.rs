@@ -7,10 +7,7 @@
 // =============================================================================
 //! Shared normalization for textual converter sources.
 
-use crate::converter::{
-    DataConversionError,
-    DataConversionOptions,
-};
+use crate::converter::{DataConversionError, DataConversionOptions};
 use crate::datatype::DataType;
 
 /// Normalizes a textual source and attaches target context to policy errors.

@@ -10,10 +10,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use serde::de::{
-    MapAccess,
-    Visitor,
-};
+use serde::de::{MapAccess, Visitor};
 
 /// Accepts JSON objects whose keys are unique and values are strings.
 pub(in crate::converter::data_converter) struct StringMapVisitor;
@@ -44,8 +41,7 @@ impl<'de> Visitor<'de> for StringMapVisitor {
     where
         A: MapAccess<'de>,
     {
-        let mut result =
-            HashMap::with_capacity(access.size_hint().unwrap_or(0));
+        let mut result = HashMap::with_capacity(access.size_hint().unwrap_or(0));
         while let Some((key, value)) = access.next_entry::<String, String>()? {
             if result.insert(key, value).is_some() {
                 return Err(serde::de::Error::custom("duplicate object key"));
