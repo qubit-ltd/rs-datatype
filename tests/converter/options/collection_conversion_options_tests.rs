@@ -20,10 +20,41 @@ use qubit_datatype::converter::{
 #[test]
 fn test_collection_conversion_options_env_friendly_profile() {
     let options = CollectionConversionOptions::env_friendly();
+    assert_eq!(CollectionConversionOptions::DEFAULT_MAX_ITEMS, 65_536);
     assert!(options.split_scalar_strings());
     assert_eq!(options.delimiters(), &[',']);
     assert!(options.trim_items());
     assert_eq!(options.empty_item_policy(), EmptyItemPolicy::Skip);
+    assert_eq!(options.max_items(), 65_536);
+}
+
+/// Test item-limit builders and the breaking collection-options wire format.
+#[test]
+fn test_collection_conversion_options_max_items_builder_and_serde() {
+    let options = CollectionConversionOptions::default()
+        .with_split_scalar_strings(true)
+        .with_delimiters([',', ';'])
+        .with_trim_items(true)
+        .with_empty_item_policy(EmptyItemPolicy::Skip)
+        .with_max_items(3);
+
+    assert_eq!(options.max_items(), 3);
+    let wire = serde_json::to_string(&options)
+        .expect("collection options should serialize");
+    assert_eq!(
+        wire,
+        r#"{"split_scalar_strings":true,"delimiters":[",",";"],"trim_items":true,"empty_item_policy":"skip","max_items":3}"#,
+    );
+    assert_eq!(
+        serde_json::from_str::<CollectionConversionOptions>(&wire)
+            .expect("collection options should deserialize"),
+        options,
+    );
+    assert_eq!(
+        serde_json::from_str::<CollectionConversionOptions>("{}")
+            .expect("omitted collection fields should use defaults"),
+        CollectionConversionOptions::default(),
+    );
 }
 
 /// Test that misspelled collection option fields are rejected.

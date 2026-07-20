@@ -30,4 +30,10 @@ pub enum ConversionLimit {
         /// Configured maximum materialized decimal digits.
         maximum: usize,
     },
+    /// A scalar collection would retain too many items.
+    #[error("collection result exceeds the {maximum}-item limit")]
+    CollectionItems {
+        /// Configured maximum number of retained items.
+        maximum: usize,
+    },
 }

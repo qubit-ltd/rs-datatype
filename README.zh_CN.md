@@ -138,7 +138,7 @@ assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 - `numeric`：小数转整数、已有数值转浮点、文本转浮点三组策略，以及资源上限。
 - `string`：trim 和空白字符串处理。
 - `boolean`：文字集合、大小写和数值布尔策略。
-- `collection`：标量拆分、分隔符、trim 和空元素处理。
+- `collection`：标量拆分、分隔符、trim、空项策略和最终保留项数上限。
 - `duration`：数值输入单位、无后缀输入、可接受后缀集、输出单位、后缀格式、舍入和源文本字节上限。
 
 `strict()` 是默认值。`env_friendly()` 会 trim 字符串、接受常见布尔文字，并开启
@@ -191,6 +191,11 @@ StringMap JSON object。日期、date-time 与 instant 仅格式化 `0000` 至 `
 
 `DataConverters` 转换现有迭代器，失败时报告原始 `source_index`。
 `ScalarStringDataConverters` 可惰性拆分一个标量字符串；跳过空元素不会重排后续索引。
+
+标量字符串集合转换默认最多保留 65,536 项。上限在 trim 和空项过滤后检查，
+因此被跳过的项不占配额。上限为零时只允许空结果；第一个额外保留项返回
+`LimitExceeded`，并保留其原始源索引。可通过
+`CollectionConversionOptions::with_max_items` 调整上限。
 
 ```rust
 use qubit_datatype::{DataConversionOptions, DataConverters, ScalarStringDataConverters};

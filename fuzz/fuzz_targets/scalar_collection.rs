@@ -22,6 +22,7 @@ fuzz_target!(|data: &[u8]| {
     let [policy_control, delimiter_control, payload @ ..] = data else {
         return;
     };
+    let max_items = usize::from(*policy_control >> 3);
     let delimiter_count = usize::from(*delimiter_control) % (MAX_DELIMITERS + 1);
     let delimiter_count = delimiter_count.min(payload.len());
     let (delimiter_bytes, text_bytes) = payload.split_at(delimiter_count);
@@ -38,7 +39,8 @@ fuzz_target!(|data: &[u8]| {
         .with_split_scalar_strings(true)
         .with_delimiters(delimiters)
         .with_trim_items(policy_control & 0b100 != 0)
-        .with_empty_item_policy(empty_item_policy);
+        .with_empty_item_policy(empty_item_policy)
+        .with_max_items(max_items);
 
     for item in collection.scalar_items(text) {
         let _ = item;

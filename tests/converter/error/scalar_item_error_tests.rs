@@ -10,6 +10,7 @@
 use std::error::Error;
 
 use qubit_datatype::{
+    ConversionLimit,
     DataConversionErrorKind,
     DataType,
     InvalidValueReason,
@@ -22,6 +23,32 @@ fn test_scalar_item_error_constructor_and_accessor() {
     let error = ScalarItemError::new(4);
 
     assert_eq!(error.source_index(), 4);
+    assert_eq!(error.maximum_items(), None);
+    assert!(matches!(error, ScalarItemError::BlankRejected { .. }));
+}
+
+/// Test collection item-limit accessors and target-aware conversion.
+#[test]
+fn test_scalar_item_error_item_limit_exceeded_contract() {
+    let error = ScalarItemError::ItemLimitExceeded {
+        source_index: 5,
+        maximum: 2,
+    };
+    assert_eq!(error.source_index(), 5);
+    assert_eq!(error.maximum_items(), Some(2));
+    assert_eq!(
+        error.to_string(),
+        "scalar collection exceeds the 2-item limit at source index 5",
+    );
+
+    let converted = error.into_data_conversion_error(DataType::UInt16);
+    assert_eq!(converted.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(converted.from_type(), Some(DataType::String));
+    assert_eq!(converted.to_type(), DataType::UInt16);
+    assert_eq!(
+        converted.limit(),
+        Some(&ConversionLimit::CollectionItems { maximum: 2 }),
+    );
 }
 
 /// Test that a rejected item reports its original unfiltered source index.

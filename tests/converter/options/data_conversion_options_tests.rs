@@ -15,6 +15,7 @@ use qubit_datatype::converter::{
     BlankStringPolicy,
     BooleanConversionOptions,
     BooleanNumericPolicy,
+    CollectionConversionOptions,
     DataConversionError,
     DataConversionOptions,
     DataConverter,
@@ -413,4 +414,8 @@ fn test_data_conversion_options_serde_and_default_ref() {
     assert!(value.get("numeric").is_some());
     assert!(value.get("numeric_policy").is_none());
     assert_eq!(value["numeric"]["limits"]["max_text_bytes"], 64);
+    assert_eq!(
+        value["collection"]["max_items"],
+        CollectionConversionOptions::DEFAULT_MAX_ITEMS,
+    );
 }
