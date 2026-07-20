@@ -13,7 +13,9 @@ use qubit_datatype::DataType;
 use qubit_datatype::converter::{
     BlankStringPolicy,
     CollectionConversionOptions,
+    ConversionLimit,
     DataConversionError,
+    DataConversionErrorKind,
     DataConversionOptions,
     EmptyItemPolicy,
     InvalidValueReason,
@@ -133,6 +135,60 @@ fn test_scalar_string_data_converters_to_vec_with_rejects_empty_item() {
             DataType::UInt16,
             InvalidValueReason::BlankRejected,
         ),
+    );
+}
+
+/// Test vector conversion reports the first retained item over the limit.
+#[test]
+fn test_scalar_string_data_converters_to_vec_with_enforces_item_limit() {
+    let options = DataConversionOptions::default().with_collection_options(
+        CollectionConversionOptions::default()
+            .with_split_scalar_strings(true)
+            .with_empty_item_policy(EmptyItemPolicy::Skip)
+            .with_max_items(2),
+    );
+    let error = ScalarStringDataConverters::from("1,,2,3")
+        .to_vec_with::<u16>(&options)
+        .expect_err("third retained item must exceed the limit");
+
+    assert_eq!(error.source_index(), 3);
+    assert_eq!(
+        error.conversion_error().kind(),
+        DataConversionErrorKind::LimitExceeded,
+    );
+    assert_eq!(error.conversion_error().from_type(), Some(DataType::String));
+    assert_eq!(error.conversion_error().to_type(), DataType::UInt16);
+    assert_eq!(
+        error.conversion_error().limit(),
+        Some(&ConversionLimit::CollectionItems { maximum: 2 }),
+    );
+}
+
+/// Test first conversion remains lazy and honors a zero item limit.
+#[test]
+fn test_scalar_string_data_converters_to_first_with_item_limit() {
+    let one = DataConversionOptions::default().with_collection_options(
+        CollectionConversionOptions::default()
+            .with_split_scalar_strings(true)
+            .with_max_items(1),
+    );
+    assert_eq!(
+        ScalarStringDataConverters::from("1,2,3").to_first_with::<u16>(&one),
+        Ok(1),
+    );
+
+    let zero = DataConversionOptions::default().with_collection_options(
+        CollectionConversionOptions::default()
+            .with_split_scalar_strings(true)
+            .with_max_items(0),
+    );
+    let error = ScalarStringDataConverters::from("1,2,3")
+        .to_first_with::<u16>(&zero)
+        .expect_err("zero limit must reject the first retained item");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(
+        error.limit(),
+        Some(&ConversionLimit::CollectionItems { maximum: 0 }),
     );
 }
 

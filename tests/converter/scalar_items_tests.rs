@@ -73,6 +73,76 @@ fn test_scalar_items_reports_rejection_when_reached() {
     assert!(items.next().is_none());
 }
 
+/// Test retained-item limits after empty-item filtering.
+#[test]
+fn test_scalar_items_enforces_retained_item_limit() {
+    let options = CollectionConversionOptions::default()
+        .with_split_scalar_strings(true)
+        .with_trim_items(true)
+        .with_empty_item_policy(EmptyItemPolicy::Skip)
+        .with_max_items(2);
+    let mut items = options.scalar_items("a,  ,b,c,d");
+
+    assert_eq!(items.next().expect("first item").expect("valid").value, "a");
+    assert_eq!(
+        items.next().expect("second item").expect("valid").value,
+        "b"
+    );
+    let error = items
+        .next()
+        .expect("limit error")
+        .expect_err("third retained item must exceed the limit");
+    assert_eq!(error.source_index(), 3);
+    assert_eq!(error.maximum_items(), Some(2));
+    assert!(items.next().is_none());
+}
+
+/// Test rejected empty items take precedence and do not consume quota.
+#[test]
+fn test_scalar_items_rejection_precedes_item_limit() {
+    let options = CollectionConversionOptions::default()
+        .with_split_scalar_strings(true)
+        .with_empty_item_policy(EmptyItemPolicy::Reject)
+        .with_max_items(1);
+    let mut items = options.scalar_items("a,,b");
+
+    assert_eq!(items.next().expect("first item").expect("valid").value, "a");
+    let blank = items
+        .next()
+        .expect("blank rejection")
+        .expect_err("blank item must be rejected before limit checking");
+    assert_eq!(blank.source_index(), 1);
+    assert_eq!(blank.maximum_items(), None);
+    let limit = items
+        .next()
+        .expect("limit error")
+        .expect_err("next retained item must exceed the limit");
+    assert_eq!(limit.source_index(), 2);
+    assert_eq!(limit.maximum_items(), Some(1));
+    assert!(items.next().is_none());
+}
+
+/// Test zero permits only an empty retained result.
+#[test]
+fn test_scalar_items_zero_limit_allows_only_empty_result() {
+    let retained = CollectionConversionOptions::default()
+        .with_split_scalar_strings(true)
+        .with_max_items(0);
+    let error = retained
+        .scalar_items("a")
+        .next()
+        .expect("limit error")
+        .expect_err("zero limit must reject the first retained item");
+    assert_eq!(error.source_index(), 0);
+    assert_eq!(error.maximum_items(), Some(0));
+
+    let skipped = CollectionConversionOptions::default()
+        .with_split_scalar_strings(true)
+        .with_empty_item_policy(EmptyItemPolicy::Skip)
+        .with_max_items(0);
+    assert!(skipped.scalar_items(",,").next().is_none());
+}
+
 /// Test a large delimiter set preserves Unicode splitting semantics.
 #[test]
 fn test_scalar_items_supports_large_delimiter_sets() {

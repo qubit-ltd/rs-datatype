@@ -155,7 +155,8 @@ retain type context but never retain the source value.
   policies, plus resource limits.
 - `string`: trimming and blank-string handling.
 - `boolean`: accepted literals, case sensitivity, and numeric policy.
-- `collection`: scalar splitting, delimiters, trimming, and empty items.
+- `collection`: scalar splitting, delimiters, trimming, empty items, and the
+  maximum number of retained items.
 - `duration`: numeric input unit, suffixless input, accepted suffix set, output
   unit, suffix formatting, rounding, and source-text byte limit.
 
@@ -219,6 +220,13 @@ values outside that canonical four-digit domain are rejected.
 `DataConverters` converts an existing iterator and reports the original
 `source_index` on failure. `ScalarStringDataConverters` optionally splits one
 string lazily; skipped empty items do not renumber later items.
+
+Scalar-string collection conversion retains at most 65,536 items by default.
+The limit is checked after trimming and empty-item filtering, so skipped items
+do not consume the budget. A zero limit permits only an empty retained result;
+the first additional retained item returns `LimitExceeded` with its original
+source index. Use `CollectionConversionOptions::with_max_items` to select a
+different bound.
 
 ```rust
 use qubit_datatype::{DataConversionOptions, DataConverters, ScalarStringDataConverters};

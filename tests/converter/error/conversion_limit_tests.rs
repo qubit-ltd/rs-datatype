@@ -24,4 +24,8 @@ fn test_conversion_limit_display() {
         ConversionLimit::DurationTextBytes { maximum: 56 }.to_string(),
         "duration text exceeds the 56-byte limit",
     );
+    assert_eq!(
+        ConversionLimit::CollectionItems { maximum: 78 }.to_string(),
+        "collection result exceeds the 78-item limit",
+    );
 }

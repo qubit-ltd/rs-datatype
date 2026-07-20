@@ -21,7 +21,8 @@ use serde::{
 /// These options are consumed by [`crate::ScalarStringDataConverters`], not by
 /// [`crate::DataConverters`] over an already-materialized collection. Splitting
 /// is lazy, preserves each raw item's original index, and applies trimming
-/// before [`EmptyItemPolicy`].
+/// before [`EmptyItemPolicy`]. Items removed by [`EmptyItemPolicy::Skip`] do
+/// not count toward the retained-item limit.
 ///
 /// # Examples
 ///
@@ -50,6 +51,8 @@ pub struct CollectionConversionOptions {
     trim_items: bool,
     /// How empty split items are interpreted.
     empty_item_policy: EmptyItemPolicy,
+    /// Maximum number of retained scalar items.
+    max_items: usize,
 }
 
 impl Default for CollectionConversionOptions {
@@ -60,11 +63,15 @@ impl Default for CollectionConversionOptions {
             delimiters: vec![','],
             trim_items: false,
             empty_item_policy: EmptyItemPolicy::Keep,
+            max_items: Self::DEFAULT_MAX_ITEMS,
         }
     }
 }
 
 impl CollectionConversionOptions {
+    /// Default maximum number of retained scalar collection items.
+    pub const DEFAULT_MAX_ITEMS: usize = 65_536;
+
     /// Creates options suitable for environment-variable lists.
     ///
     /// The profile splits comma-separated scalar strings, trims each item,
@@ -81,6 +88,7 @@ impl CollectionConversionOptions {
             delimiters: vec![','],
             trim_items: true,
             empty_item_policy: EmptyItemPolicy::Skip,
+            max_items: Self::DEFAULT_MAX_ITEMS,
         }
     }
 
@@ -182,6 +190,29 @@ impl CollectionConversionOptions {
     #[inline(always)]
     pub fn with_empty_item_policy(mut self, policy: EmptyItemPolicy) -> Self {
         self.empty_item_policy = policy;
+        self
+    }
+
+    /// Returns the maximum number of retained scalar collection items.
+    #[must_use]
+    #[inline(always)]
+    pub const fn max_items(&self) -> usize {
+        self.max_items
+    }
+
+    /// Returns a copy with a different retained-item limit.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum retained items after trimming and empty-item
+    ///   filtering. Zero permits only an empty result.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline(always)]
+    pub const fn with_max_items(mut self, maximum: usize) -> Self {
+        self.max_items = maximum;
         self
     }
 

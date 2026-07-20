@@ -20,6 +20,10 @@ use super::scalar_item::ScalarItem;
 /// that need only the first retained item do not validate or allocate the
 /// unconsumed tail. Each item borrows the original source string; iteration
 /// allocates no item strings.
+///
+/// The item limit counts only items retained after trimming and empty-item
+/// policy handling. The first retained item beyond the limit produces one
+/// [`ScalarItemError::ItemLimitExceeded`] error and exhausts the iterator.
 #[must_use]
 #[derive(Debug, Clone)]
 pub struct ScalarItems<'a> {
@@ -37,6 +41,10 @@ pub struct ScalarItems<'a> {
     trim_items: bool,
     /// Policy applied to empty items after optional trimming.
     empty_item_policy: EmptyItemPolicy,
+    /// Maximum number of retained items.
+    max_items: usize,
+    /// Number of retained items already returned successfully.
+    retained_items: usize,
     /// Byte offset of the next raw item, or `None` after the final item.
     next_start: Option<usize>,
     /// Index of the next raw item before filtering.
@@ -84,6 +92,8 @@ impl<'a> ScalarItems<'a> {
             split_scalar_strings: options.split_scalar_strings(),
             trim_items: options.trim_items(),
             empty_item_policy: options.empty_item_policy(),
+            max_items: options.max_items(),
+            retained_items: 0,
             next_start: Some(0),
             next_source_index: 0,
         }
@@ -141,12 +151,47 @@ impl<'a> ScalarItems<'a> {
             }
         }
     }
+
+    /// Retains one normalized item or reports the configured item limit.
+    ///
+    /// # Parameters
+    ///
+    /// * `item` - Candidate item after trimming and empty-item policy handling.
+    ///
+    /// # Returns
+    ///
+    /// The retained item when capacity remains.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ScalarItemError::ItemLimitExceeded`] for the first item beyond
+    /// `max_items`. The iterator is exhausted before returning that error.
+    fn retain_item(
+        &mut self,
+        item: ScalarItem<'a>,
+    ) -> Result<ScalarItem<'a>, ScalarItemError> {
+        if self.retained_items >= self.max_items {
+            self.next_start = None;
+            return Err(ScalarItemError::item_limit_exceeded(
+                item.source_index,
+                self.max_items,
+            ));
+        }
+        self.retained_items += 1;
+        Ok(item)
+    }
 }
 
 impl<'a> Iterator for ScalarItems<'a> {
     type Item = Result<ScalarItem<'a>, ScalarItemError>;
 
-    /// Returns the next retained item or the next lazily discovered rejection.
+    /// Returns the next retained item or the next lazily discovered error.
+    ///
+    /// Empty-item policy is applied before retained items consume quota. A
+    /// rejected empty item therefore takes precedence over the item limit and
+    /// does not consume quota. The first retained item beyond the configured
+    /// limit returns [`ScalarItemError::ItemLimitExceeded`] and exhausts this
+    /// iterator.
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             let mut item = self.next_raw()?;
@@ -154,10 +199,10 @@ impl<'a> Iterator for ScalarItems<'a> {
                 item.value = item.value.trim();
             }
             if !item.value.is_empty() {
-                return Some(Ok(item));
+                return Some(self.retain_item(item));
             }
             match self.empty_item_policy {
-                EmptyItemPolicy::Keep => return Some(Ok(item)),
+                EmptyItemPolicy::Keep => return Some(self.retain_item(item)),
                 EmptyItemPolicy::Skip => {}
                 EmptyItemPolicy::Reject => {
                     return Some(Err(ScalarItemError::new(item.source_index)));
