@@ -6,6 +6,10 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 
+mod api_tests;
+mod comparison_tests;
+mod exact_decimal_tests;
+
 use std::cmp::Ordering;
 
 use qubit_datatype::{NumberRef, NumericComparisonPolicy};
