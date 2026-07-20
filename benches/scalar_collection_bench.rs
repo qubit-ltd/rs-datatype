@@ -9,17 +9,9 @@
 
 use std::hint::black_box;
 
-use criterion::{
-    BenchmarkId,
-    Criterion,
-    criterion_group,
-    criterion_main,
-};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use qubit_datatype::{
-    CollectionConversionOptions,
-    DataConversionOptions,
-    DataConverters,
-    ScalarStringDataConverters,
+    CollectionConversionOptions, DataConversionOptions, DataConverters, ScalarStringDataConverters,
 };
 
 const ITEM_COUNTS: [usize; 4] = [1, 16, 256, 4096];
@@ -113,8 +105,7 @@ fn benchmark_materialized_slice(c: &mut Criterion) {
 /// Benchmarks scanning text with a large configured delimiter set.
 fn benchmark_large_delimiter_set(c: &mut Criterion) {
     let input = format!("{},tail", "a".repeat(16 * 1024));
-    let delimiters =
-        std::iter::once(',').chain((0x100..0x13f).filter_map(char::from_u32));
+    let delimiters = std::iter::once(',').chain((0x100..0x13f).filter_map(char::from_u32));
     let options = CollectionConversionOptions::default()
         .with_split_scalar_strings(true)
         .with_delimiters(delimiters);

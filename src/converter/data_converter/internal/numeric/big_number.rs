@@ -15,25 +15,15 @@ use num_bigint::BigInt;
 use num_traits::FromPrimitive;
 
 use super::super::super::DataConverter;
-use super::integer::{
-    duration_to_u128,
-    scalar_integer_magnitude,
-};
+use super::integer::{duration_to_u128, scalar_integer_magnitude};
 #[cfg(feature = "big-decimal")]
 use super::parsed_number::ParsedNumber;
 #[cfg(feature = "big-decimal")]
 use super::syntax::parse_number;
-use super::syntax::{
-    normalize_numeric_text,
-    parse_text_bigint,
-};
+use super::syntax::{normalize_numeric_text, parse_text_bigint};
 use crate::converter::{
-    ConversionLimit,
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    FractionalToIntegerPolicy,
-    InvalidValueReason,
+    ConversionLimit, DataConversionError, DataConversionOptions, DataConversionTarget,
+    FractionalToIntegerPolicy, InvalidValueReason,
 };
 use crate::datatype::DataType;
 
@@ -53,10 +43,7 @@ use crate::datatype::DataType;
 /// `true` when the non-zero magnitude has more than `maximum_digits` decimal
 /// digits; zero never exceeds the budget.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-fn exceeds_big_integer_digit_limit(
-    value: &BigInt,
-    maximum_digits: usize,
-) -> bool {
+fn exceeds_big_integer_digit_limit(value: &BigInt, maximum_digits: usize) -> bool {
     let bits = u128::from(value.bits());
     if bits == 0 {
         return false;
@@ -68,8 +55,7 @@ fn exceeds_big_integer_digit_limit(
     if bits > maximum_digits.saturating_mul(4) {
         return true;
     }
-    value.to_str_radix(10).trim_start_matches('-').len() as u128
-        > maximum_digits
+    value.to_str_radix(10).trim_start_matches('-').len() as u128 > maximum_digits
 }
 
 /// Enforces the configured BigInteger result digit limit.
@@ -96,9 +82,7 @@ fn enforce_big_integer_digit_limit(
     from: DataType,
     to: DataType,
 ) -> Result<(), DataConversionError> {
-    if to != DataType::BigInteger
-        || !exceeds_big_integer_digit_limit(value, maximum_digits)
-    {
+    if to != DataType::BigInteger || !exceeds_big_integer_digit_limit(value, maximum_digits) {
         return Ok(());
     }
     Err(DataConversionError::limit_exceeded(
@@ -145,12 +129,9 @@ pub(super) fn decimal_to_bigint(
     }
     if scale <= 0 {
         let exponent = scale.unsigned_abs();
-        let coefficient_digits =
-            coefficient.to_str_radix(10).trim_start_matches('-').len() as u64;
+        let coefficient_digits = coefficient.to_str_radix(10).trim_start_matches('-').len() as u64;
         let result_digits = coefficient_digits.saturating_add(exponent);
-        if to == DataType::BigInteger
-            && u128::from(result_digits) > maximum_digits as u128
-        {
+        if to == DataType::BigInteger && u128::from(result_digits) > maximum_digits as u128 {
             return Err(DataConversionError::limit_exceeded(
                 from,
                 to,
@@ -283,65 +264,52 @@ pub(super) fn source_to_bigint(
     if to == DataType::BigInteger
         && let DataConverter::BigInteger(value) = source
     {
-        enforce_big_integer_digit_limit(
-            value.as_ref(),
-            maximum_digits,
-            DataType::BigInteger,
-            to,
-        )?;
+        enforce_big_integer_digit_limit(value.as_ref(), maximum_digits, DataType::BigInteger, to)?;
         return Ok(value.as_ref().clone());
     }
 
-    let result =
-        if let Some((negative, magnitude)) = scalar_integer_magnitude(source) {
-            let value = BigInt::from(magnitude);
-            Ok(if negative { -value } else { value })
-        } else {
-            match source {
-                DataConverter::Float32(value) => float_to_bigint(
-                    f64::from(*value),
-                    options.numeric().fractional_to_integer(),
-                    DataType::Float32,
-                    to,
-                ),
-                DataConverter::Float64(value) => float_to_bigint(
-                    *value,
-                    options.numeric().fractional_to_integer(),
-                    DataType::Float64,
-                    to,
-                ),
-                #[cfg(feature = "big-integer")]
-                DataConverter::BigInteger(value) => Ok(value.as_ref().clone()),
-                #[cfg(feature = "big-decimal")]
-                DataConverter::BigDecimal(value) => decimal_to_bigint(
-                    value.as_ref(),
+    let result = if let Some((negative, magnitude)) = scalar_integer_magnitude(source) {
+        let value = BigInt::from(magnitude);
+        Ok(if negative { -value } else { value })
+    } else {
+        match source {
+            DataConverter::Float32(value) => float_to_bigint(
+                f64::from(*value),
+                options.numeric().fractional_to_integer(),
+                DataType::Float32,
+                to,
+            ),
+            DataConverter::Float64(value) => float_to_bigint(
+                *value,
+                options.numeric().fractional_to_integer(),
+                DataType::Float64,
+                to,
+            ),
+            #[cfg(feature = "big-integer")]
+            DataConverter::BigInteger(value) => Ok(value.as_ref().clone()),
+            #[cfg(feature = "big-decimal")]
+            DataConverter::BigDecimal(value) => decimal_to_bigint(
+                value.as_ref(),
+                options.numeric().fractional_to_integer(),
+                options.numeric().limits().max_big_integer_digits(),
+                DataType::BigDecimal,
+                to,
+            ),
+            DataConverter::String(value) => {
+                let value = normalize_numeric_text(value, options, to)?;
+                parse_text_bigint(
+                    value,
                     options.numeric().fractional_to_integer(),
                     options.numeric().limits().max_big_integer_digits(),
-                    DataType::BigDecimal,
                     to,
-                ),
-                DataConverter::String(value) => {
-                    let value = normalize_numeric_text(value, options, to)?;
-                    parse_text_bigint(
-                        value,
-                        options.numeric().fractional_to_integer(),
-                        options.numeric().limits().max_big_integer_digits(),
-                        to,
-                    )
-                }
-                DataConverter::Duration(value) => {
-                    duration_to_bigint(*value, options, to)
-                }
-                DataConverter::Unset(_) => Err(source.missing(to)),
-                _ => Err(source.unsupported(to)),
+                )
             }
-        }?;
-    enforce_big_integer_digit_limit(
-        &result,
-        maximum_digits,
-        source.data_type(),
-        to,
-    )?;
+            DataConverter::Duration(value) => duration_to_bigint(*value, options, to),
+            DataConverter::Unset(_) => Err(source.missing(to)),
+            _ => Err(source.unsupported(to)),
+        }
+    }?;
+    enforce_big_integer_digit_limit(&result, maximum_digits, source.data_type(), to)?;
     Ok(result)
 }
 
@@ -390,42 +358,27 @@ impl DataConversionTarget for BigDecimal {
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::BigDecimal(value) => Ok(value.as_ref().clone()),
-            DataConverter::Float32(value) => match BigDecimal::from_f32(*value)
-            {
+            DataConverter::Float32(value) => match BigDecimal::from_f32(*value) {
                 Some(value) => Ok(value),
-                None => Err(source.invalid(
-                    DataType::BigDecimal,
-                    InvalidValueReason::NonFinite,
-                )),
+                None => Err(source.invalid(DataType::BigDecimal, InvalidValueReason::NonFinite)),
             },
-            DataConverter::Float64(value) => match BigDecimal::from_f64(*value)
-            {
+            DataConverter::Float64(value) => match BigDecimal::from_f64(*value) {
                 Some(value) => Ok(value),
-                None => Err(source.invalid(
-                    DataType::BigDecimal,
-                    InvalidValueReason::NonFinite,
-                )),
+                None => Err(source.invalid(DataType::BigDecimal, InvalidValueReason::NonFinite)),
             },
             DataConverter::String(value) => {
-                let value = normalize_numeric_text(
-                    value,
-                    options,
-                    DataType::BigDecimal,
-                )?;
+                let value = normalize_numeric_text(value, options, DataType::BigDecimal)?;
                 match parse_number(value, DataType::BigDecimal)? {
                     ParsedNumber::Integer(value) => Ok(BigDecimal::from(value)),
                     ParsedNumber::Decimal(value) => Ok(value),
                     ParsedNumber::NaN
                     | ParsedNumber::PositiveInfinity
-                    | ParsedNumber::NegativeInfinity => Err(source.invalid(
-                        DataType::BigDecimal,
-                        InvalidValueReason::NonFinite,
-                    )),
+                    | ParsedNumber::NegativeInfinity => {
+                        Err(source.invalid(DataType::BigDecimal, InvalidValueReason::NonFinite))
+                    }
                 }
             }
-            DataConverter::Unset(_) => {
-                Err(source.missing(DataType::BigDecimal))
-            }
+            DataConverter::Unset(_) => Err(source.missing(DataType::BigDecimal)),
             DataConverter::Duration(_) | DataConverter::StringMap(_) => {
                 Err(source.unsupported(DataType::BigDecimal))
             }
@@ -433,17 +386,11 @@ impl DataConversionTarget for BigDecimal {
             DataConverter::Date(_)
             | DataConverter::Time(_)
             | DataConverter::DateTime(_)
-            | DataConverter::Instant(_) => {
-                Err(source.unsupported(DataType::BigDecimal))
-            }
+            | DataConverter::Instant(_) => Err(source.unsupported(DataType::BigDecimal)),
             #[cfg(feature = "url")]
-            DataConverter::Url(_) => {
-                Err(source.unsupported(DataType::BigDecimal))
-            }
+            DataConverter::Url(_) => Err(source.unsupported(DataType::BigDecimal)),
             #[cfg(feature = "json")]
-            DataConverter::Json(_) => {
-                Err(source.unsupported(DataType::BigDecimal))
-            }
+            DataConverter::Json(_) => Err(source.unsupported(DataType::BigDecimal)),
             _ => Ok(BigDecimal::from(source_to_bigint(
                 source,
                 options,

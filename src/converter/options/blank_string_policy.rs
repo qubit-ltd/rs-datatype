@@ -9,16 +9,11 @@
 //!
 //! Defines how blank string sources are interpreted during conversion.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 /// Controls how blank string sources are interpreted during conversion.
 #[must_use]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum BlankStringPolicy {
     /// Keep blank strings as real string values.

@@ -16,25 +16,14 @@ use num_bigint::BigInt;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_rational::BigRational;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-use num_traits::{
-    Signed,
-    ToPrimitive,
-    Zero,
-};
+use num_traits::{Signed, ToPrimitive, Zero};
 
 use super::NumericComparisonPolicy;
 #[cfg(feature = "big-decimal")]
 use super::internal::decimal_rational;
-use super::internal::{
-    NumberRepr,
-    compare_magnitude,
-    finite_parts,
-};
+use super::internal::{NumberRepr, compare_magnitude, finite_parts};
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-use super::internal::{
-    f32_rational,
-    f64_rational,
-};
+use super::internal::{f32_rational, f64_rational};
 
 /// Compares an arbitrary-precision integer with a signed fixed-width value.
 #[cfg(feature = "big-integer")]
@@ -386,13 +375,11 @@ impl<'a> NumberRef<'a> {
         #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
         {
             #[cfg(feature = "big-integer")]
-            let has_big_integer =
-                self.is_big_integer() || right.is_big_integer();
+            let has_big_integer = self.is_big_integer() || right.is_big_integer();
             #[cfg(not(feature = "big-integer"))]
             let has_big_integer = false;
             #[cfg(feature = "big-decimal")]
-            let has_big_decimal =
-                self.is_big_decimal() || right.is_big_decimal();
+            let has_big_decimal = self.is_big_decimal() || right.is_big_decimal();
             #[cfg(not(feature = "big-decimal"))]
             let has_big_decimal = false;
             if has_big_integer || has_big_decimal {
@@ -465,10 +452,7 @@ impl<'a> NumberRef<'a> {
     /// or decimal value; otherwise, `None`.
     #[cfg(feature = "big-integer")]
     #[must_use]
-    fn compare_big_integer_fixed(
-        self,
-        right: NumberRef<'_>,
-    ) -> Option<Ordering> {
+    fn compare_big_integer_fixed(self, right: NumberRef<'_>) -> Option<Ordering> {
         let ordering = match (self.inner, right.inner) {
             (NumberRepr::BigInteger(left), NumberRepr::Int8(right)) => {
                 compare_big_integer_signed(left, i128::from(right))
@@ -565,10 +549,8 @@ impl<'a> NumberRef<'a> {
     /// input.
     #[must_use]
     fn compare_fixed(self, right: NumberRef<'_>) -> Option<Ordering> {
-        let (left_negative, left_significand, left_exponent) =
-            finite_parts(self)?;
-        let (right_negative, right_significand, right_exponent) =
-            finite_parts(right)?;
+        let (left_negative, left_significand, left_exponent) = finite_parts(self)?;
+        let (right_negative, right_significand, right_exponent) = finite_parts(right)?;
         if left_significand == 0 && right_significand == 0 {
             return Some(Ordering::Equal);
         }
@@ -636,42 +618,20 @@ impl<'a> NumberRef<'a> {
     #[must_use]
     fn to_exact_rational(self) -> Option<BigRational> {
         match self.inner {
-            NumberRepr::Int8(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::Int16(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::Int32(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::Int64(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::Int128(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::UInt8(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::UInt16(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::UInt32(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::UInt64(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::UInt128(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
+            NumberRepr::Int8(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::Int16(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::Int32(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::Int64(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::Int128(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::UInt8(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::UInt16(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::UInt32(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::UInt64(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::UInt128(value) => Some(BigRational::from_integer(BigInt::from(value))),
             NumberRepr::Float32(value) => Some(f32_rational(value)),
             NumberRepr::Float64(value) => Some(f64_rational(value)),
             #[cfg(feature = "big-integer")]
-            NumberRepr::BigInteger(value) => {
-                Some(BigRational::from_integer(value.clone()))
-            }
+            NumberRepr::BigInteger(value) => Some(BigRational::from_integer(value.clone())),
             #[cfg(feature = "big-decimal")]
             NumberRepr::BigDecimal(value) => decimal_rational(value),
         }
@@ -703,9 +663,7 @@ impl<'a> NumberRef<'a> {
             NumberRepr::Float32(value) => BigDecimal::try_from(value).ok(),
             NumberRepr::Float64(value) => BigDecimal::try_from(value).ok(),
             #[cfg(feature = "big-integer")]
-            NumberRepr::BigInteger(value) => {
-                Some(BigDecimal::from(value.clone()))
-            }
+            NumberRepr::BigInteger(value) => Some(BigDecimal::from(value.clone())),
             NumberRepr::BigDecimal(value) => Some(value.clone()),
         }
     }

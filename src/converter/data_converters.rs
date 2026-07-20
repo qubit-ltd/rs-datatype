@@ -13,10 +13,7 @@
 
 use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
-use super::error::{
-    DataConversionError,
-    DataListConversionError,
-};
+use super::error::{DataConversionError, DataListConversionError};
 use super::options::DataConversionOptions;
 
 /// A lightweight adapter for converting batches of source values.

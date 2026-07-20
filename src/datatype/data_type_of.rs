@@ -10,10 +10,7 @@
 //! Provides the `DataTypeOf` trait and implementations to map Rust types to
 //! `DataType`.
 
-use super::{
-    DataType,
-    for_each_data_type_mapping,
-};
+use super::{DataType, for_each_data_type_mapping};
 
 /// Maps a concrete Rust type to its runtime [`DataType`] descriptor.
 ///

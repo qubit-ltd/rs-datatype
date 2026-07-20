@@ -9,10 +9,7 @@
 
 use std::time::Duration;
 
-use qubit_datatype::{
-    DurationOverflowError,
-    DurationUnit,
-};
+use qubit_datatype::{DurationOverflowError, DurationUnit};
 
 /// Tests unit suffix parsing.
 #[test]

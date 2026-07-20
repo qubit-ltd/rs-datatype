@@ -16,15 +16,8 @@ use num_bigint::BigInt;
 use num_rational::BigRational;
 use proptest::arbitrary::any;
 use proptest::test_runner::Config as ProptestConfig;
-use proptest::{
-    prop_assert_eq,
-    prop_assert_ne,
-    proptest,
-};
-use qubit_datatype::{
-    NumberRef,
-    NumericComparisonPolicy,
-};
+use proptest::{prop_assert_eq, prop_assert_ne, proptest};
+use qubit_datatype::{NumberRef, NumericComparisonPolicy};
 
 /// Compares two number views through the public method API.
 fn compare_numbers(
@@ -38,11 +31,7 @@ fn compare_numbers(
 use std::str::FromStr;
 
 /// Asserts an exact ordering and its reverse-direction symmetry.
-fn assert_exact(
-    left: NumberRef<'_>,
-    right: NumberRef<'_>,
-    expected: Option<Ordering>,
-) {
+fn assert_exact(left: NumberRef<'_>, right: NumberRef<'_>, expected: Option<Ordering>) {
     assert_eq!(
         compare_numbers(left, right, NumericComparisonPolicy::Exact),
         expected
@@ -591,10 +580,8 @@ fn test_number_ref_comparison_big_number_paths() {
         Some(Ordering::Equal),
     );
 
-    let extreme_scale =
-        BigDecimal::new(BigInt::from(0), i64::from(u32::MAX) + 1);
-    let extreme_negative_scale =
-        BigDecimal::new(BigInt::from(0), -(i64::from(u32::MAX) + 1));
+    let extreme_scale = BigDecimal::new(BigInt::from(0), i64::from(u32::MAX) + 1);
+    let extreme_negative_scale = BigDecimal::new(BigInt::from(0), -(i64::from(u32::MAX) + 1));
     assert_exact(
         NumberRef::from(&extreme_negative_scale),
         NumberRef::from(&extreme_scale),
@@ -633,11 +620,7 @@ fn test_number_ref_comparison_big_number_paths() {
         );
     }
     for value in [NumberRef::from(&integer), NumberRef::from(&decimal)] {
-        assert_exact(
-            NumberRef::from(&extreme_scale),
-            value,
-            Some(Ordering::Less),
-        );
+        assert_exact(NumberRef::from(&extreme_scale), value, Some(Ordering::Less));
     }
 
     let too_large_for_f64 = BigInt::from(1_u8) << 20_000;

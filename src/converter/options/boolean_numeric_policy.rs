@@ -9,19 +9,14 @@
 //!
 //! Defines how integer values may be converted to booleans.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 /// Controls conversion from integer values to booleans.
 ///
 /// This policy applies both to integer source variants and to integer-shaped
 /// strings that did not match a configured boolean literal.
 #[must_use]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum BooleanNumericPolicy {
     /// Accept only zero as false and one as true.

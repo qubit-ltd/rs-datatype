@@ -10,9 +10,7 @@
 //! Tests for string-source normalization options.
 
 use qubit_datatype::converter::{
-    BlankStringPolicy,
-    StringConversionOptions,
-    StringNormalizationError,
+    BlankStringPolicy, StringConversionOptions, StringNormalizationError,
 };
 
 /// Test the environment-variable string profile.
@@ -29,10 +27,9 @@ fn test_string_conversion_options_env_friendly_profile() {
 /// Test that misspelled string option fields are rejected.
 #[test]
 fn test_string_conversion_options_reject_unknown_fields() {
-    let error = serde_json::from_str::<StringConversionOptions>(
-        r#"{"trim":true,"unexpected":false}"#,
-    )
-    .expect_err("unknown string option fields must be rejected");
+    let error =
+        serde_json::from_str::<StringConversionOptions>(r#"{"trim":true,"unexpected":false}"#)
+            .expect_err("unknown string option fields must be rejected");
 
     assert!(error.to_string().contains("unknown field `unexpected`"));
 }
