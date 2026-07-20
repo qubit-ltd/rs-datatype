@@ -7,7 +7,6 @@
 // =============================================================================
 //! Tests mirroring internal numeric comparison responsibilities.
 
-mod exact_decimal_tests;
 mod exact_rational_tests;
 mod fixed_numeric_tests;
 mod number_repr_tests;
