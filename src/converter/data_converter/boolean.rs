@@ -13,10 +13,16 @@ use num_bigint::BigInt;
 use num_traits::Zero;
 
 use super::DataConverter;
-use super::numeric::{check_numeric_text_limit, is_integer_syntax};
+use super::numeric::{
+    check_numeric_text_limit,
+    is_integer_syntax,
+};
 use super::string_source::normalize;
 use crate::converter::{
-    BooleanNumericPolicy, DataConversionError, DataConversionOptions, DataConversionTarget,
+    BooleanNumericPolicy,
+    DataConversionError,
+    DataConversionOptions,
+    DataConversionTarget,
     InvalidValueReason,
 };
 use crate::datatype::DataType;
@@ -48,9 +54,13 @@ fn integer_to_bool(
         BooleanNumericPolicy::ZeroOrOne if zero => Ok(false),
         BooleanNumericPolicy::ZeroOrOne if one => Ok(true),
         BooleanNumericPolicy::NonZero => Ok(!zero),
-        BooleanNumericPolicy::ZeroOrOne | BooleanNumericPolicy::Reject => Err(
-            DataConversionError::invalid(from, DataType::Bool, InvalidValueReason::InvalidBoolean),
-        ),
+        BooleanNumericPolicy::ZeroOrOne | BooleanNumericPolicy::Reject => {
+            Err(DataConversionError::invalid(
+                from,
+                DataType::Bool,
+                InvalidValueReason::InvalidBoolean,
+            ))
+        }
     }
 }
 
@@ -68,9 +78,11 @@ impl DataConversionTarget for bool {
                 }
                 if is_integer_syntax(value) {
                     check_numeric_text_limit(value, options, DataType::Bool)?;
-                    let digits = value.strip_prefix(['+', '-']).unwrap_or(value);
+                    let digits =
+                        value.strip_prefix(['+', '-']).unwrap_or(value);
                     let zero = digits.bytes().all(|byte| byte == b'0');
-                    let one = !value.starts_with('-') && digits.trim_start_matches('0') == "1";
+                    let one = !value.starts_with('-')
+                        && digits.trim_start_matches('0') == "1";
                     integer_to_bool(
                         zero,
                         one,
@@ -78,7 +90,10 @@ impl DataConversionTarget for bool {
                         DataType::String,
                     )
                 } else {
-                    Err(source.invalid(DataType::Bool, InvalidValueReason::InvalidBoolean))
+                    Err(source.invalid(
+                        DataType::Bool,
+                        InvalidValueReason::InvalidBoolean,
+                    ))
                 }
             }
             DataConverter::Int8(value) => integer_to_bool(

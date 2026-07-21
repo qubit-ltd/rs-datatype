@@ -8,8 +8,13 @@
 //! String-source normalization tests.
 
 use qubit_datatype::{
-    BlankStringPolicy, DataConversionError, DataConversionOptions, DataConverter, DataType,
-    InvalidValueReason, StringConversionOptions,
+    BlankStringPolicy,
+    DataConversionError,
+    DataConversionOptions,
+    DataConverter,
+    DataType,
+    InvalidValueReason,
+    StringConversionOptions,
 };
 
 /// Test that blank-string policy outcomes retain the requested target context.
@@ -28,7 +33,8 @@ fn test_string_source_normalization_maps_policy_errors() {
     );
 
     let reject_options = DataConversionOptions::default().with_string_options(
-        StringConversionOptions::default().with_blank_string_policy(BlankStringPolicy::Reject),
+        StringConversionOptions::default()
+            .with_blank_string_policy(BlankStringPolicy::Reject),
     );
     assert_eq!(
         DataConverter::from(" ").to_with::<bool>(&reject_options),

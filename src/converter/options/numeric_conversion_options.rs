@@ -7,9 +7,16 @@
 // =============================================================================
 //! Independently configurable numeric conversion options.
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
-use super::{FloatRoundingPolicy, FractionalToIntegerPolicy, NumericConversionLimits};
+use super::{
+    FloatRoundingPolicy,
+    FractionalToIntegerPolicy,
+    NumericConversionLimits,
+};
 
 /// Groups policies and resource limits for numeric conversion.
 #[must_use]
@@ -18,7 +25,8 @@ use super::{FloatRoundingPolicy, FractionalToIntegerPolicy, NumericConversionLim
 pub struct NumericConversionOptions {
     /// Policy governing fractional numeric conversions to integer targets.
     fractional_to_integer: FractionalToIntegerPolicy,
-    /// Rounding policy for existing numeric values converted to floating point.
+    /// Rounding policy for existing numeric values converted to floating
+    /// point.
     numeric_to_float: FloatRoundingPolicy,
     /// Rounding policy for text parsed into floating-point targets.
     text_to_float: FloatRoundingPolicy,
@@ -68,7 +76,10 @@ impl NumericConversionOptions {
 
     /// Returns a copy with a different fractional-to-integer policy.
     #[inline(always)]
-    pub const fn with_fractional_to_integer(mut self, policy: FractionalToIntegerPolicy) -> Self {
+    pub const fn with_fractional_to_integer(
+        mut self,
+        policy: FractionalToIntegerPolicy,
+    ) -> Self {
         self.fractional_to_integer = policy;
         self
     }
@@ -81,7 +92,10 @@ impl NumericConversionOptions {
 
     /// Returns a copy with a different numeric-to-float policy.
     #[inline(always)]
-    pub const fn with_numeric_to_float(mut self, policy: FloatRoundingPolicy) -> Self {
+    pub const fn with_numeric_to_float(
+        mut self,
+        policy: FloatRoundingPolicy,
+    ) -> Self {
         self.numeric_to_float = policy;
         self
     }
@@ -94,7 +108,10 @@ impl NumericConversionOptions {
 
     /// Returns a copy with a different text-to-float policy.
     #[inline(always)]
-    pub const fn with_text_to_float(mut self, policy: FloatRoundingPolicy) -> Self {
+    pub const fn with_text_to_float(
+        mut self,
+        policy: FloatRoundingPolicy,
+    ) -> Self {
         self.text_to_float = policy;
         self
     }
@@ -107,7 +124,10 @@ impl NumericConversionOptions {
 
     /// Returns a copy with different numeric conversion resource limits.
     #[inline(always)]
-    pub const fn with_limits(mut self, limits: NumericConversionLimits) -> Self {
+    pub const fn with_limits(
+        mut self,
+        limits: NumericConversionLimits,
+    ) -> Self {
         self.limits = limits;
         self
     }

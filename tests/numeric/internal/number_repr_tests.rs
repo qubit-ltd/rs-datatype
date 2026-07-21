@@ -9,13 +9,17 @@
 
 use std::cmp::Ordering;
 
-use qubit_datatype::{NumberRef, NumericComparisonPolicy};
+use qubit_datatype::{
+    NumberRef,
+    NumericComparisonPolicy,
+};
 
 /// Verifies that distinct internal primitive representations compare exactly.
 #[test]
 fn test_number_repr_preserves_exact_values() {
     assert_eq!(
-        NumberRef::from(42_i8).compare(NumberRef::from(42_u128), NumericComparisonPolicy::Exact,),
+        NumberRef::from(42_i8)
+            .compare(NumberRef::from(42_u128), NumericComparisonPolicy::Exact,),
         Some(Ordering::Equal),
     );
 }

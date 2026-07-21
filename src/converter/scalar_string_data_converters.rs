@@ -11,7 +11,10 @@
 
 use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
-use super::error::{DataConversionError, DataListConversionError};
+use super::error::{
+    DataConversionError,
+    DataListConversionError,
+};
 use super::options::DataConversionOptions;
 
 /// Converts a scalar string as a configurable collection source.
@@ -95,11 +98,16 @@ impl<'a> ScalarStringDataConverters<'a> {
         let items = options.collection().scalar_items(self.source);
         let mut converted = Vec::new();
         for item in items {
-            let item = item.map_err(|error| error.into_list_conversion_error(T::DATA_TYPE))?;
+            let item = item.map_err(|error| {
+                error.into_list_conversion_error(T::DATA_TYPE)
+            })?;
             let value = match DataConverter::from(item.value).to_with(options) {
                 Ok(value) => value,
                 Err(source) => {
-                    return Err(DataListConversionError::new(item.source_index, source));
+                    return Err(DataListConversionError::new(
+                        item.source_index,
+                        source,
+                    ));
                 }
             };
             converted.push(value);

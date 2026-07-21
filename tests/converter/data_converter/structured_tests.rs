@@ -37,7 +37,13 @@ use bigdecimal::BigDecimal;
     feature = "url",
     feature = "json"
 ))]
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{
+    DateTime,
+    NaiveDate,
+    NaiveDateTime,
+    NaiveTime,
+    Utc,
+};
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",
@@ -52,14 +58,23 @@ use num_bigint::BigInt;
 use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConverter;
 #[cfg(feature = "json")]
-use qubit_datatype::{ConversionLimit, DataConversionOptions, StructuredConversionLimits};
+use qubit_datatype::{
+    ConversionLimit,
+    DataConversionOptions,
+    StructuredConversionLimits,
+};
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",
     feature = "url",
     feature = "json"
 ))]
-use qubit_datatype::{DataConversionError, DataFormat, DataType, InvalidValueReason};
+use qubit_datatype::{
+    DataConversionError,
+    DataFormat,
+    DataType,
+    InvalidValueReason,
+};
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",
@@ -116,8 +131,9 @@ fn assert_invalid_reason<T>(
 #[cfg(feature = "json")]
 #[test]
 fn test_data_converter_rejects_oversize_structured_text() {
-    let options = DataConversionOptions::default()
-        .with_structured_limits(StructuredConversionLimits::default().with_max_text_bytes(2));
+    let options = DataConversionOptions::default().with_structured_limits(
+        StructuredConversionLimits::default().with_max_text_bytes(2),
+    );
 
     assert!(
         DataConverter::from("[]")
@@ -139,7 +155,8 @@ fn test_data_converter_rejects_oversize_structured_text() {
             .is_ok()
     );
     assert_eq!(
-        DataConverter::from(r#"{"a":"b"}"#).to_with::<HashMap<String, String>>(&options),
+        DataConverter::from(r#"{"a":"b"}"#)
+            .to_with::<HashMap<String, String>>(&options),
         Err(DataConversionError::limit_exceeded(
             qubit_datatype::DataType::String,
             qubit_datatype::DataType::StringMap,
@@ -223,7 +240,8 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
         },
     );
     assert_invalid_reason(
-        DataConverter::from(r#"{"key":"value"} []"#).to::<HashMap<String, String>>(),
+        DataConverter::from(r#"{"key":"value"} []"#)
+            .to::<HashMap<String, String>>(),
         DataType::StringMap,
         InvalidValueReason::Deserialization {
             format: DataFormat::Json,
@@ -258,7 +276,8 @@ fn test_data_converter_string_map_identity_without_json() {
 /// a borrowed source remains independently owned.
 #[test]
 fn test_data_converter_consuming_string_map_identity_reuses_owned_storage() {
-    let source = HashMap::from([("key".to_owned(), "owned payload".to_owned())]);
+    let source =
+        HashMap::from([("key".to_owned(), "owned payload".to_owned())]);
     let source_pointer = source
         .get("key")
         .expect("test map should contain key")
@@ -274,7 +293,8 @@ fn test_data_converter_consuming_string_map_identity_reuses_owned_storage() {
         source_pointer,
     );
 
-    let borrowed = HashMap::from([("key".to_owned(), "borrowed payload".to_owned())]);
+    let borrowed =
+        HashMap::from([("key".to_owned(), "borrowed payload".to_owned())]);
     let borrowed_pointer = borrowed
         .get("key")
         .expect("test map should contain key")
@@ -311,6 +331,22 @@ fn test_data_converter_consuming_json_identity_reuses_owned_storage() {
             .as_ptr(),
         source_pointer,
     );
+}
+
+/// Verifies consuming structured conversions delegate non-identity sources to
+/// the shared borrowed conversion path.
+#[test]
+#[cfg(feature = "json")]
+fn test_data_converter_consuming_structured_non_identity_sources() {
+    let json = DataConverter::from(String::from(r#"{"key":"value"}"#))
+        .into_target::<serde_json::Value>()
+        .expect("owned JSON text should convert through the borrowed path");
+    assert_eq!(json["key"], "value");
+
+    let map = DataConverter::from(String::from(r#"{"key":"value"}"#))
+        .into_target::<HashMap<String, String>>()
+        .expect("owned map text should convert through the borrowed path");
+    assert_eq!(map.get("key").map(String::as_str), Some("value"));
 }
 
 /// Test URL and JSON conversion behavior.

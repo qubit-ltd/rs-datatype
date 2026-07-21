@@ -9,14 +9,26 @@
 
 use super::super::super::DataConverter;
 #[cfg(feature = "big-integer")]
-use super::float_big_number::{bigint_to_f32, bigint_to_f64};
+use super::float_big_number::{
+    bigint_to_f32,
+    bigint_to_f64,
+};
 #[cfg(feature = "big-decimal")]
-use super::float_big_number::{decimal_to_f32, decimal_to_f64};
-use super::float_text::{parse_text_f32, parse_text_f64};
+use super::float_big_number::{
+    decimal_to_f32,
+    decimal_to_f64,
+};
+use super::float_text::{
+    parse_text_f32,
+    parse_text_f64,
+};
 use super::integer::scalar_integer_magnitude;
 use super::syntax::normalize_numeric_text;
 use crate::converter::{
-    DataConversionError, DataConversionOptions, DataConversionTarget, FloatRoundingPolicy,
+    DataConversionError,
+    DataConversionOptions,
+    DataConversionTarget,
+    FloatRoundingPolicy,
     InvalidValueReason,
 };
 use crate::datatype::DataType;
@@ -221,9 +233,12 @@ impl DataConversionTarget for f32 {
                 }
                 let converted = *value as f32;
                 if !converted.is_finite() {
-                    return Err(source.invalid(to, InvalidValueReason::OutOfRange));
+                    return Err(
+                        source.invalid(to, InvalidValueReason::OutOfRange)
+                    );
                 }
-                if options.numeric().numeric_to_float() == FloatRoundingPolicy::Exact
+                if options.numeric().numeric_to_float()
+                    == FloatRoundingPolicy::Exact
                     && f64::from(converted) != *value
                 {
                     Err(source.invalid(to, InvalidValueReason::PrecisionLoss))
