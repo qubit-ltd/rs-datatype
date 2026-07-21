@@ -13,9 +13,19 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{
+    DateTime,
+    NaiveDate,
+    NaiveDateTime,
+    NaiveTime,
+    Utc,
+};
 use num_bigint::BigInt;
-use qubit_datatype::{DataConversionError, DataConverter, DataType};
+use qubit_datatype::{
+    DataConversionError,
+    DataConverter,
+    DataType,
+};
 use url::Url;
 
 /// Asserts that a converter reports the expected data type.
@@ -73,8 +83,10 @@ fn test_data_converter_from_impls_cover_all_sources() {
     assert_data_type(DataConverter::from(float64_value), DataType::Float64);
     assert_data_type(DataConverter::from(&float64_value), DataType::Float64);
 
-    let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
-    let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
+    let date =
+        NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
+    let time =
+        NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
     let duration = Duration::new(1, 2);
@@ -95,7 +107,10 @@ fn test_data_converter_from_impls_cover_all_sources() {
     let mut map = HashMap::new();
     map.insert("k".to_string(), "v".to_string());
     let json = serde_json::json!({"k": "v"});
-    assert_data_type(DataConverter::from(big_int.clone()), DataType::BigInteger);
+    assert_data_type(
+        DataConverter::from(big_int.clone()),
+        DataType::BigInteger,
+    );
     assert_data_type(DataConverter::from(&big_int), DataType::BigInteger);
     assert_data_type(
         DataConverter::from(big_decimal.clone()),

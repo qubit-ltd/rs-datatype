@@ -12,16 +12,28 @@ use std::hint::black_box;
 
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
+use criterion::{
+    BatchSize,
+    BenchmarkId,
+    Criterion,
+    Throughput,
+    criterion_group,
+    criterion_main,
+};
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-use qubit_datatype::{DataConversionTarget, DataConverter, DataConverters};
+use qubit_datatype::{
+    DataConversionTarget,
+    DataConverter,
+    DataConverters,
+};
 #[cfg(feature = "json")]
 use serde_json::Value as JsonValue;
 #[cfg(feature = "url")]
 use url::Url;
 
-const TEXT_SIZES: [(&str, usize); 3] = [("64B", 64), ("4KiB", 4 * 1024), ("256KiB", 256 * 1024)];
+const TEXT_SIZES: [(&str, usize); 3] =
+    [("64B", 64), ("4KiB", 4 * 1024), ("256KiB", 256 * 1024)];
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 const BIG_NUMBER_DIGITS: [(&str, usize); 3] = [
     ("32_digits", 32),
@@ -91,7 +103,9 @@ fn benchmark_identity_case<T>(
     group.bench_with_input(
         BenchmarkId::new("borrowed_to_target", case_name),
         &value,
-        |b, value| b.iter(|| black_box(convert_borrowed::<T>(black_box(value)))),
+        |b, value| {
+            b.iter(|| black_box(convert_borrowed::<T>(black_box(value))))
+        },
     );
     group.bench_function(BenchmarkId::new("owned_to_target", case_name), |b| {
         b.iter_batched(
@@ -139,7 +153,12 @@ fn benchmark_string_identity(c: &mut Criterion) {
 fn benchmark_string_map_identity(c: &mut Criterion) {
     let mut group = c.benchmark_group("identity_string_map");
     for (name, bytes) in TEXT_SIZES {
-        benchmark_identity_case(&mut group, name, bytes, string_map_payload(bytes));
+        benchmark_identity_case(
+            &mut group,
+            name,
+            bytes,
+            string_map_payload(bytes),
+        );
     }
     group.finish();
 }
@@ -176,9 +195,16 @@ fn benchmark_string_batch_identity(c: &mut Criterion) {
                 BatchSize::LargeInput,
             );
         });
-        group.bench_function(BenchmarkId::new("direct_move", item_count), |b| {
-            b.iter_batched(|| values.clone(), black_box, BatchSize::LargeInput);
-        });
+        group.bench_function(
+            BenchmarkId::new("direct_move", item_count),
+            |b| {
+                b.iter_batched(
+                    || values.clone(),
+                    black_box,
+                    BatchSize::LargeInput,
+                );
+            },
+        );
     }
     group.finish();
 }

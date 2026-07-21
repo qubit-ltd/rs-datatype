@@ -8,7 +8,9 @@
 //! Tests for independently configurable numeric conversion options.
 
 use qubit_datatype::converter::{
-    FloatRoundingPolicy, FractionalToIntegerPolicy, NumericConversionLimits,
+    FloatRoundingPolicy,
+    FractionalToIntegerPolicy,
+    NumericConversionLimits,
     NumericConversionOptions,
 };
 
@@ -64,7 +66,8 @@ fn test_numeric_conversion_options_builders_and_serde() {
     assert_eq!(options.text_to_float(), FloatRoundingPolicy::NearestEven,);
     assert_eq!(options.limits(), &limits);
 
-    let wire = serde_json::to_string(&options).expect("numeric options should serialize");
+    let wire = serde_json::to_string(&options)
+        .expect("numeric options should serialize");
     assert_eq!(
         wire,
         r#"{"fractional_to_integer":"truncate","numeric_to_float":"nearest_even","text_to_float":"nearest_even","limits":{"max_text_bytes":32,"max_big_integer_digits":8}}"#,

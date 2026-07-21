@@ -7,7 +7,10 @@
 // =============================================================================
 //! Numeric syntax validation tests.
 
-use qubit_datatype::{DataConverter, InvalidValueReason};
+use qubit_datatype::{
+    DataConverter,
+    InvalidValueReason,
+};
 
 /// Verifies malformed signs are classified as invalid numeric syntax.
 #[test]

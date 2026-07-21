@@ -15,6 +15,12 @@ mod number_repr;
 #[cfg(feature = "big-decimal")]
 pub(in crate::numeric) use exact_rational::decimal_rational;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-pub(in crate::numeric) use exact_rational::{f32_rational, f64_rational};
-pub(in crate::numeric) use fixed_numeric::{compare_magnitude, finite_parts};
+pub(in crate::numeric) use exact_rational::{
+    f32_rational,
+    f64_rational,
+};
+pub(in crate::numeric) use fixed_numeric::{
+    compare_magnitude,
+    finite_parts,
+};
 pub(super) use number_repr::NumberRepr;

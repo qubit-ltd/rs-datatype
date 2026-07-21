@@ -9,7 +9,10 @@
 
 use serde::Deserialize;
 
-use super::super::{BooleanConversionOptions, BooleanNumericPolicy};
+use super::super::{
+    BooleanConversionOptions,
+    BooleanNumericPolicy,
+};
 
 /// Holds deserialized Boolean fields before literal-set validation.
 #[must_use]

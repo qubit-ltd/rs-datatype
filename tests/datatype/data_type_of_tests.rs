@@ -9,7 +9,10 @@
 //!
 //! Tests for compile-time Rust type to `DataType` mapping.
 
-use qubit_datatype::{DataType, DataTypeOf};
+use qubit_datatype::{
+    DataType,
+    DataTypeOf,
+};
 
 /// Test primitive and standard-library mappings without optional features.
 #[test]
@@ -40,7 +43,13 @@ fn test_data_type_of_primitive_and_standard_types() {
 #[test]
 #[cfg(feature = "chrono")]
 fn test_data_type_of_chrono_types() {
-    use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+    use chrono::{
+        DateTime,
+        NaiveDate,
+        NaiveDateTime,
+        NaiveTime,
+        Utc,
+    };
 
     assert_eq!(NaiveDate::DATA_TYPE, DataType::Date);
     assert_eq!(NaiveTime::DATA_TYPE, DataType::Time);

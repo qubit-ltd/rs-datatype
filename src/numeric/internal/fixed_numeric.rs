@@ -23,7 +23,9 @@ use crate::numeric::internal::NumberRepr;
 ///
 /// A tuple representing `(-1)^sign * significand * 2^exponent`, or `None`
 /// for non-finite values or arbitrary-precision representations.
-pub(in crate::numeric) fn finite_parts(value: NumberRef<'_>) -> Option<(bool, u128, i32)> {
+pub(in crate::numeric) fn finite_parts(
+    value: NumberRef<'_>,
+) -> Option<(bool, u128, i32)> {
     match value.inner() {
         NumberRepr::Int8(value) => signed_parts(i128::from(value)),
         NumberRepr::Int16(value) => signed_parts(i128::from(value)),
@@ -35,8 +37,12 @@ pub(in crate::numeric) fn finite_parts(value: NumberRef<'_>) -> Option<(bool, u1
         NumberRepr::UInt32(value) => Some((false, u128::from(value), 0)),
         NumberRepr::UInt64(value) => Some((false, u128::from(value), 0)),
         NumberRepr::UInt128(value) => Some((false, value, 0)),
-        NumberRepr::Float32(value) if value.is_finite() => Some(f32_parts(value)),
-        NumberRepr::Float64(value) if value.is_finite() => Some(f64_parts(value)),
+        NumberRepr::Float32(value) if value.is_finite() => {
+            Some(f32_parts(value))
+        }
+        NumberRepr::Float64(value) if value.is_finite() => {
+            Some(f64_parts(value))
+        }
         _ => None,
     }
 }
@@ -118,17 +124,18 @@ pub(in crate::numeric) fn compare_magnitude(
     if left_significand == 0 || right_significand == 0 {
         return left_significand.cmp(&right_significand);
     }
-    let left_high_bit = 128 - left_significand.leading_zeros() as i32 + left_exponent;
-    let right_high_bit = 128 - right_significand.leading_zeros() as i32 + right_exponent;
+    let left_high_bit =
+        128 - left_significand.leading_zeros() as i32 + left_exponent;
+    let right_high_bit =
+        128 - right_significand.leading_zeros() as i32 + right_exponent;
     match left_high_bit.cmp(&right_high_bit) {
         Ordering::Equal => match left_exponent.cmp(&right_exponent) {
             Ordering::Equal => left_significand.cmp(&right_significand),
-            Ordering::Greater => {
-                (left_significand << (left_exponent - right_exponent)).cmp(&right_significand)
-            }
-            Ordering::Less => {
-                left_significand.cmp(&(right_significand << (right_exponent - left_exponent)))
-            }
+            Ordering::Greater => (left_significand
+                << (left_exponent - right_exponent))
+                .cmp(&right_significand),
+            Ordering::Less => left_significand
+                .cmp(&(right_significand << (right_exponent - left_exponent))),
         },
         ordering => ordering,
     }
