@@ -30,7 +30,7 @@ use qubit_datatype::{
     DurationConversionOptions,
     DurationRoundingPolicy,
     DurationUnit,
-    DurationUnitSuffixSet,
+    DurationUnitParseMode,
     InvalidValueReason,
     NumericConversionOptions,
     SuffixlessDurationPolicy,
@@ -66,7 +66,7 @@ fn test_data_converter_duration_string_conversion() {
         .expect("duration string with seconds should parse");
     assert_eq!(seconds, Duration::from_secs(2));
 
-    let minutes: Duration = DataConverter::from("2m")
+    let minutes: Duration = DataConverter::from("2min")
         .to()
         .expect("duration string with minutes should parse");
     assert_eq!(minutes, Duration::from_secs(120));
@@ -81,17 +81,44 @@ fn test_data_converter_duration_string_conversion() {
         .expect("duration string with days should parse");
     assert_eq!(days, Duration::from_secs(172800));
 
-    for source in ["10us", "10µs", "10μs"] {
-        let micros: Duration = DataConverter::from(source)
-            .to()
-            .expect("every supported microsecond suffix should parse");
-        assert_eq!(micros, Duration::from_micros(10));
-    }
-
-    let bare_default: Duration = DataConverter::from("10")
+    let micros: Duration = DataConverter::from("10µs")
         .to()
-        .expect("bare duration string should use default milliseconds");
-    assert_eq!(bare_default, Duration::from_millis(10));
+        .expect("canonical microsecond suffix should parse");
+    assert_eq!(micros, Duration::from_micros(10));
+
+    for source in ["10us", "10µs", "10μs"] {
+        assert_eq!(
+            DataConverter::from(source).to::<Duration>(),
+            Ok(Duration::from_micros(10)),
+        );
+    }
+    let non_canonical = DataConverter::from("10m")
+        .to::<Duration>()
+        .expect_err("strict mode should reject the minute alias");
+    assert_eq!(
+        non_canonical.reason(),
+        Some(&InvalidValueReason::NonCanonicalDurationUnit {
+            canonical: "min".to_owned(),
+        }),
+    );
+
+    assert!(DataConverter::from("10").to::<Duration>().is_err());
+
+    let env_friendly = DataConversionOptions::default()
+        .with_duration_options(DurationConversionOptions::env_friendly());
+    for source in ["10", "10us", "10μs", "10m"] {
+        let parsed: Duration = DataConverter::from(source)
+            .to_with(&env_friendly)
+            .expect("environment-friendly duration text should parse");
+        let expected = if source == "10m" {
+            Duration::from_secs(600)
+        } else if source == "10" {
+            Duration::from_millis(10)
+        } else {
+            Duration::from_micros(10)
+        };
+        assert_eq!(parsed, expected);
+    }
 
     let options = DataConversionOptions::default().with_duration_options(
         DurationConversionOptions::default().with_suffixless_string_policy(
@@ -113,7 +140,7 @@ fn test_data_converter_duration_string_conversion() {
     assert_eq!(
         error.reason(),
         Some(&InvalidValueReason::InvalidSyntax {
-            expected: "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)",
+            expected: "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)",
         }),
     );
 
@@ -394,49 +421,42 @@ fn test_data_converter_duration_rounding_is_independent() {
     );
 }
 
-/// Test Duration text honors the configured explicit suffix set.
+/// Test Duration text honors the configured explicit unit parse mode.
 #[test]
-fn test_data_converter_duration_text_honors_suffix_set() {
-    let ascii = DataConversionOptions::strict().with_duration_options(
+fn test_data_converter_duration_text_honors_unit_parse_mode() {
+    let strict = DataConversionOptions::strict().with_duration_options(
         DurationConversionOptions::default()
-            .with_unit_suffix_set(DurationUnitSuffixSet::Ascii),
+            .with_unit_parse_mode(DurationUnitParseMode::Strict),
     );
+    for source in ["2us", "2µs", "2μs"] {
+        assert_eq!(
+            DataConverter::from(source).to_with::<Duration>(&strict),
+            Ok(Duration::from_micros(2)),
+        );
+    }
+    let non_canonical = DataConverter::from("2m")
+        .to_with::<Duration>(&strict)
+        .expect_err("strict mode should reject the minute alias");
     assert_eq!(
-        DataConverter::from("2us").to_with::<Duration>(&ascii),
-        Ok(Duration::from_micros(2)),
-    );
-    let error = DataConverter::from("2µs")
-        .to_with::<Duration>(&ascii)
-        .expect_err("Unicode microsecond suffix should be rejected");
-    assert_eq!(
-        error.reason(),
-        Some(&InvalidValueReason::InvalidSyntax {
-            expected: "[0-9]+(ns|us|ms|s|m|h|d)?",
+        non_canonical.reason(),
+        Some(&InvalidValueReason::NonCanonicalDurationUnit {
+            canonical: "min".to_owned(),
         }),
     );
-    assert!(
-        DataConverter::from("2μs")
-            .to_with::<Duration>(&ascii)
-            .is_err()
-    );
-    assert_eq!(
-        DataConverter::from("2µs").to::<Duration>(),
-        Ok(Duration::from_micros(2)),
-    );
 
-    let reject_suffixless_ascii = DataConversionOptions::strict()
+    let reject_suffixless_strict = DataConversionOptions::strict()
         .with_duration_options(
             DurationConversionOptions::default()
                 .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject)
-                .with_unit_suffix_set(DurationUnitSuffixSet::Ascii),
+                .with_unit_parse_mode(DurationUnitParseMode::Strict),
         );
     let error = DataConverter::from("2")
-        .to_with::<Duration>(&reject_suffixless_ascii)
-        .expect_err("suffixless ASCII input should be rejected");
+        .to_with::<Duration>(&reject_suffixless_strict)
+        .expect_err("suffixless strict input should be rejected");
     assert_eq!(
         error.reason(),
         Some(&InvalidValueReason::InvalidSyntax {
-            expected: "[0-9]+(ns|us|ms|s|m|h|d)",
+            expected: "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)",
         }),
     );
 }
@@ -453,7 +473,7 @@ fn test_data_converter_duration_accepts_large_representable_unit_counts() {
         ),
         (
             DurationUnit::Microseconds,
-            "us",
+            "µs",
             Duration::new(u64::MAX / 1_000_000, 551_616_000),
         ),
         (
@@ -490,8 +510,10 @@ fn test_data_converter_duration_rejects_unrepresentable_counts() {
     for result in [
         DataConverter::from(&above_u128).to_with::<Duration>(&seconds),
         DataConverter::from(u128::MAX).to_with::<Duration>(&seconds),
-        DataConverter::from(format!("{}s", u128::MAX)).to::<Duration>(),
-        DataConverter::from(format!("{}0", u128::MAX)).to::<Duration>(),
+        DataConverter::from(format!("{}s", u128::MAX))
+            .to_with::<Duration>(&seconds),
+        DataConverter::from(format!("{}0s", u128::MAX))
+            .to_with::<Duration>(&seconds),
     ] {
         assert!(matches!(
             result,

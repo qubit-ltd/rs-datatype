@@ -10,7 +10,7 @@
 //! Tests for grouped data conversion options.
 
 use qubit_datatype::DataType;
-use qubit_datatype::DurationUnitSuffixSet;
+use qubit_datatype::DurationUnitParseMode;
 use qubit_datatype::converter::{
     BlankStringPolicy,
     BooleanConversionOptions,
@@ -177,11 +177,11 @@ fn test_data_conversion_options_duration_builders() {
     );
     assert_eq!(
         defaults.duration().suffixless_string_policy(),
-        SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds),
+        SuffixlessDurationPolicy::Reject,
     );
     assert_eq!(
-        defaults.duration().unit_suffix_set(),
-        DurationUnitSuffixSet::Extended,
+        defaults.duration().unit_parse_mode(),
+        DurationUnitParseMode::Strict,
     );
     assert_eq!(
         defaults.duration().output_unit(),
@@ -192,13 +192,13 @@ fn test_data_conversion_options_duration_builders() {
         defaults.duration().rounding_policy(),
         DurationRoundingPolicy::Reject,
     );
-    assert_eq!(defaults.duration().output_unit().suffix(), "ms");
+    assert_eq!(defaults.duration().output_unit().symbol(), "ms");
 
     let options = DataConversionOptions::default().with_duration_options(
         DurationConversionOptions::default()
             .with_numeric_input_unit(DurationUnit::Seconds)
             .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject)
-            .with_unit_suffix_set(DurationUnitSuffixSet::Ascii)
+            .with_unit_parse_mode(DurationUnitParseMode::Lenient)
             .with_output_unit(DurationUnit::Minutes)
             .with_append_unit_suffix(false)
             .with_rounding_policy(DurationRoundingPolicy::HalfUp),
@@ -213,8 +213,8 @@ fn test_data_conversion_options_duration_builders() {
         SuffixlessDurationPolicy::Reject,
     );
     assert_eq!(
-        options.duration().unit_suffix_set(),
-        DurationUnitSuffixSet::Ascii,
+        options.duration().unit_parse_mode(),
+        DurationUnitParseMode::Lenient,
     );
     assert_eq!(options.duration().output_unit(), DurationUnit::Minutes);
     assert!(!options.duration().append_unit_suffix());
@@ -222,16 +222,16 @@ fn test_data_conversion_options_duration_builders() {
         options.duration().rounding_policy(),
         DurationRoundingPolicy::HalfUp,
     );
-    assert_eq!(DurationUnit::from_suffix("s"), Some(DurationUnit::Seconds));
+    assert_eq!(DurationUnit::parse_strict("s"), Ok(DurationUnit::Seconds));
     assert_eq!(
-        DurationUnit::from_suffix("µs"),
-        Some(DurationUnit::Microseconds)
+        DurationUnit::parse_strict("µs"),
+        Ok(DurationUnit::Microseconds)
     );
     assert_eq!(
-        DurationUnit::from_suffix("μs"),
-        Some(DurationUnit::Microseconds)
+        DurationUnit::parse_lenient("μs"),
+        Ok(DurationUnit::Microseconds)
     );
-    assert_eq!(DurationUnit::from_suffix("fortnights"), None);
+    assert!(DurationUnit::parse_strict("fortnights").is_err());
 }
 
 /// Test all duration unit suffixes and rounding conversions.
@@ -239,16 +239,16 @@ fn test_data_conversion_options_duration_builders() {
 fn test_duration_unit_suffixes_and_rounding_cover_all_units() {
     let cases = [
         (DurationUnit::Nanoseconds, "ns", 1),
-        (DurationUnit::Microseconds, "us", 1_000),
+        (DurationUnit::Microseconds, "µs", 1_000),
         (DurationUnit::Milliseconds, "ms", 1_000_000),
         (DurationUnit::Seconds, "s", 1_000_000_000),
-        (DurationUnit::Minutes, "m", 60_000_000_000),
+        (DurationUnit::Minutes, "min", 60_000_000_000),
         (DurationUnit::Hours, "h", 3_600_000_000_000),
         (DurationUnit::Days, "d", 86_400_000_000_000),
     ];
 
     for (unit, suffix, nanos) in cases {
-        assert_eq!(unit.suffix(), suffix);
+        assert_eq!(unit.symbol(), suffix);
         assert_eq!(
             unit.rounded_units(std::time::Duration::from_nanos(nanos)),
             1

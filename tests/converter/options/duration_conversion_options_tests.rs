@@ -13,7 +13,7 @@ use qubit_datatype::converter::{
 };
 use qubit_datatype::{
     DurationTextOptions,
-    DurationUnitSuffixSet,
+    DurationUnitParseMode,
 };
 use serde_json::json;
 
@@ -34,9 +34,9 @@ fn test_duration_conversion_options_builders_update_fields() {
     assert_eq!(defaults.numeric_input_unit(), DurationUnit::Milliseconds,);
     assert_eq!(
         defaults.suffixless_string_policy(),
-        SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds),
+        SuffixlessDurationPolicy::Reject,
     );
-    assert_eq!(defaults.unit_suffix_set(), DurationUnitSuffixSet::Extended,);
+    assert_eq!(defaults.unit_parse_mode(), DurationUnitParseMode::Strict,);
     assert_eq!(
         defaults.max_text_bytes(),
         DurationTextOptions::DEFAULT_MAX_TEXT_BYTES,
@@ -48,7 +48,7 @@ fn test_duration_conversion_options_builders_update_fields() {
     let options = defaults
         .with_numeric_input_unit(DurationUnit::Seconds)
         .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject)
-        .with_unit_suffix_set(DurationUnitSuffixSet::Ascii)
+        .with_unit_parse_mode(DurationUnitParseMode::Lenient)
         .with_max_text_bytes(4_096)
         .with_output_unit(DurationUnit::Minutes)
         .with_append_unit_suffix(false)
@@ -59,7 +59,7 @@ fn test_duration_conversion_options_builders_update_fields() {
         options.suffixless_string_policy(),
         SuffixlessDurationPolicy::Reject,
     );
-    assert_eq!(options.unit_suffix_set(), DurationUnitSuffixSet::Ascii);
+    assert_eq!(options.unit_parse_mode(), DurationUnitParseMode::Lenient);
     assert_eq!(options.max_text_bytes(), 4_096);
     assert_eq!(options.output_unit(), DurationUnit::Minutes);
     assert!(!options.append_unit_suffix());
@@ -71,7 +71,11 @@ fn test_duration_conversion_options_builders_update_fields() {
 fn test_duration_conversion_options_env_friendly_profile() {
     assert_eq!(
         DurationConversionOptions::env_friendly(),
-        DurationConversionOptions::default(),
+        DurationConversionOptions::default()
+            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(
+                DurationUnit::Milliseconds
+            ))
+            .with_unit_parse_mode(DurationUnitParseMode::Lenient),
     );
 }
 
@@ -83,7 +87,7 @@ fn test_duration_conversion_options_exact_json_wire_and_round_trip() {
         .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(
             DurationUnit::Minutes,
         ))
-        .with_unit_suffix_set(DurationUnitSuffixSet::Ascii)
+        .with_unit_parse_mode(DurationUnitParseMode::Strict)
         .with_max_text_bytes(4_096)
         .with_output_unit(DurationUnit::Hours)
         .with_append_unit_suffix(false)
@@ -93,7 +97,7 @@ fn test_duration_conversion_options_exact_json_wire_and_round_trip() {
         .expect("duration options should serialize");
     assert_eq!(
         wire,
-        r#"{"numeric_input_unit":"seconds","suffixless_string_policy":{"assume":"minutes"},"unit_suffix_set":"ascii","max_text_bytes":4096,"output_unit":"hours","append_unit_suffix":false,"rounding_policy":"half_up"}"#,
+        r#"{"numeric_input_unit":"seconds","suffixless_string_policy":{"assume":"minutes"},"unit_parse_mode":"strict","max_text_bytes":4096,"output_unit":"hours","append_unit_suffix":false,"rounding_policy":"half_up"}"#,
     );
     assert_eq!(
         serde_json::from_str::<DurationConversionOptions>(&wire)
@@ -112,9 +116,9 @@ fn test_duration_conversion_options_partial_json_uses_defaults() {
     assert_eq!(options.numeric_input_unit(), DurationUnit::Milliseconds,);
     assert_eq!(
         options.suffixless_string_policy(),
-        SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds),
+        SuffixlessDurationPolicy::Reject,
     );
-    assert_eq!(options.unit_suffix_set(), DurationUnitSuffixSet::Extended,);
+    assert_eq!(options.unit_parse_mode(), DurationUnitParseMode::Strict,);
     assert_eq!(
         options.max_text_bytes(),
         DurationTextOptions::DEFAULT_MAX_TEXT_BYTES,
@@ -142,7 +146,7 @@ fn test_duration_conversion_options_all_serde_values() {
             json!({
                 "numeric_input_unit": wire_name,
                 "suffixless_string_policy": { "assume": wire_name },
-                "unit_suffix_set": "extended",
+                "unit_parse_mode": "strict",
                 "max_text_bytes": DurationTextOptions::DEFAULT_MAX_TEXT_BYTES,
                 "output_unit": wire_name,
                 "append_unit_suffix": true,

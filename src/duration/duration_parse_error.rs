@@ -7,7 +7,7 @@
 // =============================================================================
 //! Error returned by Duration text parsing.
 
-/// Error returned when parsing canonical Duration text.
+/// Error returned when parsing Duration text.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum DurationParseError {
@@ -20,6 +20,14 @@ pub enum DurationParseError {
     /// The input does not match the configured non-negative integer grammar.
     #[error("invalid duration syntax")]
     InvalidSyntax,
+    /// The input is a Lenient-only alias rather than a strict symbol.
+    #[error("non-canonical duration unit `{unit}`; use `{canonical}`")]
+    NonCanonicalUnit {
+        /// Lenient-only alias without the numeric prefix.
+        unit: String,
+        /// Preferred strict unit symbol.
+        canonical: String,
+    },
     /// The input has a syntactically valid but unsupported unit suffix.
     #[error("unsupported duration unit `{unit}`")]
     UnsupportedUnit {

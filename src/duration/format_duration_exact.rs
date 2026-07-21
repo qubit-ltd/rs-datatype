@@ -5,7 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Exact canonical formatting for Duration values.
+//! Exact preferred-unit formatting for Duration values.
 
 use std::time::Duration;
 
@@ -13,8 +13,8 @@ use super::DurationUnit;
 
 /// Formats a Duration with the largest exact supported unit.
 ///
-/// Zero is formatted as `0ms`; microseconds use the canonical ASCII `us`
-/// suffix. The resulting text round-trips through an ASCII Duration parser.
+/// Zero is formatted as `0ms`; microseconds use the preferred `µs` symbol.
+/// The resulting text round-trips through a strict Duration parser.
 ///
 /// # Parameters
 ///
@@ -22,7 +22,7 @@ use super::DurationUnit;
 ///
 /// # Returns
 ///
-/// Canonical unit-suffixed text.
+/// Preferred unit-suffixed text.
 #[must_use]
 pub fn format_duration_exact(duration: Duration) -> String {
     if duration.is_zero() {
@@ -37,7 +37,7 @@ pub fn format_duration_exact(duration: Duration) -> String {
         DurationUnit::Microseconds,
     ] {
         if let Some(value) = unit.exact_units(duration) {
-            return format!("{value}{}", unit.suffix());
+            return format!("{value}{}", unit.symbol());
         }
     }
     format!("{}ns", duration.as_nanos())

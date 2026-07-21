@@ -38,8 +38,10 @@
 //!
 //! Strings are not trimmed by default and are normalized exactly once.
 //! Boolean text defaults to `true` and `false`; numeric 0/1 handling is
-//! controlled independently by `BooleanNumericPolicy`. Duration text uses
-//! `[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`.
+//! controlled independently by `BooleanNumericPolicy`. By default, Duration
+//! text rejects omitted suffixes and accepts
+//! `[0-9]+(ns|us|µs|μs|ms|s|min|h|d)`. Strict mode accepts all three
+//! microsecond spellings; lenient mode additionally accepts `m` for minutes.
 //!
 //! # Example
 //!
@@ -119,7 +121,7 @@ pub use duration::{
     DurationParseError,
     DurationTextOptions,
     DurationUnit,
-    DurationUnitSuffixSet,
+    DurationUnitParseMode,
     SuffixlessDurationPolicy,
     format_duration_exact,
     parse_duration_text,

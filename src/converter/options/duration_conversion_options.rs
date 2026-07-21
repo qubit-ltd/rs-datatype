@@ -12,7 +12,7 @@
 use crate::duration::{
     DurationTextOptions,
     DurationUnit,
-    DurationUnitSuffixSet,
+    DurationUnitParseMode,
     SuffixlessDurationPolicy,
 };
 use serde::{
@@ -66,8 +66,8 @@ pub struct DurationConversionOptions {
     numeric_input_unit: DurationUnit,
     /// Policy for Duration strings that omit an explicit unit suffix.
     suffixless_string_policy: SuffixlessDurationPolicy,
-    /// Set of explicit unit suffixes accepted in Duration text.
-    unit_suffix_set: DurationUnitSuffixSet,
+    /// Strictness applied to explicit Duration unit symbols.
+    unit_parse_mode: DurationUnitParseMode,
     /// Maximum accepted Duration source text length in bytes.
     max_text_bytes: usize,
     /// Unit used when converting a Duration to an integer or string.
@@ -81,9 +81,9 @@ pub struct DurationConversionOptions {
 impl DurationConversionOptions {
     /// Creates duration options for environment-variable input.
     ///
-    /// The current environment profile intentionally matches the default
-    /// millisecond representation. Keeping the constructor here allows the
-    /// profile to evolve without changing composite option builders.
+    /// The profile interprets suffixless integers as milliseconds and accepts
+    /// Lenient-only unit aliases. Numeric input and output retain the default
+    /// millisecond representation.
     ///
     /// # Returns
     ///
@@ -91,6 +91,10 @@ impl DurationConversionOptions {
     #[inline(always)]
     pub fn env_friendly() -> Self {
         Self::default()
+            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(
+                DurationUnit::Milliseconds,
+            ))
+            .with_unit_parse_mode(DurationUnitParseMode::Lenient)
     }
 
     /// Returns the unit assigned to integer sources.
@@ -138,19 +142,19 @@ impl DurationConversionOptions {
         self
     }
 
-    /// Returns the set of explicit suffixes accepted in Duration text.
+    /// Returns the strictness applied to explicit Duration unit symbols.
     #[inline(always)]
-    pub const fn unit_suffix_set(&self) -> DurationUnitSuffixSet {
-        self.unit_suffix_set
+    pub const fn unit_parse_mode(&self) -> DurationUnitParseMode {
+        self.unit_parse_mode
     }
 
-    /// Returns a copy with a different accepted Duration suffix set.
+    /// Returns a copy with a different Duration unit parse mode.
     #[inline(always)]
-    pub const fn with_unit_suffix_set(
+    pub const fn with_unit_parse_mode(
         mut self,
-        unit_suffix_set: DurationUnitSuffixSet,
+        unit_parse_mode: DurationUnitParseMode,
     ) -> Self {
-        self.unit_suffix_set = unit_suffix_set;
+        self.unit_parse_mode = unit_parse_mode;
         self
     }
 
@@ -257,8 +261,8 @@ impl Default for DurationConversionOptions {
     fn default() -> Self {
         Self {
             numeric_input_unit: DurationUnit::default(),
-            suffixless_string_policy: SuffixlessDurationPolicy::default(),
-            unit_suffix_set: DurationUnitSuffixSet::default(),
+            suffixless_string_policy: SuffixlessDurationPolicy::Reject,
+            unit_parse_mode: DurationUnitParseMode::Strict,
             max_text_bytes: DurationTextOptions::DEFAULT_MAX_TEXT_BYTES,
             output_unit: DurationUnit::default(),
             append_unit_suffix: true,

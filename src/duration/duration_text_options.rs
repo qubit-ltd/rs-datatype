@@ -13,19 +13,19 @@ use serde::{
 };
 
 use super::{
-    DurationUnitSuffixSet,
+    DurationUnitParseMode,
     SuffixlessDurationPolicy,
 };
 
-/// Controls suffixless input and supported unit suffixes.
+/// Controls suffixless input and Duration unit parsing.
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct DurationTextOptions {
     /// Policy applied when text omits a unit suffix.
     suffixless_policy: SuffixlessDurationPolicy,
-    /// Set of explicit unit suffixes accepted by the parser.
-    unit_suffix_set: DurationUnitSuffixSet,
+    /// Strictness applied to explicit unit symbols.
+    unit_parse_mode: DurationUnitParseMode,
     /// Maximum accepted source text length in bytes.
     max_text_bytes: usize,
 }
@@ -39,7 +39,7 @@ impl DurationTextOptions {
     /// # Parameters
     ///
     /// * `suffixless_policy` - Policy for text without a unit suffix.
-    /// * `unit_suffix_set` - Set of explicit suffixes accepted by the parser.
+    /// * `unit_parse_mode` - Strictness applied to explicit unit symbols.
     ///
     /// # Returns
     ///
@@ -47,11 +47,11 @@ impl DurationTextOptions {
     #[inline(always)]
     pub const fn new(
         suffixless_policy: SuffixlessDurationPolicy,
-        unit_suffix_set: DurationUnitSuffixSet,
+        unit_parse_mode: DurationUnitParseMode,
     ) -> Self {
         Self {
             suffixless_policy,
-            unit_suffix_set,
+            unit_parse_mode,
             max_text_bytes: Self::DEFAULT_MAX_TEXT_BYTES,
         }
     }
@@ -80,27 +80,27 @@ impl DurationTextOptions {
         self
     }
 
-    /// Returns the set of explicit unit suffixes accepted by the parser.
+    /// Returns the strictness applied to explicit unit symbols.
     #[inline(always)]
-    pub const fn unit_suffix_set(&self) -> DurationUnitSuffixSet {
-        self.unit_suffix_set
+    pub const fn unit_parse_mode(&self) -> DurationUnitParseMode {
+        self.unit_parse_mode
     }
 
-    /// Returns a copy with a different accepted suffix set.
+    /// Returns a copy with a different unit parse mode.
     ///
     /// # Parameters
     ///
-    /// * `unit_suffix_set` - Replacement explicit suffix set.
+    /// * `unit_parse_mode` - Replacement unit parse mode.
     ///
     /// # Returns
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_unit_suffix_set(
+    pub const fn with_unit_parse_mode(
         mut self,
-        unit_suffix_set: DurationUnitSuffixSet,
+        unit_parse_mode: DurationUnitParseMode,
     ) -> Self {
-        self.unit_suffix_set = unit_suffix_set;
+        self.unit_parse_mode = unit_parse_mode;
         self
     }
 
@@ -135,11 +135,12 @@ impl DurationTextOptions {
 }
 
 impl Default for DurationTextOptions {
-    /// Creates the extended, suffixless-millisecond compatibility profile.
+    /// Creates the default profile that rejects suffixless text and uses strict
+    /// unit parsing.
     fn default() -> Self {
         Self::new(
-            SuffixlessDurationPolicy::default(),
-            DurationUnitSuffixSet::default(),
+            SuffixlessDurationPolicy::Reject,
+            DurationUnitParseMode::Strict,
         )
     }
 }

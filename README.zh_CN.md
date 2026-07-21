@@ -143,7 +143,7 @@ unset，`EmptyCollection` 表示请求首值时集合为空，`InvalidValue` 表
 - `string`：trim 和空白字符串处理。
 - `boolean`：文字集合、大小写和数值布尔策略。
 - `collection`：标量拆分、分隔符、trim、空项策略和最终保留项数上限。
-- `duration`：数值输入单位、无后缀输入、可接受后缀集、输出单位、后缀格式、舍入和源文本字节上限。
+- `duration`：数值输入单位、无后缀输入策略、单位解析模式、输出单位、后缀格式、舍入和源文本字节上限。
 
 `strict()` 是默认值。`env_friendly()` 会 trim 字符串、接受常见布尔文字，并开启
 逗号分隔的标量集合；它只把文本转浮点放宽为 nearest-even，不会开启小数转整数
@@ -177,14 +177,18 @@ let options = DataConversionOptions::strict().with_numeric_options(
 
 ## 8. 字符串、Duration 与富格式
 
-默认不 trim 字符串。空白值可保留、视为缺失或拒绝。默认扩展 Duration 后缀集接受
-`[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`；ASCII 后缀集不接受 `µs` 和 `μs`。
+默认不 trim 字符串。空白值可保留、视为缺失或拒绝。默认 Duration 策略拒绝无后缀
+文本，并使用 Strict 解析：`[0-9]+(ns|us|µs|μs|ms|s|min|h|d)`。Strict 同时接受
+ASCII `us`、微符号 `µs` 与希腊 mu `μs` 三种微秒拼写。Lenient 额外接受非规范的
+分钟别名 `m`：`[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)`。
+`DurationConversionOptions::env_friendly()` 使用 Lenient，并把无后缀整数解释为毫秒。
 输入和输出单位分别配置；精确输出要求按输出单位整除，half-up 舍入必须显式开启。
+输出微秒时固定使用 `µs`，输出分钟时固定使用 `min`。
 
-仅启用 `duration` feature 时，`DurationTextOptions` 可选择无后缀策略、ASCII
-或扩展后缀集合，并默认把输入限制为 1 MiB；`parse_duration_text` 在处理后缀前
-先执行该字节上限，再在不隐式 trim 的情况下执行带范围检查的解析，
-`format_duration_exact` 自动选择最大的精确规范单位。
+仅启用 `duration` feature 时，`DurationTextOptions` 可选择无后缀策略和单位解析模式，
+并默认把输入限制为 1 MiB；`parse_duration_text` 在处理后缀前先执行该字节上限，
+再在不隐式 trim 的情况下执行带范围检查的解析，`format_duration_exact` 自动选择
+最大的精确首选单位。
 
 富文本的规范格式包括：日期 `YYYY-MM-DD`、时间 `HH:MM:SS[.fraction]`、
 instant 的 RFC 3339、绝对 URL、标准 JSON，以及 key 唯一且 value 全为字符串的

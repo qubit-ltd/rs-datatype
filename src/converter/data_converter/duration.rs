@@ -31,7 +31,7 @@ use crate::datatype::DataType;
 use crate::duration::{
     DurationParseError,
     DurationTextOptions,
-    DurationUnitSuffixSet,
+    DurationUnitParseMode,
     SuffixlessDurationPolicy,
     parse_duration_text,
 };
@@ -101,7 +101,7 @@ fn parse_duration(
     let value = normalize(value, options, to)?;
     let text_options = DurationTextOptions::new(
         options.duration().suffixless_string_policy(),
-        options.duration().unit_suffix_set(),
+        options.duration().unit_parse_mode(),
     )
     .with_max_text_bytes(options.duration().max_text_bytes());
     match parse_duration_text(value, &text_options) {
@@ -123,25 +123,32 @@ fn parse_duration(
                 to,
                 InvalidValueReason::InvalidSyntax {
                     expected: if suffix_required {
-                        match options.duration().unit_suffix_set() {
-                            DurationUnitSuffixSet::Ascii => {
-                                "[0-9]+(ns|us|ms|s|m|h|d)"
+                        match options.duration().unit_parse_mode() {
+                            DurationUnitParseMode::Strict => {
+                                "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)"
                             }
-                            DurationUnitSuffixSet::Extended => {
-                                "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)"
+                            DurationUnitParseMode::Lenient => {
+                                "[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)"
                             }
                         }
                     } else {
-                        match options.duration().unit_suffix_set() {
-                            DurationUnitSuffixSet::Ascii => {
-                                "[0-9]+(ns|us|ms|s|m|h|d)?"
+                        match options.duration().unit_parse_mode() {
+                            DurationUnitParseMode::Strict => {
+                                "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)?"
                             }
-                            DurationUnitSuffixSet::Extended => {
-                                "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?"
+                            DurationUnitParseMode::Lenient => {
+                                "[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)?"
                             }
                         }
                     },
                 },
+            ))
+        }
+        Err(DurationParseError::NonCanonicalUnit { canonical, .. }) => {
+            Err(DataConversionError::invalid(
+                DataType::String,
+                to,
+                InvalidValueReason::NonCanonicalDurationUnit { canonical },
             ))
         }
         Err(DurationParseError::UnsupportedUnit { .. }) => {
@@ -233,7 +240,7 @@ pub(super) fn format_duration(
     if options.duration().append_unit_suffix() {
         Ok(format!(
             "{units}{}",
-            options.duration().output_unit().suffix()
+            options.duration().output_unit().symbol()
         ))
     } else {
         Ok(units.to_string())

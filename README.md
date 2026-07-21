@@ -161,8 +161,8 @@ resource caps. Errors retain type context but never retain the source value.
 - `boolean`: accepted literals, case sensitivity, and numeric policy.
 - `collection`: scalar splitting, delimiters, trimming, empty items, and the
   maximum number of retained items.
-- `duration`: numeric input unit, suffixless input, accepted suffix set, output
-  unit, suffix formatting, rounding, and source-text byte limit.
+- `duration`: numeric input unit, suffixless input policy, unit parse mode,
+  output unit, suffix formatting, rounding, and source-text byte limit.
 
 `strict()` is the default. `env_friendly()` trims strings, accepts common
 Boolean literals, enables comma-separated scalar collections, and relaxes only
@@ -201,17 +201,21 @@ disjoint under the selected case-sensitivity rule.
 ## 8. Strings, duration, and rich formats
 
 Strings are not trimmed by default. Blank values can be preserved, treated as
-missing, or rejected. The default extended Duration suffix set accepts
-`[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?`; the ASCII suffix set excludes `µs` and
-`μs`. Input and output units are configured independently. Exact Duration
-output requires divisibility by the output unit; half-up rounding must be
-selected explicitly.
+missing, or rejected. The default Duration policy rejects suffixless text and
+uses Strict parsing: `[0-9]+(ns|us|µs|μs|ms|s|min|h|d)`. Strict accepts the
+ASCII `us`, micro-sign `µs`, and Greek-mu `μs` microsecond spellings. Lenient
+parsing additionally accepts the non-canonical minute alias `m`:
+`[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)`. `DurationConversionOptions::env_friendly()`
+uses Lenient parsing and interprets suffixless integers as milliseconds.
+Input and output units are configured independently. Exact Duration output
+requires divisibility by the output unit; half-up rounding must be selected
+explicitly. Output always uses `µs` for microseconds and `min` for minutes.
 
-With only the `duration` feature, `DurationTextOptions` selects suffixless and
-ASCII-versus-extended suffix policies and bounds input to 1 MiB by default.
+With only the `duration` feature, `DurationTextOptions` selects the suffixless
+policy and unit parse mode and bounds input to 1 MiB by default.
 `parse_duration_text` enforces that byte limit before suffix processing,
 performs checked parsing without implicit trimming, and `format_duration_exact`
-selects the largest exact canonical unit.
+selects the largest exact preferred unit.
 
 Canonical rich strings are: `YYYY-MM-DD` for dates,
 `HH:MM:SS[.fraction]` for times, RFC 3339 for instants, absolute URLs, standard

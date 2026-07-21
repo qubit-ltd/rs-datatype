@@ -13,41 +13,40 @@ use qubit_datatype::{
     DurationParseError,
     DurationTextOptions,
     DurationUnit,
-    DurationUnitSuffixSet,
+    DurationUnitParseMode,
     SuffixlessDurationPolicy,
     parse_duration_text,
 };
 
-/// Tests ASCII and extended microsecond suffix profiles.
+/// Tests strict and lenient unit symbol parsing.
 #[test]
-fn test_parse_duration_text_respects_suffix_set() {
-    let ascii = DurationTextOptions::default()
-        .with_unit_suffix_set(DurationUnitSuffixSet::Ascii);
-    let extended = DurationTextOptions::default();
+fn test_parse_duration_text_respects_parse_mode() {
+    let strict = DurationTextOptions::default();
+    let lenient = strict.with_unit_parse_mode(DurationUnitParseMode::Lenient);
 
+    for text in ["2us", "2µs", "2μs"] {
+        assert_eq!(
+            parse_duration_text(text, &strict),
+            Ok(Duration::from_micros(2)),
+        );
+    }
     assert_eq!(
-        parse_duration_text("2us", &ascii),
-        Ok(Duration::from_micros(2)),
+        parse_duration_text("2m", &strict),
+        Err(DurationParseError::NonCanonicalUnit {
+            unit: "m".to_owned(),
+            canonical: "min".to_owned(),
+        }),
     );
     assert_eq!(
-        parse_duration_text("2µs", &ascii),
-        Err(DurationParseError::InvalidSyntax),
-    );
-    assert_eq!(
-        parse_duration_text("2µs", &extended),
-        Ok(Duration::from_micros(2)),
-    );
-    assert_eq!(
-        parse_duration_text("2μs", &extended),
-        Ok(Duration::from_micros(2)),
+        parse_duration_text("2m", &lenient),
+        Ok(Duration::from_secs(120)),
     );
 }
 
 /// Tests rejection and assignment policies for suffixless text.
 #[test]
 fn test_parse_duration_text_respects_suffixless_policy() {
-    let reject = DurationTextOptions::default()
-        .with_suffixless_policy(SuffixlessDurationPolicy::Reject);
+    let reject = DurationTextOptions::default();
     let seconds = DurationTextOptions::default().with_suffixless_policy(
         SuffixlessDurationPolicy::Assume(DurationUnit::Seconds),
     );
@@ -100,11 +99,19 @@ fn test_parse_duration_text_enforces_byte_limit() {
         Ok(Duration::from_millis(2)),
     );
     assert_eq!(
+        parse_duration_text("2us", &options),
+        Ok(Duration::from_micros(2)),
+    );
+    assert_eq!(
         parse_duration_text("20ms", &options),
         Err(DurationParseError::LimitExceeded { maximum: 3 }),
     );
     assert_eq!(
         parse_duration_text("2µs", &options),
+        Err(DurationParseError::LimitExceeded { maximum: 3 }),
+    );
+    assert_eq!(
+        parse_duration_text("2μs", &options),
         Err(DurationParseError::LimitExceeded { maximum: 3 }),
     );
     assert_eq!(

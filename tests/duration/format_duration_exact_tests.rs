@@ -11,7 +11,6 @@ use std::time::Duration;
 
 use qubit_datatype::{
     DurationTextOptions,
-    DurationUnitSuffixSet,
     format_duration_exact,
     parse_duration_text,
 };
@@ -19,16 +18,15 @@ use qubit_datatype::{
 /// Tests canonical formatting and round-tripping at semantic boundaries.
 #[test]
 fn test_format_duration_exact_round_trips_boundaries() {
-    let options = DurationTextOptions::default()
-        .with_unit_suffix_set(DurationUnitSuffixSet::Ascii);
+    let options = DurationTextOptions::default();
     let cases = [
         (Duration::ZERO, "0ms"),
         (Duration::from_secs(172_800), "2d"),
         (Duration::from_secs(7_200), "2h"),
-        (Duration::from_secs(120), "2m"),
+        (Duration::from_secs(120), "2min"),
         (Duration::from_secs(42), "42s"),
         (Duration::from_millis(2_500), "2500ms"),
-        (Duration::from_micros(500), "500us"),
+        (Duration::from_micros(500), "500µs"),
         (Duration::from_nanos(42), "42ns"),
     ];
 

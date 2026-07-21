@@ -43,6 +43,12 @@ pub enum InvalidValueReason {
     /// A negative value cannot represent a duration.
     #[error("negative duration")]
     NegativeDuration,
+    /// The duration suffix is accepted only in a different strict spelling.
+    #[error("non-canonical duration unit; use {canonical}")]
+    NonCanonicalDurationUnit {
+        /// Preferred strict duration unit symbol suggested to the caller.
+        canonical: String,
+    },
     /// The duration suffix is not supported.
     #[error("unsupported duration unit")]
     UnsupportedDurationUnit,
