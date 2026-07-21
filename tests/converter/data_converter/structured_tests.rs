@@ -263,7 +263,7 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
         assert_invalid_syntax(
             DataConverter::from(value).to::<Duration>(),
             DataType::Duration,
-            "[0-9]+(ns|us|µs|μs|ms|s|m|h|d)?",
+            "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)?",
         );
     }
     assert_invalid_reason(

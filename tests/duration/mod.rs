@@ -10,7 +10,7 @@
 mod duration_overflow_error_tests;
 mod duration_parse_error_tests;
 mod duration_text_options_tests;
-mod duration_unit_suffix_set_tests;
+mod duration_unit_parse_mode_tests;
 mod duration_unit_tests;
 mod format_duration_exact_tests;
 mod parse_duration_text_tests;

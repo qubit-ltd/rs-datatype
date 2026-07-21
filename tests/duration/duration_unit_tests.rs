@@ -11,21 +11,29 @@ use std::time::Duration;
 
 use qubit_datatype::{
     DurationOverflowError,
+    DurationParseError,
     DurationUnit,
 };
 
-/// Tests unit suffix parsing.
+/// Tests strict and lenient Duration unit symbol parsing.
 #[test]
-fn test_duration_unit_parses_suffixes() {
+fn test_duration_unit_parses_symbols() {
+    for symbol in ["us", "µs", "μs"] {
+        assert_eq!(
+            DurationUnit::parse_strict(symbol),
+            Ok(DurationUnit::Microseconds),
+        );
+    }
     assert_eq!(
-        DurationUnit::from_suffix("ms"),
-        Some(DurationUnit::Milliseconds),
+        DurationUnit::parse_strict("m"),
+        Err(DurationParseError::NonCanonicalUnit {
+            unit: "m".to_owned(),
+            canonical: "min".to_owned(),
+        }),
     );
-    assert_eq!(
-        DurationUnit::from_suffix("µs"),
-        Some(DurationUnit::Microseconds),
-    );
-    assert_eq!(DurationUnit::from_suffix("unknown"), None);
+    assert_eq!(DurationUnit::parse_lenient("m"), Ok(DurationUnit::Minutes),);
+    assert_eq!(DurationUnit::Microseconds.symbol(), "µs");
+    assert_eq!(DurationUnit::Minutes.symbol(), "min");
 }
 
 /// Tests exact and half-up conversion to unit counts.

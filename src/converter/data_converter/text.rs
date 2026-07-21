@@ -22,8 +22,9 @@ use url::Url;
 use super::DataConverter;
 use super::duration::format_duration;
 use super::string_source::normalize;
+#[cfg(feature = "url")]
+use crate::converter::ConversionLimit;
 use crate::converter::{
-    ConversionLimit,
     DataConversionError,
     DataConversionOptions,
     DataConversionTarget,

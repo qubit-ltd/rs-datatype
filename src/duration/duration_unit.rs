@@ -14,7 +14,10 @@ use serde::{
     Serialize,
 };
 
-use super::DurationOverflowError;
+use super::{
+    DurationOverflowError,
+    DurationParseError,
+};
 
 /// Unit used to interpret or format a Duration value.
 #[must_use]
@@ -41,43 +44,116 @@ pub enum DurationUnit {
 }
 
 impl DurationUnit {
-    /// Parses a supported Duration unit suffix.
+    /// Parses a Duration unit symbol accepted by strict mode.
     ///
     /// # Parameters
     ///
-    /// * `suffix` - Candidate unit suffix.
+    /// * `symbol` - Unit suffix without its numeric prefix.
     ///
     /// # Returns
     ///
-    /// The matched unit, including Unicode microsecond aliases, or `None`.
+    /// The unit represented by a stable strict symbol.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DurationParseError::NonCanonicalUnit`] when `symbol` is a
+    /// Lenient-only alias, or [`DurationParseError::UnsupportedUnit`] when it
+    /// is not a supported unit symbol.
     #[inline]
-    pub fn from_suffix(suffix: &str) -> Option<Self> {
-        match suffix {
+    pub fn parse_strict(symbol: &str) -> Result<Self, DurationParseError> {
+        if let Some(unit) = Self::strict_symbol(symbol) {
+            return Ok(unit);
+        }
+        if let Some((_, canonical)) = Self::lenient_alias(symbol) {
+            return Err(DurationParseError::NonCanonicalUnit {
+                unit: symbol.to_owned(),
+                canonical: canonical.to_owned(),
+            });
+        }
+        Err(DurationParseError::UnsupportedUnit {
+            unit: symbol.to_owned(),
+        })
+    }
+
+    /// Parses a Duration unit symbol accepted by lenient mode.
+    ///
+    /// # Parameters
+    ///
+    /// * `symbol` - Unit suffix without its numeric prefix.
+    ///
+    /// # Returns
+    ///
+    /// The unit represented by a strict symbol or documented Lenient-only
+    /// alias.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DurationParseError::UnsupportedUnit`] when `symbol` is not a
+    /// supported unit symbol.
+    #[inline]
+    pub fn parse_lenient(symbol: &str) -> Result<Self, DurationParseError> {
+        Self::strict_symbol(symbol)
+            .or_else(|| Self::lenient_alias(symbol).map(|(unit, _)| unit))
+            .ok_or_else(|| DurationParseError::UnsupportedUnit {
+                unit: symbol.to_owned(),
+            })
+    }
+
+    /// Resolves a stable symbol accepted by strict mode.
+    ///
+    /// # Parameters
+    ///
+    /// * `symbol` - Unit suffix without its numeric prefix.
+    ///
+    /// # Returns
+    ///
+    /// `Some` containing the represented unit when `symbol` is accepted by
+    /// strict mode; otherwise, `None`.
+    fn strict_symbol(symbol: &str) -> Option<Self> {
+        match symbol {
             "ns" => Some(Self::Nanoseconds),
             "us" | "µs" | "μs" => Some(Self::Microseconds),
             "ms" => Some(Self::Milliseconds),
             "s" => Some(Self::Seconds),
-            "m" => Some(Self::Minutes),
+            "min" => Some(Self::Minutes),
             "h" => Some(Self::Hours),
             "d" => Some(Self::Days),
             _ => None,
         }
     }
 
-    /// Returns the canonical ASCII suffix for this unit.
+    /// Resolves an alias accepted only by lenient mode.
+    ///
+    /// # Parameters
+    ///
+    /// * `symbol` - Unit suffix without its numeric prefix.
     ///
     /// # Returns
     ///
-    /// The canonical suffix.
+    /// `Some` containing the represented unit and its preferred output symbol
+    /// when `symbol` is a Lenient-only alias; otherwise, `None`.
+    fn lenient_alias(symbol: &str) -> Option<(Self, &'static str)> {
+        match symbol {
+            "m" => Some((Self::Minutes, "min")),
+            _ => None,
+        }
+    }
+
+    /// Returns the preferred Duration unit symbol for output.
+    ///
+    /// # Returns
+    ///
+    /// The preferred suffix, which is `µs` for microseconds and `min` for
+    /// minutes.
     #[must_use]
     #[inline(always)]
-    pub const fn suffix(self) -> &'static str {
+    pub const fn symbol(self) -> &'static str {
         match self {
             Self::Nanoseconds => "ns",
-            Self::Microseconds => "us",
+            Self::Microseconds => "µs",
             Self::Milliseconds => "ms",
             Self::Seconds => "s",
-            Self::Minutes => "m",
+            Self::Minutes => "min",
             Self::Hours => "h",
             Self::Days => "d",
         }

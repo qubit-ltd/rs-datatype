@@ -13,7 +13,7 @@ use super::{
     DurationParseError,
     DurationTextOptions,
     DurationUnit,
-    DurationUnitSuffixSet,
+    DurationUnitParseMode,
     SuffixlessDurationPolicy,
 };
 
@@ -35,8 +35,9 @@ use super::{
 /// Returns [`DurationParseError::LimitExceeded`] when the source text exceeds
 /// the configured byte limit, [`DurationParseError::InvalidSyntax`] for
 /// malformed text, [`DurationParseError::UnsupportedUnit`] for an unknown
-/// alphabetic suffix, and [`DurationParseError::OutOfRange`] for numeric or
-/// Duration overflow.
+/// alphabetic suffix, [`DurationParseError::NonCanonicalUnit`] for a
+/// Lenient-only alias in strict mode, and [`DurationParseError::OutOfRange`]
+/// for numeric or Duration overflow.
 pub fn parse_duration_text(
     text: &str,
     options: &DurationTextOptions,
@@ -75,8 +76,9 @@ pub fn parse_duration_text(
 ///
 /// # Errors
 ///
-/// Returns invalid syntax for a rejected omission or malformed suffix, and
-/// unsupported unit for an unknown alphabetic suffix.
+/// Returns invalid syntax for a rejected omission or malformed suffix,
+/// [`DurationParseError::NonCanonicalUnit`] for a Lenient-only alias in
+/// strict mode, and unsupported unit for an unknown alphabetic suffix.
 fn resolve_unit(
     suffix: &str,
     options: &DurationTextOptions,
@@ -89,51 +91,17 @@ fn resolve_unit(
             SuffixlessDurationPolicy::Assume(unit) => Ok(unit),
         };
     }
-    if let Some(unit) = explicit_unit(suffix, options.unit_suffix_set()) {
-        return Ok(unit);
-    }
-    let alphabetic = match options.unit_suffix_set() {
-        DurationUnitSuffixSet::Ascii => {
-            suffix.bytes().all(|byte| byte.is_ascii_alphabetic())
-        }
-        DurationUnitSuffixSet::Extended => {
-            suffix.chars().all(char::is_alphabetic)
-        }
+    let result = match options.unit_parse_mode() {
+        DurationUnitParseMode::Strict => DurationUnit::parse_strict(suffix),
+        DurationUnitParseMode::Lenient => DurationUnit::parse_lenient(suffix),
     };
-    if alphabetic {
-        Err(DurationParseError::UnsupportedUnit {
-            unit: suffix.to_owned(),
-        })
-    } else {
-        Err(DurationParseError::InvalidSyntax)
-    }
-}
-
-/// Matches a suffix from the selected supported set.
-///
-/// # Parameters
-///
-/// * `suffix` - Explicit suffix to match.
-/// * `suffix_set` - Accepted ASCII or extended suffix profile.
-///
-/// # Returns
-///
-/// The matching unit, or `None` for an unsupported suffix.
-fn explicit_unit(
-    suffix: &str,
-    suffix_set: DurationUnitSuffixSet,
-) -> Option<DurationUnit> {
-    match suffix {
-        "ns" => Some(DurationUnit::Nanoseconds),
-        "us" => Some(DurationUnit::Microseconds),
-        "ms" => Some(DurationUnit::Milliseconds),
-        "s" => Some(DurationUnit::Seconds),
-        "m" => Some(DurationUnit::Minutes),
-        "h" => Some(DurationUnit::Hours),
-        "d" => Some(DurationUnit::Days),
-        "µs" | "μs" if suffix_set == DurationUnitSuffixSet::Extended => {
-            Some(DurationUnit::Microseconds)
+    match result {
+        Ok(unit) => Ok(unit),
+        Err(DurationParseError::UnsupportedUnit { .. })
+            if !suffix.chars().all(char::is_alphabetic) =>
+        {
+            Err(DurationParseError::InvalidSyntax)
         }
-        _ => None,
+        Err(error) => Err(error),
     }
 }

@@ -5,23 +5,23 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Supported suffix sets for Duration text parsing.
+//! Strictness modes for Duration unit symbols.
 
 use serde::{
     Deserialize,
     Serialize,
 };
 
-/// Selects the unit suffixes accepted by Duration text parsing.
+/// Selects the accepted Duration unit symbol set.
 #[must_use]
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
 )]
 #[serde(rename_all = "snake_case")]
-pub enum DurationUnitSuffixSet {
-    /// Accept only ASCII suffixes, including `us` for microseconds.
-    Ascii,
-    /// Additionally accept `µs` and `μs` as microsecond aliases.
+pub enum DurationUnitParseMode {
+    /// Accept stable strict symbols, including `us`, `µs`, and `μs`.
     #[default]
-    Extended,
+    Strict,
+    /// Additionally accept documented non-canonical aliases such as `m`.
+    Lenient,
 }

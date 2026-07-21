@@ -9,8 +9,7 @@
 
 use qubit_datatype::{
     DurationTextOptions,
-    DurationUnit,
-    DurationUnitSuffixSet,
+    DurationUnitParseMode,
     SuffixlessDurationPolicy,
 };
 
@@ -20,8 +19,8 @@ fn test_duration_text_options_builders() {
     assert_eq!(
         DurationTextOptions::default(),
         DurationTextOptions::new(
-            SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds),
-            DurationUnitSuffixSet::Extended,
+            SuffixlessDurationPolicy::Reject,
+            DurationUnitParseMode::Strict,
         ),
     );
     assert_eq!(
@@ -31,12 +30,12 @@ fn test_duration_text_options_builders() {
 
     let options = DurationTextOptions::default()
         .with_suffixless_policy(SuffixlessDurationPolicy::Reject)
-        .with_unit_suffix_set(DurationUnitSuffixSet::Ascii)
+        .with_unit_parse_mode(DurationUnitParseMode::Lenient)
         .with_max_text_bytes(4_096);
     assert_eq!(
         options.suffixless_policy(),
         SuffixlessDurationPolicy::Reject,
     );
-    assert_eq!(options.unit_suffix_set(), DurationUnitSuffixSet::Ascii);
+    assert_eq!(options.unit_parse_mode(), DurationUnitParseMode::Lenient);
     assert_eq!(options.max_text_bytes(), 4_096);
 }
