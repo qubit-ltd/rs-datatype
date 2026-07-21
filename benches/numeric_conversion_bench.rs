@@ -17,7 +17,20 @@ use qubit_datatype::{
     DataConversionOptions,
     DataConverter,
 };
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use qubit_datatype::{
+    NumericConversionLimits,
+    NumericConversionOptions,
+};
 use std::hint::black_box;
+
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+const BIG_NUMBER_TEXT_SIZES: [(&str, usize); 4] = [
+    ("1KiB", 1024),
+    ("16KiB", 16 * 1024),
+    ("64KiB", 64 * 1024),
+    ("256KiB", 256 * 1024),
+];
 
 /// Benchmarks representative exact integer text conversions.
 fn benchmark_exact_integer_text(c: &mut Criterion) {
@@ -99,10 +112,84 @@ fn benchmark_exact_float_text(c: &mut Criterion) {
     group.finish();
 }
 
+/// Benchmarks text-to-BigInt parsing across representative input sizes.
+fn benchmark_big_integer_text(c: &mut Criterion) {
+    #[cfg(feature = "big-integer")]
+    {
+        let mut group = c.benchmark_group("numeric_text_to_big_integer");
+        for (name, digits) in BIG_NUMBER_TEXT_SIZES {
+            let source = "9".repeat(digits);
+            let options = DataConversionOptions::strict().with_numeric_options(
+                NumericConversionOptions::strict().with_limits(
+                    NumericConversionLimits::default()
+                        .with_max_text_bytes(digits)
+                        .with_max_big_integer_digits(digits),
+                ),
+            );
+            group.bench_with_input(
+                BenchmarkId::from_parameter(name),
+                &source,
+                |b, source| {
+                    b.iter(|| {
+                        black_box(
+                            DataConverter::from(black_box(source.as_str()))
+                                .to_with::<num_bigint::BigInt>(black_box(
+                                    &options,
+                                ))
+                                .expect("benchmark integer text should parse"),
+                        )
+                    });
+                },
+            );
+        }
+        group.finish();
+    }
+    #[cfg(not(feature = "big-integer"))]
+    let _ = c;
+}
+
+/// Benchmarks text-to-BigDecimal parsing across representative input sizes.
+fn benchmark_big_decimal_text(c: &mut Criterion) {
+    #[cfg(feature = "big-decimal")]
+    {
+        let mut group = c.benchmark_group("numeric_text_to_big_decimal");
+        for (name, digits) in BIG_NUMBER_TEXT_SIZES {
+            let source = "9".repeat(digits);
+            let options = DataConversionOptions::strict().with_numeric_options(
+                NumericConversionOptions::strict().with_limits(
+                    NumericConversionLimits::default()
+                        .with_max_text_bytes(digits)
+                        .with_max_big_integer_digits(digits),
+                ),
+            );
+            group.bench_with_input(
+                BenchmarkId::from_parameter(name),
+                &source,
+                |b, source| {
+                    b.iter(|| {
+                        black_box(
+                            DataConverter::from(black_box(source.as_str()))
+                                .to_with::<bigdecimal::BigDecimal>(black_box(
+                                    &options,
+                                ))
+                                .expect("benchmark decimal text should parse"),
+                        )
+                    });
+                },
+            );
+        }
+        group.finish();
+    }
+    #[cfg(not(feature = "big-decimal"))]
+    let _ = c;
+}
+
 criterion_group!(
     benches,
     benchmark_exact_integer_text,
     benchmark_lossy_integer_text,
     benchmark_exact_float_text,
+    benchmark_big_integer_text,
+    benchmark_big_decimal_text,
 );
 criterion_main!(benches);
