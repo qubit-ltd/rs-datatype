@@ -48,13 +48,15 @@ qubit-datatype = { version = "0.8", default-features = false, features = ["conve
 | --- | --- |
 | `duration` | Duration units, checked arithmetic, text parsing, and exact formatting |
 | `converter` | Scalar, string, Duration, map, batch, and option APIs; includes `duration` |
-| `chrono` | Chrono type mappings and conversions |
-| `big-integer` | `BigInt` mappings and conversions |
-| `big-decimal` | `BigDecimal` mappings and conversions |
+| `chrono` | Chrono type mappings; conversion support when combined with `converter` |
+| `big-integer` | `BigInt` mappings; conversion support when combined with `converter` |
+| `big-decimal` | `BigDecimal` mappings; conversion support when combined with `converter` |
 | `big-number` | Compatibility alias for `big-integer` and `big-decimal` |
-| `url` | `Url` mapping and conversion |
-| `json` | `serde_json::Value`, JSON text, and StringMap JSON conversion |
+| `url` | `Url` mapping; conversion support when combined with `converter` |
+| `json` | `serde_json::Value` mapping; JSON text and StringMap conversion when combined with `converter` |
 | `all` | `converter` plus every rich-type feature |
+
+Rich-type features do not enable `converter` by themselves.
 
 `HashMap<String, String>` identity conversion is part of `converter`; parsing
 or formatting that map as JSON additionally needs `json`.
@@ -142,10 +144,12 @@ Rich targets require their matching feature.
 | StringMap | StringMap; JSON and `String` with `json` |
 | JSON | `String` |
 
-Unsupported pairs return `DataConversionError::Unsupported`; typed unset
-sources return `Missing`; malformed or policy-rejected values return
-`InvalidValue`, and configured resource caps return `LimitExceeded`. Errors
-retain type context but never retain the source value.
+Inspect `DataConversionError::kind()` for the stable classification:
+`DataConversionErrorKind::Unsupported` identifies unsupported pairs,
+`Missing` identifies typed unset sources, `EmptyCollection` identifies an
+empty collection where a first value was requested, `InvalidValue` identifies
+malformed or policy-rejected values, and `LimitExceeded` identifies configured
+resource caps. Errors retain type context but never retain the source value.
 
 ## 7. Options and input profiles
 

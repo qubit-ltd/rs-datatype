@@ -61,16 +61,8 @@ use strum::{Display, EnumString, IntoStaticStr, VariantArray};
 /// ```rust
 /// use qubit_datatype::DataType;
 ///
-/// fn is_numeric(data_type: DataType) -> bool {
-///     matches!(data_type,
-///         DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64 | DataType::Int128 |
-///         DataType::UInt8 | DataType::UInt16 | DataType::UInt32 | DataType::UInt64 | DataType::UInt128 |
-///         DataType::Float32 | DataType::Float64 | DataType::BigInteger | DataType::BigDecimal
-///     )
-/// }
-///
-/// assert!(is_numeric(DataType::Int32));
-/// assert!(!is_numeric(DataType::String));
+/// assert!(DataType::Int32.is_numeric());
+/// assert!(!DataType::String.is_numeric());
 /// ```
 ///
 /// ## Serialization
