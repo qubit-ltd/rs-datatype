@@ -13,13 +13,13 @@ use qubit_datatype::converter::NumericConversionLimits;
 #[test]
 fn test_numeric_conversion_limits_contract() {
     let defaults = NumericConversionLimits::default();
-    assert_eq!(NumericConversionLimits::DEFAULT_MAX_TEXT_BYTES, 1_048_576,);
+    assert_eq!(NumericConversionLimits::DEFAULT_MAX_TEXT_BYTES, 16_384);
     assert_eq!(
         NumericConversionLimits::DEFAULT_MAX_BIG_INTEGER_DIGITS,
-        1_000_000,
+        16_384,
     );
-    assert_eq!(defaults.max_text_bytes(), 1_048_576);
-    assert_eq!(defaults.max_big_integer_digits(), 1_000_000);
+    assert_eq!(defaults.max_text_bytes(), 16_384);
+    assert_eq!(defaults.max_big_integer_digits(), 16_384);
 
     let limits = defaults
         .with_max_text_bytes(32)
