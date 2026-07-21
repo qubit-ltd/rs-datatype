@@ -12,7 +12,21 @@
 use serde::{Deserialize, Serialize};
 
 /// Structured data format used by a conversion operation.
+///
+/// This enum may gain additional formats in future releases. External
+/// matches must include a wildcard arm.
+///
+/// ```compile_fail
+/// use qubit_datatype::DataFormat;
+///
+/// fn format_name(format: DataFormat) -> &'static str {
+///     match format {
+///         DataFormat::Json => "json",
+///     }
+/// }
+/// ```
 #[must_use]
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DataFormat {
