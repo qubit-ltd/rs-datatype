@@ -423,6 +423,22 @@ fn test_data_converter_duration_text_honors_suffix_set() {
         DataConverter::from("2µs").to::<Duration>(),
         Ok(Duration::from_micros(2)),
     );
+
+    let reject_suffixless_ascii = DataConversionOptions::strict()
+        .with_duration_options(
+            DurationConversionOptions::default()
+                .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject)
+                .with_unit_suffix_set(DurationUnitSuffixSet::Ascii),
+        );
+    let error = DataConverter::from("2")
+        .to_with::<Duration>(&reject_suffixless_ascii)
+        .expect_err("suffixless ASCII input should be rejected");
+    assert_eq!(
+        error.reason(),
+        Some(&InvalidValueReason::InvalidSyntax {
+            expected: "[0-9]+(ns|us|ms|s|m|h|d)",
+        }),
+    );
 }
 
 /// Test large unit counts that still fit in `Duration` after decomposition.

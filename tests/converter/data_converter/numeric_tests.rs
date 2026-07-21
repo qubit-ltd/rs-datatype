@@ -399,6 +399,17 @@ fn test_data_converter_big_number_conversions_check_range() {
     assert!((converted - 123.75).abs() < f64::EPSILON);
 }
 
+/// Test BigInt and BigDecimal values in the unsigned-only `u128` range.
+#[test]
+fn test_data_converter_big_numbers_preserve_unsigned_only_u128_values() {
+    let expected = 1_u128 << 127;
+    let big_int = BigInt::from(expected);
+    let big_decimal = BigDecimal::from(big_int.clone());
+
+    assert_eq!(DataConverter::from(&big_int).to::<u128>(), Ok(expected));
+    assert_eq!(DataConverter::from(&big_decimal).to::<u128>(), Ok(expected),);
+}
+
 /// Test the focused numeric module applies explicit lossy conversion.
 #[test]
 fn test_data_converter_numeric_lossy_conversion() {

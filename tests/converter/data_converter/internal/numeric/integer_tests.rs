@@ -49,6 +49,25 @@ fn test_negative_integer_to_f32_checks_target_mantissa() {
     );
 }
 
+/// Verifies negative integer-to-f64 conversion applies the exact mantissa
+/// policy before returning a rounded value.
+#[test]
+fn test_negative_integer_to_f64_checks_target_mantissa() {
+    let source = DataConverter::from(-9_007_199_254_740_993_i64);
+    assert!(matches!(
+        source.to::<f64>(),
+        Err(error)
+            if matches!(
+                error.reason(),
+                Some(InvalidValueReason::PrecisionLoss)
+            )
+    ));
+    assert_eq!(
+        source.to_with::<f64>(&DataConversionOptions::lossy()),
+        Ok(-9_007_199_254_740_992.0),
+    );
+}
+
 /// Verifies integer-to-f32 overflow is rejected before lossy rounding can be
 /// applied.
 #[test]
