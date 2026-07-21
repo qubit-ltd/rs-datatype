@@ -7,6 +7,8 @@
 // =============================================================================
 #![no_main]
 
+use std::cmp::Ordering;
+
 use bigdecimal::BigDecimal;
 use libfuzzer_sys::fuzz_target;
 use num_bigint::BigInt;
@@ -67,6 +69,29 @@ fuzz_target!(|data: &[u8]| {
                     .compare(left, policy)
                     .expect("generated non-NaN numeric values must be ordered");
                 assert_eq!(reverse, forward.reverse());
+            }
+        }
+    }
+
+    for &left in &values {
+        for &middle in &values {
+            for &right in &values {
+                let left_middle = left
+                    .compare(middle, NumericComparisonPolicy::Exact)
+                    .expect("generated non-NaN numeric values must be ordered");
+                let middle_right = middle
+                    .compare(right, NumericComparisonPolicy::Exact)
+                    .expect("generated non-NaN numeric values must be ordered");
+                if left_middle != Ordering::Greater
+                    && middle_right != Ordering::Greater
+                {
+                    let left_right = left
+                        .compare(right, NumericComparisonPolicy::Exact)
+                        .expect(
+                            "generated non-NaN numeric values must be ordered",
+                        );
+                    assert_ne!(left_right, Ordering::Greater);
+                }
             }
         }
     }
