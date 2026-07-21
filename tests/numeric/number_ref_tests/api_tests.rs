@@ -13,7 +13,10 @@ use std::cmp::Ordering;
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-use qubit_datatype::{NumberRef, NumericComparisonPolicy};
+use qubit_datatype::{
+    NumberRef,
+    NumericComparisonPolicy,
+};
 
 /// Verifies classification and sign properties for fixed-width values.
 #[test]
@@ -132,7 +135,8 @@ fn test_number_ref_compare() {
         Some(Ordering::Less),
     );
     assert_eq!(
-        NumberRef::from(f64::NAN).compare(right, NumericComparisonPolicy::Exact),
+        NumberRef::from(f64::NAN)
+            .compare(right, NumericComparisonPolicy::Exact),
         None,
     );
 }

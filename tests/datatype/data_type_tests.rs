@@ -94,7 +94,9 @@ fn test_data_type_all_and_numeric_classifications() {
         ),
         (DataType::Json, false, false, false, false, false, false),
     ];
-    for (data_type, numeric, integer, signed, unsigned, float, big_number) in cases {
+    for (data_type, numeric, integer, signed, unsigned, float, big_number) in
+        cases
+    {
         assert_eq!(data_type.is_numeric(), numeric, "{data_type}");
         assert_eq!(data_type.is_integer(), integer, "{data_type}");
         assert_eq!(data_type.is_signed_integer(), signed, "{data_type}");
@@ -122,8 +124,8 @@ fn test_data_type_protocol_cases() {
             Ok(data_type),
         );
 
-        let serialized =
-            serde_json::to_string(&data_type).expect("DataType serialization should succeed");
+        let serialized = serde_json::to_string(&data_type)
+            .expect("DataType serialization should succeed");
         assert_eq!(serialized, format!("\"{canonical}\""));
         assert_eq!(
             serde_json::from_str::<DataType>(&serialized)

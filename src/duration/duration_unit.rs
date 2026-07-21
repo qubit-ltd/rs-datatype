@@ -9,13 +9,18 @@
 
 use std::time::Duration;
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use super::DurationOverflowError;
 
 /// Unit used to interpret or format a Duration value.
 #[must_use]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum DurationUnit {
     /// Nanoseconds.
@@ -92,7 +97,10 @@ impl DurationUnit {
     ///
     /// Returns [`DurationOverflowError`] when the result exceeds Duration.
     #[inline(always)]
-    pub fn duration_from_u64(self, value: u64) -> Result<Duration, DurationOverflowError> {
+    pub fn duration_from_u64(
+        self,
+        value: u64,
+    ) -> Result<Duration, DurationOverflowError> {
         self.duration_from_u128(u128::from(value))
     }
 
@@ -109,11 +117,20 @@ impl DurationUnit {
     /// # Errors
     ///
     /// Returns [`DurationOverflowError`] when the result exceeds Duration.
-    pub fn duration_from_u128(self, value: u128) -> Result<Duration, DurationOverflowError> {
+    pub fn duration_from_u128(
+        self,
+        value: u128,
+    ) -> Result<Duration, DurationOverflowError> {
         match self {
-            Self::Nanoseconds => duration_from_subseconds(value, 1_000_000_000, 1),
-            Self::Microseconds => duration_from_subseconds(value, 1_000_000, 1_000),
-            Self::Milliseconds => duration_from_subseconds(value, 1_000, 1_000_000),
+            Self::Nanoseconds => {
+                duration_from_subseconds(value, 1_000_000_000, 1)
+            }
+            Self::Microseconds => {
+                duration_from_subseconds(value, 1_000_000, 1_000)
+            }
+            Self::Milliseconds => {
+                duration_from_subseconds(value, 1_000, 1_000_000)
+            }
             Self::Seconds => checked_seconds(value, 1),
             Self::Minutes => checked_seconds(value, 60),
             Self::Hours => checked_seconds(value, 60 * 60),
@@ -199,7 +216,10 @@ impl DurationUnit {
 ///
 /// Returns [`DurationOverflowError`] when multiplication or `Duration`'s
 /// seconds range would overflow.
-fn checked_seconds(value: u128, seconds_per_unit: u128) -> Result<Duration, DurationOverflowError> {
+fn checked_seconds(
+    value: u128,
+    seconds_per_unit: u128,
+) -> Result<Duration, DurationOverflowError> {
     let seconds = value
         .checked_mul(seconds_per_unit)
         .filter(|seconds| *seconds <= u128::from(u64::MAX))

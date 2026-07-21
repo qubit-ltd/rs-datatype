@@ -11,7 +11,10 @@
 
 use qubit_datatype::DataType;
 use qubit_datatype::converter::{
-    ConversionLimit, DataConversionError, DataConversionErrorKind, DataListConversionError,
+    ConversionLimit,
+    DataConversionError,
+    DataConversionErrorKind,
+    DataListConversionError,
     InvalidValueReason,
 };
 
@@ -19,7 +22,11 @@ use qubit_datatype::converter::{
 #[test]
 fn test_data_conversion_error_constructors_and_accessors() {
     let reason = InvalidValueReason::OutOfRange;
-    let error = DataConversionError::invalid(DataType::Int64, DataType::UInt8, reason.clone());
+    let error = DataConversionError::invalid(
+        DataType::Int64,
+        DataType::UInt8,
+        reason.clone(),
+    );
     assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
     assert!(!error.is_missing());
     assert_eq!(error.from_type(), Some(DataType::Int64));
@@ -39,7 +46,11 @@ fn test_data_conversion_error_constructors_and_accessors() {
 #[test]
 fn test_data_conversion_error_limit_exceeded_contract() {
     let limit = ConversionLimit::BigIntegerDigits { maximum: 12 };
-    let error = DataConversionError::limit_exceeded(DataType::String, DataType::BigInteger, limit);
+    let error = DataConversionError::limit_exceeded(
+        DataType::String,
+        DataType::BigInteger,
+        limit,
+    );
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert!(!error.is_missing());

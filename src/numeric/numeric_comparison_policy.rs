@@ -7,7 +7,10 @@
 // =============================================================================
 //! Numeric comparison policy definitions.
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 /// Selects exact or floating-projection numeric comparison.
 ///
@@ -16,7 +19,9 @@ use serde::{Deserialize, Serialize};
 /// and is not transitive, so it must not be used to implement [`Ord`], sort or
 /// group values, or construct keys for ordered maps and sets.
 #[must_use]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum NumericComparisonPolicy {
     /// Preserves exact mathematical values for deterministic ordering.

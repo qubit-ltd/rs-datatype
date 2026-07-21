@@ -23,7 +23,10 @@ mod numeric_conversion_options;
 mod string_conversion_options;
 mod structured_conversion_limits;
 
-pub use crate::duration::{DurationUnit, SuffixlessDurationPolicy};
+pub use crate::duration::{
+    DurationUnit,
+    SuffixlessDurationPolicy,
+};
 pub use blank_string_policy::BlankStringPolicy;
 pub use boolean_conversion_options::BooleanConversionOptions;
 pub use boolean_numeric_policy::BooleanNumericPolicy;
