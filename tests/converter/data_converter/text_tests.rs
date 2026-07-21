@@ -14,10 +14,20 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{
+    DateTime,
+    NaiveDate,
+    NaiveDateTime,
+    NaiveTime,
+    Utc,
+};
 use num_bigint::BigInt;
 use qubit_datatype::{
-    DataConversionError, DataConversionOptions, DataConverter, DataType, InvalidValueReason,
+    DataConversionError,
+    DataConversionOptions,
+    DataConverter,
+    DataType,
+    InvalidValueReason,
     StringConversionOptions,
 };
 use url::Url;
@@ -47,7 +57,10 @@ fn assert_invalid_syntax<T>(
 ///
 /// * `result` - String conversion result to inspect.
 /// * `from` - Expected temporal source type.
-fn assert_non_canonical_year_rejected(result: Result<String, DataConversionError>, from: DataType) {
+fn assert_non_canonical_year_rejected(
+    result: Result<String, DataConversionError>,
+    from: DataType,
+) {
     assert_eq!(
         result,
         Err(DataConversionError::invalid(
@@ -71,13 +84,15 @@ fn test_data_converter_rich_targets_use_canonical_text_formats() {
         DataConverter::from("2026-07-12")
             .to::<NaiveDate>()
             .expect("canonical date should parse"),
-        NaiveDate::from_ymd_opt(2026, 7, 12).expect("test date should be valid"),
+        NaiveDate::from_ymd_opt(2026, 7, 12)
+            .expect("test date should be valid"),
     );
     assert_eq!(
         DataConverter::from("10:11:12.123456789")
             .to::<NaiveTime>()
             .expect("canonical time should parse"),
-        NaiveTime::from_hms_nano_opt(10, 11, 12, 123_456_789).expect("test time should be valid"),
+        NaiveTime::from_hms_nano_opt(10, 11, 12, 123_456_789)
+            .expect("test time should be valid"),
     );
     assert_eq!(
         DataConverter::from("2026-07-12T10:11:12")
@@ -99,7 +114,8 @@ fn test_data_converter_rich_targets_use_canonical_text_formats() {
         DataConverter::from("+12345678901234567890")
             .to::<BigInt>()
             .expect("signed decimal BigInt should parse"),
-        BigInt::from_str("12345678901234567890").expect("expected BigInt should parse"),
+        BigInt::from_str("12345678901234567890")
+            .expect("expected BigInt should parse"),
     );
     assert_eq!(
         DataConverter::from("1.25e3")
@@ -111,7 +127,8 @@ fn test_data_converter_rich_targets_use_canonical_text_formats() {
         DataConverter::from("https://example.com/path")
             .to::<Url>()
             .expect("absolute URL should parse"),
-        Url::parse("https://example.com/path").expect("expected URL should parse"),
+        Url::parse("https://example.com/path")
+            .expect("expected URL should parse"),
     );
     assert_eq!(
         DataConverter::from("[1,true,null]")
@@ -198,12 +215,15 @@ fn test_data_converter_char_target_conversions() {
 /// Test string target conversion for every supported source variant.
 #[test]
 fn test_data_converter_string_target_accepts_all_value_sources() {
-    let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
-    let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
+    let date =
+        NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
+    let time =
+        NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
     let big_int = BigInt::from(18);
-    let big_decimal = BigDecimal::from_str("19.5").expect("test BigDecimal should parse");
+    let big_decimal =
+        BigDecimal::from_str("19.5").expect("test BigDecimal should parse");
     let url = Url::parse("https://example.com").expect("test URL should parse");
     let mut map = HashMap::new();
     map.insert("k".to_string(), "v".to_string());
@@ -255,8 +275,10 @@ fn test_data_converter_string_target_accepts_all_value_sources() {
 /// Test direct strict conversions for non-numeric target types.
 #[test]
 fn test_data_converter_strict_targets_cover_success_and_errors() {
-    let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
-    let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
+    let date =
+        NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
+    let time =
+        NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
     let big_int = BigInt::from(18);
@@ -353,8 +375,10 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
 /// Test temporal and complex conversions with strict target behavior.
 #[test]
 fn test_data_converter_temporal_and_complex_conversions() {
-    let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
-    let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
+    let date =
+        NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
+    let time =
+        NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
 
@@ -394,8 +418,8 @@ fn test_data_converter_temporal_and_complex_conversions() {
 #[test]
 fn test_date_to_string_rejects_non_canonical_years() {
     for year in [-1, 10_000] {
-        let date =
-            NaiveDate::from_ymd_opt(year, 1, 1).expect("test date should be valid in Chrono");
+        let date = NaiveDate::from_ymd_opt(year, 1, 1)
+            .expect("test date should be valid in Chrono");
         assert_non_canonical_year_rejected(
             DataConverter::from(date).to::<String>(),
             DataType::Date,
@@ -406,10 +430,11 @@ fn test_date_to_string_rejects_non_canonical_years() {
 /// Verifies local date-time formatting rejects non-canonical years.
 #[test]
 fn test_datetime_to_string_rejects_non_canonical_years() {
-    let time = NaiveTime::from_hms_opt(0, 0, 0).expect("test time should be valid");
+    let time =
+        NaiveTime::from_hms_opt(0, 0, 0).expect("test time should be valid");
     for year in [-1, 10_000] {
-        let date =
-            NaiveDate::from_ymd_opt(year, 1, 1).expect("test date should be valid in Chrono");
+        let date = NaiveDate::from_ymd_opt(year, 1, 1)
+            .expect("test date should be valid in Chrono");
         let datetime = NaiveDateTime::new(date, time);
         assert_non_canonical_year_rejected(
             DataConverter::from(datetime).to::<String>(),
@@ -421,10 +446,11 @@ fn test_datetime_to_string_rejects_non_canonical_years() {
 /// Verifies UTC instant formatting rejects non-canonical years.
 #[test]
 fn test_instant_to_string_rejects_non_canonical_years() {
-    let time = NaiveTime::from_hms_opt(0, 0, 0).expect("test time should be valid");
+    let time =
+        NaiveTime::from_hms_opt(0, 0, 0).expect("test time should be valid");
     for year in [-1, 10_000] {
-        let date =
-            NaiveDate::from_ymd_opt(year, 1, 1).expect("test date should be valid in Chrono");
+        let date = NaiveDate::from_ymd_opt(year, 1, 1)
+            .expect("test date should be valid in Chrono");
         let datetime = NaiveDateTime::new(date, time);
         let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
         assert_non_canonical_year_rejected(
@@ -453,8 +479,9 @@ fn test_data_converter_consuming_string_identity_reuses_owned_storage() {
         .expect("borrowed String identity conversion should succeed");
     assert_ne!(converted.as_ptr(), borrowed_pointer);
 
-    let options = DataConversionOptions::default()
-        .with_string_options(StringConversionOptions::default().with_trim(true));
+    let options = DataConversionOptions::default().with_string_options(
+        StringConversionOptions::default().with_trim(true),
+    );
     let trimmed = DataConverter::from(String::from("  payload  "))
         .into_target_with::<String>(&options)
         .expect("consuming String conversion should still trim text");
@@ -464,11 +491,22 @@ fn test_data_converter_consuming_string_identity_reuses_owned_storage() {
 /// Verifies consuming URL conversion reuses owned URL storage.
 #[test]
 fn test_data_converter_consuming_url_identity_reuses_owned_storage() {
-    let source = Url::parse("https://example.com/owned-payload").expect("test URL should parse");
+    let source = Url::parse("https://example.com/owned-payload")
+        .expect("test URL should parse");
     let source_pointer = source.as_str().as_ptr();
     let converted = DataConverter::from(source)
         .into_target::<Url>()
         .expect("owned URL identity conversion should succeed");
 
     assert_eq!(converted.as_str().as_ptr(), source_pointer);
+
+    let converted = DataConverter::from(String::from(
+        "https://example.com/non-identity-source",
+    ))
+    .into_target::<Url>()
+    .expect("owned URL text should convert through the borrowed path");
+    assert_eq!(
+        converted.as_str(),
+        "https://example.com/non-identity-source",
+    );
 }
