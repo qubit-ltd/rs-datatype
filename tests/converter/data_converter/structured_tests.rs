@@ -51,15 +51,11 @@ use chrono::{
     feature = "json"
 ))]
 use num_bigint::BigInt;
-#[cfg(all(
-    feature = "json",
-    not(all(feature = "big-number", feature = "chrono", feature = "url",)),
-))]
-use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConverter;
-#[cfg(feature = "json")]
+#[cfg(any(feature = "json", feature = "url"))]
 use qubit_datatype::{
     ConversionLimit,
+    DataConversionError,
     DataConversionOptions,
     StructuredConversionLimits,
 };
@@ -70,17 +66,11 @@ use qubit_datatype::{
     feature = "json"
 ))]
 use qubit_datatype::{
-    DataConversionError,
     DataFormat,
     DataType,
     InvalidValueReason,
 };
-#[cfg(all(
-    feature = "big-number",
-    feature = "chrono",
-    feature = "url",
-    feature = "json"
-))]
+#[cfg(feature = "url")]
 use url::Url;
 
 /// Assert an invalid-syntax error with exact source and target types.
@@ -161,6 +151,28 @@ fn test_data_converter_rejects_oversize_structured_text() {
             qubit_datatype::DataType::String,
             qubit_datatype::DataType::StringMap,
             ConversionLimit::StructuredTextBytes { maximum: 2 },
+        )),
+    );
+}
+
+/// Tests that URL parsing enforces the configured structured text byte limit.
+#[cfg(feature = "url")]
+#[test]
+fn test_data_converter_rejects_oversize_url_text() {
+    let options = DataConversionOptions::default().with_structured_limits(
+        StructuredConversionLimits::default().with_max_text_bytes(14),
+    );
+
+    assert_eq!(
+        DataConverter::from("https://a.test").to_with::<Url>(&options),
+        Ok(Url::parse("https://a.test").expect("test URL should parse")),
+    );
+    assert_eq!(
+        DataConverter::from("https://a.test/x").to_with::<Url>(&options),
+        Err(DataConversionError::limit_exceeded(
+            qubit_datatype::DataType::String,
+            qubit_datatype::DataType::Url,
+            ConversionLimit::StructuredTextBytes { maximum: 14 },
         )),
     );
 }

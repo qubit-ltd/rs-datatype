@@ -16,7 +16,7 @@ use serde::{
 /// conversion.
 ///
 /// The text limit applies to UTF-8 bytes after configured string normalization
-/// and covers JSON values plus JSON objects converted to string maps.
+/// and covers JSON values, JSON objects converted to string maps, and URLs.
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
