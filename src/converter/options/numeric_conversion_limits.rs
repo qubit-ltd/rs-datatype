@@ -30,10 +30,10 @@ pub struct NumericConversionLimits {
 
 impl NumericConversionLimits {
     /// Default maximum normalized numeric text length in bytes.
-    pub const DEFAULT_MAX_TEXT_BYTES: usize = 1_048_576;
+    pub const DEFAULT_MAX_TEXT_BYTES: usize = 16_384;
 
     /// Default maximum decimal digits materialized for a BigInt result.
-    pub const DEFAULT_MAX_BIG_INTEGER_DIGITS: usize = 1_000_000;
+    pub const DEFAULT_MAX_BIG_INTEGER_DIGITS: usize = 16_384;
 
     /// Returns the maximum normalized numeric text length in bytes.
     #[inline(always)]
