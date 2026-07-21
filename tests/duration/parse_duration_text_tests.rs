@@ -10,14 +10,19 @@
 use std::time::Duration;
 
 use qubit_datatype::{
-    DurationParseError, DurationTextOptions, DurationUnit, DurationUnitSuffixSet,
-    SuffixlessDurationPolicy, parse_duration_text,
+    DurationParseError,
+    DurationTextOptions,
+    DurationUnit,
+    DurationUnitSuffixSet,
+    SuffixlessDurationPolicy,
+    parse_duration_text,
 };
 
 /// Tests ASCII and extended microsecond suffix profiles.
 #[test]
 fn test_parse_duration_text_respects_suffix_set() {
-    let ascii = DurationTextOptions::default().with_unit_suffix_set(DurationUnitSuffixSet::Ascii);
+    let ascii = DurationTextOptions::default()
+        .with_unit_suffix_set(DurationUnitSuffixSet::Ascii);
     let extended = DurationTextOptions::default();
 
     assert_eq!(
@@ -41,10 +46,11 @@ fn test_parse_duration_text_respects_suffix_set() {
 /// Tests rejection and assignment policies for suffixless text.
 #[test]
 fn test_parse_duration_text_respects_suffixless_policy() {
-    let reject =
-        DurationTextOptions::default().with_suffixless_policy(SuffixlessDurationPolicy::Reject);
-    let seconds = DurationTextOptions::default()
-        .with_suffixless_policy(SuffixlessDurationPolicy::Assume(DurationUnit::Seconds));
+    let reject = DurationTextOptions::default()
+        .with_suffixless_policy(SuffixlessDurationPolicy::Reject);
+    let seconds = DurationTextOptions::default().with_suffixless_policy(
+        SuffixlessDurationPolicy::Assume(DurationUnit::Seconds),
+    );
 
     assert_eq!(
         parse_duration_text("2", &reject),
@@ -72,7 +78,10 @@ fn test_parse_duration_text_classifies_errors() {
         }),
     );
     assert_eq!(
-        parse_duration_text("340282366920938463463374607431768211456ns", &options,),
+        parse_duration_text(
+            "340282366920938463463374607431768211456ns",
+            &options,
+        ),
         Err(DurationParseError::OutOfRange),
     );
     assert_eq!(

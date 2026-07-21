@@ -7,9 +7,16 @@
 // =============================================================================
 //! Fixed-width integer conversion tests.
 
-use proptest::{prop_assert_eq, proptest};
+use proptest::{
+    prop_assert_eq,
+    proptest,
+};
 use qubit_datatype::{
-    DataConversionOptions, DataConverter, FloatRoundingPolicy, NumericConversionOptions,
+    DataConversionOptions,
+    DataConverter,
+    FloatRoundingPolicy,
+    InvalidValueReason,
+    NumericConversionOptions,
 };
 
 /// Verifies exact and lossy integer-to-f32 conversion at the mantissa boundary.
@@ -23,11 +30,45 @@ fn test_integer_to_f32_checks_target_mantissa() {
     );
 }
 
+/// Verifies negative integer-to-f32 conversion preserves the sign while
+/// applying the target mantissa policy.
+#[test]
+fn test_negative_integer_to_f32_checks_target_mantissa() {
+    let source = DataConverter::from(-16_777_217_i32);
+    assert!(matches!(
+        source.to::<f32>(),
+        Err(error)
+            if matches!(
+                error.reason(),
+                Some(InvalidValueReason::PrecisionLoss)
+            )
+    ));
+    assert_eq!(
+        source.to_with::<f32>(&DataConversionOptions::lossy()),
+        Ok(-16_777_216.0),
+    );
+}
+
+/// Verifies integer-to-f32 overflow is rejected before lossy rounding can be
+/// applied.
+#[test]
+fn test_integer_to_f32_rejects_overflow() {
+    let error = DataConverter::from(u128::MAX)
+        .to_with::<f32>(&DataConversionOptions::lossy())
+        .expect_err("u128::MAX must overflow f32");
+
+    assert!(matches!(
+        error.reason(),
+        Some(InvalidValueReason::OutOfRange)
+    ));
+}
+
 /// Verifies numeric-to-float rounding can be enabled independently.
 #[test]
 fn test_numeric_to_float_rounding_is_independent() {
     let options = DataConversionOptions::strict().with_numeric_options(
-        NumericConversionOptions::strict().with_numeric_to_float(FloatRoundingPolicy::NearestEven),
+        NumericConversionOptions::strict()
+            .with_numeric_to_float(FloatRoundingPolicy::NearestEven),
     );
 
     assert_eq!(

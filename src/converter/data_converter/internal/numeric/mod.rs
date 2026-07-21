@@ -18,7 +18,11 @@ mod integer;
 mod parsed_number;
 mod syntax;
 
-pub(in crate::converter::data_converter) use integer::{duration_to_u128, source_to_integer};
+pub(in crate::converter::data_converter) use integer::{
+    duration_to_u128,
+    source_to_integer,
+};
 pub(in crate::converter::data_converter) use syntax::{
-    check_numeric_text_limit, is_integer_syntax,
+    check_numeric_text_limit,
+    is_integer_syntax,
 };

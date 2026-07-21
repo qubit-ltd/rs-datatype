@@ -12,7 +12,10 @@ mod exact_decimal_tests;
 
 use std::cmp::Ordering;
 
-use qubit_datatype::{NumberRef, NumericComparisonPolicy};
+use qubit_datatype::{
+    NumberRef,
+    NumericComparisonPolicy,
+};
 
 #[cfg(feature = "big-number")]
 use bigdecimal::BigDecimal;

@@ -8,7 +8,10 @@
 //! Floating-point text conversion regression tests.
 
 use qubit_datatype::{
-    DataConversionOptions, DataConverter, FloatRoundingPolicy, InvalidValueReason,
+    DataConversionOptions,
+    DataConverter,
+    FloatRoundingPolicy,
+    InvalidValueReason,
     NumericConversionOptions,
 };
 
@@ -55,7 +58,8 @@ fn test_lossy_text_to_f32_avoids_double_rounding() {
 #[test]
 fn test_text_to_float_rounding_is_independent() {
     let options = DataConversionOptions::strict().with_numeric_options(
-        NumericConversionOptions::strict().with_text_to_float(FloatRoundingPolicy::NearestEven),
+        NumericConversionOptions::strict()
+            .with_text_to_float(FloatRoundingPolicy::NearestEven),
     );
 
     assert_eq!(
@@ -90,7 +94,8 @@ fn test_env_friendly_numeric_profile_relaxes_only_text_float() {
 /// Verifies that redundant decimal zeros do not defeat exact conversion.
 #[test]
 fn test_exact_float_text_normalizes_redundant_zeros() {
-    let source = DataConverter::from("1.000000000000000000000000000000000000000");
+    let source =
+        DataConverter::from("1.000000000000000000000000000000000000000");
     assert_eq!(
         source
             .to::<f32>()

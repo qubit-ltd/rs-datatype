@@ -11,9 +11,16 @@
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-use num_traits::{FromPrimitive, ToPrimitive};
+use num_traits::{
+    FromPrimitive,
+    ToPrimitive,
+};
 
-use crate::converter::{DataConversionError, FloatRoundingPolicy, InvalidValueReason};
+use crate::converter::{
+    DataConversionError,
+    FloatRoundingPolicy,
+    InvalidValueReason,
+};
 use crate::datatype::DataType;
 
 /// Converts an integer to a float under an explicit rounding policy.
@@ -53,7 +60,9 @@ pub(super) fn bigint_to_f64(
             InvalidValueReason::OutOfRange,
         ));
     }
-    if policy == FloatRoundingPolicy::Exact && BigInt::from_f64(converted).as_ref() != Some(value) {
+    if policy == FloatRoundingPolicy::Exact
+        && BigInt::from_f64(converted).as_ref() != Some(value)
+    {
         Err(DataConversionError::invalid(
             from,
             to,
@@ -96,7 +105,9 @@ pub(super) fn bigint_to_f32(
             InvalidValueReason::OutOfRange,
         ));
     }
-    if policy == FloatRoundingPolicy::Exact && BigInt::from_f32(converted).as_ref() != Some(value) {
+    if policy == FloatRoundingPolicy::Exact
+        && BigInt::from_f32(converted).as_ref() != Some(value)
+    {
         Err(DataConversionError::invalid(
             from,
             to,

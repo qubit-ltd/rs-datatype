@@ -7,9 +7,13 @@
 // =============================================================================
 //! Resource limits for structured text conversions.
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
-/// Bounds parsing work and allocations introduced by structured text conversion.
+/// Bounds parsing work and allocations introduced by structured text
+/// conversion.
 ///
 /// The text limit applies to UTF-8 bytes after configured string normalization
 /// and covers JSON values plus JSON objects converted to string maps.

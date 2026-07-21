@@ -7,7 +7,11 @@
 // =============================================================================
 //! Target-side data conversion extension point.
 
-use super::{DataConversionError, DataConversionOptions, DataConverter};
+use super::{
+    DataConversionError,
+    DataConversionOptions,
+    DataConverter,
+};
 use crate::DataTypeOf;
 
 /// Defines how a target type is constructed from a [`DataConverter`].

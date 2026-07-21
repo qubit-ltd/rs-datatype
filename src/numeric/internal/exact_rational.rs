@@ -29,7 +29,11 @@ const MAX_MATERIALIZED_DECIMAL_SCALE: u32 = 4_096;
 /// # Returns
 ///
 /// The exact rational value.
-fn binary_rational(negative: bool, significand: u128, exponent: i32) -> BigRational {
+fn binary_rational(
+    negative: bool,
+    significand: u128,
+    exponent: i32,
+) -> BigRational {
     let mut numerator = BigInt::from(significand);
     if negative {
         numerator = -numerator;
@@ -95,7 +99,9 @@ pub(in crate::numeric) fn f64_rational(value: f64) -> BigRational {
 /// caller can use `BigDecimal`'s exact scale-aware comparator without an
 /// impractically large power allocation.
 #[cfg(feature = "big-decimal")]
-pub(in crate::numeric) fn decimal_rational(value: &BigDecimal) -> Option<BigRational> {
+pub(in crate::numeric) fn decimal_rational(
+    value: &BigDecimal,
+) -> Option<BigRational> {
     let (coefficient, scale) = value.as_bigint_and_exponent();
     if scale >= 0 {
         let scale = u32::try_from(scale).ok()?;

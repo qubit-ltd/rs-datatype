@@ -17,16 +17,28 @@ use std::time::Duration;
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "chrono")]
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{
+    DateTime,
+    NaiveDate,
+    NaiveDateTime,
+    NaiveTime,
+    Utc,
+};
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 #[cfg(feature = "url")]
 use url::Url;
 
 use super::data_conversion_target::DataConversionTarget;
-use super::error::{DataConversionError, InvalidValueReason};
+use super::error::{
+    DataConversionError,
+    InvalidValueReason,
+};
 use super::options::DataConversionOptions;
-use crate::datatype::{DataType, for_each_data_type_mapping};
+use crate::datatype::{
+    DataType,
+    for_each_data_type_mapping,
+};
 
 mod boolean;
 mod duration;
@@ -278,7 +290,10 @@ impl DataConverter<'_> {
     /// Returns a structured error containing source type, target type, and a
     /// value-free rejection reason.
     #[inline(always)]
-    pub fn to_with<T>(&self, options: &DataConversionOptions) -> Result<T, DataConversionError>
+    pub fn to_with<T>(
+        &self,
+        options: &DataConversionOptions,
+    ) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -393,7 +408,11 @@ impl DataConverter<'_> {
     ///
     /// An invalid-value error recording this source's runtime type.
     #[inline(always)]
-    fn invalid(&self, to: DataType, reason: InvalidValueReason) -> DataConversionError {
+    fn invalid(
+        &self,
+        to: DataType,
+        reason: InvalidValueReason,
+    ) -> DataConversionError {
         DataConversionError::invalid(self.data_type(), to, reason)
     }
 }
