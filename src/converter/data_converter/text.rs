@@ -23,6 +23,7 @@ use super::DataConverter;
 use super::duration::format_duration;
 use super::string_source::normalize;
 use crate::converter::{
+    ConversionLimit,
     DataConversionError,
     DataConversionOptions,
     DataConversionTarget,
@@ -346,6 +347,14 @@ impl DataConversionTarget for Url {
             DataConverter::Url(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Url)?;
+                let maximum = options.structured().max_text_bytes();
+                if value.len() > maximum {
+                    return Err(DataConversionError::limit_exceeded(
+                        DataType::String,
+                        DataType::Url,
+                        ConversionLimit::StructuredTextBytes { maximum },
+                    ));
+                }
                 match Url::parse(value) {
                     Ok(value) => Ok(value),
                     Err(_) => Err(source.invalid(
