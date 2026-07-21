@@ -41,13 +41,15 @@ qubit-datatype = { version = "0.8", default-features = false, features = ["conve
 | --- | --- |
 | `duration` | Duration 单位、带检查运算、文本解析和精确格式化 |
 | `converter` | 标量、字符串、Duration、StringMap、批量和配置 API；包含 `duration` |
-| `chrono` | Chrono 类型映射及转换 |
-| `big-integer` | `BigInt` 映射及转换 |
-| `big-decimal` | `BigDecimal` 映射及转换 |
+| `chrono` | Chrono 类型映射；与 `converter` 组合时支持转换 |
+| `big-integer` | `BigInt` 映射；与 `converter` 组合时支持转换 |
+| `big-decimal` | `BigDecimal` 映射；与 `converter` 组合时支持转换 |
 | `big-number` | `big-integer` 与 `big-decimal` 的兼容别名 |
-| `url` | `Url` 映射及转换 |
-| `json` | `serde_json::Value`、JSON 文本和 StringMap JSON 转换 |
+| `url` | `Url` 映射；与 `converter` 组合时支持转换 |
+| `json` | `serde_json::Value` 映射；与 `converter` 组合时支持 JSON 文本及 StringMap 转换 |
 | `all` | `converter` 与全部富类型 feature |
+
+富类型 feature 本身不会启用 `converter`。
 
 `HashMap<String, String>` 的恒等转换只需要 `converter`；把它解析或格式化为 JSON
 还需要 `json`。
@@ -127,9 +129,11 @@ assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
 | StringMap | StringMap；启用 `json` 后支持 JSON 和 `String` |
 | JSON | `String` |
 
-表外组合返回 `DataConversionError::Unsupported`，typed unset 返回 `Missing`，
-格式或策略不合法返回 `InvalidValue`，触及配置的资源上限返回 `LimitExceeded`。
-错误只保留类型上下文，不保留原始值。
+通过 `DataConversionError::kind()` 获取稳定分类：
+`DataConversionErrorKind::Unsupported` 表示不支持的类型组合，`Missing` 表示 typed
+unset，`EmptyCollection` 表示请求首值时集合为空，`InvalidValue` 表示格式或策略
+不合法，`LimitExceeded` 表示触及配置的资源上限。错误只保留类型上下文，不保留
+原始值。
 
 ## 7. 配置与输入 profile
 
