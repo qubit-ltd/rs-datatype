@@ -39,6 +39,7 @@ use crate::datatype::DataType;
 ///
 /// Whether `value` is negative and its unsigned absolute magnitude.
 #[inline(always)]
+#[must_use]
 pub(super) fn signed_magnitude(value: i128) -> (bool, u128) {
     (value.is_negative(), value.unsigned_abs())
 }
@@ -408,6 +409,21 @@ where
 macro_rules! impl_signed_target {
     ($target:ty, $data_type:expr) => {
         impl DataConversionTarget for $target {
+            /// Converts a borrowed runtime value to the signed integer target.
+            ///
+            /// # Parameters
+            ///
+            /// * `source` - Borrowed runtime value to convert.
+            /// * `options` - Numeric syntax, rounding, and resource policies.
+            ///
+            /// # Returns
+            ///
+            /// The represented target integer.
+            ///
+            /// # Errors
+            ///
+            /// Returns a missing, unsupported, syntax, non-finite, precision,
+            /// range, normalization, or resource-limit error.
             fn convert_from(
                 source: &DataConverter<'_>,
                 options: &DataConversionOptions,
@@ -425,6 +441,22 @@ macro_rules! impl_signed_target {
 macro_rules! impl_unsigned_target {
     ($target:ty, $data_type:expr) => {
         impl DataConversionTarget for $target {
+            /// Converts a borrowed runtime value to the unsigned integer
+            /// target.
+            ///
+            /// # Parameters
+            ///
+            /// * `source` - Borrowed runtime value to convert.
+            /// * `options` - Numeric syntax, rounding, and resource policies.
+            ///
+            /// # Returns
+            ///
+            /// The represented target integer.
+            ///
+            /// # Errors
+            ///
+            /// Returns a missing, unsupported, syntax, non-finite, precision,
+            /// range, normalization, or resource-limit error.
             fn convert_from(
                 source: &DataConverter<'_>,
                 options: &DataConversionOptions,

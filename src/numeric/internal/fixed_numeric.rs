@@ -70,6 +70,7 @@ fn signed_parts(value: i128) -> Option<(bool, u128, i32)> {
 /// # Returns
 ///
 /// Its sign, integer significand, and signed binary exponent.
+#[must_use]
 fn f32_parts(value: f32) -> (bool, u128, i32) {
     let bits = value.to_bits();
     let negative = bits >> 31 != 0;
@@ -91,6 +92,7 @@ fn f32_parts(value: f32) -> (bool, u128, i32) {
 /// # Returns
 ///
 /// Its sign, integer significand, and signed binary exponent.
+#[must_use]
 fn f64_parts(value: f64) -> (bool, u128, i32) {
     let bits = value.to_bits();
     let negative = bits >> 63 != 0;
@@ -115,6 +117,7 @@ fn f64_parts(value: f64) -> (bool, u128, i32) {
 /// # Returns
 ///
 /// The exact magnitude ordering.
+#[must_use]
 pub(in crate::numeric) fn compare_magnitude(
     left_significand: u128,
     left_exponent: i32,

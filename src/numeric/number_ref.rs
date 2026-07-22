@@ -37,8 +37,18 @@ use super::internal::{
 };
 
 /// Compares an arbitrary-precision integer with a signed fixed-width value.
+///
+/// # Parameters
+///
+/// * `left` - Arbitrary-precision value on the left.
+/// * `right` - Signed fixed-width value on the right.
+///
+/// # Returns
+///
+/// The exact mathematical ordering.
 #[cfg(feature = "big-integer")]
-#[inline(always)]
+#[must_use]
+#[inline]
 fn compare_big_integer_signed(left: &BigInt, right: i128) -> Ordering {
     match left.to_i128() {
         Some(left) => left.cmp(&right),
@@ -48,8 +58,18 @@ fn compare_big_integer_signed(left: &BigInt, right: i128) -> Ordering {
 }
 
 /// Compares an arbitrary-precision integer with an unsigned fixed-width value.
+///
+/// # Parameters
+///
+/// * `left` - Arbitrary-precision value on the left.
+/// * `right` - Unsigned fixed-width value on the right.
+///
+/// # Returns
+///
+/// The exact mathematical ordering.
 #[cfg(feature = "big-integer")]
-#[inline(always)]
+#[must_use]
+#[inline]
 fn compare_big_integer_unsigned(left: &BigInt, right: u128) -> Ordering {
     if left.is_negative() {
         Ordering::Less
@@ -133,6 +153,15 @@ pub struct NumberRef<'a> {
 macro_rules! impl_from_copy {
     ($source:ty, $variant:ident) => {
         impl From<$source> for NumberRef<'_> {
+            /// Creates a numeric view by copying a fixed-width value.
+            ///
+            /// # Parameters
+            ///
+            /// * `value` - Numeric value to copy.
+            ///
+            /// # Returns
+            ///
+            /// A numeric view owning the copied scalar representation.
             #[inline(always)]
             fn from(value: $source) -> Self {
                 Self {
@@ -147,6 +176,15 @@ macro_rules! impl_from_copy {
 macro_rules! impl_from_ref {
     ($source:ty, $variant:ident) => {
         impl<'a> From<&'a $source> for NumberRef<'a> {
+            /// Creates a numeric view borrowing an arbitrary-precision value.
+            ///
+            /// # Parameters
+            ///
+            /// * `value` - Numeric value to borrow.
+            ///
+            /// # Returns
+            ///
+            /// A numeric view borrowing the source for its lifetime.
             #[inline(always)]
             fn from(value: &'a $source) -> Self {
                 Self {

@@ -53,6 +53,7 @@ use crate::datatype::DataType;
 /// `true` when the non-zero magnitude has more than `maximum_digits` decimal
 /// digits; zero never exceeds the budget.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+#[must_use]
 fn exceeds_big_integer_digit_limit(
     value: &BigInt,
     maximum_digits: usize,
@@ -423,6 +424,21 @@ fn parse_big_decimal(
 
 #[cfg(feature = "big-integer")]
 impl DataConversionTarget for BigInt {
+    /// Converts a borrowed runtime value to an arbitrary-precision integer.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to convert.
+    /// * `options` - Numeric rounding and BigInteger digit-limit policies.
+    ///
+    /// # Returns
+    ///
+    /// The represented arbitrary-precision integer.
+    ///
+    /// # Errors
+    ///
+    /// Returns a missing, unsupported, syntax, non-finite, precision, range,
+    /// normalization, or digit-limit error.
     #[inline(always)]
     fn convert_from(
         source: &DataConverter<'_>,
@@ -431,6 +447,21 @@ impl DataConversionTarget for BigInt {
         source_to_bigint(source, options, DataType::BigInteger)
     }
 
+    /// Converts a runtime value to an arbitrary-precision integer, consuming
+    /// it.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Runtime value to consume.
+    /// * `options` - Numeric rounding and BigInteger digit-limit policies.
+    ///
+    /// # Returns
+    ///
+    /// The converted integer; an owned BigInteger reuses its storage.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same conversion errors as [`Self::convert_from`].
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,
@@ -454,6 +485,21 @@ impl DataConversionTarget for BigInt {
 
 #[cfg(feature = "big-decimal")]
 impl DataConversionTarget for BigDecimal {
+    /// Converts a borrowed runtime value to an arbitrary-precision decimal.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to convert.
+    /// * `options` - Numeric syntax, rounding, and resource policies.
+    ///
+    /// # Returns
+    ///
+    /// The represented arbitrary-precision decimal.
+    ///
+    /// # Errors
+    ///
+    /// Returns a missing, unsupported, syntax, non-finite, normalization, or
+    /// resource-limit error.
     fn convert_from(
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
@@ -496,6 +542,21 @@ impl DataConversionTarget for BigDecimal {
         }
     }
 
+    /// Converts a runtime value to an arbitrary-precision decimal, consuming
+    /// it.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Runtime value to consume.
+    /// * `options` - Numeric syntax, rounding, and resource policies.
+    ///
+    /// # Returns
+    ///
+    /// The converted decimal; an owned BigDecimal reuses its storage.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same conversion errors as [`Self::convert_from`].
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,

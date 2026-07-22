@@ -57,6 +57,10 @@ pub struct CollectionConversionOptions {
 
 impl Default for CollectionConversionOptions {
     /// Creates default collection conversion options.
+    ///
+    /// # Returns
+    ///
+    /// Options using comma delimiters without splitting or item normalization.
     fn default() -> Self {
         Self {
             split_scalar_strings: false,
@@ -93,6 +97,10 @@ impl CollectionConversionOptions {
     }
 
     /// Returns whether scalar strings are split into collection items.
+    ///
+    /// # Returns
+    ///
+    /// `true` when scalar strings are split using configured delimiters.
     #[inline(always)]
     #[must_use]
     pub const fn split_scalar_strings(&self) -> bool {
@@ -118,6 +126,10 @@ impl CollectionConversionOptions {
     }
 
     /// Returns the delimiters used to split scalar strings.
+    ///
+    /// # Returns
+    ///
+    /// The configured delimiter slice in matching order.
     ///
     /// ```compile_fail
     /// #![deny(unused_must_use)]
@@ -151,6 +163,10 @@ impl CollectionConversionOptions {
     }
 
     /// Returns whether collection items are trimmed before conversion.
+    ///
+    /// # Returns
+    ///
+    /// `true` when each split item is trimmed.
     #[inline(always)]
     #[must_use]
     pub const fn trim_items(&self) -> bool {
@@ -173,6 +189,10 @@ impl CollectionConversionOptions {
     }
 
     /// Returns the empty collection item policy.
+    ///
+    /// # Returns
+    ///
+    /// The policy applied to empty items after optional trimming.
     #[inline(always)]
     pub const fn empty_item_policy(&self) -> EmptyItemPolicy {
         self.empty_item_policy
@@ -194,6 +214,10 @@ impl CollectionConversionOptions {
     }
 
     /// Returns the maximum number of retained scalar collection items.
+    ///
+    /// # Returns
+    ///
+    /// The retained-item limit after empty-item filtering.
     #[must_use]
     #[inline(always)]
     pub const fn max_items(&self) -> usize {

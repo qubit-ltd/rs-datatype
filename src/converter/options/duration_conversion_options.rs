@@ -98,6 +98,10 @@ impl DurationConversionOptions {
     }
 
     /// Returns the unit assigned to integer sources.
+    ///
+    /// # Returns
+    ///
+    /// The unit used to interpret integer sources.
     #[inline(always)]
     pub const fn numeric_input_unit(&self) -> DurationUnit {
         self.numeric_input_unit
@@ -119,6 +123,10 @@ impl DurationConversionOptions {
     }
 
     /// Returns the policy for Duration text without an explicit suffix.
+    ///
+    /// # Returns
+    ///
+    /// The configured suffixless-input policy.
     #[inline(always)]
     pub const fn suffixless_string_policy(&self) -> SuffixlessDurationPolicy {
         self.suffixless_string_policy
@@ -143,12 +151,24 @@ impl DurationConversionOptions {
     }
 
     /// Returns the strictness applied to explicit Duration unit symbols.
+    ///
+    /// # Returns
+    ///
+    /// The configured strict or lenient unit parse mode.
     #[inline(always)]
     pub const fn unit_parse_mode(&self) -> DurationUnitParseMode {
         self.unit_parse_mode
     }
 
     /// Returns a copy with a different Duration unit parse mode.
+    ///
+    /// # Parameters
+    ///
+    /// * `unit_parse_mode` - New explicit-unit parse mode.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
     #[inline(always)]
     pub const fn with_unit_parse_mode(
         mut self,
@@ -159,6 +179,10 @@ impl DurationConversionOptions {
     }
 
     /// Returns the maximum accepted Duration source text length in bytes.
+    ///
+    /// # Returns
+    ///
+    /// The normalized source text byte limit.
     ///
     /// ```compile_fail
     /// #![deny(unused_must_use)]
@@ -188,6 +212,10 @@ impl DurationConversionOptions {
     }
 
     /// Returns the unit used for Duration output.
+    ///
+    /// # Returns
+    ///
+    /// The unit used for integer and string output.
     #[inline(always)]
     pub const fn output_unit(&self) -> DurationUnit {
         self.output_unit
@@ -210,6 +238,10 @@ impl DurationConversionOptions {
     }
 
     /// Returns whether formatted Duration text includes a unit suffix.
+    ///
+    /// # Returns
+    ///
+    /// `true` when formatted strings append the selected unit symbol.
     ///
     /// ```compile_fail
     /// #![deny(unused_must_use)]
@@ -240,12 +272,24 @@ impl DurationConversionOptions {
     }
 
     /// Returns the Duration output rounding policy.
+    ///
+    /// # Returns
+    ///
+    /// The policy applied when output units have a remainder.
     #[inline(always)]
     pub const fn rounding_policy(&self) -> DurationRoundingPolicy {
         self.rounding_policy
     }
 
     /// Returns a copy with a different Duration output rounding policy.
+    ///
+    /// # Parameters
+    ///
+    /// * `rounding_policy` - New output rounding policy.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
     #[inline(always)]
     pub const fn with_rounding_policy(
         mut self,
@@ -258,6 +302,10 @@ impl DurationConversionOptions {
 
 impl Default for DurationConversionOptions {
     /// Creates default duration conversion options.
+    ///
+    /// # Returns
+    ///
+    /// Strict millisecond-based Duration conversion options.
     fn default() -> Self {
         Self {
             numeric_input_unit: DurationUnit::default(),

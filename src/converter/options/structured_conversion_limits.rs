@@ -30,6 +30,10 @@ impl StructuredConversionLimits {
     pub const DEFAULT_MAX_TEXT_BYTES: usize = 1_048_576;
 
     /// Returns the maximum normalized structured text length in bytes.
+    ///
+    /// # Returns
+    ///
+    /// The configured normalized structured text byte limit.
     #[inline(always)]
     #[must_use]
     pub const fn max_text_bytes(&self) -> usize {
@@ -37,6 +41,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns a copy with a different structured text byte limit.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - New normalized structured text byte limit.
+    ///
+    /// # Returns
+    ///
+    /// Updated limits.
     #[inline(always)]
     pub const fn with_max_text_bytes(mut self, maximum: usize) -> Self {
         self.max_text_bytes = maximum;
@@ -46,6 +58,10 @@ impl StructuredConversionLimits {
 
 impl Default for StructuredConversionLimits {
     /// Creates the default structured conversion limits.
+    ///
+    /// # Returns
+    ///
+    /// Limits using the documented one-mebibyte text budget.
     #[inline(always)]
     fn default() -> Self {
         Self {

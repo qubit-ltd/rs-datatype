@@ -176,6 +176,10 @@ impl DataConversionOptions {
     }
 
     /// Returns the numeric conversion options.
+    ///
+    /// # Returns
+    ///
+    /// A shared reference to the numeric policy group.
     #[must_use = "numeric conversion options should be inspected"]
     #[inline(always)]
     pub const fn numeric(&self) -> &NumericConversionOptions {
@@ -201,6 +205,10 @@ impl DataConversionOptions {
     }
 
     /// Returns the string conversion options.
+    ///
+    /// # Returns
+    ///
+    /// A shared reference to the string normalization policies.
     #[must_use = "string conversion options should be inspected"]
     #[inline(always)]
     pub const fn string(&self) -> &StringConversionOptions {
@@ -244,6 +252,10 @@ impl DataConversionOptions {
     }
 
     /// Returns the Boolean conversion options.
+    ///
+    /// # Returns
+    ///
+    /// A shared reference to the Boolean conversion policies.
     #[must_use = "Boolean conversion options should be inspected"]
     #[inline(always)]
     pub const fn boolean(&self) -> &BooleanConversionOptions {
@@ -269,6 +281,10 @@ impl DataConversionOptions {
     }
 
     /// Returns the collection conversion options.
+    ///
+    /// # Returns
+    ///
+    /// A shared reference to the scalar collection policies.
     #[must_use = "collection conversion options should be inspected"]
     #[inline(always)]
     pub const fn collection(&self) -> &CollectionConversionOptions {
@@ -309,6 +325,10 @@ impl DataConversionOptions {
     }
 
     /// Returns the Duration conversion options.
+    ///
+    /// # Returns
+    ///
+    /// A shared reference to the Duration conversion policies.
     #[must_use = "Duration conversion options should be inspected"]
     #[inline(always)]
     pub const fn duration(&self) -> &DurationConversionOptions {
@@ -334,6 +354,10 @@ impl DataConversionOptions {
     }
 
     /// Returns the structured text conversion resource limits.
+    ///
+    /// # Returns
+    ///
+    /// A shared reference to the structured text limits.
     #[must_use = "structured text conversion limits should be inspected"]
     #[inline(always)]
     pub const fn structured(&self) -> &StructuredConversionLimits {
@@ -362,6 +386,10 @@ impl DataConversionOptions {
 
 impl Default for DataConversionOptions {
     /// Creates the strict default conversion profile.
+    ///
+    /// # Returns
+    ///
+    /// The strict conversion profile.
     #[inline(always)]
     fn default() -> Self {
         Self::strict()

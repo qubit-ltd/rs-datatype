@@ -86,6 +86,10 @@ use strum::{
 /// let deserialized: DataType = serde_json::from_str(&json).unwrap();
 /// assert_eq!(deserialized, DataType::Float64);
 /// ```
+///
+/// This enum intentionally defines the closed runtime type vocabulary used by
+/// exhaustive downstream mappings. Adding a variant is a deliberate breaking
+/// change.
 #[must_use]
 #[derive(
     Debug,

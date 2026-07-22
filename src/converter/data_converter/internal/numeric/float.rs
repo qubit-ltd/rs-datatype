@@ -43,6 +43,8 @@ use crate::datatype::DataType;
 /// # Returns
 ///
 /// `true` when the target mantissa represents `value` exactly.
+#[must_use]
+#[inline]
 fn unsigned_integer_is_exact(value: u128, mantissa_digits: u32) -> bool {
     if value == 0 {
         return true;
@@ -196,6 +198,21 @@ fn source_to_f64(
 }
 
 impl DataConversionTarget for f64 {
+    /// Converts a borrowed runtime value to `f64`.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to convert.
+    /// * `options` - Numeric syntax, rounding, and resource policies.
+    ///
+    /// # Returns
+    ///
+    /// The represented `f64` value.
+    ///
+    /// # Errors
+    ///
+    /// Returns a missing, unsupported, syntax, precision, range, normalization,
+    /// or resource-limit error.
     #[inline(always)]
     fn convert_from(
         source: &DataConverter<'_>,
@@ -206,6 +223,21 @@ impl DataConversionTarget for f64 {
 }
 
 impl DataConversionTarget for f32 {
+    /// Converts a borrowed runtime value to `f32`.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to convert.
+    /// * `options` - Numeric syntax, rounding, and resource policies.
+    ///
+    /// # Returns
+    ///
+    /// The represented `f32` value.
+    ///
+    /// # Errors
+    ///
+    /// Returns a missing, unsupported, syntax, precision, range, normalization,
+    /// or resource-limit error.
     fn convert_from(
         source: &DataConverter<'_>,
         options: &DataConversionOptions,

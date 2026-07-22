@@ -44,6 +44,10 @@ pub struct StringConversionOptions {
 
 impl Default for StringConversionOptions {
     /// Creates default string conversion options.
+    ///
+    /// # Returns
+    ///
+    /// Options preserving source whitespace and blank strings.
     fn default() -> Self {
         Self {
             trim: false,
@@ -70,6 +74,10 @@ impl StringConversionOptions {
     }
 
     /// Returns whether strings are trimmed before conversion.
+    ///
+    /// # Returns
+    ///
+    /// `true` when surrounding whitespace is removed.
     #[inline(always)]
     #[must_use]
     pub const fn trim(&self) -> bool {
@@ -92,6 +100,10 @@ impl StringConversionOptions {
     }
 
     /// Returns the blank string policy.
+    ///
+    /// # Returns
+    ///
+    /// The policy applied after optional trimming.
     #[inline(always)]
     pub const fn blank_string_policy(&self) -> BlankStringPolicy {
         self.blank_string_policy

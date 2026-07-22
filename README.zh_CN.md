@@ -144,6 +144,8 @@ unset，`EmptyCollection` 表示请求首值时集合为空，`InvalidValue` 表
 - `boolean`：文字集合、大小写和数值布尔策略。
 - `collection`：标量拆分、分隔符、trim、空项策略和最终保留项数上限。
 - `duration`：数值输入单位、无后缀输入策略、单位解析模式、输出单位、后缀格式、舍入和源文本字节上限。
+- `structured`：URL、JSON 和 StringMap 解析使用的规范化输入字节上限，
+  默认值为 1 MiB。
 
 `strict()` 是默认值。`env_friendly()` 会 trim 字符串、接受常见布尔文字，并开启
 逗号分隔的标量集合；它只把文本转浮点放宽为 nearest-even，不会开启小数转整数
@@ -173,6 +175,18 @@ let options = DataConversionOptions::strict().with_numeric_options(
 );
 ```
 
+结构化文本限制在字符串规范化之后、URL、JSON 或 StringMap 解析之前检查：
+
+```rust
+use qubit_datatype::{
+    DataConversionOptions, StructuredConversionLimits,
+};
+
+let options = DataConversionOptions::strict().with_structured_limits(
+    StructuredConversionLimits::default().with_max_text_bytes(64 * 1024),
+);
+```
+
 布尔文字 builder 返回 `Result`，保证在选定大小写规则下 true/false 集合互不重叠。
 
 ## 8. 字符串、Duration 与富格式
@@ -189,11 +203,14 @@ ASCII `us`、微符号 `µs` 与希腊 mu `μs` 三种微秒拼写。Lenient 额
 并默认把输入限制为 1 MiB；`parse_duration_text` 在处理后缀前先执行该字节上限，
 再在不隐式 trim 的情况下执行带范围检查的解析，`format_duration_exact` 自动选择
 最大的精确首选单位。
+Duration 解析错误只保留稳定类别和静态规范单位，不回显也不持有任意长度的输入后缀。
 
 富文本的规范格式包括：日期 `YYYY-MM-DD`、时间 `HH:MM:SS[.fraction]`、
 instant 的 RFC 3339、绝对 URL、标准 JSON，以及 key 唯一且 value 全为字符串的
 StringMap JSON object。日期、date-time 与 instant 仅格式化 `0000` 至 `9999`
 年份；超出四位规范年份范围的值会被拒绝。
+日期和时间字段必须由零填充的 ASCII 数字组成，分隔符必须位于上述精确位置；
+Chrono 执行范围校验前会拒绝内部空白、带符号年份、替代分隔符和 Unicode 数字。
 
 ## 9. 批量与标量字符串集合
 

@@ -36,6 +36,10 @@ impl NumericConversionLimits {
     pub const DEFAULT_MAX_BIG_INTEGER_DIGITS: usize = 16_384;
 
     /// Returns the maximum normalized numeric text length in bytes.
+    ///
+    /// # Returns
+    ///
+    /// The configured normalized numeric text byte limit.
     #[inline(always)]
     #[must_use]
     pub const fn max_text_bytes(&self) -> usize {
@@ -43,6 +47,14 @@ impl NumericConversionLimits {
     }
 
     /// Returns a copy with a different numeric text byte limit.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - New normalized numeric text byte limit.
+    ///
+    /// # Returns
+    ///
+    /// Updated limits.
     #[inline(always)]
     pub const fn with_max_text_bytes(mut self, maximum: usize) -> Self {
         self.max_text_bytes = maximum;
@@ -50,6 +62,10 @@ impl NumericConversionLimits {
     }
 
     /// Returns the maximum decimal digits materialized for a BigInt result.
+    ///
+    /// # Returns
+    ///
+    /// The configured BigInteger decimal digit limit.
     #[inline(always)]
     #[must_use]
     pub const fn max_big_integer_digits(&self) -> usize {
@@ -57,6 +73,14 @@ impl NumericConversionLimits {
     }
 
     /// Returns a copy with a different BigInt decimal digit limit.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - New materialized decimal digit limit.
+    ///
+    /// # Returns
+    ///
+    /// Updated limits.
     #[inline(always)]
     pub const fn with_max_big_integer_digits(mut self, maximum: usize) -> Self {
         self.max_big_integer_digits = maximum;
@@ -66,6 +90,10 @@ impl NumericConversionLimits {
 
 impl Default for NumericConversionLimits {
     /// Creates the default numeric conversion limits.
+    ///
+    /// # Returns
+    ///
+    /// Limits using the documented default byte and digit budgets.
     #[inline(always)]
     fn default() -> Self {
         Self {

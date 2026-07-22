@@ -57,6 +57,10 @@ impl DurationTextOptions {
     }
 
     /// Returns the policy applied when text omits a unit suffix.
+    ///
+    /// # Returns
+    ///
+    /// The configured suffixless-input policy.
     #[inline(always)]
     pub const fn suffixless_policy(&self) -> SuffixlessDurationPolicy {
         self.suffixless_policy
@@ -81,6 +85,10 @@ impl DurationTextOptions {
     }
 
     /// Returns the strictness applied to explicit unit symbols.
+    ///
+    /// # Returns
+    ///
+    /// The configured strict or lenient unit parse mode.
     #[inline(always)]
     pub const fn unit_parse_mode(&self) -> DurationUnitParseMode {
         self.unit_parse_mode
@@ -105,6 +113,10 @@ impl DurationTextOptions {
     }
 
     /// Returns the maximum accepted source text length in bytes.
+    ///
+    /// # Returns
+    ///
+    /// The configured source text byte limit.
     ///
     /// ```compile_fail
     /// #![deny(unused_must_use)]
@@ -137,6 +149,10 @@ impl DurationTextOptions {
 impl Default for DurationTextOptions {
     /// Creates the default profile that rejects suffixless text and uses strict
     /// unit parsing.
+    ///
+    /// # Returns
+    ///
+    /// Strict options using the default source text byte limit.
     fn default() -> Self {
         Self::new(
             SuffixlessDurationPolicy::Reject,

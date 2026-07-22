@@ -163,6 +163,8 @@ resource caps. Errors retain type context but never retain the source value.
   maximum number of retained items.
 - `duration`: numeric input unit, suffixless input policy, unit parse mode,
   output unit, suffix formatting, rounding, and source-text byte limit.
+- `structured`: normalized input byte limits for URL, JSON, and StringMap
+  parsing; the default limit is 1 MiB.
 
 `strict()` is the default. `env_friendly()` trims strings, accepts common
 Boolean literals, enables comma-separated scalar collections, and relaxes only
@@ -195,6 +197,19 @@ let options = DataConversionOptions::strict().with_numeric_options(
 );
 ```
 
+Structured text limits are checked after string normalization and before URL,
+JSON, or StringMap parsing:
+
+```rust
+use qubit_datatype::{
+    DataConversionOptions, StructuredConversionLimits,
+};
+
+let options = DataConversionOptions::strict().with_structured_limits(
+    StructuredConversionLimits::default().with_max_text_bytes(64 * 1024),
+);
+```
+
 Boolean literal builders are fallible because true and false sets must remain
 disjoint under the selected case-sensitivity rule.
 
@@ -216,12 +231,17 @@ policy and unit parse mode and bounds input to 1 MiB by default.
 `parse_duration_text` enforces that byte limit before suffix processing,
 performs checked parsing without implicit trimming, and `format_duration_exact`
 selects the largest exact preferred unit.
+Duration parse errors retain only stable categories and static canonical unit
+symbols; they neither echo nor own arbitrary input suffixes.
 
 Canonical rich strings are: `YYYY-MM-DD` for dates,
 `HH:MM:SS[.fraction]` for times, RFC 3339 for instants, absolute URLs, standard
 JSON, and JSON objects with unique keys and string values for StringMap. Date,
 date-time, and instant formatting accepts only years `0000` through `9999`;
 values outside that canonical four-digit domain are rejected.
+Date and time fields are zero-padded ASCII digits with separators in the exact
+positions shown; internal whitespace, signed years, alternate separators, and
+Unicode digits are rejected before Chrono performs range validation.
 
 ## 9. Batch and scalar-string collections
 

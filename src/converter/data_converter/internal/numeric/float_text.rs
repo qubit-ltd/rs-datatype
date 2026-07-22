@@ -26,6 +26,8 @@ use crate::datatype::DataType;
 /// # Returns
 ///
 /// The unsigned significand and its signed binary exponent.
+#[must_use]
+#[inline]
 fn finite_float_parts(value: f64) -> (u128, i32) {
     let bits = value.abs().to_bits();
     let exponent = i32::from(((bits >> 52) & 0x7ff) as u16);
@@ -84,6 +86,7 @@ fn multiply_decimal_digits(digits: &mut Vec<u8>, factor: u8) {
 ///
 /// Little-endian coefficient digits, the number of low decimal zero digits to
 /// ignore, and the signed decimal scale after canonicalization.
+#[must_use]
 fn exact_float_decimal(value: f64) -> (Vec<u8>, usize, i128) {
     let (mut significand, exponent) = finite_float_parts(value);
     let (factor, multiplication_count, mut scale) = if exponent >= 0 {
@@ -116,6 +119,7 @@ fn exact_float_decimal(value: f64) -> (Vec<u8>, usize, i128) {
 /// # Returns
 ///
 /// `true` if `converted` has exactly the same mathematical value as `value`.
+#[must_use]
 fn text_is_exact_float(value: &str, converted: f64) -> bool {
     let unsigned = value.strip_prefix(['+', '-']).unwrap_or(value);
     let exponent_index = unsigned
