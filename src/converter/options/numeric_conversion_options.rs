@@ -117,6 +117,14 @@ impl NumericConversionOptions {
     }
 
     /// Returns the numeric conversion resource limits.
+    ///
+    /// ```compile_fail
+    /// #![deny(unused_must_use)]
+    /// use qubit_datatype::NumericConversionOptions;
+    ///
+    /// NumericConversionOptions::default().limits();
+    /// ```
+    #[must_use = "numeric conversion limits should be inspected"]
     #[inline(always)]
     pub const fn limits(&self) -> &NumericConversionLimits {
         &self.limits

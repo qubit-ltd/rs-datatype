@@ -68,7 +68,7 @@ where
     ///
     /// Returns a batch converter that consumes the iterator when conversion is
     /// requested.
-    #[inline]
+    #[inline(always)]
     pub fn from_iterator(sources: I) -> Self {
         Self { sources }
     }
@@ -167,7 +167,8 @@ where
     ///
     /// # Returns
     ///
-    /// Returns the converted first value.
+    /// Returns the converted first value. Later source items are neither
+    /// converted nor inspected.
     ///
     /// # Errors
     ///
@@ -209,7 +210,8 @@ where
     ///
     /// # Returns
     ///
-    /// Returns the converted first value.
+    /// Returns the converted first value. Later source items are neither
+    /// converted nor inspected.
     ///
     /// # Errors
     ///

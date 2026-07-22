@@ -41,7 +41,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// Returns a converter that can split the scalar source when requested by
     /// collection options.
-    #[inline]
+    #[inline(always)]
     pub const fn new(source: &'a str) -> Self {
         Self { source }
     }
@@ -123,7 +123,8 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// # Returns
     ///
-    /// Returns the converted first item.
+    /// Returns the converted first item. Later scalar items are neither split,
+    /// converted, nor validated.
     ///
     /// # Errors
     ///
@@ -150,7 +151,8 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// # Returns
     ///
-    /// Returns the converted first item.
+    /// Returns the converted first item. Later scalar items are neither split,
+    /// converted, nor validated.
     ///
     /// # Errors
     ///

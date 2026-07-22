@@ -62,6 +62,22 @@ impl DataListConversionError {
     /// # Returns
     ///
     /// A shared reference to the underlying conversion error.
+    ///
+    /// ```compile_fail
+    /// #![deny(unused_must_use)]
+    /// use qubit_datatype::{
+    ///     DataConversionError,
+    ///     DataListConversionError,
+    ///     DataType,
+    /// };
+    ///
+    /// let error = DataListConversionError::new(
+    ///     0,
+    ///     DataConversionError::missing(DataType::String, DataType::Bool),
+    /// );
+    /// error.conversion_error();
+    /// ```
+    #[must_use]
     #[inline(always)]
     pub const fn conversion_error(&self) -> &DataConversionError {
         &self.source

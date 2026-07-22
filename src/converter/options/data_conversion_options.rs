@@ -153,6 +153,21 @@ impl DataConversionOptions {
     /// # Returns
     ///
     /// A process-wide lazily initialized default value.
+    ///
+    /// ```compile_fail
+    /// #![deny(unused_must_use)]
+    /// use qubit_datatype::DataConversionOptions;
+    ///
+    /// let options = DataConversionOptions::default();
+    /// DataConversionOptions::default_ref();
+    /// options.numeric();
+    /// options.string();
+    /// options.boolean();
+    /// options.collection();
+    /// options.duration();
+    /// options.structured();
+    /// ```
+    #[must_use = "the default conversion options should be inspected"]
     #[inline(always)]
     pub fn default_ref() -> &'static Self {
         static DEFAULT: LazyLock<DataConversionOptions> =
@@ -161,6 +176,7 @@ impl DataConversionOptions {
     }
 
     /// Returns the numeric conversion options.
+    #[must_use = "numeric conversion options should be inspected"]
     #[inline(always)]
     pub const fn numeric(&self) -> &NumericConversionOptions {
         &self.numeric
@@ -185,6 +201,7 @@ impl DataConversionOptions {
     }
 
     /// Returns the string conversion options.
+    #[must_use = "string conversion options should be inspected"]
     #[inline(always)]
     pub const fn string(&self) -> &StringConversionOptions {
         &self.string
@@ -227,6 +244,7 @@ impl DataConversionOptions {
     }
 
     /// Returns the Boolean conversion options.
+    #[must_use = "Boolean conversion options should be inspected"]
     #[inline(always)]
     pub const fn boolean(&self) -> &BooleanConversionOptions {
         &self.boolean
@@ -251,6 +269,7 @@ impl DataConversionOptions {
     }
 
     /// Returns the collection conversion options.
+    #[must_use = "collection conversion options should be inspected"]
     #[inline(always)]
     pub const fn collection(&self) -> &CollectionConversionOptions {
         &self.collection
@@ -290,6 +309,7 @@ impl DataConversionOptions {
     }
 
     /// Returns the Duration conversion options.
+    #[must_use = "Duration conversion options should be inspected"]
     #[inline(always)]
     pub const fn duration(&self) -> &DurationConversionOptions {
         &self.duration
@@ -314,6 +334,7 @@ impl DataConversionOptions {
     }
 
     /// Returns the structured text conversion resource limits.
+    #[must_use = "structured text conversion limits should be inspected"]
     #[inline(always)]
     pub const fn structured(&self) -> &StructuredConversionLimits {
         &self.structured
