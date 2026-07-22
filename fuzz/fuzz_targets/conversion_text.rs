@@ -11,10 +11,20 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{
+    DateTime,
+    NaiveDate,
+    NaiveDateTime,
+    NaiveTime,
+    Utc,
+};
 use libfuzzer_sys::fuzz_target;
 use num_bigint::BigInt;
-use qubit_datatype::{DataConversionOptions, DataConversionTarget, DataConverter};
+use qubit_datatype::{
+    DataConversionOptions,
+    DataConversionTarget,
+    DataConverter,
+};
 use serde_json::Value;
 use url::Url;
 
@@ -59,8 +69,10 @@ fuzz_target!(|data: &[u8]| {
 ///
 /// * `converter` - Valid UTF-8 source to convert.
 /// * `options` - Bounded set of conversion profiles to exercise.
-fn exercise_conversion<T>(converter: &DataConverter<'_>, options: &[DataConversionOptions])
-where
+fn exercise_conversion<T>(
+    converter: &DataConverter<'_>,
+    options: &[DataConversionOptions],
+) where
     T: DataConversionTarget,
 {
     for option in options {
