@@ -32,6 +32,12 @@ fn test_duration_unit_parses_symbols() {
         }),
     );
     assert_eq!(DurationUnit::parse_lenient("m"), Ok(DurationUnit::Minutes),);
+    assert_eq!(
+        DurationUnit::parse_lenient("fortnight"),
+        Err(DurationParseError::UnsupportedUnit {
+            unit: "fortnight".to_owned(),
+        }),
+    );
     assert_eq!(DurationUnit::Microseconds.symbol(), "µs");
     assert_eq!(DurationUnit::Minutes.symbol(), "min");
 }
