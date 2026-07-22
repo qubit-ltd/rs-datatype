@@ -110,6 +110,59 @@ fn test_boolean_conversion_options_reject_literal_conflicts() {
     );
 }
 
+/// Verifies duplicates on one side remain valid while cross-side conflicts
+/// fail.
+#[test]
+fn test_boolean_conversion_options_only_reject_cross_set_conflicts() {
+    let options = BooleanConversionOptions::try_new(
+        vec!["yes".to_owned(), "yes".to_owned()],
+        vec!["no".to_owned(), "no".to_owned()],
+        false,
+        BooleanNumericPolicy::ZeroOrOne,
+    )
+    .expect("same-side duplicates must remain valid");
+
+    assert_eq!(options.parse("YES"), Some(true));
+    assert_eq!(options.parse("NO"), Some(false));
+    assert!(
+        BooleanConversionOptions::try_new(
+            vec!["Enabled".to_owned()],
+            vec!["enabled".to_owned()],
+            false,
+            BooleanNumericPolicy::ZeroOrOne,
+        )
+        .is_err(),
+    );
+    assert!(
+        BooleanConversionOptions::try_new(
+            vec!["Ä".to_owned()],
+            vec!["ä".to_owned()],
+            false,
+            BooleanNumericPolicy::ZeroOrOne,
+        )
+        .is_ok(),
+    );
+}
+
+/// Characterizes validation for large disjoint literal collections.
+#[test]
+fn test_boolean_conversion_options_validate_large_disjoint_sets() {
+    let true_literals =
+        (0..4096).map(|index| format!("true-{index}")).collect();
+    let false_literals =
+        (0..4096).map(|index| format!("false-{index}")).collect();
+
+    assert!(
+        BooleanConversionOptions::try_new(
+            true_literals,
+            false_literals,
+            false,
+            BooleanNumericPolicy::ZeroOrOne,
+        )
+        .is_ok(),
+    );
+}
+
 /// Test default literal identity and options Serde round-trip.
 #[test]
 fn test_boolean_conversion_options_serde_and_defaults() {

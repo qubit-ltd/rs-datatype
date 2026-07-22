@@ -7,7 +7,34 @@
 // =============================================================================
 //! Tests for duration parsing errors.
 
-use qubit_datatype::DurationParseError;
+use qubit_datatype::{
+    DurationParseError,
+    DurationUnit,
+};
+
+/// Verifies unit errors contain only bounded, copyable diagnostics.
+#[test]
+fn test_duration_parse_error_does_not_own_source_text() {
+    fn assert_copy<T: Copy>() {}
+
+    assert_copy::<DurationParseError>();
+    assert!(
+        !std::mem::needs_drop::<DurationParseError>(),
+        "DurationParseError must not retain owned source text",
+    );
+    assert_eq!(
+        DurationUnit::parse_strict("m")
+            .expect_err("strict parsing should reject the minute alias")
+            .to_string(),
+        "non-canonical duration unit; use `min`",
+    );
+    assert_eq!(
+        DurationUnit::parse_lenient("fortnights")
+            .expect_err("unknown unit should be rejected")
+            .to_string(),
+        "unsupported duration unit",
+    );
+}
 
 /// Verifies that invalid syntax uses an accurate format-neutral diagnostic.
 #[test]

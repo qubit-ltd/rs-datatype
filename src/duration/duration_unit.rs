@@ -20,6 +20,10 @@ use super::{
 };
 
 /// Unit used to interpret or format a Duration value.
+///
+/// This enum intentionally defines a closed supported-unit vocabulary.
+/// Exhaustive matching is part of its API contract; adding a variant is a
+/// deliberate breaking change.
 #[must_use]
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
@@ -65,14 +69,9 @@ impl DurationUnit {
             return Ok(unit);
         }
         if let Some((_, canonical)) = Self::lenient_alias(symbol) {
-            return Err(DurationParseError::NonCanonicalUnit {
-                unit: symbol.to_owned(),
-                canonical: canonical.to_owned(),
-            });
+            return Err(DurationParseError::NonCanonicalUnit { canonical });
         }
-        Err(DurationParseError::UnsupportedUnit {
-            unit: symbol.to_owned(),
-        })
+        Err(DurationParseError::UnsupportedUnit)
     }
 
     /// Parses a Duration unit symbol accepted by lenient mode.
@@ -94,9 +93,7 @@ impl DurationUnit {
     pub fn parse_lenient(symbol: &str) -> Result<Self, DurationParseError> {
         Self::strict_symbol(symbol)
             .or_else(|| Self::lenient_alias(symbol).map(|(unit, _)| unit))
-            .ok_or_else(|| DurationParseError::UnsupportedUnit {
-                unit: symbol.to_owned(),
-            })
+            .ok_or(DurationParseError::UnsupportedUnit)
     }
 
     /// Resolves a stable symbol accepted by strict mode.
@@ -292,6 +289,7 @@ impl DurationUnit {
 ///
 /// Returns [`DurationOverflowError`] when multiplication or `Duration`'s
 /// seconds range would overflow.
+#[inline]
 fn checked_seconds(
     value: u128,
     seconds_per_unit: u128,
@@ -319,6 +317,7 @@ fn checked_seconds(
 ///
 /// Returns [`DurationOverflowError`] when the whole-seconds component exceeds
 /// `Duration`'s range.
+#[inline]
 fn duration_from_subseconds(
     value: u128,
     units_per_second: u128,

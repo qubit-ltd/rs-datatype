@@ -11,7 +11,9 @@ use qubit_datatype::converter::DataConversionErrorKind;
 
 use std::time::Duration;
 
+#[cfg(feature = "chrono")]
 use chrono::NaiveDate;
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use proptest::strategy::{
     Just,
@@ -272,12 +274,6 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
         assert_eq!(duration, Duration::from_secs(1));
     }
 
-    let big_integer = BigInt::from(3u8);
-    let duration: Duration = DataConverter::from(&big_integer)
-        .to_with(&options)
-        .expect("BigInteger should convert to Duration");
-    assert_eq!(duration, Duration::from_secs(3));
-
     let lossy_options = options.clone().with_duration_options(
         options
             .duration()
@@ -323,24 +319,43 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
             .to_with::<Duration>(&overflowing_options),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
+}
 
-    let negative_big_integer = BigInt::from(-1);
-    assert!(matches!(
-        DataConverter::from(&negative_big_integer).to::<Duration>(),
-        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::NegativeDuration)
-    )));
-    let huge_negative_big_integer =
-        -(BigInt::from(u128::MAX) + BigInt::from(1u8));
-    assert!(matches!(
-        DataConverter::from(&huge_negative_big_integer).to::<Duration>(),
-        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::NegativeDuration)
-    )));
-    let overflowing_big_integer = BigInt::from(u64::MAX);
-    assert!(matches!(
-        DataConverter::from(&overflowing_big_integer)
-            .to_with::<Duration>(&overflowing_options),
-        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
-    ));
+/// Tests arbitrary-precision integer Duration conversion policies.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_data_converter_duration_big_integer_conversion_uses_configured_unit() {
+    let options = DataConversionOptions::default().with_duration_options(
+        DurationConversionOptions::default()
+            .with_numeric_input_unit(DurationUnit::Seconds),
+    );
+    let big_integer = BigInt::from(3u8);
+    assert_eq!(
+        DataConverter::from(&big_integer).to_with::<Duration>(&options),
+        Ok(Duration::from_secs(3)),
+    );
+    for value in [BigInt::from(-1), -(BigInt::from(u128::MAX) + 1u8)] {
+        assert!(matches!(
+            DataConverter::from(&value).to::<Duration>(),
+            Err(error) if matches!(error.reason(), Some(InvalidValueReason::NegativeDuration)),
+        ));
+    }
+    let overflowing_options = DataConversionOptions::default()
+        .with_duration_options(
+            DurationConversionOptions::default()
+                .with_numeric_input_unit(DurationUnit::Days),
+        );
+    assert!(
+        DataConverter::from(&BigInt::from(u64::MAX))
+            .to_with::<Duration>(&overflowing_options)
+            .is_err(),
+    );
+}
+
+/// Tests Chrono values remain unsupported Duration sources.
+#[cfg(feature = "chrono")]
+#[test]
+fn test_data_converter_duration_rejects_chrono_source() {
     assert!(matches!(
         DataConverter::from(
             NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date")
@@ -506,9 +521,7 @@ fn test_data_converter_duration_rejects_unrepresentable_counts() {
                 DurationUnit::Seconds,
             )),
     );
-    let above_u128 = BigInt::from(u128::MAX) + BigInt::from(1u8);
     for result in [
-        DataConverter::from(&above_u128).to_with::<Duration>(&seconds),
         DataConverter::from(u128::MAX).to_with::<Duration>(&seconds),
         DataConverter::from(format!("{}s", u128::MAX))
             .to_with::<Duration>(&seconds),
@@ -520,6 +533,21 @@ fn test_data_converter_duration_rejects_unrepresentable_counts() {
             Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)),
         ));
     }
+}
+
+/// Tests arbitrary-precision counts beyond `u128` are out of range.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_data_converter_duration_rejects_unrepresentable_big_integer_counts() {
+    let seconds = DataConversionOptions::default().with_duration_options(
+        DurationConversionOptions::default()
+            .with_numeric_input_unit(DurationUnit::Seconds),
+    );
+    let above_u128 = BigInt::from(u128::MAX) + BigInt::from(1u8);
+    assert!(matches!(
+        DataConverter::from(&above_u128).to_with::<Duration>(&seconds),
+        Err(error) if matches!(error.reason(), Some(InvalidValueReason::OutOfRange)),
+    ));
 }
 
 /// Creates arbitrary supported Duration units for property tests.

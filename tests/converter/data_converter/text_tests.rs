@@ -9,11 +9,30 @@
 
 use qubit_datatype::converter::DataConversionErrorKind;
 
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use std::collections::HashMap;
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use std::str::FromStr;
 use std::time::Duration;
 
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use bigdecimal::BigDecimal;
+#[cfg(feature = "chrono")]
 use chrono::{
     DateTime,
     NaiveDate,
@@ -21,6 +40,12 @@ use chrono::{
     NaiveTime,
     Utc,
 };
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use num_bigint::BigInt;
 use qubit_datatype::{
     DataConversionError,
@@ -30,6 +55,7 @@ use qubit_datatype::{
     InvalidValueReason,
     StringConversionOptions,
 };
+#[cfg(feature = "url")]
 use url::Url;
 
 /// Assert an invalid-syntax error with exact source and target types.
@@ -57,6 +83,7 @@ fn assert_invalid_syntax<T>(
 ///
 /// * `result` - String conversion result to inspect.
 /// * `from` - Expected temporal source type.
+#[cfg(feature = "chrono")]
 fn assert_non_canonical_year_rejected(
     result: Result<String, DataConversionError>,
     from: DataType,
@@ -73,6 +100,12 @@ fn assert_non_canonical_year_rejected(
 
 /// Test the canonical textual formats for rich target types.
 #[test]
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 fn test_data_converter_rich_targets_use_canonical_text_formats() {
     assert_eq!(
         DataConverter::from("汉")
@@ -153,6 +186,7 @@ fn test_data_converter_rich_targets_use_canonical_text_formats() {
 
 /// Test parser-internal rejection branches for canonical temporal formats.
 #[test]
+#[cfg(feature = "chrono")]
 fn test_data_converter_temporal_parsers_reject_invalid_components() {
     for value in ["2026-7-12", "2026-13-40"] {
         assert!(DataConverter::from(value).to::<NaiveDate>().is_err());
@@ -167,6 +201,29 @@ fn test_data_converter_temporal_parsers_reject_invalid_components() {
     ] {
         assert!(DataConverter::from(value).to::<NaiveDateTime>().is_err());
     }
+}
+
+/// Verifies fixed-width temporal parsers reject non-canonical byte shapes.
+#[test]
+#[cfg(feature = "chrono")]
+fn test_data_converter_temporal_parsers_reject_noncanonical_byte_shapes() {
+    for value in ["2026- 7-12", "+001-01-01"] {
+        assert_invalid_syntax(
+            DataConverter::from(value).to::<NaiveDate>(),
+            DataType::Date,
+            "YYYY-MM-DD",
+        );
+    }
+    assert_invalid_syntax(
+        DataConverter::from(" 1:02:03").to::<NaiveTime>(),
+        DataType::Time,
+        "HH:MM:SS[.fraction]",
+    );
+    assert_invalid_syntax(
+        DataConverter::from("2026- 7-12T 1:02:03").to::<NaiveDateTime>(),
+        DataType::DateTime,
+        "YYYY-MM-DDTHH:MM:SS[.fraction]",
+    );
 }
 
 /// Test that trim is applied exactly according to string options.
@@ -214,6 +271,12 @@ fn test_data_converter_char_target_conversions() {
 
 /// Test string target conversion for every supported source variant.
 #[test]
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 fn test_data_converter_string_target_accepts_all_value_sources() {
     let date =
         NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
@@ -274,6 +337,12 @@ fn test_data_converter_string_target_accepts_all_value_sources() {
 
 /// Test direct strict conversions for non-numeric target types.
 #[test]
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 fn test_data_converter_strict_targets_cover_success_and_errors() {
     let date =
         NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
@@ -374,6 +443,12 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
 
 /// Test temporal and complex conversions with strict target behavior.
 #[test]
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 fn test_data_converter_temporal_and_complex_conversions() {
     let date =
         NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
@@ -416,6 +491,7 @@ fn test_data_converter_temporal_and_complex_conversions() {
 
 /// Verifies date formatting rejects years outside the canonical four digits.
 #[test]
+#[cfg(feature = "chrono")]
 fn test_date_to_string_rejects_non_canonical_years() {
     for year in [-1, 10_000] {
         let date = NaiveDate::from_ymd_opt(year, 1, 1)
@@ -429,6 +505,7 @@ fn test_date_to_string_rejects_non_canonical_years() {
 
 /// Verifies local date-time formatting rejects non-canonical years.
 #[test]
+#[cfg(feature = "chrono")]
 fn test_datetime_to_string_rejects_non_canonical_years() {
     let time =
         NaiveTime::from_hms_opt(0, 0, 0).expect("test time should be valid");
@@ -445,6 +522,7 @@ fn test_datetime_to_string_rejects_non_canonical_years() {
 
 /// Verifies UTC instant formatting rejects non-canonical years.
 #[test]
+#[cfg(feature = "chrono")]
 fn test_instant_to_string_rejects_non_canonical_years() {
     let time =
         NaiveTime::from_hms_opt(0, 0, 0).expect("test time should be valid");
@@ -490,6 +568,7 @@ fn test_data_converter_consuming_string_identity_reuses_owned_storage() {
 
 /// Verifies consuming URL conversion reuses owned URL storage.
 #[test]
+#[cfg(feature = "url")]
 fn test_data_converter_consuming_url_identity_reuses_owned_storage() {
     let source = Url::parse("https://example.com/owned-payload")
         .expect("test URL should parse");

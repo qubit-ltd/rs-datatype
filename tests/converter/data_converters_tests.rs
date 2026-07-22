@@ -21,6 +21,19 @@ use qubit_datatype::converter::{
     StringConversionOptions,
 };
 
+use super::internal::InflatedSizeHintIterator;
+
+/// Verifies batch conversion does not allocate from an untrusted size hint.
+#[test]
+fn test_data_converters_ignore_inflated_size_hint() {
+    let converted =
+        DataConverters::from_iterator(InflatedSizeHintIterator::new("42"))
+            .to_vec::<u16>()
+            .expect("actual iterator elements should determine allocation");
+
+    assert_eq!(converted, vec![42]);
+}
+
 /// Test batch conversion from a borrowed vector without moving the source.
 #[test]
 fn test_data_converters_from_borrowed_vec_converts_all_values() {

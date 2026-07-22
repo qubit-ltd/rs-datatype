@@ -32,10 +32,7 @@ fn test_parse_duration_text_respects_parse_mode() {
     }
     assert_eq!(
         parse_duration_text("2m", &strict),
-        Err(DurationParseError::NonCanonicalUnit {
-            unit: "m".to_owned(),
-            canonical: "min".to_owned(),
-        }),
+        Err(DurationParseError::NonCanonicalUnit { canonical: "min" }),
     );
     assert_eq!(
         parse_duration_text("2m", &lenient),
@@ -72,9 +69,7 @@ fn test_parse_duration_text_classifies_errors() {
     );
     assert_eq!(
         parse_duration_text("12fortnights", &options),
-        Err(DurationParseError::UnsupportedUnit {
-            unit: "fortnights".to_owned(),
-        }),
+        Err(DurationParseError::UnsupportedUnit),
     );
     assert_eq!(
         parse_duration_text(

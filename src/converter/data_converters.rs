@@ -145,8 +145,7 @@ where
         T: DataConversionTarget,
     {
         let sources = self.sources;
-        let (capacity, _) = sources.size_hint();
-        let mut converted = Vec::with_capacity(capacity);
+        let mut converted = Vec::new();
         for (index, source) in sources.enumerate() {
             let value = match source.into().into_target_with::<T>(options) {
                 Ok(value) => value,
@@ -263,6 +262,14 @@ where
 
 impl<'a, V> From<&'a [V]> for DataConverters<std::slice::Iter<'a, V>> {
     /// Creates a batch converter from a borrowed slice.
+    ///
+    /// # Parameters
+    ///
+    /// * `values` - Slice whose elements remain borrowed.
+    ///
+    /// # Returns
+    ///
+    /// A converter iterating over borrowed elements without cloning them.
     #[inline(always)]
     fn from(values: &'a [V]) -> Self {
         Self::from_iterator(values.iter())
@@ -271,6 +278,14 @@ impl<'a, V> From<&'a [V]> for DataConverters<std::slice::Iter<'a, V>> {
 
 impl<'a, V> From<&'a Vec<V>> for DataConverters<std::slice::Iter<'a, V>> {
     /// Creates a batch converter from a borrowed vector.
+    ///
+    /// # Parameters
+    ///
+    /// * `values` - Vector whose elements remain borrowed.
+    ///
+    /// # Returns
+    ///
+    /// A converter iterating over borrowed elements without cloning them.
     #[inline(always)]
     fn from(values: &'a Vec<V>) -> Self {
         Self::from(values.as_slice())
@@ -279,6 +294,14 @@ impl<'a, V> From<&'a Vec<V>> for DataConverters<std::slice::Iter<'a, V>> {
 
 impl<V> From<Vec<V>> for DataConverters<std::vec::IntoIter<V>> {
     /// Creates a batch converter from an owned vector.
+    ///
+    /// # Parameters
+    ///
+    /// * `values` - Vector to consume.
+    ///
+    /// # Returns
+    ///
+    /// A converter consuming elements from the vector.
     #[inline(always)]
     fn from(values: Vec<V>) -> Self {
         Self::from_iterator(values.into_iter())

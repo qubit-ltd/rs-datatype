@@ -78,6 +78,115 @@ fn integer_to_duration(
     }
 }
 
+/// Builds the public duration parser options used by conversion.
+///
+/// # Parameters
+///
+/// * `options` - Conversion policies supplying suffix and text-limit rules.
+///
+/// # Returns
+///
+/// Duration text options equivalent to the converter configuration.
+fn duration_text_options(
+    options: &DataConversionOptions,
+) -> DurationTextOptions {
+    DurationTextOptions::new(
+        options.duration().suffixless_string_policy(),
+        options.duration().unit_parse_mode(),
+    )
+    .with_max_text_bytes(options.duration().max_text_bytes())
+}
+
+/// Selects the expected duration grammar for an invalid source value.
+///
+/// # Parameters
+///
+/// * `value` - Normalized duration text that failed parsing.
+/// * `options` - Duration suffix and unit parsing policies.
+///
+/// # Returns
+///
+/// A static grammar distinguishing required and optional suffixes as well as
+/// strict and lenient unit vocabularies.
+fn expected_duration_syntax(
+    value: &str,
+    options: &DataConversionOptions,
+) -> &'static str {
+    let suffix_required = !value.is_empty()
+        && value.bytes().all(|byte| byte.is_ascii_digit())
+        && options.duration().suffixless_string_policy()
+            == SuffixlessDurationPolicy::Reject;
+    match (suffix_required, options.duration().unit_parse_mode()) {
+        (true, DurationUnitParseMode::Strict) => {
+            "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)"
+        }
+        (true, DurationUnitParseMode::Lenient) => {
+            "[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)"
+        }
+        (false, DurationUnitParseMode::Strict) => {
+            "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)?"
+        }
+        (false, DurationUnitParseMode::Lenient) => {
+            "[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)?"
+        }
+    }
+}
+
+/// Maps a duration parser error into the converter error model.
+///
+/// # Parameters
+///
+/// * `error` - Structured parsing failure to translate.
+/// * `value` - Normalized source text used only to select syntax guidance.
+/// * `options` - Conversion policies that determine expected syntax.
+///
+/// # Returns
+///
+/// A value-free conversion error preserving the limit, syntax, unit, or range
+/// category. Arbitrary source suffixes are never retained.
+fn map_duration_parse_error(
+    error: DurationParseError,
+    value: &str,
+    options: &DataConversionOptions,
+) -> DataConversionError {
+    let to = DataType::Duration;
+    match error {
+        DurationParseError::LimitExceeded { maximum } => {
+            DataConversionError::limit_exceeded(
+                DataType::String,
+                to,
+                ConversionLimit::DurationTextBytes { maximum },
+            )
+        }
+        DurationParseError::InvalidSyntax => DataConversionError::invalid(
+            DataType::String,
+            to,
+            InvalidValueReason::InvalidSyntax {
+                expected: expected_duration_syntax(value, options),
+            },
+        ),
+        DurationParseError::NonCanonicalUnit { canonical } => {
+            DataConversionError::invalid(
+                DataType::String,
+                to,
+                InvalidValueReason::NonCanonicalDurationUnit {
+                    canonical: canonical.to_owned(),
+                },
+            )
+        }
+        DurationParseError::UnsupportedUnit => DataConversionError::invalid(
+            DataType::String,
+            to,
+            InvalidValueReason::UnsupportedDurationUnit,
+        ),
+        DurationParseError::OutOfRange => DataConversionError::invalid(
+            DataType::String,
+            to,
+            InvalidValueReason::OutOfRange,
+        ),
+    }
+}
+
 /// Parses the canonical duration grammar.
 ///
 /// # Parameters
@@ -97,78 +206,27 @@ fn parse_duration(
     value: &str,
     options: &DataConversionOptions,
 ) -> Result<Duration, DataConversionError> {
-    let to = DataType::Duration;
-    let value = normalize(value, options, to)?;
-    let text_options = DurationTextOptions::new(
-        options.duration().suffixless_string_policy(),
-        options.duration().unit_parse_mode(),
-    )
-    .with_max_text_bytes(options.duration().max_text_bytes());
-    match parse_duration_text(value, &text_options) {
-        Ok(duration) => Ok(duration),
-        Err(DurationParseError::LimitExceeded { maximum }) => {
-            Err(DataConversionError::limit_exceeded(
-                DataType::String,
-                to,
-                ConversionLimit::DurationTextBytes { maximum },
-            ))
-        }
-        Err(DurationParseError::InvalidSyntax) => {
-            let suffix_required = !value.is_empty()
-                && value.bytes().all(|byte| byte.is_ascii_digit())
-                && options.duration().suffixless_string_policy()
-                    == SuffixlessDurationPolicy::Reject;
-            Err(DataConversionError::invalid(
-                DataType::String,
-                to,
-                InvalidValueReason::InvalidSyntax {
-                    expected: if suffix_required {
-                        match options.duration().unit_parse_mode() {
-                            DurationUnitParseMode::Strict => {
-                                "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)"
-                            }
-                            DurationUnitParseMode::Lenient => {
-                                "[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)"
-                            }
-                        }
-                    } else {
-                        match options.duration().unit_parse_mode() {
-                            DurationUnitParseMode::Strict => {
-                                "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)?"
-                            }
-                            DurationUnitParseMode::Lenient => {
-                                "[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)?"
-                            }
-                        }
-                    },
-                },
-            ))
-        }
-        Err(DurationParseError::NonCanonicalUnit { canonical, .. }) => {
-            Err(DataConversionError::invalid(
-                DataType::String,
-                to,
-                InvalidValueReason::NonCanonicalDurationUnit { canonical },
-            ))
-        }
-        Err(DurationParseError::UnsupportedUnit { .. }) => {
-            Err(DataConversionError::invalid(
-                DataType::String,
-                to,
-                InvalidValueReason::UnsupportedDurationUnit,
-            ))
-        }
-        Err(DurationParseError::OutOfRange) => {
-            Err(DataConversionError::invalid(
-                DataType::String,
-                to,
-                InvalidValueReason::OutOfRange,
-            ))
-        }
-    }
+    let value = normalize(value, options, DataType::Duration)?;
+    parse_duration_text(value, &duration_text_options(options))
+        .map_err(|error| map_duration_parse_error(error, value, options))
 }
 
 impl DataConversionTarget for Duration {
+    /// Converts a borrowed runtime value to a duration.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to convert.
+    /// * `options` - String, numeric-unit, and duration parsing policies.
+    ///
+    /// # Returns
+    ///
+    /// The represented non-negative duration.
+    ///
+    /// # Errors
+    ///
+    /// Returns a missing, unsupported, negative, syntax, unit, range, or
+    /// configured resource-limit error as applicable to the source.
     fn convert_from(
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
