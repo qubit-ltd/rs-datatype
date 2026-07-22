@@ -9,6 +9,8 @@
 //!
 //! Defines options that control string-to-boolean conversion.
 
+use std::collections::HashSet;
+
 use serde::de::Error as DeError;
 use serde::{
     Deserialize,
@@ -19,6 +21,53 @@ use serde::{
 use super::super::error::BooleanLiteralConflictError;
 use super::boolean_numeric_policy::BooleanNumericPolicy;
 use super::internal::UncheckedBooleanConversionOptions;
+
+/// Reports whether case-sensitive true and false literals overlap.
+///
+/// # Parameters
+///
+/// * `true_literals` - Literals recognized as true.
+/// * `false_literals` - Literals recognized as false.
+///
+/// # Returns
+///
+/// `true` when any literal occurs on both sides with identical bytes.
+fn case_sensitive_literals_overlap(
+    true_literals: &[String],
+    false_literals: &[String],
+) -> bool {
+    let true_literals = true_literals
+        .iter()
+        .map(String::as_str)
+        .collect::<HashSet<_>>();
+    false_literals
+        .iter()
+        .any(|literal| true_literals.contains(literal.as_str()))
+}
+
+/// Reports whether true and false literals overlap after ASCII case folding.
+///
+/// # Parameters
+///
+/// * `true_literals` - Literals recognized as true.
+/// * `false_literals` - Literals recognized as false.
+///
+/// # Returns
+///
+/// `true` when any literal occurs on both sides after ASCII lowercasing.
+fn ascii_case_insensitive_literals_overlap(
+    true_literals: &[String],
+    false_literals: &[String],
+) -> bool {
+    let true_literals = true_literals
+        .iter()
+        .map(|literal| literal.to_ascii_lowercase())
+        .collect::<HashSet<_>>();
+    false_literals
+        .iter()
+        .map(|literal| literal.to_ascii_lowercase())
+        .any(|literal| true_literals.contains(&literal))
+}
 
 /// Validated rules for textual and numeric boolean conversion.
 ///
@@ -314,15 +363,17 @@ impl BooleanConversionOptions {
     /// Returns [`BooleanLiteralConflictError`] when the sets overlap according
     /// to the configured case-sensitivity rule.
     pub fn validate(&self) -> Result<(), BooleanLiteralConflictError> {
-        let overlaps = self.true_literals.iter().any(|true_literal| {
-            self.false_literals.iter().any(|false_literal| {
-                if self.case_sensitive {
-                    true_literal == false_literal
-                } else {
-                    true_literal.eq_ignore_ascii_case(false_literal)
-                }
-            })
-        });
+        let overlaps = if self.case_sensitive {
+            case_sensitive_literals_overlap(
+                &self.true_literals,
+                &self.false_literals,
+            )
+        } else {
+            ascii_case_insensitive_literals_overlap(
+                &self.true_literals,
+                &self.false_literals,
+            )
+        };
         if overlaps {
             Err(BooleanLiteralConflictError)
         } else {
@@ -333,6 +384,10 @@ impl BooleanConversionOptions {
 
 impl Default for BooleanConversionOptions {
     /// Creates default boolean conversion options.
+    ///
+    /// # Returns
+    ///
+    /// The validated strict Boolean conversion profile.
     #[inline(always)]
     fn default() -> Self {
         Self::strict()
@@ -341,6 +396,19 @@ impl Default for BooleanConversionOptions {
 
 impl<'de> Deserialize<'de> for BooleanConversionOptions {
     /// Deserializes and validates boolean conversion options.
+    ///
+    /// # Parameters
+    ///
+    /// * `deserializer` - Serde input containing the unchecked wire fields.
+    ///
+    /// # Returns
+    ///
+    /// Validated Boolean conversion options.
+    ///
+    /// # Errors
+    ///
+    /// Returns a deserializer error for malformed input, unknown fields, or
+    /// overlapping true and false literal sets.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,

@@ -64,38 +64,99 @@ fn integer_to_bool(
     }
 }
 
+/// Converts string input to a boolean under the configured policies.
+///
+/// # Parameters
+///
+/// * `value` - Source string before configured normalization.
+/// * `options` - String, Boolean literal, numeric policy, and text limits.
+///
+/// # Returns
+///
+/// The represented Boolean value.
+///
+/// # Errors
+///
+/// Returns a normalization or numeric-text limit error when those policies
+/// reject the input, or an invalid-Boolean error for unknown literals and
+/// rejected numeric values.
+fn string_to_bool(
+    value: &str,
+    options: &DataConversionOptions,
+) -> Result<bool, DataConversionError> {
+    let value = normalize(value, options, DataType::Bool)?;
+    if let Some(value) = options.boolean().parse(value) {
+        return Ok(value);
+    }
+    if !is_integer_syntax(value) {
+        return Err(DataConversionError::invalid(
+            DataType::String,
+            DataType::Bool,
+            InvalidValueReason::InvalidBoolean,
+        ));
+    }
+    check_numeric_text_limit(value, options, DataType::Bool)?;
+    let digits = value.strip_prefix(['+', '-']).unwrap_or(value);
+    let zero = digits.bytes().all(|byte| byte == b'0');
+    let one = !value.starts_with('-') && digits.trim_start_matches('0') == "1";
+    integer_to_bool(
+        zero,
+        one,
+        options.boolean().numeric_policy(),
+        DataType::String,
+    )
+}
+
+/// Converts an arbitrary-precision integer to a boolean.
+///
+/// # Parameters
+///
+/// * `value` - Arbitrary-precision integer source.
+/// * `options` - Boolean numeric policy.
+///
+/// # Returns
+///
+/// The Boolean selected by the numeric policy.
+///
+/// # Errors
+///
+/// Returns an invalid-Boolean error when the policy rejects `value`.
+#[cfg(feature = "big-integer")]
+fn big_integer_to_bool(
+    value: &BigInt,
+    options: &DataConversionOptions,
+) -> Result<bool, DataConversionError> {
+    integer_to_bool(
+        value.is_zero(),
+        value == &BigInt::from(1u8),
+        options.boolean().numeric_policy(),
+        DataType::BigInteger,
+    )
+}
+
 impl DataConversionTarget for bool {
+    /// Converts a borrowed runtime value to a Boolean.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to convert.
+    /// * `options` - String normalization and Boolean conversion policies.
+    ///
+    /// # Returns
+    ///
+    /// The converted Boolean.
+    ///
+    /// # Errors
+    ///
+    /// Returns a missing, unsupported, invalid-Boolean, normalization, or
+    /// numeric-text-limit error as applicable to the source.
     fn convert_from(
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::Bool(value) => Ok(*value),
-            DataConverter::String(value) => {
-                let value = normalize(value, options, DataType::Bool)?;
-                if let Some(value) = options.boolean().parse(value) {
-                    return Ok(value);
-                }
-                if is_integer_syntax(value) {
-                    check_numeric_text_limit(value, options, DataType::Bool)?;
-                    let digits =
-                        value.strip_prefix(['+', '-']).unwrap_or(value);
-                    let zero = digits.bytes().all(|byte| byte == b'0');
-                    let one = !value.starts_with('-')
-                        && digits.trim_start_matches('0') == "1";
-                    integer_to_bool(
-                        zero,
-                        one,
-                        options.boolean().numeric_policy(),
-                        DataType::String,
-                    )
-                } else {
-                    Err(source.invalid(
-                        DataType::Bool,
-                        InvalidValueReason::InvalidBoolean,
-                    ))
-                }
-            }
+            DataConverter::String(value) => string_to_bool(value, options),
             DataConverter::Int8(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
@@ -157,12 +218,9 @@ impl DataConversionTarget for bool {
                 DataType::UInt128,
             ),
             #[cfg(feature = "big-integer")]
-            DataConverter::BigInteger(value) => integer_to_bool(
-                value.is_zero(),
-                value.as_ref() == &BigInt::from(1u8),
-                options.boolean().numeric_policy(),
-                DataType::BigInteger,
-            ),
+            DataConverter::BigInteger(value) => {
+                big_integer_to_bool(value.as_ref(), options)
+            }
             DataConverter::Unset(_) => Err(source.missing(DataType::Bool)),
             _ => Err(source.unsupported(DataType::Bool)),
         }

@@ -11,10 +11,10 @@
 
 mod data_conversion_target_tests;
 mod data_converter;
-#[cfg(feature = "chrono")]
 mod data_converter_tests;
 mod data_converters_tests;
 mod error;
+mod internal;
 mod options;
 mod scalar_item_tests;
 mod scalar_items_tests;

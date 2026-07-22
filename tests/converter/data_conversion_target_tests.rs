@@ -6,32 +6,9 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 
-use qubit_datatype::{
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    DataConverter,
-    DataType,
-    DataTypeOf,
-};
+use qubit_datatype::DataConverter;
 
-/// A downstream-owned conversion target used to prove the target-side API is
-/// extensible without implementing a foreign trait for `DataConverter`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Port(u16);
-
-impl DataTypeOf for Port {
-    const DATA_TYPE: DataType = DataType::UInt16;
-}
-
-impl DataConversionTarget for Port {
-    fn convert_from(
-        source: &DataConverter<'_>,
-        options: &DataConversionOptions,
-    ) -> Result<Self, DataConversionError> {
-        u16::convert_from(source, options).map(Self)
-    }
-}
+use super::internal::Port;
 
 /// Verifies that a downstream newtype can own its target conversion.
 #[test]

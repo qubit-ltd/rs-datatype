@@ -12,7 +12,9 @@ use qubit_datatype::converter::DataConversionErrorKind;
 use std::collections::HashMap;
 use std::time::Duration;
 
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
+#[cfg(feature = "chrono")]
 use chrono::{
     DateTime,
     NaiveDate,
@@ -20,12 +22,14 @@ use chrono::{
     NaiveTime,
     Utc,
 };
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use qubit_datatype::{
     DataConversionError,
     DataConverter,
     DataType,
 };
+#[cfg(feature = "url")]
 use url::Url;
 
 /// Asserts that a converter reports the expected data type.
@@ -83,46 +87,66 @@ fn test_data_converter_from_impls_cover_all_sources() {
     assert_data_type(DataConverter::from(float64_value), DataType::Float64);
     assert_data_type(DataConverter::from(&float64_value), DataType::Float64);
 
-    let date =
-        NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
-    let time =
-        NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
-    let datetime = NaiveDateTime::new(date, time);
-    let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
     let duration = Duration::new(1, 2);
-    assert_data_type(DataConverter::from(date), DataType::Date);
-    assert_data_type(DataConverter::from(&date), DataType::Date);
-    assert_data_type(DataConverter::from(time), DataType::Time);
-    assert_data_type(DataConverter::from(&time), DataType::Time);
-    assert_data_type(DataConverter::from(datetime), DataType::DateTime);
-    assert_data_type(DataConverter::from(&datetime), DataType::DateTime);
-    assert_data_type(DataConverter::from(instant), DataType::Instant);
-    assert_data_type(DataConverter::from(&instant), DataType::Instant);
     assert_data_type(DataConverter::from(duration), DataType::Duration);
     assert_data_type(DataConverter::from(&duration), DataType::Duration);
 
-    let big_int = BigInt::from(15);
-    let big_decimal = BigDecimal::from(16);
-    let url = Url::parse("https://example.com").expect("test URL should parse");
+    #[cfg(feature = "chrono")]
+    {
+        let date = NaiveDate::from_ymd_opt(2026, 5, 1)
+            .expect("test date should be valid");
+        let time = NaiveTime::from_hms_opt(12, 30, 45)
+            .expect("test time should be valid");
+        let datetime = NaiveDateTime::new(date, time);
+        let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
+        assert_data_type(DataConverter::from(date), DataType::Date);
+        assert_data_type(DataConverter::from(&date), DataType::Date);
+        assert_data_type(DataConverter::from(time), DataType::Time);
+        assert_data_type(DataConverter::from(&time), DataType::Time);
+        assert_data_type(DataConverter::from(datetime), DataType::DateTime);
+        assert_data_type(DataConverter::from(&datetime), DataType::DateTime);
+        assert_data_type(DataConverter::from(instant), DataType::Instant);
+        assert_data_type(DataConverter::from(&instant), DataType::Instant);
+    }
+
+    #[cfg(feature = "big-integer")]
+    {
+        let big_int = BigInt::from(15);
+        assert_data_type(
+            DataConverter::from(big_int.clone()),
+            DataType::BigInteger,
+        );
+        assert_data_type(DataConverter::from(&big_int), DataType::BigInteger);
+    }
+    #[cfg(feature = "big-decimal")]
+    {
+        let big_decimal = BigDecimal::from(16);
+        assert_data_type(
+            DataConverter::from(big_decimal.clone()),
+            DataType::BigDecimal,
+        );
+        assert_data_type(
+            DataConverter::from(&big_decimal),
+            DataType::BigDecimal,
+        );
+    }
+    #[cfg(feature = "url")]
+    {
+        let url =
+            Url::parse("https://example.com").expect("test URL should parse");
+        assert_data_type(DataConverter::from(url.clone()), DataType::Url);
+        assert_data_type(DataConverter::from(&url), DataType::Url);
+    }
     let mut map = HashMap::new();
     map.insert("k".to_string(), "v".to_string());
-    let json = serde_json::json!({"k": "v"});
-    assert_data_type(
-        DataConverter::from(big_int.clone()),
-        DataType::BigInteger,
-    );
-    assert_data_type(DataConverter::from(&big_int), DataType::BigInteger);
-    assert_data_type(
-        DataConverter::from(big_decimal.clone()),
-        DataType::BigDecimal,
-    );
-    assert_data_type(DataConverter::from(&big_decimal), DataType::BigDecimal);
-    assert_data_type(DataConverter::from(url.clone()), DataType::Url);
-    assert_data_type(DataConverter::from(&url), DataType::Url);
     assert_data_type(DataConverter::from(map.clone()), DataType::StringMap);
     assert_data_type(DataConverter::from(&map), DataType::StringMap);
-    assert_data_type(DataConverter::from(json.clone()), DataType::Json);
-    assert_data_type(DataConverter::from(&json), DataType::Json);
+    #[cfg(feature = "json")]
+    {
+        let json = serde_json::json!({"k": "v"});
+        assert_data_type(DataConverter::from(json.clone()), DataType::Json);
+        assert_data_type(DataConverter::from(&json), DataType::Json);
+    }
 
     let string = String::from("17");
     assert_data_type(DataConverter::from("17"), DataType::String);

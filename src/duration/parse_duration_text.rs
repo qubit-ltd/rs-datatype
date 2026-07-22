@@ -55,6 +55,9 @@ pub fn parse_duration_text(
     if digits.is_empty() {
         return Err(DurationParseError::InvalidSyntax);
     }
+    if !suffix.chars().all(char::is_alphabetic) {
+        return Err(DurationParseError::InvalidSyntax);
+    }
     let unit = resolve_unit(suffix, options)?;
     let value = digits
         .parse::<u128>()
@@ -91,17 +94,8 @@ fn resolve_unit(
             SuffixlessDurationPolicy::Assume(unit) => Ok(unit),
         };
     }
-    let result = match options.unit_parse_mode() {
+    match options.unit_parse_mode() {
         DurationUnitParseMode::Strict => DurationUnit::parse_strict(suffix),
         DurationUnitParseMode::Lenient => DurationUnit::parse_lenient(suffix),
-    };
-    match result {
-        Ok(unit) => Ok(unit),
-        Err(DurationParseError::UnsupportedUnit { .. })
-            if !suffix.chars().all(char::is_alphabetic) =>
-        {
-            Err(DurationParseError::InvalidSyntax)
-        }
-        Err(error) => Err(error),
     }
 }

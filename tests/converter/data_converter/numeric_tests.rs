@@ -9,18 +9,29 @@
 
 use qubit_datatype::converter::DataConversionErrorKind;
 
+#[cfg(feature = "big-number")]
 use std::collections::HashMap;
+#[cfg(feature = "big-decimal")]
 use std::str::FromStr;
 use std::time::Duration;
 
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
+#[cfg(feature = "chrono")]
+use chrono::NaiveDate;
+#[cfg(all(
+    feature = "big-decimal",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use chrono::{
     DateTime,
-    NaiveDate,
     NaiveDateTime,
     NaiveTime,
     Utc,
 };
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use proptest::proptest;
 use qubit_datatype::{
@@ -33,9 +44,16 @@ use qubit_datatype::{
     NumericConversionOptions,
     StringConversionOptions,
 };
+#[cfg(all(
+    feature = "big-decimal",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
 use url::Url;
 
 /// Creates a very large BigInt for overflow-oriented tests.
+#[cfg(feature = "big-integer")]
 fn create_huge_bigint() -> BigInt {
     BigInt::parse_bytes(b"10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", 10)
         .expect("huge BigInt literal should parse")
@@ -77,10 +95,7 @@ fn test_data_converter_from_string_converts_to_numbers_and_bool() {
 /// Test signed integer targets across all supported source variants.
 #[test]
 fn test_data_converter_signed_integer_targets_accept_supported_sources() {
-    let big_int = BigInt::from(20);
-    let big_decimal = BigDecimal::from(21);
-
-    let cases = [
+    let cases = vec![
         (DataConverter::from(true), 1i128),
         (DataConverter::from('A'), 65),
         (DataConverter::from(-1i8), -1),
@@ -96,9 +111,21 @@ fn test_data_converter_signed_integer_targets_accept_supported_sources() {
         (DataConverter::from(13.0f32), 13),
         (DataConverter::from(14.0f64), 14),
         (DataConverter::from("15"), 15),
-        (DataConverter::from(&big_int), 20),
-        (DataConverter::from(&big_decimal), 21),
     ];
+    #[cfg(feature = "big-integer")]
+    let big_int = BigInt::from(20);
+    #[cfg(feature = "big-integer")]
+    let cases = cases
+        .into_iter()
+        .chain([(DataConverter::from(&big_int), 20)])
+        .collect::<Vec<_>>();
+    #[cfg(feature = "big-decimal")]
+    let big_decimal = BigDecimal::from(21);
+    #[cfg(feature = "big-decimal")]
+    let cases = cases
+        .into_iter()
+        .chain([(DataConverter::from(&big_decimal), 21)])
+        .collect::<Vec<_>>();
     for (source, expected) in cases {
         assert_eq!(
             source.to::<i128>().expect("source should convert to i128"),
@@ -136,16 +163,24 @@ fn test_data_converter_signed_integer_targets_accept_supported_sources() {
         DataConverter::from(f64::MAX).to::<i128>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
-    let huge = create_huge_bigint();
-    let huge_decimal = BigDecimal::from(huge.clone());
-    assert!(matches!(
-        DataConverter::from(&huge).to::<i128>(),
-        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
-    ));
-    assert!(matches!(
-        DataConverter::from(&huge_decimal).to::<i128>(),
-        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
-    ));
+    #[cfg(feature = "big-integer")]
+    {
+        let huge = create_huge_bigint();
+        assert!(matches!(
+            DataConverter::from(&huge).to::<i128>(),
+            Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
+        ));
+    }
+    #[cfg(feature = "big-number")]
+    {
+        let huge = create_huge_bigint();
+        let huge_decimal = BigDecimal::from(huge);
+        assert!(matches!(
+            DataConverter::from(&huge_decimal).to::<i128>(),
+            Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
+        ));
+    }
+    #[cfg(feature = "chrono")]
     assert!(matches!(
         DataConverter::from(
             NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date")
@@ -221,11 +256,7 @@ fn test_data_converter_unsigned_integer_targets_accept_supported_sources() {
 /// Test floating point target conversions across supported source variants.
 #[test]
 fn test_data_converter_float_targets_accept_supported_sources() {
-    let big_int = BigInt::from(20);
-    let big_decimal =
-        BigDecimal::from_str("21.5").expect("test BigDecimal should parse");
-
-    let f32_sources = [
+    let f32_sources = vec![
         DataConverter::from(1.0f32),
         DataConverter::from(2.0f64),
         DataConverter::from(true),
@@ -241,19 +272,8 @@ fn test_data_converter_float_targets_accept_supported_sources() {
         DataConverter::from(12u64),
         DataConverter::from(13u128),
         DataConverter::from("15.5"),
-        DataConverter::from(&big_int),
-        DataConverter::from(&big_decimal),
     ];
-    for source in f32_sources {
-        assert!(
-            source
-                .to::<f32>()
-                .expect("source should convert to f32")
-                .is_finite()
-        );
-    }
-
-    let f64_sources = [
+    let f64_sources = vec![
         DataConverter::from(1.0f64),
         DataConverter::from(2.0f32),
         DataConverter::from(false),
@@ -269,9 +289,41 @@ fn test_data_converter_float_targets_accept_supported_sources() {
         DataConverter::from(12u64),
         DataConverter::from(13u128),
         DataConverter::from("15.5"),
-        DataConverter::from(&big_int),
-        DataConverter::from(&big_decimal),
     ];
+    #[cfg(feature = "big-integer")]
+    let big_int = BigInt::from(20);
+    #[cfg(feature = "big-integer")]
+    let f32_sources = f32_sources
+        .into_iter()
+        .chain([DataConverter::from(&big_int)])
+        .collect::<Vec<_>>();
+    #[cfg(feature = "big-integer")]
+    let f64_sources = f64_sources
+        .into_iter()
+        .chain([DataConverter::from(&big_int)])
+        .collect::<Vec<_>>();
+    #[cfg(feature = "big-decimal")]
+    let big_decimal =
+        BigDecimal::from_str("21.5").expect("test BigDecimal should parse");
+    #[cfg(feature = "big-decimal")]
+    let f32_sources = f32_sources
+        .into_iter()
+        .chain([DataConverter::from(&big_decimal)])
+        .collect::<Vec<_>>();
+    #[cfg(feature = "big-decimal")]
+    let f64_sources = f64_sources
+        .into_iter()
+        .chain([DataConverter::from(&big_decimal)])
+        .collect::<Vec<_>>();
+    for source in f32_sources {
+        assert!(
+            source
+                .to::<f32>()
+                .expect("source should convert to f32")
+                .is_finite()
+        );
+    }
+
     for source in f64_sources {
         assert!(
             source
@@ -312,12 +364,18 @@ fn test_data_converter_float_targets_accept_supported_sources() {
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
 
-    let huge = create_huge_bigint();
-    let huge_decimal = BigDecimal::from(huge.clone());
-    assert!(DataConverter::from(&huge).to::<f32>().is_err());
-    assert!(DataConverter::from(&huge).to::<f64>().is_err());
-    assert!(DataConverter::from(&huge_decimal).to::<f32>().is_err());
-    assert!(DataConverter::from(&huge_decimal).to::<f64>().is_err());
+    #[cfg(feature = "big-integer")]
+    {
+        let huge = create_huge_bigint();
+        assert!(DataConverter::from(&huge).to::<f32>().is_err());
+        assert!(DataConverter::from(&huge).to::<f64>().is_err());
+    }
+    #[cfg(feature = "big-number")]
+    {
+        let huge_decimal = BigDecimal::from(create_huge_bigint());
+        assert!(DataConverter::from(&huge_decimal).to::<f32>().is_err());
+        assert!(DataConverter::from(&huge_decimal).to::<f64>().is_err());
+    }
 }
 
 /// Test integer conversion range checks across signed and unsigned targets.
@@ -376,6 +434,7 @@ fn test_data_converter_float_conversions_check_non_finite_and_overflow() {
 
 /// Test BigInt and BigDecimal conversions and range failures.
 #[test]
+#[cfg(feature = "big-number")]
 fn test_data_converter_big_number_conversions_check_range() {
     let big_int = BigInt::from(i64::MAX);
     let converted: i64 = DataConverter::from(&big_int)
@@ -401,6 +460,7 @@ fn test_data_converter_big_number_conversions_check_range() {
 
 /// Test BigInt and BigDecimal values in the unsigned-only `u128` range.
 #[test]
+#[cfg(feature = "big-number")]
 fn test_data_converter_big_numbers_preserve_unsigned_only_u128_values() {
     let expected = 1_u128 << 127;
     let big_int = BigInt::from(expected);
@@ -419,6 +479,7 @@ fn test_data_converter_numeric_lossy_conversion() {
 
 /// Test extreme decimal exponents are classified without expanding powers.
 #[test]
+#[cfg(feature = "big-decimal")]
 fn test_data_converter_big_decimal_extreme_exponents_are_bounded() {
     let huge = BigDecimal::from_str("1e1000000000")
         .expect("large positive exponent should parse compactly");
@@ -439,6 +500,7 @@ fn test_data_converter_big_decimal_extreme_exponents_are_bounded() {
 
 /// Test exponent expansion cannot exhaust memory when producing a `BigInt`.
 #[test]
+#[cfg(feature = "big-number")]
 fn test_data_converter_bigint_exponent_expansion_is_bounded() {
     let huge = BigDecimal::from_str("1e738508196")
         .expect("large positive exponent should parse compactly");
@@ -461,6 +523,7 @@ fn test_data_converter_bigint_exponent_expansion_is_bounded() {
 
 /// Test textual and typed non-finite values share BigDecimal classification.
 #[test]
+#[cfg(feature = "big-decimal")]
 fn test_data_converter_big_decimal_non_finite_classification_is_consistent() {
     for result in [
         DataConverter::from(f32::NAN).to::<BigDecimal>(),
@@ -553,6 +616,7 @@ fn test_data_converter_core_numeric_parser_covers_decimal_boundaries() {
 
 /// Test arbitrary-precision targets across every numeric source family.
 #[test]
+#[cfg(feature = "big-number")]
 fn test_data_converter_big_integer_target_covers_numeric_sources() {
     let integral_decimal = BigDecimal::from_str("12.0").unwrap();
     let sources = [
@@ -634,6 +698,7 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
 
 /// Test decimal text follows the fractional policy for BigInt targets.
 #[test]
+#[cfg(feature = "big-integer")]
 fn test_data_converter_big_integer_target_applies_policy_to_decimal_text() {
     assert_eq!(
         DataConverter::from("12.0").to::<BigInt>(),
@@ -711,30 +776,43 @@ fn test_data_converter_numeric_boundary_branches() {
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)),
     ));
 
-    let zero = BigDecimal::from(0);
-    assert_eq!(DataConverter::from(&zero).to::<i32>(), Ok(0));
-    let integral_decimal = BigDecimal::from_str("12.0").unwrap();
-    assert_eq!(DataConverter::from(&integral_decimal).to::<i32>(), Ok(12));
-    let fractional = BigDecimal::from_str("12.9").unwrap();
-    let lossy = DataConversionOptions::lossy();
-    assert_eq!(
-        DataConverter::from(&fractional).to_with::<i32>(&lossy),
-        Ok(12)
-    );
+    #[cfg(feature = "big-decimal")]
+    {
+        let zero = BigDecimal::from(0);
+        assert_eq!(DataConverter::from(&zero).to::<i32>(), Ok(0));
+        let integral_decimal = BigDecimal::from_str("12.0").unwrap();
+        assert_eq!(DataConverter::from(&integral_decimal).to::<i32>(), Ok(12));
+        let fractional = BigDecimal::from_str("12.9").unwrap();
+        let lossy = DataConversionOptions::lossy();
+        assert_eq!(
+            DataConverter::from(&fractional).to_with::<i32>(&lossy),
+            Ok(12)
+        );
 
-    assert_eq!(
-        DataConverter::from(1.25f32).to::<BigDecimal>(),
-        Ok(BigDecimal::from_str("1.25").unwrap()),
-    );
-    assert_eq!(
-        DataConverter::from(1.25f64).to::<BigDecimal>(),
-        Ok(BigDecimal::from_str("1.25").unwrap()),
-    );
-    assert_eq!(
-        DataConverter::from("12").to::<BigDecimal>(),
-        Ok(BigDecimal::from(12))
-    );
+        assert_eq!(
+            DataConverter::from(1.25f32).to::<BigDecimal>(),
+            Ok(BigDecimal::from_str("1.25").unwrap()),
+        );
+        assert_eq!(
+            DataConverter::from(1.25f64).to::<BigDecimal>(),
+            Ok(BigDecimal::from_str("1.25").unwrap()),
+        );
+        assert_eq!(
+            DataConverter::from("12").to::<BigDecimal>(),
+            Ok(BigDecimal::from(12))
+        );
+    }
+}
 
+/// Tests BigDecimal rejects rich non-numeric source families.
+#[cfg(all(
+    feature = "big-decimal",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
+#[test]
+fn test_data_converter_big_decimal_rejects_rich_non_numeric_sources() {
     let date = NaiveDate::from_ymd_opt(2026, 7, 12).unwrap();
     let time = NaiveTime::from_hms_opt(1, 2, 3).unwrap();
     let datetime = NaiveDateTime::new(date, time);
@@ -806,6 +884,7 @@ fn test_numeric_text_limit_applies_before_float_parsing() {
 
 /// Test BigInteger decimal digit limits for text materialization.
 #[test]
+#[cfg(feature = "big-integer")]
 fn test_big_integer_digit_limit_text_boundaries() {
     let at_limit = options_with_limits(
         NumericConversionLimits::default().with_max_big_integer_digits(4),
@@ -848,6 +927,7 @@ fn test_big_integer_digit_limit_text_boundaries() {
 
 /// Test BigDecimal expansion uses the configurable BigInteger digit limit.
 #[test]
+#[cfg(feature = "big-number")]
 fn test_big_integer_digit_limit_big_decimal_expansion() {
     let decimal = BigDecimal::new(BigInt::from(1), -3);
     let at_limit = options_with_limits(
@@ -874,6 +954,7 @@ fn test_big_integer_digit_limit_big_decimal_expansion() {
 /// Verifies consuming big-number identity conversion preserves values and
 /// continues to enforce the BigInteger digit limit.
 #[test]
+#[cfg(feature = "big-number")]
 fn test_data_converter_consuming_big_number_identity_preserves_limits() {
     let integer = BigInt::from(12_345_u32);
     assert_eq!(

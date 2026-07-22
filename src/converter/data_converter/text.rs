@@ -103,6 +103,20 @@ fn format_display_source(source: &DataConverter<'_>) -> Option<String> {
 }
 
 impl DataConversionTarget for char {
+    /// Converts a borrowed runtime value to one Unicode scalar value.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to convert.
+    /// * `options` - String normalization policies.
+    ///
+    /// # Returns
+    ///
+    /// The source character or the only scalar in normalized string input.
+    ///
+    /// # Errors
+    ///
+    /// Returns a missing, unsupported, normalization, or invalid-syntax error.
     fn convert_from(
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
@@ -129,6 +143,21 @@ impl DataConversionTarget for char {
 }
 
 impl DataConversionTarget for String {
+    /// Formats a borrowed runtime value as canonical text.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to format.
+    /// * `options` - String, duration, and structured conversion policies.
+    ///
+    /// # Returns
+    ///
+    /// The canonical string representation.
+    ///
+    /// # Errors
+    ///
+    /// Returns a missing, unsupported, normalization, range, precision, or
+    /// serialization error as applicable to the source.
     fn convert_from(
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
@@ -175,6 +204,20 @@ impl DataConversionTarget for String {
         }
     }
 
+    /// Formats a runtime value as canonical text, consuming it when possible.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Runtime value to consume.
+    /// * `options` - String, duration, and structured conversion policies.
+    ///
+    /// # Returns
+    ///
+    /// The canonical text; unchanged owned strings reuse their storage.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same conversion errors as [`Self::convert_from`].
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,
@@ -198,6 +241,22 @@ impl DataConversionTarget for String {
 macro_rules! impl_text_or_copy_target {
     ($target:ty, $variant:ident, $data_type:expr, $format:literal, $parser:expr) => {
         impl DataConversionTarget for $target {
+            /// Converts a borrowed runtime value to the canonical temporal
+            /// target.
+            ///
+            /// # Parameters
+            ///
+            /// * `source` - Borrowed runtime value to convert.
+            /// * `options` - String normalization policies.
+            ///
+            /// # Returns
+            ///
+            /// The parsed or copied temporal value.
+            ///
+            /// # Errors
+            ///
+            /// Returns a missing, unsupported, normalization, or canonical
+            /// temporal-syntax error.
             fn convert_from(
                 source: &DataConverter<'_>,
                 options: &DataConversionOptions,
@@ -224,6 +283,52 @@ macro_rules! impl_text_or_copy_target {
     };
 }
 
+/// Reports whether a value has the canonical `YYYY-MM-DD` byte shape.
+///
+/// # Parameters
+///
+/// * `value` - Candidate date text.
+///
+/// # Returns
+///
+/// `true` when every field contains only ASCII digits and both separators are
+/// in their canonical positions.
+#[cfg(feature = "chrono")]
+fn has_canonical_date_shape(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 10
+        && bytes[4] == b'-'
+        && bytes[7] == b'-'
+        && bytes[..4]
+            .iter()
+            .chain(bytes[5..7].iter())
+            .chain(bytes[8..].iter())
+            .all(u8::is_ascii_digit)
+}
+
+/// Reports whether a value has the canonical `HH:MM:SS` byte shape.
+///
+/// # Parameters
+///
+/// * `value` - Candidate whole-second time text.
+///
+/// # Returns
+///
+/// `true` when every field contains only ASCII digits and both separators are
+/// in their canonical positions.
+#[cfg(feature = "chrono")]
+fn has_canonical_time_shape(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    bytes.len() == 8
+        && bytes[2] == b':'
+        && bytes[5] == b':'
+        && bytes[..2]
+            .iter()
+            .chain(bytes[3..5].iter())
+            .chain(bytes[6..].iter())
+            .all(u8::is_ascii_digit)
+}
+
 /// Parses the canonical date grammar without alternate padding.
 ///
 /// # Parameters
@@ -235,11 +340,10 @@ macro_rules! impl_text_or_copy_target {
 /// `Some` for a valid ten-byte `YYYY-MM-DD` value, otherwise `None`.
 #[cfg(feature = "chrono")]
 fn parse_date(value: &str) -> Option<NaiveDate> {
-    if value.len() == 10 {
-        NaiveDate::parse_from_str(value, "%Y-%m-%d").ok()
-    } else {
-        None
+    if !has_canonical_date_shape(value) {
+        return None;
     }
+    NaiveDate::parse_from_str(value, "%Y-%m-%d").ok()
 }
 
 /// Parses a canonical time with at most nine fractional digits.
@@ -257,7 +361,7 @@ fn parse_time(value: &str) -> Option<NaiveTime> {
     let (whole, fraction) = value
         .split_once('.')
         .map_or((value, None), |(whole, fraction)| (whole, Some(fraction)));
-    if whole.len() != 8
+    if !has_canonical_time_shape(whole)
         || fraction.is_some_and(|fraction| {
             fraction.is_empty()
                 || fraction.len() > 9
@@ -280,11 +384,10 @@ fn parse_time(value: &str) -> Option<NaiveTime> {
 /// `Some` when canonical date and time components form a valid local
 /// date-time, otherwise `None`.
 #[cfg(feature = "chrono")]
+#[inline]
 fn parse_datetime(value: &str) -> Option<NaiveDateTime> {
     let (date, time) = value.split_once('T')?;
-    parse_date(date)?;
-    parse_time(time)?;
-    NaiveDateTime::parse_from_str(value, "%Y-%m-%dT%H:%M:%S%.f").ok()
+    Some(NaiveDateTime::new(parse_date(date)?, parse_time(time)?))
 }
 
 #[cfg(feature = "chrono")]
@@ -314,6 +417,20 @@ impl_text_or_copy_target!(
 
 #[cfg(feature = "chrono")]
 impl DataConversionTarget for DateTime<Utc> {
+    /// Converts a borrowed runtime value to a UTC instant.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to convert.
+    /// * `options` - String normalization policies.
+    ///
+    /// # Returns
+    ///
+    /// The copied instant or parsed RFC 3339 value normalized to UTC.
+    ///
+    /// # Errors
+    ///
+    /// Returns a missing, unsupported, normalization, or RFC 3339 syntax error.
     fn convert_from(
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
@@ -340,6 +457,21 @@ impl DataConversionTarget for DateTime<Utc> {
 
 #[cfg(feature = "url")]
 impl DataConversionTarget for Url {
+    /// Converts a borrowed runtime value to a URL.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to convert.
+    /// * `options` - String normalization and structured text-limit policies.
+    ///
+    /// # Returns
+    ///
+    /// A cloned URL or one parsed from normalized string input.
+    ///
+    /// # Errors
+    ///
+    /// Returns a missing, unsupported, normalization, text-limit, or URL syntax
+    /// error.
     fn convert_from(
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
@@ -371,6 +503,20 @@ impl DataConversionTarget for Url {
         }
     }
 
+    /// Converts a runtime value to a URL, consuming it when possible.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Runtime value to consume.
+    /// * `options` - String normalization and structured text-limit policies.
+    ///
+    /// # Returns
+    ///
+    /// The converted URL; an owned URL reuses its storage.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same conversion errors as [`Self::convert_from`].
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,
