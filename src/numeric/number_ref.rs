@@ -61,6 +61,57 @@ fn compare_big_integer_unsigned(left: &BigInt, right: u128) -> Ordering {
     }
 }
 
+/// Compares an arbitrary-precision integer with a fixed-width representation.
+///
+/// # Parameters
+///
+/// * `left` - Arbitrary-precision integer on the left.
+/// * `right` - Candidate fixed-width integer on the right.
+///
+/// # Returns
+///
+/// The ordering for a fixed-width integer, or `None` for any other numeric
+/// representation.
+#[cfg(feature = "big-integer")]
+fn compare_big_integer_to_fixed(
+    left: &BigInt,
+    right: NumberRepr<'_>,
+) -> Option<Ordering> {
+    match right {
+        NumberRepr::Int8(right) => {
+            Some(compare_big_integer_signed(left, i128::from(right)))
+        }
+        NumberRepr::Int16(right) => {
+            Some(compare_big_integer_signed(left, i128::from(right)))
+        }
+        NumberRepr::Int32(right) => {
+            Some(compare_big_integer_signed(left, i128::from(right)))
+        }
+        NumberRepr::Int64(right) => {
+            Some(compare_big_integer_signed(left, i128::from(right)))
+        }
+        NumberRepr::Int128(right) => {
+            Some(compare_big_integer_signed(left, right))
+        }
+        NumberRepr::UInt8(right) => {
+            Some(compare_big_integer_unsigned(left, u128::from(right)))
+        }
+        NumberRepr::UInt16(right) => {
+            Some(compare_big_integer_unsigned(left, u128::from(right)))
+        }
+        NumberRepr::UInt32(right) => {
+            Some(compare_big_integer_unsigned(left, u128::from(right)))
+        }
+        NumberRepr::UInt64(right) => {
+            Some(compare_big_integer_unsigned(left, u128::from(right)))
+        }
+        NumberRepr::UInt128(right) => {
+            Some(compare_big_integer_unsigned(left, right))
+        }
+        _ => None,
+    }
+}
+
 /// Borrows or copies a numeric value without depending on a runtime value enum.
 ///
 /// Values are constructed through [`From`] implementations. The internal
@@ -469,70 +520,15 @@ impl<'a> NumberRef<'a> {
         self,
         right: NumberRef<'_>,
     ) -> Option<Ordering> {
-        let ordering = match (self.inner, right.inner) {
-            (NumberRepr::BigInteger(left), NumberRepr::Int8(right)) => {
-                compare_big_integer_signed(left, i128::from(right))
+        match (self.inner, right.inner) {
+            (NumberRepr::BigInteger(left), right) => {
+                compare_big_integer_to_fixed(left, right)
             }
-            (NumberRepr::BigInteger(left), NumberRepr::Int16(right)) => {
-                compare_big_integer_signed(left, i128::from(right))
+            (left, NumberRepr::BigInteger(right)) => {
+                compare_big_integer_to_fixed(right, left).map(Ordering::reverse)
             }
-            (NumberRepr::BigInteger(left), NumberRepr::Int32(right)) => {
-                compare_big_integer_signed(left, i128::from(right))
-            }
-            (NumberRepr::BigInteger(left), NumberRepr::Int64(right)) => {
-                compare_big_integer_signed(left, i128::from(right))
-            }
-            (NumberRepr::BigInteger(left), NumberRepr::Int128(right)) => {
-                compare_big_integer_signed(left, right)
-            }
-            (NumberRepr::BigInteger(left), NumberRepr::UInt8(right)) => {
-                compare_big_integer_unsigned(left, u128::from(right))
-            }
-            (NumberRepr::BigInteger(left), NumberRepr::UInt16(right)) => {
-                compare_big_integer_unsigned(left, u128::from(right))
-            }
-            (NumberRepr::BigInteger(left), NumberRepr::UInt32(right)) => {
-                compare_big_integer_unsigned(left, u128::from(right))
-            }
-            (NumberRepr::BigInteger(left), NumberRepr::UInt64(right)) => {
-                compare_big_integer_unsigned(left, u128::from(right))
-            }
-            (NumberRepr::BigInteger(left), NumberRepr::UInt128(right)) => {
-                compare_big_integer_unsigned(left, right)
-            }
-            (NumberRepr::Int8(left), NumberRepr::BigInteger(right)) => {
-                compare_big_integer_signed(right, i128::from(left)).reverse()
-            }
-            (NumberRepr::Int16(left), NumberRepr::BigInteger(right)) => {
-                compare_big_integer_signed(right, i128::from(left)).reverse()
-            }
-            (NumberRepr::Int32(left), NumberRepr::BigInteger(right)) => {
-                compare_big_integer_signed(right, i128::from(left)).reverse()
-            }
-            (NumberRepr::Int64(left), NumberRepr::BigInteger(right)) => {
-                compare_big_integer_signed(right, i128::from(left)).reverse()
-            }
-            (NumberRepr::Int128(left), NumberRepr::BigInteger(right)) => {
-                compare_big_integer_signed(right, left).reverse()
-            }
-            (NumberRepr::UInt8(left), NumberRepr::BigInteger(right)) => {
-                compare_big_integer_unsigned(right, u128::from(left)).reverse()
-            }
-            (NumberRepr::UInt16(left), NumberRepr::BigInteger(right)) => {
-                compare_big_integer_unsigned(right, u128::from(left)).reverse()
-            }
-            (NumberRepr::UInt32(left), NumberRepr::BigInteger(right)) => {
-                compare_big_integer_unsigned(right, u128::from(left)).reverse()
-            }
-            (NumberRepr::UInt64(left), NumberRepr::BigInteger(right)) => {
-                compare_big_integer_unsigned(right, u128::from(left)).reverse()
-            }
-            (NumberRepr::UInt128(left), NumberRepr::BigInteger(right)) => {
-                compare_big_integer_unsigned(right, left).reverse()
-            }
-            _ => return None,
-        };
-        Some(ordering)
+            _ => None,
+        }
     }
 
     /// Compares values through exact arbitrary-precision decimal

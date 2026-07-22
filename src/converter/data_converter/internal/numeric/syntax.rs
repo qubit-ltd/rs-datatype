@@ -89,14 +89,8 @@ pub(super) fn parse_number(
     value: &str,
     to: DataType,
 ) -> Result<ParsedNumber, DataConversionError> {
-    let lower = value.to_ascii_lowercase();
-    match lower.as_str() {
-        "nan" => return Ok(ParsedNumber::NaN),
-        "inf" | "+inf" | "infinity" | "+infinity" => {
-            return Ok(ParsedNumber::PositiveInfinity);
-        }
-        "-inf" | "-infinity" => return Ok(ParsedNumber::NegativeInfinity),
-        _ => {}
+    if let Some(value) = parse_non_finite_number(value) {
+        return Ok(value);
     }
     if is_integer_syntax(value) {
         let negative = value.starts_with('-');
@@ -119,6 +113,35 @@ pub(super) fn parse_number(
                 expected: numeric_syntax(to),
             },
         )),
+    }
+}
+
+/// Parses a case-insensitive non-finite numeric spelling.
+///
+/// # Parameters
+///
+/// * `value` - Normalized numeric text to inspect.
+///
+/// # Returns
+///
+/// The corresponding non-finite marker, or `None` when `value` is not a
+/// supported non-finite spelling.
+#[cfg(feature = "big-decimal")]
+fn parse_non_finite_number(value: &str) -> Option<ParsedNumber> {
+    if value.eq_ignore_ascii_case("nan") {
+        Some(ParsedNumber::NaN)
+    } else if value.eq_ignore_ascii_case("inf")
+        || value.eq_ignore_ascii_case("+inf")
+        || value.eq_ignore_ascii_case("infinity")
+        || value.eq_ignore_ascii_case("+infinity")
+    {
+        Some(ParsedNumber::PositiveInfinity)
+    } else if value.eq_ignore_ascii_case("-inf")
+        || value.eq_ignore_ascii_case("-infinity")
+    {
+        Some(ParsedNumber::NegativeInfinity)
+    } else {
+        None
     }
 }
 
