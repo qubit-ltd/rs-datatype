@@ -9,7 +9,10 @@
 
 use libfuzzer_sys::fuzz_target;
 use qubit_datatype::{
-    CollectionConversionOptions, DataConversionOptions, EmptyItemPolicy, ScalarStringDataConverters,
+    CollectionConversionOptions,
+    DataConversionOptions,
+    EmptyItemPolicy,
+    ScalarStringDataConverters,
 };
 
 const MAX_INPUT_SIZE: usize = 16 * 1024;
@@ -23,7 +26,8 @@ fuzz_target!(|data: &[u8]| {
         return;
     };
     let max_items = usize::from(*policy_control >> 3);
-    let delimiter_count = usize::from(*delimiter_control) % (MAX_DELIMITERS + 1);
+    let delimiter_count =
+        usize::from(*delimiter_control) % (MAX_DELIMITERS + 1);
     let delimiter_count = delimiter_count.min(payload.len());
     let (delimiter_bytes, text_bytes) = payload.split_at(delimiter_count);
     let delimiters = delimiter_bytes.iter().copied().map(char::from);
@@ -46,7 +50,8 @@ fuzz_target!(|data: &[u8]| {
         let _ = item;
     }
 
-    let options = DataConversionOptions::env_friendly().with_collection_options(collection);
+    let options = DataConversionOptions::env_friendly()
+        .with_collection_options(collection);
     let converter = ScalarStringDataConverters::from(text);
     let _ = converter.to_first_with::<String>(&options);
     let _ = converter.to_vec_with::<String>(&options);
