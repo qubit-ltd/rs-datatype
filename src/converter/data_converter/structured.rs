@@ -32,6 +32,21 @@ use crate::datatype::DataType;
 
 #[cfg(feature = "json")]
 impl DataConversionTarget for serde_json::Value {
+    /// Converts a borrowed runtime value to JSON.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to convert.
+    /// * `options` - String normalization and structured text-limit policies.
+    ///
+    /// # Returns
+    ///
+    /// The converted JSON value.
+    ///
+    /// # Errors
+    ///
+    /// Returns missing, unsupported, JSON syntax, normalization, or structured
+    /// text-limit errors.
     fn convert_from(
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
@@ -71,6 +86,20 @@ impl DataConversionTarget for serde_json::Value {
         }
     }
 
+    /// Converts a runtime value to JSON, consuming it when possible.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Runtime value to consume.
+    /// * `options` - String normalization and structured text-limit policies.
+    ///
+    /// # Returns
+    ///
+    /// The converted JSON value; owned JSON reuses its storage.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same conversion errors as [`Self::convert_from`].
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,
@@ -97,6 +126,7 @@ impl DataConversionTarget for serde_json::Value {
 /// Returns [`serde_json::Error`] for syntax errors, trailing data, duplicate
 /// keys, or non-string values.
 #[cfg(feature = "json")]
+#[inline(always)]
 fn deserialize_string_map(
     value: &str,
 ) -> Result<HashMap<String, String>, serde_json::Error> {
@@ -107,6 +137,21 @@ fn deserialize_string_map(
 }
 
 impl DataConversionTarget for HashMap<String, String> {
+    /// Converts a borrowed runtime value to a string map.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Borrowed runtime value to convert.
+    /// * `options` - String normalization and structured text-limit policies.
+    ///
+    /// # Returns
+    ///
+    /// A map whose keys and values are strings.
+    ///
+    /// # Errors
+    ///
+    /// Returns missing, unsupported, JSON shape, duplicate-key, normalization,
+    /// or structured text-limit errors.
     fn convert_from(
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
@@ -141,6 +186,20 @@ impl DataConversionTarget for HashMap<String, String> {
         }
     }
 
+    /// Converts a runtime value to a string map, consuming it when possible.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Runtime value to consume.
+    /// * `options` - String normalization and structured text-limit policies.
+    ///
+    /// # Returns
+    ///
+    /// The converted map; an owned string map reuses its storage.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same conversion errors as [`Self::convert_from`].
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,

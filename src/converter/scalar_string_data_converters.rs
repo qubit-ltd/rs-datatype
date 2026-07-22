@@ -179,6 +179,14 @@ impl<'a> ScalarStringDataConverters<'a> {
 
 impl<'a> From<&'a str> for ScalarStringDataConverters<'a> {
     /// Creates a scalar string converter from a string slice.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Scalar string to borrow.
+    ///
+    /// # Returns
+    ///
+    /// A converter borrowing the source for its lifetime.
     #[inline(always)]
     fn from(source: &'a str) -> Self {
         Self::new(source)

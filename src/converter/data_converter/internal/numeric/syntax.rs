@@ -42,6 +42,7 @@ use crate::datatype::DataType;
 /// # Errors
 ///
 /// Returns a normalization error or a numeric-text resource limit error.
+#[inline(always)]
 pub(super) fn normalize_numeric_text<'a>(
     value: &'a str,
     options: &DataConversionOptions,
@@ -53,6 +54,21 @@ pub(super) fn normalize_numeric_text<'a>(
 }
 
 /// Enforces the configured normalized numeric text byte limit.
+///
+/// # Parameters
+///
+/// * `value` - Normalized numeric text whose byte length is checked.
+/// * `options` - Numeric resource limits.
+/// * `to` - Target type retained in a limit error.
+///
+/// # Returns
+///
+/// `Ok(())` when the text is within the configured limit.
+///
+/// # Errors
+///
+/// Returns a [`ConversionLimit::NumericTextBytes`] error when `value` exceeds
+/// the configured maximum.
 pub(in crate::converter::data_converter) fn check_numeric_text_limit(
     value: &str,
     options: &DataConversionOptions,
@@ -154,6 +170,8 @@ fn parse_non_finite_number(value: &str) -> Option<ParsedNumber> {
 /// # Returns
 ///
 /// `true` for one or more ASCII digits with an optional leading sign.
+#[must_use]
+#[inline]
 pub(in crate::converter::data_converter) fn is_integer_syntax(
     value: &str,
 ) -> bool {
@@ -170,6 +188,7 @@ pub(in crate::converter::data_converter) fn is_integer_syntax(
 /// # Returns
 ///
 /// A static, source-value-free syntax label for invalid-syntax errors.
+#[must_use]
 fn numeric_syntax(to: DataType) -> &'static str {
     match to {
         DataType::BigDecimal => "decimal number with optional exponent",
@@ -207,6 +226,7 @@ pub(super) fn invalid_numeric_syntax(to: DataType) -> DataConversionError {
 /// # Returns
 ///
 /// `true` for a case-insensitive NaN or infinity spelling.
+#[must_use]
 fn is_explicit_non_finite(value: &str) -> bool {
     [
         "nan",
@@ -230,6 +250,7 @@ fn is_explicit_non_finite(value: &str) -> bool {
 /// # Returns
 ///
 /// Whether the sign is negative and the unsigned remainder.
+#[must_use]
 fn split_sign(value: &str) -> (bool, &str) {
     match value.as_bytes().first() {
         Some(b'-') => (true, &value[1..]),
@@ -336,6 +357,7 @@ fn analyze_mantissa(
 /// # Returns
 ///
 /// `true` when truncating the effective fractional portion loses information.
+#[must_use]
 fn fractional_part_is_non_zero(
     mantissa: &str,
     integer_digit_count: usize,

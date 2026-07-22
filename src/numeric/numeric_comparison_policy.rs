@@ -18,6 +18,9 @@ use serde::{
 /// representations. [`Self::Approximate`] performs a pair-dependent projection
 /// and is not transitive, so it must not be used to implement [`Ord`], sort or
 /// group values, or construct keys for ordered maps and sets.
+///
+/// This enum intentionally defines a closed policy set. Exhaustive matching is
+/// part of its API contract; adding a variant is a deliberate breaking change.
 #[must_use]
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,

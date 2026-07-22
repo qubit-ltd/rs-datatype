@@ -31,6 +31,10 @@ pub(in crate::converter::options) struct UncheckedBooleanConversionOptions {
 
 impl Default for UncheckedBooleanConversionOptions {
     /// Creates the wire defaults used by [`BooleanConversionOptions`].
+    ///
+    /// # Returns
+    ///
+    /// An unchecked representation populated from validated defaults.
     fn default() -> Self {
         let options = BooleanConversionOptions::default();
         Self {

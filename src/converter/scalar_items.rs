@@ -192,6 +192,11 @@ impl<'a> Iterator for ScalarItems<'a> {
     /// does not consume quota. The first retained item beyond the configured
     /// limit returns [`ScalarItemError::ItemLimitExceeded`] and exhausts this
     /// iterator.
+    ///
+    /// # Returns
+    ///
+    /// `Some(Ok(item))` for a retained item, `Some(Err(error))` for the first
+    /// rejection or limit failure, and `None` after exhaustion.
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             let mut item = self.next_raw()?;

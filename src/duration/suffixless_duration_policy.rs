@@ -17,6 +17,9 @@ use super::DurationUnit;
 /// Controls parsing of Duration text that omits an explicit unit suffix.
 ///
 /// Explicitly suffixed text such as `"10ms"` does not use this policy.
+///
+/// This enum intentionally defines a closed policy set. Exhaustive matching is
+/// part of its API contract; adding a variant is a deliberate breaking change.
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -32,6 +35,10 @@ pub enum SuffixlessDurationPolicy {
 
 impl Default for SuffixlessDurationPolicy {
     /// Preserves the default convention that suffixless text is milliseconds.
+    ///
+    /// # Returns
+    ///
+    /// [`Self::Assume`] containing [`DurationUnit::Milliseconds`].
     fn default() -> Self {
         Self::Assume(DurationUnit::Milliseconds)
     }

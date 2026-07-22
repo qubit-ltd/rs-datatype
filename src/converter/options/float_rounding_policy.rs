@@ -13,6 +13,9 @@ use serde::{
 };
 
 /// Controls whether floating-point rounding is permitted.
+///
+/// This enum intentionally defines a closed policy set. Exhaustive matching is
+/// part of its API contract; adding a variant is a deliberate breaking change.
 #[must_use]
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
