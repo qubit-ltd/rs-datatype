@@ -371,6 +371,56 @@ pub(super) fn duration_to_bigint(
     duration_to_u128(duration, options, to).map(BigInt::from)
 }
 
+/// Creates the conversion error used for non-finite decimal sources.
+///
+/// # Parameters
+///
+/// * `source` - Source converter whose type is retained in the error.
+///
+/// # Returns
+///
+/// An invalid-value error targeting [`DataType::BigDecimal`].
+#[cfg(feature = "big-decimal")]
+#[inline(always)]
+fn non_finite_big_decimal_error(
+    source: &DataConverter<'_>,
+) -> DataConversionError {
+    source.invalid(DataType::BigDecimal, InvalidValueReason::NonFinite)
+}
+
+/// Parses normalized text into an arbitrary-precision decimal.
+///
+/// # Parameters
+///
+/// * `source` - Source converter used to retain error context.
+/// * `value` - Raw text to normalize and parse.
+/// * `options` - Conversion policies and resource limits.
+///
+/// # Returns
+///
+/// The exact decimal value represented by `value`.
+///
+/// # Errors
+///
+/// Returns a normalization, resource-limit, syntax, or non-finite-value error.
+#[cfg(feature = "big-decimal")]
+fn parse_big_decimal(
+    source: &DataConverter<'_>,
+    value: &str,
+    options: &DataConversionOptions,
+) -> Result<BigDecimal, DataConversionError> {
+    let value = normalize_numeric_text(value, options, DataType::BigDecimal)?;
+    match parse_number(value, DataType::BigDecimal)? {
+        ParsedNumber::Integer(value) => Ok(BigDecimal::from(value)),
+        ParsedNumber::Decimal(value) => Ok(value),
+        ParsedNumber::NaN
+        | ParsedNumber::PositiveInfinity
+        | ParsedNumber::NegativeInfinity => {
+            Err(non_finite_big_decimal_error(source))
+        }
+    }
+}
+
 #[cfg(feature = "big-integer")]
 impl DataConversionTarget for BigInt {
     #[inline(always)]
@@ -410,38 +460,12 @@ impl DataConversionTarget for BigDecimal {
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::BigDecimal(value) => Ok(value.as_ref().clone()),
-            DataConverter::Float32(value) => match BigDecimal::from_f32(*value)
-            {
-                Some(value) => Ok(value),
-                None => Err(source.invalid(
-                    DataType::BigDecimal,
-                    InvalidValueReason::NonFinite,
-                )),
-            },
-            DataConverter::Float64(value) => match BigDecimal::from_f64(*value)
-            {
-                Some(value) => Ok(value),
-                None => Err(source.invalid(
-                    DataType::BigDecimal,
-                    InvalidValueReason::NonFinite,
-                )),
-            },
+            DataConverter::Float32(value) => BigDecimal::from_f32(*value)
+                .ok_or_else(|| non_finite_big_decimal_error(source)),
+            DataConverter::Float64(value) => BigDecimal::from_f64(*value)
+                .ok_or_else(|| non_finite_big_decimal_error(source)),
             DataConverter::String(value) => {
-                let value = normalize_numeric_text(
-                    value,
-                    options,
-                    DataType::BigDecimal,
-                )?;
-                match parse_number(value, DataType::BigDecimal)? {
-                    ParsedNumber::Integer(value) => Ok(BigDecimal::from(value)),
-                    ParsedNumber::Decimal(value) => Ok(value),
-                    ParsedNumber::NaN
-                    | ParsedNumber::PositiveInfinity
-                    | ParsedNumber::NegativeInfinity => Err(source.invalid(
-                        DataType::BigDecimal,
-                        InvalidValueReason::NonFinite,
-                    )),
-                }
+                parse_big_decimal(source, value, options)
             }
             DataConverter::Unset(_) => {
                 Err(source.missing(DataType::BigDecimal))
