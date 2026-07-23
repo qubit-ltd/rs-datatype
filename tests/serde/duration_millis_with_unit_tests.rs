@@ -10,7 +10,10 @@
 use std::time::Duration;
 
 use qubit_datatype::serde::duration_millis_with_unit;
-use qubit_datatype::{DurationParseError, DurationTextOptions};
+use qubit_datatype::{
+    DurationParseError,
+    DurationTextOptions,
+};
 
 use super::internal::DurationMillisWithUnitHolder;
 
@@ -21,7 +24,8 @@ fn test_duration_millis_with_unit_serialize_as_millisecond_string() {
         duration: Duration::from_millis(1500),
     };
 
-    let json = serde_json::to_string(&holder).expect("duration should serialize");
+    let json =
+        serde_json::to_string(&holder).expect("duration should serialize");
 
     assert_eq!(json, r#"{"duration":"1500ms"}"#);
 }
@@ -38,7 +42,8 @@ fn test_duration_millis_with_unit_serialize_uses_half_up_rounding() {
 
     for (duration, expected) in cases {
         let holder = DurationMillisWithUnitHolder { duration };
-        let json = serde_json::to_value(holder).expect("duration should serialize");
+        let json =
+            serde_json::to_value(holder).expect("duration should serialize");
         assert_eq!(json["duration"], expected);
     }
 }
@@ -73,7 +78,8 @@ fn test_duration_millis_with_unit_format_saturates_at_duration_max() {
 #[test]
 fn test_duration_millis_with_unit_deserialize_supported_input() {
     let holder: DurationMillisWithUnitHolder =
-        serde_json::from_str(r#"{"duration":"42ms"}"#).expect("duration should deserialize");
+        serde_json::from_str(r#"{"duration":"42ms"}"#)
+            .expect("duration should deserialize");
 
     assert_eq!(holder.duration, Duration::from_millis(42));
 }
@@ -82,7 +88,10 @@ fn test_duration_millis_with_unit_deserialize_supported_input() {
 #[test]
 fn test_duration_millis_with_unit_rejects_non_millisecond_input() {
     assert!(
-        serde_json::from_str::<DurationMillisWithUnitHolder>(r#"{"duration":"42ns"}"#).is_err()
+        serde_json::from_str::<DurationMillisWithUnitHolder>(
+            r#"{"duration":"42ns"}"#
+        )
+        .is_err()
     );
     assert!(duration_millis_with_unit::parse("42s").is_err());
 }
@@ -117,14 +126,17 @@ fn test_duration_millis_with_unit_parse_enforces_default_text_limit() {
 /// Verifies fixed millisecond serde deserialization rejects text over the
 /// default Duration text length limit.
 #[test]
-fn test_duration_millis_with_unit_deserialize_rejects_text_above_default_limit() {
+fn test_duration_millis_with_unit_deserialize_rejects_text_above_default_limit()
+{
     let maximum = DurationTextOptions::DEFAULT_MAX_TEXT_BYTES;
     let text = format!("{}ms", "0".repeat(maximum - 1));
 
-    assert!(serde_json::from_value::<DurationMillisWithUnitHolder>(
-        serde_json::json!({ "duration": text }),
-    )
-    .is_err());
+    assert!(
+        serde_json::from_value::<DurationMillisWithUnitHolder>(
+            serde_json::json!({ "duration": text }),
+        )
+        .is_err()
+    );
 }
 
 /// Verifies the direct serializer emits fixed millisecond text.
@@ -132,8 +144,11 @@ fn test_duration_millis_with_unit_deserialize_rejects_text_above_default_limit()
 fn test_duration_millis_with_unit_serialize_function() {
     let mut buffer = Vec::new();
     let mut serializer = serde_json::Serializer::new(&mut buffer);
-    duration_millis_with_unit::serialize(&Duration::from_micros(1500), &mut serializer)
-        .expect("duration should serialize");
+    duration_millis_with_unit::serialize(
+        &Duration::from_micros(1500),
+        &mut serializer,
+    )
+    .expect("duration should serialize");
 
     assert_eq!(
         String::from_utf8(buffer).expect("serialized text should be UTF-8"),
@@ -172,7 +187,9 @@ fn test_duration_millis_with_unit_parse_rejects_invalid_text() {
         );
     }
     assert_eq!(
-        duration_millis_with_unit::parse("340282366920938463463374607431768211456ms"),
+        duration_millis_with_unit::parse(
+            "340282366920938463463374607431768211456ms"
+        ),
         Err(DurationParseError::OutOfRange)
     );
 }
@@ -183,9 +200,10 @@ fn test_duration_millis_with_unit_postcard_saturates_duration_max() {
     let holder = DurationMillisWithUnitHolder {
         duration: Duration::MAX,
     };
-    let bytes = postcard::to_stdvec(&holder).expect("maximum duration should serialize");
-    let decoded: DurationMillisWithUnitHolder =
-        postcard::from_bytes(&bytes).expect("saturated duration should deserialize");
+    let bytes = postcard::to_stdvec(&holder)
+        .expect("maximum duration should serialize");
+    let decoded: DurationMillisWithUnitHolder = postcard::from_bytes(&bytes)
+        .expect("saturated duration should deserialize");
 
     assert_eq!(decoded.duration, Duration::new(u64::MAX, 999_000_000));
 }
