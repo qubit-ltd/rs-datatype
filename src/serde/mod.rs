@@ -5,15 +5,11 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # Datatype Crate Test Entry
+//! Serde adapters for common standard-library and Qubit value types.
 //!
-//! Tests for data type descriptors and conversion utilities.
+//! The modules in this namespace are intended for use with
+//! `#[serde(with = "...")]` on fields that need a stable interchange format.
 
-#[cfg(feature = "converter")]
-mod converter;
-mod datatype;
-#[cfg(feature = "duration")]
-mod duration;
-mod numeric;
-#[cfg(feature = "duration")]
-mod serde;
+pub mod duration_millis;
+pub mod duration_millis_with_unit;
+pub mod duration_with_unit;

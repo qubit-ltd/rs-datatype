@@ -9,12 +9,12 @@
 //!
 //! The default feature set is empty and exposes the lightweight [`DataType`]
 //! vocabulary plus [`DataTypeOf`]. The lightweight `duration` feature adds
-//! Duration units and text codecs. Optional `chrono`, `big-integer`,
-//! `big-decimal`, `url`, and `json` features add mappings for external types;
-//! `big-number` enables both big-number families. The `converter` feature
-//! includes `duration` and enables core scalar, string, and Duration
-//! conversions. Combine it with a rich-type feature to enable conversions for
-//! that family, or use `all`.
+//! Duration units, text codecs, and Serde field adapters. Optional `chrono`,
+//! `big-integer`, `big-decimal`, `url`, and `json` features add mappings for
+//! external types; `big-number` enables both big-number families. The
+//! `converter` feature includes `duration` and enables core scalar, string, and
+//! Duration conversions. Combine it with a rich-type feature to enable
+//! conversions for that family, or use `all`.
 //!
 //! # Conversion contract
 //!
@@ -73,6 +73,23 @@ pub mod numeric;
 /// Lightweight Duration units and text codecs.
 #[cfg(feature = "duration")]
 pub mod duration;
+
+#[cfg(feature = "duration")]
+#[path = "serde/mod.rs"]
+mod serde_impl;
+
+/// Serde adapters for Duration interchange formats.
+///
+/// Use these modules with `#[serde(with = "...")]` when a field requires a
+/// stable numeric or unit-suffixed Duration representation.
+#[cfg(feature = "duration")]
+pub mod serde {
+    pub use super::serde_impl::{
+        duration_millis,
+        duration_millis_with_unit,
+        duration_with_unit,
+    };
+}
 
 /// Runtime value conversion utilities.
 #[cfg(feature = "converter")]

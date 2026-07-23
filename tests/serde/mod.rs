@@ -5,15 +5,12 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # Datatype Crate Test Entry
+//! # Serde Module Tests
 //!
-//! Tests for data type descriptors and conversion utilities.
+//! Tests for serde adapter modules.
 
-#[cfg(feature = "converter")]
-mod converter;
-mod datatype;
-#[cfg(feature = "duration")]
-mod duration;
-mod numeric;
-#[cfg(feature = "duration")]
-mod serde;
+mod internal;
+
+pub mod duration_millis_tests;
+pub mod duration_millis_with_unit_tests;
+pub mod duration_with_unit_tests;
