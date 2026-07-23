@@ -10,19 +10,13 @@
 //! Serialization rounds to the nearest whole millisecond using half-up
 //! rounding, saturates at the largest whole-millisecond value representable by
 //! [`std::time::Duration`], and appends `ms`. Deserialization accepts only the
-//! matching, untrimmed `<integer>ms` grammar.
+//! matching, untrimmed `<integer>ms` grammar and applies
+//! [`crate::DurationTextOptions::DEFAULT_MAX_TEXT_BYTES`].
 
 use std::time::Duration;
 
-use crate::{
-    DurationParseError,
-    DurationUnit,
-};
-use serde::{
-    Deserialize,
-    Deserializer,
-    Serializer,
-};
+use crate::{DurationParseError, DurationTextOptions, DurationUnit};
+use serde::{Deserialize, Deserializer, Serializer};
 
 use super::duration_millis::rounded_millis;
 
@@ -39,8 +33,9 @@ use super::duration_millis::rounded_millis;
 /// # Errors
 ///
 /// Returns the deserializer error when the input is not a string, does not
-/// match the untrimmed `<integer>ms` grammar, exceeds `u128`, or represents a
-/// value outside the range of [`Duration`].
+/// match the untrimmed `<integer>ms` grammar, exceeds
+/// [`DurationTextOptions::DEFAULT_MAX_TEXT_BYTES`], exceeds `u128`, or
+/// represents a value outside the range of [`Duration`].
 #[inline(always)]
 pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
@@ -66,8 +61,10 @@ where
 /// # Errors
 ///
 /// Returns [`DurationParseError::InvalidSyntax`] when `text` does not match the
-/// required grammar. Returns [`DurationParseError::OutOfRange`] when the
-/// integer exceeds `u128` or the value cannot fit in a [`Duration`].
+/// required grammar. Returns [`DurationParseError::LimitExceeded`] when the
+/// input exceeds [`DurationTextOptions::DEFAULT_MAX_TEXT_BYTES`]. Returns
+/// [`DurationParseError::OutOfRange`] when the integer exceeds `u128` or the
+/// value cannot fit in a [`Duration`].
 ///
 /// # Examples
 ///
@@ -83,6 +80,10 @@ where
 /// ```
 #[inline(always)]
 pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
+    let maximum = DurationTextOptions::DEFAULT_MAX_TEXT_BYTES;
+    if text.len() > maximum {
+        return Err(DurationParseError::LimitExceeded { maximum });
+    }
     let Some(digits) = text.strip_suffix("ms") else {
         return Err(DurationParseError::InvalidSyntax);
     };
@@ -113,10 +114,7 @@ pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
 ///
 /// Returns the serializer error if writing the string value fails.
 #[inline(always)]
-pub fn serialize<S>(
-    duration: &Duration,
-    serializer: S,
-) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
