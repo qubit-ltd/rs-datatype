@@ -12,7 +12,10 @@
 //! represented as `0ms`. Deserialization accepts the broader strict grammar
 //! with `ns`, `us`, `µs`, `μs`, `ms`, `s`, `min`, `h`, or `d` suffixes.
 
-use std::time::Duration;
+use std::{
+    fmt,
+    time::Duration,
+};
 
 use crate::{
     DurationParseError,
@@ -22,9 +25,11 @@ use crate::{
     format_duration_exact,
     parse_duration_text,
 };
-use serde::de::Error as DeserializeError;
+use serde::de::{
+    Error as DeserializeError,
+    Visitor,
+};
 use serde::{
-    Deserialize,
     Deserializer,
     Serializer,
 };
@@ -34,6 +39,66 @@ const DURATION_TEXT_OPTIONS: DurationTextOptions = DurationTextOptions::new(
     SuffixlessDurationPolicy::Reject,
     DurationUnitParseMode::Strict,
 );
+
+/// Parses borrowed or owned exact unit-suffixed duration text.
+struct DurationWithUnitVisitor;
+
+impl Visitor<'_> for DurationWithUnitVisitor {
+    type Value = Duration;
+
+    /// Describes the strict unit-suffixed string accepted by this visitor.
+    ///
+    /// # Parameters
+    ///
+    /// * `formatter` - Formatter receiving the expected input description.
+    ///
+    /// # Returns
+    ///
+    /// The formatter result after writing the duration grammar.
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("a strict unit-suffixed duration string")
+    }
+
+    /// Parses a borrowed or transient string without taking ownership.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Duration text supplied by the deserializer.
+    ///
+    /// # Returns
+    ///
+    /// The parsed [`Duration`].
+    ///
+    /// # Errors
+    ///
+    /// Returns the visitor error when [`parse`] rejects the text.
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: DeserializeError,
+    {
+        parse(value).map_err(E::custom)
+    }
+
+    /// Parses an owned string supplied by a non-borrowing deserializer.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Owned duration text supplied by the deserializer.
+    ///
+    /// # Returns
+    ///
+    /// The parsed [`Duration`].
+    ///
+    /// # Errors
+    ///
+    /// Returns the visitor error when [`parse`] rejects the text.
+    fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+    where
+        E: DeserializeError,
+    {
+        self.visit_str(&value)
+    }
+}
 
 /// Serializes a [`Duration`] as an exact string such as `"500µs"`.
 ///
@@ -84,8 +149,7 @@ pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let text = String::deserialize(deserializer)?;
-    parse(&text).map_err(DeserializeError::custom)
+    deserializer.deserialize_str(DurationWithUnitVisitor)
 }
 
 /// Formats a [`Duration`] with the largest exact supported unit.

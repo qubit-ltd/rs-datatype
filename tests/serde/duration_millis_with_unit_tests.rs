@@ -15,7 +15,10 @@ use qubit_datatype::{
     DurationTextOptions,
 };
 
-use super::internal::DurationMillisWithUnitHolder;
+use super::internal::{
+    BorrowedStrOnlyDeserializer,
+    DurationMillisWithUnitHolder,
+};
 
 /// Verifies Duration serializes as fixed millisecond text.
 #[test]
@@ -82,6 +85,32 @@ fn test_duration_millis_with_unit_deserialize_supported_input() {
             .expect("duration should deserialize");
 
     assert_eq!(holder.duration, Duration::from_millis(42));
+}
+
+/// Verifies direct deserialization can consume borrowed text without requesting
+/// an owned string.
+#[test]
+fn test_duration_millis_with_unit_deserialize_from_borrowed_only_str() {
+    let deserializer = BorrowedStrOnlyDeserializer::new("42ms");
+    let duration = duration_millis_with_unit::deserialize(deserializer)
+        .expect("borrowed duration text should deserialize");
+
+    assert_eq!(duration, Duration::from_millis(42));
+}
+
+/// Verifies non-string values report the expected fixed-millisecond grammar.
+#[test]
+fn test_duration_millis_with_unit_deserialize_rejects_non_string() {
+    let error = serde_json::from_str::<DurationMillisWithUnitHolder>(
+        r#"{"duration":42}"#,
+    )
+    .expect_err("numeric duration input should be rejected");
+
+    assert!(
+        error
+            .to_string()
+            .contains("a duration string in the `<integer>ms` format")
+    );
 }
 
 /// Verifies fixed millisecond text rejects other unit suffixes.
