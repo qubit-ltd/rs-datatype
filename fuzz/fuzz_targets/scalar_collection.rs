@@ -53,6 +53,27 @@ fuzz_target!(|data: &[u8]| {
     let options = DataConversionOptions::env_friendly()
         .with_collection_options(collection);
     let converter = ScalarStringDataConverters::from(text);
-    let _ = converter.to_first_with::<String>(&options);
-    let _ = converter.to_vec_with::<String>(&options);
+    let first = converter.to_first_with::<String>(&options);
+    let values = converter.to_vec_with::<String>(&options);
+    if let Ok(values) = values {
+        assert!(
+            values.len() <= max_items,
+            "successful collection conversion exceeded its item limit"
+        );
+        match values.first() {
+            Some(expected) => {
+                assert_eq!(
+                    first.as_ref().ok(),
+                    Some(expected),
+                    "successful first-item conversion disagreed with the vector"
+                );
+            }
+            None => {
+                assert!(
+                    first.is_err(),
+                    "empty vector conversion must not produce a first item"
+                );
+            }
+        }
+    }
 });
