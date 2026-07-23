@@ -13,20 +13,86 @@
 //! matching, untrimmed `<integer>ms` grammar and applies
 //! [`crate::DurationTextOptions::DEFAULT_MAX_TEXT_BYTES`].
 
-use std::time::Duration;
+use std::{
+    fmt,
+    time::Duration,
+};
 
 use crate::{
     DurationParseError,
     DurationTextOptions,
     DurationUnit,
 };
+use serde::de::{
+    Error as DeserializeError,
+    Visitor,
+};
 use serde::{
-    Deserialize,
     Deserializer,
     Serializer,
 };
 
 use super::duration_millis::rounded_millis;
+
+/// Parses borrowed or owned fixed-millisecond duration text.
+struct DurationMillisWithUnitVisitor;
+
+impl Visitor<'_> for DurationMillisWithUnitVisitor {
+    type Value = Duration;
+
+    /// Describes the fixed-millisecond string accepted by this visitor.
+    ///
+    /// # Parameters
+    ///
+    /// * `formatter` - Formatter receiving the expected input description.
+    ///
+    /// # Returns
+    ///
+    /// The formatter result after writing the duration grammar.
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("a duration string in the `<integer>ms` format")
+    }
+
+    /// Parses a borrowed or transient string without taking ownership.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Duration text supplied by the deserializer.
+    ///
+    /// # Returns
+    ///
+    /// The parsed [`Duration`].
+    ///
+    /// # Errors
+    ///
+    /// Returns the visitor error when [`parse`] rejects the text.
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: DeserializeError,
+    {
+        parse(value).map_err(E::custom)
+    }
+
+    /// Parses an owned string supplied by a non-borrowing deserializer.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Owned duration text supplied by the deserializer.
+    ///
+    /// # Returns
+    ///
+    /// The parsed [`Duration`].
+    ///
+    /// # Errors
+    ///
+    /// Returns the visitor error when [`parse`] rejects the text.
+    fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+    where
+        E: DeserializeError,
+    {
+        self.visit_str(&value)
+    }
+}
 
 /// Deserializes fixed millisecond text matching the required grammar.
 ///
@@ -49,8 +115,7 @@ pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let text = String::deserialize(deserializer)?;
-    parse(&text).map_err(serde::de::Error::custom)
+    deserializer.deserialize_str(DurationMillisWithUnitVisitor)
 }
 
 /// Parses a non-negative whole millisecond count with the canonical `ms`
@@ -86,7 +151,6 @@ where
 ///     Ok(Duration::from_millis(42))
 /// );
 /// ```
-#[inline(always)]
 pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
     let maximum = DurationTextOptions::DEFAULT_MAX_TEXT_BYTES;
     if text.len() > maximum {

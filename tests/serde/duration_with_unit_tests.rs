@@ -16,7 +16,10 @@ use serde::de::value::{
     StringDeserializer,
 };
 
-use super::internal::DurationWithUnitHolder;
+use super::internal::{
+    BorrowedStrOnlyDeserializer,
+    DurationWithUnitHolder,
+};
 
 /// Verifies exact Duration serialization emits a unit-suffixed string.
 #[test]
@@ -76,6 +79,17 @@ fn test_duration_with_unit_deserialize_from_owned_string() {
         StringDeserializer::<ValueError>::new("42ns".to_string());
     let duration = duration_with_unit::deserialize(deserializer)
         .expect("owned duration text should deserialize");
+
+    assert_eq!(duration, Duration::from_nanos(42));
+}
+
+/// Verifies the exact adapter can consume borrowed text without requesting an
+/// owned string.
+#[test]
+fn test_duration_with_unit_deserialize_from_borrowed_only_str() {
+    let deserializer = BorrowedStrOnlyDeserializer::new("42ns");
+    let duration = duration_with_unit::deserialize(deserializer)
+        .expect("borrowed duration text should deserialize");
 
     assert_eq!(duration, Duration::from_nanos(42));
 }
