@@ -17,7 +17,7 @@
 - `DataType`、`DataTypeOf`：稳定的运行时类型描述，适合 schema 和元数据。
 - `NumberRef`：比较不同数值表示，避免隐式精度损失，并提供通用数值属性查询。
 - 轻量 `duration` feature：提供 Duration 单位、带溢出检查的单位运算、可配置文本
-  解析和精确规范化格式。
+  解析、精确规范化格式和 Serde 字段适配器。
 - `converter` feature：按显式策略执行单值、批量和标量字符串集合转换，并返回
   结构化错误，适合配置、协议和数据接入边界。
 
@@ -27,19 +27,19 @@
 
 ```toml
 [dependencies]
-qubit-datatype = "0.8"
+qubit-datatype = "0.9"
 ```
 
 按需启用转换器和富类型：
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.8", default-features = false, features = ["converter", "chrono"] }
+qubit-datatype = { version = "0.9", default-features = false, features = ["converter", "chrono"] }
 ```
 
 | Feature | 能力 |
 | --- | --- |
-| `duration` | Duration 单位、带检查运算、文本解析和精确格式化 |
+| `duration` | Duration 单位、带检查运算、文本解析、精确格式化和 Serde 适配器 |
 | `converter` | 标量、字符串、Duration、StringMap、批量和配置 API；包含 `duration` |
 | `chrono` | Chrono 类型映射；与 `converter` 组合时支持转换 |
 | `big-integer` | `BigInt` 映射；与 `converter` 组合时支持转换 |
@@ -204,6 +204,23 @@ ASCII `us`、微符号 `µs` 与希腊 mu `μs` 三种微秒拼写。Lenient 额
 再在不隐式 trim 的情况下执行带范围检查的解析，`format_duration_exact` 自动选择
 最大的精确首选单位。
 Duration 解析错误只保留稳定类别和静态规范单位，不回显也不持有任意长度的输入后缀。
+
+`duration` feature 还提供三个 `#[serde(with = "...")]` 模块：
+`duration_millis` 存储按 half-up 舍入的 `u64` 毫秒数，
+`duration_millis_with_unit` 存储按 half-up 舍入的 `<integer>ms` 文本，
+`duration_with_unit` 存储使用首选单位的精确字符串。
+
+```rust
+use std::time::Duration;
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Timeout {
+    #[serde(with = "qubit_datatype::serde::duration_with_unit")]
+    value: Duration,
+}
+```
 
 富文本的规范格式包括：日期 `YYYY-MM-DD`、时间 `HH:MM:SS[.fraction]`、
 instant 的 RFC 3339、绝对 URL、标准 JSON，以及 key 唯一且 value 全为字符串的

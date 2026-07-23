@@ -19,7 +19,8 @@ and policy-driven value conversion for Rust. API documentation is available on
 - `NumberRef` compares unlike numeric representations without silently losing
   precision and exposes common numeric properties.
 - The lightweight `duration` feature provides Duration units, checked unit
-  arithmetic, configurable text parsing, and exact canonical formatting.
+  arithmetic, configurable text parsing, exact canonical formatting, and
+  Serde field adapters.
 - The `converter` feature provides single-value, batch, and scalar-string
   collection conversion with explicit policies and structured errors.
 
@@ -34,19 +35,19 @@ The minimum build has no optional dependencies:
 
 ```toml
 [dependencies]
-qubit-datatype = "0.8"
+qubit-datatype = "0.9"
 ```
 
 Enable conversion and only the rich families you need:
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.8", default-features = false, features = ["converter", "chrono"] }
+qubit-datatype = { version = "0.9", default-features = false, features = ["converter", "chrono"] }
 ```
 
 | Feature | Capability |
 | --- | --- |
-| `duration` | Duration units, checked arithmetic, text parsing, and exact formatting |
+| `duration` | Duration units, checked arithmetic, text parsing, exact formatting, and Serde adapters |
 | `converter` | Scalar, string, Duration, map, batch, and option APIs; includes `duration` |
 | `chrono` | Chrono type mappings; conversion support when combined with `converter` |
 | `big-integer` | `BigInt` mappings; conversion support when combined with `converter` |
@@ -233,6 +234,23 @@ performs checked parsing without implicit trimming, and `format_duration_exact`
 selects the largest exact preferred unit.
 Duration parse errors retain only stable categories and static canonical unit
 symbols; they neither echo nor own arbitrary input suffixes.
+
+The `duration` feature also exposes three `#[serde(with = "...")]` modules:
+`duration_millis` stores a half-up rounded `u64` millisecond count,
+`duration_millis_with_unit` stores half-up rounded `<integer>ms` text, and
+`duration_with_unit` stores an exact preferred-unit string.
+
+```rust
+use std::time::Duration;
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Timeout {
+    #[serde(with = "qubit_datatype::serde::duration_with_unit")]
+    value: Duration,
+}
+```
 
 Canonical rich strings are: `YYYY-MM-DD` for dates,
 `HH:MM:SS[.fraction]` for times, RFC 3339 for instants, absolute URLs, standard
