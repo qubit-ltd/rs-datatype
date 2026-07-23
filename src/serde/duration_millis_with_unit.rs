@@ -15,8 +15,16 @@
 
 use std::time::Duration;
 
-use crate::{DurationParseError, DurationTextOptions, DurationUnit};
-use serde::{Deserialize, Deserializer, Serializer};
+use crate::{
+    DurationParseError,
+    DurationTextOptions,
+    DurationUnit,
+};
+use serde::{
+    Deserialize,
+    Deserializer,
+    Serializer,
+};
 
 use super::duration_millis::rounded_millis;
 
@@ -114,7 +122,10 @@ pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
 ///
 /// Returns the serializer error if writing the string value fails.
 #[inline(always)]
-pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(
+    duration: &Duration,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
