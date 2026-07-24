@@ -118,6 +118,8 @@ fn test_data_type_protocol_cases() {
     for (data_type, canonical) in DATA_TYPE_CASES {
         assert_eq!(data_type.as_str(), canonical);
         assert_eq!(data_type.to_string(), canonical);
+        assert_eq!(<&'static str>::from(data_type), canonical);
+        assert_eq!(<&'static str>::from(&data_type), canonical);
         assert_eq!(DataType::from_str(canonical), Ok(data_type));
         assert_eq!(
             DataType::from_str(&canonical.to_ascii_uppercase()),
