@@ -23,6 +23,7 @@ use criterion::{
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use qubit_datatype::{
+    DataConversionError,
     DataConversionTarget,
     DataConverter,
     DataConverters,
@@ -51,15 +52,13 @@ const BATCH_ITEM_BYTES: usize = 1024;
 ///
 /// # Returns
 ///
-/// The converted value of the same type.
-fn convert_owned<T>(value: T) -> T
+/// The conversion result containing a value of the same type.
+fn convert_owned<T>(value: T) -> Result<T, DataConversionError>
 where
     T: DataConversionTarget,
     DataConverter<'static>: From<T>,
 {
-    DataConverter::from(value)
-        .into_target::<T>()
-        .expect("owned identity conversion should succeed")
+    DataConverter::from(value).into_target::<T>()
 }
 
 /// Converts a borrowed source through the current conversion API.
@@ -70,15 +69,13 @@ where
 ///
 /// # Returns
 ///
-/// An owned value of the same type.
-fn convert_borrowed<T>(value: &T) -> T
+/// The conversion result containing an owned value of the same type.
+fn convert_borrowed<T>(value: &T) -> Result<T, DataConversionError>
 where
     T: DataConversionTarget,
     for<'a> DataConverter<'a>: From<&'a T>,
 {
-    DataConverter::from(value)
-        .to::<T>()
-        .expect("borrowed identity conversion should succeed")
+    DataConverter::from(value).to::<T>()
 }
 
 /// Registers borrowed, owned, and direct-move measurements for one value.
@@ -99,6 +96,11 @@ fn benchmark_identity_case<T>(
     DataConverter<'static>: From<T>,
     for<'a> DataConverter<'a>: From<&'a T>,
 {
+    convert_borrowed(&value)
+        .expect("borrowed identity benchmark fixture should convert");
+    convert_owned(value.clone())
+        .expect("owned identity benchmark fixture should convert");
+
     group.throughput(Throughput::Bytes(payload_bytes as u64));
     group.bench_with_input(
         BenchmarkId::new("borrowed_to_target", case_name),
@@ -168,6 +170,13 @@ fn benchmark_string_batch_identity(c: &mut Criterion) {
     let mut group = c.benchmark_group("identity_string_batch");
     for item_count in BATCH_ITEM_COUNTS {
         let values = vec!["x".repeat(BATCH_ITEM_BYTES); item_count];
+        DataConverters::from(values.as_slice())
+            .to_vec::<String>()
+            .expect("borrowed batch identity benchmark fixture should convert");
+        DataConverters::from(values.clone())
+            .to_vec::<String>()
+            .expect("owned batch identity benchmark fixture should convert");
+
         group.throughput(Throughput::Elements(item_count as u64));
         group.bench_with_input(
             BenchmarkId::new("borrowed_to_target", item_count),
@@ -176,25 +185,26 @@ fn benchmark_string_batch_identity(c: &mut Criterion) {
                 b.iter(|| {
                     black_box(
                         DataConverters::from(black_box(values))
-                            .to_vec::<String>()
-                            .expect("borrowed batch identity conversion should succeed"),
+                            .to_vec::<String>(),
                     )
                 });
             },
         );
-        group.bench_function(BenchmarkId::new("owned_to_target", item_count), |b| {
-            b.iter_batched(
-                || values.clone(),
-                |values| {
-                    black_box(
-                        DataConverters::from(black_box(values))
-                            .to_vec::<String>()
-                            .expect("owned batch identity conversion should succeed"),
-                    )
-                },
-                BatchSize::LargeInput,
-            );
-        });
+        group.bench_function(
+            BenchmarkId::new("owned_to_target", item_count),
+            |b| {
+                b.iter_batched(
+                    || values.clone(),
+                    |values| {
+                        black_box(
+                            DataConverters::from(black_box(values))
+                                .to_vec::<String>(),
+                        )
+                    },
+                    BatchSize::LargeInput,
+                );
+            },
+        );
         group.bench_function(
             BenchmarkId::new("direct_move", item_count),
             |b| {
