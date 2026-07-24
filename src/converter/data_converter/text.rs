@@ -48,6 +48,7 @@ use crate::datatype::DataType;
 /// Returns an out-of-range conversion error for a negative year or a year
 /// greater than 9999.
 #[cfg(feature = "chrono")]
+#[inline]
 fn validate_canonical_temporal_year(
     source: &DataConverter<'_>,
     year: i32,
@@ -218,6 +219,7 @@ impl DataConversionTarget for String {
     /// # Errors
     ///
     /// Returns the same conversion errors as [`Self::convert_from`].
+    #[inline]
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,
@@ -237,6 +239,7 @@ impl DataConversionTarget for String {
     }
 }
 
+/// Implements a canonical temporal target from text or an identical source.
 #[cfg(feature = "chrono")]
 macro_rules! impl_text_or_copy_target {
     ($target:ty, $variant:ident, $data_type:expr, $format:literal, $parser:expr) => {
@@ -294,6 +297,7 @@ macro_rules! impl_text_or_copy_target {
 /// `true` when every field contains only ASCII digits and both separators are
 /// in their canonical positions.
 #[cfg(feature = "chrono")]
+#[must_use]
 fn has_canonical_date_shape(value: &str) -> bool {
     let bytes = value.as_bytes();
     bytes.len() == 10
@@ -317,6 +321,7 @@ fn has_canonical_date_shape(value: &str) -> bool {
 /// `true` when every field contains only ASCII digits and both separators are
 /// in their canonical positions.
 #[cfg(feature = "chrono")]
+#[must_use]
 fn has_canonical_time_shape(value: &str) -> bool {
     let bytes = value.as_bytes();
     bytes.len() == 8
@@ -339,6 +344,7 @@ fn has_canonical_time_shape(value: &str) -> bool {
 ///
 /// `Some` for a valid ten-byte `YYYY-MM-DD` value, otherwise `None`.
 #[cfg(feature = "chrono")]
+#[inline]
 fn parse_date(value: &str) -> Option<NaiveDate> {
     if !has_canonical_date_shape(value) {
         return None;
@@ -517,6 +523,7 @@ impl DataConversionTarget for Url {
     /// # Errors
     ///
     /// Returns the same conversion errors as [`Self::convert_from`].
+    #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,

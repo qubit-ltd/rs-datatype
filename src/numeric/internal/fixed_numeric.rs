@@ -71,6 +71,7 @@ fn signed_parts(value: i128) -> Option<(bool, u128, i32)> {
 ///
 /// Its sign, integer significand, and signed binary exponent.
 #[must_use]
+#[inline]
 fn f32_parts(value: f32) -> (bool, u128, i32) {
     let bits = value.to_bits();
     let negative = bits >> 31 != 0;
@@ -93,6 +94,7 @@ fn f32_parts(value: f32) -> (bool, u128, i32) {
 ///
 /// Its sign, integer significand, and signed binary exponent.
 #[must_use]
+#[inline]
 fn f64_parts(value: f64) -> (bool, u128, i32) {
     let bits = value.to_bits();
     let negative = bits >> 63 != 0;

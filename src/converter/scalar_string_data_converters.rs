@@ -23,6 +23,10 @@ use super::options::DataConversionOptions;
 /// scalar string to a vector or first value. It keeps scalar strings such as
 /// `"1,2,3"` distinct from already-materialized string collections such as
 /// `["1", "2", "3"]`.
+///
+/// # Type Parameters
+///
+/// * `'a` - Lifetime of the borrowed scalar string source.
 #[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct ScalarStringDataConverters<'a> {
@@ -159,6 +163,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     /// Returns a missing-value [`DataConversionError`] when normalization
     /// treats the scalar as missing, an empty-collection error when
     /// splitting yields no retained item, or the underlying conversion error.
+    #[inline]
     pub fn to_first_with<'b, T>(
         self,
         options: &'b DataConversionOptions,

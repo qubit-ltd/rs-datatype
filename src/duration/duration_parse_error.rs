@@ -8,6 +8,7 @@
 //! Error returned by Duration text parsing.
 
 /// Error returned when parsing Duration text.
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum DurationParseError {

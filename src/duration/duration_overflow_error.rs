@@ -11,6 +11,7 @@
 ///
 /// The error deliberately contains no source value, so it is safe to expose
 /// when conversion input may contain sensitive configuration data.
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[error("duration exceeds the range supported by std::time::Duration")]
 pub struct DurationOverflowError;

@@ -18,6 +18,10 @@ use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 
 /// Private storage representation for [`crate::NumberRef`].
+///
+/// # Type Parameters
+///
+/// * `'a` - Lifetime of a borrowed arbitrary-precision numeric value.
 #[derive(Debug, Clone, Copy)]
 pub(in crate::numeric) enum NumberRepr<'a> {
     /// An `i8` value.

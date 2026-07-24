@@ -138,6 +138,10 @@ fn compare_big_integer_to_fixed(
 /// representation is intentionally private, so callers cannot create marker
 /// or otherwise non-numeric states.
 ///
+/// # Type Parameters
+///
+/// * `'a` - Lifetime of a borrowed arbitrary-precision numeric value.
+///
 /// ```compile_fail
 /// use qubit_datatype::NumberRef;
 ///
@@ -150,6 +154,7 @@ pub struct NumberRef<'a> {
     inner: NumberRepr<'a>,
 }
 
+/// Implements copied fixed-width conversions into [`NumberRef`].
 macro_rules! impl_from_copy {
     ($source:ty, $variant:ident) => {
         impl From<$source> for NumberRef<'_> {
@@ -172,6 +177,7 @@ macro_rules! impl_from_copy {
     };
 }
 
+/// Implements borrowed arbitrary-precision conversions into [`NumberRef`].
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 macro_rules! impl_from_ref {
     ($source:ty, $variant:ident) => {
@@ -554,6 +560,7 @@ impl<'a> NumberRef<'a> {
     /// or decimal value; otherwise, `None`.
     #[cfg(feature = "big-integer")]
     #[must_use]
+    #[inline]
     fn compare_big_integer_fixed(
         self,
         right: NumberRef<'_>,

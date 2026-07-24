@@ -8,6 +8,7 @@
 //! Boolean literal conflict error.
 
 /// Error returned when true and false literal sets overlap.
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[error("boolean true and false literals overlap")]
 pub struct BooleanLiteralConflictError;

@@ -35,6 +35,7 @@ impl Default for UncheckedBooleanConversionOptions {
     /// # Returns
     ///
     /// An unchecked representation populated from validated defaults.
+    #[inline]
     fn default() -> Self {
         let options = BooleanConversionOptions::default();
         Self {

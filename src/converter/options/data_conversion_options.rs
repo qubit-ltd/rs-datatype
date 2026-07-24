@@ -84,6 +84,7 @@ impl DataConversionOptions {
     /// let options = DataConversionOptions::strict();
     /// assert!(DataConverter::from("3.9").to_with::<i32>(&options).is_err());
     /// ```
+    #[inline]
     pub fn strict() -> Self {
         Self {
             numeric: NumericConversionOptions::strict(),
@@ -115,6 +116,7 @@ impl DataConversionOptions {
     /// let options = DataConversionOptions::lossy();
     /// assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&options), Ok(3));
     /// ```
+    #[inline]
     pub fn lossy() -> Self {
         Self {
             numeric: NumericConversionOptions::lossy(),
@@ -137,6 +139,7 @@ impl DataConversionOptions {
     /// nearest-even rounding, while fractional-to-integer and
     /// existing-numeric-to-float conversions remain exact. Structured text
     /// keeps its default limit.
+    #[inline]
     pub fn env_friendly() -> Self {
         Self {
             numeric: NumericConversionOptions::env_friendly(),

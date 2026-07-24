@@ -37,6 +37,10 @@ pub(super) fn rounded_millis(duration: Duration) -> u128 {
 
 /// Serializes a [`Duration`] as a rounded `u64` millisecond count.
 ///
+/// # Type Parameters
+///
+/// - `S`: Serde serializer type.
+///
 /// # Parameters
 ///
 /// - `duration`: Duration to serialize.
@@ -64,6 +68,11 @@ where
 }
 
 /// Deserializes a [`Duration`] from a `u64` millisecond count.
+///
+/// # Type Parameters
+///
+/// - `'de`: Lifetime of data borrowed from the deserializer input.
+/// - `D`: Serde deserializer type.
 ///
 /// # Parameters
 ///

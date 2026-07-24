@@ -37,6 +37,11 @@ impl<'de> Visitor<'de> for StringMapVisitor {
 
     /// Reads the map while checking duplicate keys.
     ///
+    /// # Type Parameters
+    ///
+    /// * `'de` - Lifetime of data borrowed from the deserializer input.
+    /// * `A` - Serde map access implementation supplying the entries.
+    ///
     /// # Parameters
     ///
     /// * `access` - Serde map access for the object being decoded.

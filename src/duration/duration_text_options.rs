@@ -153,6 +153,7 @@ impl Default for DurationTextOptions {
     /// # Returns
     ///
     /// Strict options using the default source text byte limit.
+    #[inline]
     fn default() -> Self {
         Self::new(
             SuffixlessDurationPolicy::Reject,

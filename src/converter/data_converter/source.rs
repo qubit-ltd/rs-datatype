@@ -11,6 +11,7 @@ use super::DataConverter;
 use crate::datatype::for_each_data_type_mapping;
 use std::borrow::Cow;
 
+/// Implements owned and borrowed constructors for copied scalar sources.
 macro_rules! impl_from_copy {
     ($source:ty, $variant:ident) => {
         impl<'a> From<$source> for DataConverter<'a> {
@@ -46,6 +47,7 @@ macro_rules! impl_from_copy {
     };
 }
 
+/// Implements owned and borrowed constructors for `Cow`-backed sources.
 macro_rules! impl_from_cow {
     ($source:ty, $variant:ident) => {
         impl<'a> From<$source> for DataConverter<'a> {
@@ -81,6 +83,7 @@ macro_rules! impl_from_cow {
     };
 }
 
+/// Implements owned and borrowed constructors for string sources.
 macro_rules! impl_from_string {
     ($source:ty, $variant:ident) => {
         impl<'a> From<$source> for DataConverter<'a> {
@@ -116,6 +119,7 @@ macro_rules! impl_from_string {
     };
 }
 
+/// Dispatches a source mapping entry to its storage strategy.
 macro_rules! impl_from_strategy {
     (copy, $source:ty, $variant:ident) => {
         impl_from_copy!($source, $variant);
@@ -128,6 +132,7 @@ macro_rules! impl_from_strategy {
     };
 }
 
+/// Expands the central mapping table into [`DataConverter`] constructors.
 macro_rules! impl_from_data_type_mappings {
     (; $( $(#[$meta:meta])* ($variant:ident, $source:ty, $strategy:ident) ),+ $(,)?) => {
         $(

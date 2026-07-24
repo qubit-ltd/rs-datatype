@@ -48,6 +48,7 @@ fn finite_float_parts(value: f64) -> (u128, i32) {
 /// # Returns
 ///
 /// Decimal digits with the least significant digit first.
+#[must_use]
 fn decimal_digits(mut value: u128) -> Vec<u8> {
     let mut digits = Vec::new();
     while value != 0 {
@@ -86,6 +87,11 @@ fn multiply_decimal_digits(digits: &mut Vec<u8>, factor: u8) {
 ///
 /// Little-endian coefficient digits, the number of low decimal zero digits to
 /// ignore, and the signed decimal scale after canonicalization.
+///
+/// # Panics
+///
+/// Panics only if the bounded decimal expansion of a finite `f64` contains
+/// more trailing zero digits than `i128` can represent.
 #[must_use]
 fn exact_float_decimal(value: f64) -> (Vec<u8>, usize, i128) {
     let (mut significand, exponent) = finite_float_parts(value);

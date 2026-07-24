@@ -15,6 +15,7 @@ use super::data_conversion_error::DataConversionError;
 use super::invalid_value_reason::InvalidValueReason;
 
 /// Error returned while normalizing a string source.
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum StringNormalizationError {

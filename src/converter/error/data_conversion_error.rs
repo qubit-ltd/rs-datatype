@@ -37,6 +37,7 @@ use super::invalid_value_reason::InvalidValueReason;
 ///     Some(InvalidValueReason::InvalidSyntax { .. }),
 /// ));
 /// ```
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("{inner}")]
 pub struct DataConversionError {

@@ -91,6 +91,7 @@ fn exceeds_big_integer_digit_limit(
 /// Returns [`DataConversionErrorKind::LimitExceeded`](crate::converter::DataConversionErrorKind::LimitExceeded)
 /// when a BigInteger target would exceed `maximum_digits`.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+#[inline]
 fn enforce_big_integer_digit_limit(
     value: &BigInt,
     maximum_digits: usize,
@@ -230,6 +231,11 @@ pub(super) fn decimal_to_bigint(
 ///
 /// Returns a non-finite error for NaN or infinity, or a precision error for a
 /// fractional value under [`FractionalToIntegerPolicy::Reject`].
+///
+/// # Panics
+///
+/// Panics only if `BigInt` cannot represent a truncated finite primitive
+/// float, which would violate `BigInt`'s finite-float conversion contract.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 fn float_to_bigint(
     value: f64,
@@ -405,6 +411,7 @@ fn non_finite_big_decimal_error(
 ///
 /// Returns a normalization, resource-limit, syntax, or non-finite-value error.
 #[cfg(feature = "big-decimal")]
+#[inline]
 fn parse_big_decimal(
     source: &DataConverter<'_>,
     value: &str,
@@ -462,6 +469,7 @@ impl DataConversionTarget for BigInt {
     /// # Errors
     ///
     /// Returns the same conversion errors as [`Self::convert_from`].
+    #[inline]
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,
@@ -557,6 +565,7 @@ impl DataConversionTarget for BigDecimal {
     /// # Errors
     ///
     /// Returns the same conversion errors as [`Self::convert_from`].
+    #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,

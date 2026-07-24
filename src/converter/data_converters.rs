@@ -26,6 +26,10 @@ use super::options::DataConversionOptions;
 /// converted by reference and do not clone the source collection. Owned inputs
 /// are consumed, allowing matching target types to reuse their allocations.
 ///
+/// # Type Parameters
+///
+/// * `I` - Iterator yielding source values for batch conversion.
+///
 /// # Examples
 ///
 /// ```
@@ -217,6 +221,7 @@ where
     /// Returns an empty-collection [`DataConversionError`] when the source
     /// iterator is empty. Returns the original conversion error when the first
     /// element cannot be converted.
+    #[inline]
     pub fn to_first_with<'a, T>(
         self,
         options: &DataConversionOptions,
