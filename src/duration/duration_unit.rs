@@ -129,6 +129,7 @@ impl DurationUnit {
     ///
     /// `Some` containing the represented unit and its preferred output symbol
     /// when `symbol` is a Lenient-only alias; otherwise, `None`.
+    #[inline(always)]
     fn lenient_alias(symbol: &str) -> Option<(Self, &'static str)> {
         match symbol {
             "m" => Some((Self::Minutes, "min")),
@@ -242,6 +243,7 @@ impl DurationUnit {
     ///
     /// The rounded unit count.
     #[must_use]
+    #[inline]
     pub fn rounded_units(self, duration: Duration) -> u128 {
         let total_nanos = duration.as_nanos();
         let unit_nanos = self.nanos_per_unit();

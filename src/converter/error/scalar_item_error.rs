@@ -15,6 +15,7 @@ use super::data_list_conversion_error::DataListConversionError;
 use super::invalid_value_reason::InvalidValueReason;
 
 /// Target-independent error discovered while iterating scalar items.
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
 pub enum ScalarItemError {

@@ -30,6 +30,7 @@ const MAX_MATERIALIZED_DECIMAL_SCALE: u32 = 4_096;
 ///
 /// The exact rational value.
 #[must_use]
+#[inline]
 fn binary_rational(
     negative: bool,
     significand: u128,
@@ -56,6 +57,7 @@ fn binary_rational(
 ///
 /// The exact represented value. The caller guarantees finiteness.
 #[must_use]
+#[inline]
 pub(in crate::numeric) fn f32_rational(value: f32) -> BigRational {
     let bits = value.to_bits();
     let negative = bits >> 31 != 0;
@@ -78,6 +80,7 @@ pub(in crate::numeric) fn f32_rational(value: f32) -> BigRational {
 ///
 /// The exact represented value. The caller guarantees finiteness.
 #[must_use]
+#[inline]
 pub(in crate::numeric) fn f64_rational(value: f64) -> BigRational {
     let bits = value.to_bits();
     let negative = bits >> 63 != 0;

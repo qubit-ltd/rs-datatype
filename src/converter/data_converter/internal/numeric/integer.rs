@@ -323,6 +323,7 @@ fn to_i128(
 ///
 /// Returns an out-of-range error for negative or otherwise unrepresentable
 /// values and propagates source parsing or policy errors unchanged.
+#[inline]
 fn to_u128(
     source: &DataConverter<'_>,
     options: &DataConversionOptions,
@@ -342,6 +343,10 @@ fn to_u128(
 
 /// Checks a signed target range.
 ///
+/// # Type Parameters
+///
+/// * `T` - Signed integer target converted from the `i128` intermediate.
+///
 /// # Parameters
 ///
 /// * `value` - Signed intermediate to narrow.
@@ -355,6 +360,7 @@ fn to_u128(
 /// # Errors
 ///
 /// Returns an out-of-range error when `value` cannot be represented by `T`.
+#[inline]
 fn checked_signed<T>(
     value: i128,
     source: &DataConverter<'_>,
@@ -375,6 +381,10 @@ where
 
 /// Checks an unsigned target range.
 ///
+/// # Type Parameters
+///
+/// * `T` - Unsigned integer target converted from the `u128` intermediate.
+///
 /// # Parameters
 ///
 /// * `value` - Unsigned intermediate to narrow.
@@ -388,6 +398,7 @@ where
 /// # Errors
 ///
 /// Returns an out-of-range error when `value` cannot be represented by `T`.
+#[inline]
 fn checked_unsigned<T>(
     value: u128,
     source: &DataConverter<'_>,
@@ -406,6 +417,7 @@ where
     }
 }
 
+/// Implements a signed primitive integer conversion target.
 macro_rules! impl_signed_target {
     ($target:ty, $data_type:expr) => {
         impl DataConversionTarget for $target {
@@ -424,6 +436,7 @@ macro_rules! impl_signed_target {
             ///
             /// Returns a missing, unsupported, syntax, non-finite, precision,
             /// range, normalization, or resource-limit error.
+            #[inline(always)]
             fn convert_from(
                 source: &DataConverter<'_>,
                 options: &DataConversionOptions,
@@ -438,6 +451,7 @@ macro_rules! impl_signed_target {
     };
 }
 
+/// Implements an unsigned primitive integer conversion target.
 macro_rules! impl_unsigned_target {
     ($target:ty, $data_type:expr) => {
         impl DataConversionTarget for $target {
@@ -457,6 +471,7 @@ macro_rules! impl_unsigned_target {
             ///
             /// Returns a missing, unsupported, syntax, non-finite, precision,
             /// range, normalization, or resource-limit error.
+            #[inline(always)]
             fn convert_from(
                 source: &DataConverter<'_>,
                 options: &DataConversionOptions,

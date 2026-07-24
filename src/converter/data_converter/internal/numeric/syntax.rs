@@ -29,6 +29,10 @@ use crate::datatype::DataType;
 
 /// Normalizes numeric text and enforces its configured byte limit.
 ///
+/// # Type Parameters
+///
+/// * `'a` - Lifetime of the returned slice borrowed from `value`.
+///
 /// # Parameters
 ///
 /// * `value` - Raw textual source.
@@ -69,6 +73,7 @@ pub(super) fn normalize_numeric_text<'a>(
 ///
 /// Returns a [`ConversionLimit::NumericTextBytes`] error when `value` exceeds
 /// the configured maximum.
+#[inline]
 pub(in crate::converter::data_converter) fn check_numeric_text_limit(
     value: &str,
     options: &DataConversionOptions,
@@ -171,7 +176,6 @@ fn parse_non_finite_number(value: &str) -> Option<ParsedNumber> {
 ///
 /// `true` for one or more ASCII digits with an optional leading sign.
 #[must_use]
-#[inline]
 pub(in crate::converter::data_converter) fn is_integer_syntax(
     value: &str,
 ) -> bool {
@@ -189,6 +193,7 @@ pub(in crate::converter::data_converter) fn is_integer_syntax(
 ///
 /// A static, source-value-free syntax label for invalid-syntax errors.
 #[must_use]
+#[inline]
 fn numeric_syntax(to: DataType) -> &'static str {
     match to {
         DataType::BigDecimal => "decimal number with optional exponent",
@@ -251,6 +256,7 @@ fn is_explicit_non_finite(value: &str) -> bool {
 ///
 /// Whether the sign is negative and the unsigned remainder.
 #[must_use]
+#[inline]
 fn split_sign(value: &str) -> (bool, &str) {
     match value.as_bytes().first() {
         Some(b'-') => (true, &value[1..]),

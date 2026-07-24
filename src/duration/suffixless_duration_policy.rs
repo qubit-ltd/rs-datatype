@@ -39,6 +39,7 @@ impl Default for SuffixlessDurationPolicy {
     /// # Returns
     ///
     /// [`Self::Assume`] containing [`DurationUnit::Milliseconds`].
+    #[inline(always)]
     fn default() -> Self {
         Self::Assume(DurationUnit::Milliseconds)
     }

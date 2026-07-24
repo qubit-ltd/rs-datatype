@@ -87,6 +87,7 @@ fn integer_to_duration(
 /// # Returns
 ///
 /// Duration text options equivalent to the converter configuration.
+#[inline(always)]
 fn duration_text_options(
     options: &DataConversionOptions,
 ) -> DurationTextOptions {
@@ -202,6 +203,7 @@ fn map_duration_parse_error(
 ///
 /// Returns contextual conversion errors for normalization, syntax, unit, and
 /// range failures.
+#[inline(always)]
 fn parse_duration(
     value: &str,
     options: &DataConversionOptions,
@@ -290,6 +292,7 @@ impl DataConversionTarget for Duration {
 ///
 /// Returns an invalid-value [`DataConversionError`] when exact conversion
 /// would lose precision.
+#[inline]
 pub(super) fn format_duration(
     value: Duration,
     options: &DataConversionOptions,

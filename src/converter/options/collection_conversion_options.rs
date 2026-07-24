@@ -61,6 +61,7 @@ impl Default for CollectionConversionOptions {
     /// # Returns
     ///
     /// Options using comma delimiters without splitting or item normalization.
+    #[inline]
     fn default() -> Self {
         Self {
             split_scalar_strings: false,
@@ -154,6 +155,7 @@ impl CollectionConversionOptions {
     /// # Returns
     ///
     /// Updated options.
+    #[inline]
     pub fn with_delimiters(
         mut self,
         delimiters: impl IntoIterator<Item = char>,
@@ -241,6 +243,11 @@ impl CollectionConversionOptions {
     }
 
     /// Splits and normalizes a scalar string into collection items.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `'a` - Lifetime shared by `value`, these options, and the returned
+    ///   iterator.
     ///
     /// # Parameters
     ///

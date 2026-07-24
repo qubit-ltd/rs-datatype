@@ -17,6 +17,7 @@ use super::data_conversion_error::DataConversionError;
 /// including positions skipped by collection policies.
 /// [`Self::conversion_error`] returns the complete single-value conversion
 /// error, which is also exposed as the standard error source.
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("Data conversion failed at source index {source_index}: {source}")]
 pub struct DataListConversionError {
@@ -77,7 +78,7 @@ impl DataListConversionError {
     /// );
     /// error.conversion_error();
     /// ```
-    #[must_use]
+    #[must_use = "the conversion error should be inspected"]
     #[inline(always)]
     pub const fn conversion_error(&self) -> &DataConversionError {
         &self.source

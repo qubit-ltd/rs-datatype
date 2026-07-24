@@ -24,6 +24,10 @@ use super::scalar_item::ScalarItem;
 /// The item limit counts only items retained after trimming and empty-item
 /// policy handling. The first retained item beyond the limit produces one
 /// [`ScalarItemError::ItemLimitExceeded`] error and exhausts the iterator.
+///
+/// # Type Parameters
+///
+/// * `'a` - Lifetime shared by the borrowed source text and collection options.
 #[must_use]
 #[derive(Debug, Clone)]
 pub struct ScalarItems<'a> {
@@ -166,6 +170,7 @@ impl<'a> ScalarItems<'a> {
     ///
     /// Returns [`ScalarItemError::ItemLimitExceeded`] for the first item beyond
     /// `max_items`. The iterator is exhausted before returning that error.
+    #[inline]
     fn retain_item(
         &mut self,
         item: ScalarItem<'a>,

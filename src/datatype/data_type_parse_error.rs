@@ -10,6 +10,7 @@
 //! Provides the error returned when parsing `DataType` from text fails.
 
 /// Error returned when parsing a `DataType` from text fails.
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("invalid data type: {input}")]
 pub struct DataTypeParseError {

@@ -100,6 +100,7 @@ impl DataConversionTarget for serde_json::Value {
     /// # Errors
     ///
     /// Returns the same conversion errors as [`Self::convert_from`].
+    #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,
@@ -200,6 +201,7 @@ impl DataConversionTarget for HashMap<String, String> {
     /// # Errors
     ///
     /// Returns the same conversion errors as [`Self::convert_from`].
+    #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
         options: &DataConversionOptions,

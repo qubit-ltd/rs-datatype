@@ -306,6 +306,7 @@ impl Default for DurationConversionOptions {
     /// # Returns
     ///
     /// Strict millisecond-based Duration conversion options.
+    #[inline]
     fn default() -> Self {
         Self {
             numeric_input_unit: DurationUnit::default(),

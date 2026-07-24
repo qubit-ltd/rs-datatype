@@ -54,6 +54,7 @@ pub trait DataTypeOf {
     const DATA_TYPE: DataType;
 }
 
+/// Implements [`DataTypeOf`] for every entry in the central mapping table.
 macro_rules! impl_data_type_of {
     (; $( $(#[$meta:meta])* ($variant:ident, $source:ty, $strategy:ident) ),+ $(,)?) => {
         $(

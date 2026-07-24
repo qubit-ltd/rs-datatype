@@ -48,6 +48,7 @@ impl Default for StringConversionOptions {
     /// # Returns
     ///
     /// Options preserving source whitespace and blank strings.
+    #[inline]
     fn default() -> Self {
         Self {
             trim: false,
@@ -129,6 +130,10 @@ impl StringConversionOptions {
 
     /// Normalizes a string source according to these options.
     ///
+    /// # Type Parameters
+    ///
+    /// * `'a` - Lifetime of the returned slice borrowed from `value`.
+    ///
     /// # Parameters
     ///
     /// * `value` - Source string.
@@ -164,6 +169,10 @@ impl StringConversionOptions {
 
     /// Normalizes a string and represents a missing blank value as `None`.
     ///
+    /// # Type Parameters
+    ///
+    /// * `'a` - Lifetime of the optional returned slice borrowed from `value`.
+    ///
     /// # Parameters
     ///
     /// * `value` - Source string.
@@ -177,6 +186,7 @@ impl StringConversionOptions {
     ///
     /// Returns [`StringNormalizationError::BlankRejected`] when the configured
     /// blank policy rejects the value.
+    #[inline]
     pub fn normalize_optional<'a>(
         &self,
         value: &'a str,

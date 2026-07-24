@@ -49,6 +49,7 @@ mod string_source;
 mod structured;
 mod text;
 
+/// Expands the central data-type mapping table into a source-variant match.
 macro_rules! data_converter_data_type_match {
     ($value:expr; $( $(#[$meta:meta])* ($variant:ident, $source:ty, $strategy:ident) ),+ $(,)?) => {
         match $value {
@@ -78,6 +79,11 @@ macro_rules! data_converter_data_type_match {
 /// from configuration, command-line arguments, or heterogeneous metadata. For
 /// homogeneous collections, [`super::DataConverters`] provides indexed batch
 /// errors on top of the same conversion rules.
+///
+/// # Type Parameters
+///
+/// * `'a` - Lifetime of borrowed string, big-number, URL, map, and JSON sources
+///   stored by the converter.
 ///
 /// # Examples
 ///

@@ -15,6 +15,10 @@ use crate::datatype::DataType;
 
 /// Normalizes a textual source and attaches target context to policy errors.
 ///
+/// # Type Parameters
+///
+/// * `'a` - Lifetime of the returned slice borrowed from `value`.
+///
 /// # Parameters
 ///
 /// * `value` - Textual source to normalize.
