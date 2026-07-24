@@ -355,30 +355,46 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
     let mut map = HashMap::new();
     map.insert("k".to_string(), "v".to_string());
 
-    assert_eq!(DataConverter::from(date).to::<NaiveDate>().unwrap(), date);
-    assert_eq!(DataConverter::from(time).to::<NaiveTime>().unwrap(), time);
     assert_eq!(
-        DataConverter::from(datetime).to::<NaiveDateTime>().unwrap(),
+        DataConverter::from(date)
+            .to::<NaiveDate>()
+            .expect("date conversion should succeed"),
+        date
+    );
+    assert_eq!(
+        DataConverter::from(time)
+            .to::<NaiveTime>()
+            .expect("time conversion should succeed"),
+        time
+    );
+    assert_eq!(
+        DataConverter::from(datetime)
+            .to::<NaiveDateTime>()
+            .expect("naive date-time conversion should succeed"),
         datetime
     );
     assert_eq!(
-        DataConverter::from(instant).to::<DateTime<Utc>>().unwrap(),
+        DataConverter::from(instant)
+            .to::<DateTime<Utc>>()
+            .expect("UTC date-time conversion should succeed"),
         instant
     );
     assert_eq!(
-        DataConverter::from(&big_int).to::<BigInt>().unwrap(),
+        DataConverter::from(&big_int)
+            .to::<BigInt>()
+            .expect("BigInt conversion should succeed"),
         big_int
     );
     assert_eq!(
         DataConverter::from(&big_decimal)
             .to::<BigDecimal>()
-            .unwrap(),
+            .expect("BigDecimal conversion should succeed"),
         big_decimal
     );
     assert_eq!(
         DataConverter::from(&map)
             .to::<HashMap<String, String>>()
-            .unwrap(),
+            .expect("string map conversion should succeed"),
         map
     );
 

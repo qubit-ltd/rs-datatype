@@ -529,7 +529,8 @@ fn test_number_ref_comparison_big_number_paths() {
         Some(Ordering::Greater),
     );
 
-    let decimal = BigDecimal::from_str("0.1").unwrap();
+    let decimal =
+        BigDecimal::from_str("0.1").expect("decimal fixture should parse");
     assert_eq!(
         compare_numbers(
             NumberRef::from(&decimal),
