@@ -55,6 +55,7 @@ impl Visitor<'_> for DurationWithUnitVisitor {
     /// # Returns
     ///
     /// The formatter result after writing the duration grammar.
+    #[inline(always)]
     fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a strict unit-suffixed duration string")
     }
@@ -72,6 +73,7 @@ impl Visitor<'_> for DurationWithUnitVisitor {
     /// # Errors
     ///
     /// Returns the visitor error when [`parse`] rejects the text.
+    #[inline(always)]
     fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
     where
         E: DeserializeError,
@@ -92,6 +94,7 @@ impl Visitor<'_> for DurationWithUnitVisitor {
     /// # Errors
     ///
     /// Returns the visitor error when [`parse`] rejects the text.
+    #[inline(always)]
     fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
     where
         E: DeserializeError,
