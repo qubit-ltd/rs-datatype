@@ -41,6 +41,9 @@ fn benchmark_exact_integer_text(c: &mut Criterion) {
         ("scientific_integer", "12345e4"),
         ("exact_decimal", "12345.000"),
     ] {
+        DataConverter::from(source)
+            .to::<i64>()
+            .expect("exact integer benchmark fixture should convert");
         group.bench_with_input(
             BenchmarkId::from_parameter(name),
             source,
@@ -65,6 +68,9 @@ fn benchmark_lossy_integer_text(c: &mut Criterion) {
         ("fractional_scientific", "12345.6789e2"),
         ("small_fraction", "0.000000001"),
     ] {
+        DataConverter::from(source)
+            .to_with::<i64>(&options)
+            .expect("lossy integer benchmark fixture should convert");
         group.bench_with_input(
             BenchmarkId::from_parameter(name),
             source,
@@ -96,6 +102,9 @@ fn benchmark_exact_float_text(c: &mut Criterion) {
     ];
     let mut group = c.benchmark_group("numeric_text_to_f64_exact");
     for (name, source) in &sources {
+        DataConverter::from(source.as_str())
+            .to::<f64>()
+            .expect("exact float benchmark fixture should convert");
         group.bench_with_input(
             BenchmarkId::from_parameter(name),
             source,
@@ -126,6 +135,9 @@ fn benchmark_big_integer_text(c: &mut Criterion) {
                         .with_max_big_integer_digits(digits),
                 ),
             );
+            DataConverter::from(source.as_str())
+                .to_with::<num_bigint::BigInt>(&options)
+                .expect("integer benchmark fixture should parse");
             group.bench_with_input(
                 BenchmarkId::from_parameter(name),
                 &source,
@@ -135,8 +147,7 @@ fn benchmark_big_integer_text(c: &mut Criterion) {
                             DataConverter::from(black_box(source.as_str()))
                                 .to_with::<num_bigint::BigInt>(black_box(
                                     &options,
-                                ))
-                                .expect("benchmark integer text should parse"),
+                                )),
                         )
                     });
                 },
@@ -162,6 +173,9 @@ fn benchmark_big_decimal_text(c: &mut Criterion) {
                         .with_max_big_integer_digits(digits),
                 ),
             );
+            DataConverter::from(source.as_str())
+                .to_with::<bigdecimal::BigDecimal>(&options)
+                .expect("decimal benchmark fixture should parse");
             group.bench_with_input(
                 BenchmarkId::from_parameter(name),
                 &source,
@@ -170,9 +184,8 @@ fn benchmark_big_decimal_text(c: &mut Criterion) {
                         black_box(
                             DataConverter::from(black_box(source.as_str()))
                                 .to_with::<bigdecimal::BigDecimal>(black_box(
-                                    &options,
-                                ))
-                                .expect("benchmark decimal text should parse"),
+                                &options,
+                            )),
                         )
                     });
                 },
