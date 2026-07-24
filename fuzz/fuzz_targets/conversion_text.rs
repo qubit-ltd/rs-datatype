@@ -5,6 +5,13 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
+//! Fuzzes bounded UTF-8 text conversion across supported target families.
+//!
+//! Every input is exercised under the strict, lossy, and environment-friendly
+//! profiles. Successful values and structured conversion errors are both valid;
+//! the invariant is that no target conversion panics for arbitrary bounded
+//! text.
+
 #![no_main]
 
 use std::collections::HashMap;
@@ -28,6 +35,7 @@ use qubit_datatype::{
 use serde_json::Value;
 use url::Url;
 
+/// Caps parser work and derived allocations while retaining long-limit cases.
 const MAX_INPUT_SIZE: usize = 16 * 1024;
 
 fuzz_target!(|data: &[u8]| {
