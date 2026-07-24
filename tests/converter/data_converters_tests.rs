@@ -59,6 +59,18 @@ fn test_data_converters_from_slice_converts_all_values() {
     assert_eq!(converted, vec![1, 2, 3]);
 }
 
+/// Verifies borrowed slices reserve their exact, trusted source length.
+#[test]
+fn test_data_converters_from_slice_reserves_exact_source_length() {
+    let values = ["1".to_string(), "2".to_string(), "3".to_string()];
+
+    let converted: Vec<u16> = DataConverters::from(values.as_slice())
+        .to_vec()
+        .expect("string slice should convert to u16 vector");
+
+    assert_eq!(converted.capacity(), values.len());
+}
+
 /// Test batch conversion from an owned vector.
 #[test]
 fn test_data_converters_from_owned_vec_converts_all_values() {
@@ -69,6 +81,19 @@ fn test_data_converters_from_owned_vec_converts_all_values() {
         .expect("owned string vector should convert to u16 vector");
 
     assert_eq!(converted, vec![1, 2, 3]);
+}
+
+/// Verifies owned vectors reserve their exact, trusted source length.
+#[test]
+fn test_data_converters_from_owned_vec_reserves_exact_source_length() {
+    let values = vec!["1", "2", "3"];
+    let expected_capacity = values.len();
+
+    let converted: Vec<u16> = DataConverters::from(values)
+        .to_vec()
+        .expect("owned string vector should convert to u16 vector");
+
+    assert_eq!(converted.capacity(), expected_capacity);
 }
 
 /// Verifies owned identity batch conversion reuses each String allocation.
