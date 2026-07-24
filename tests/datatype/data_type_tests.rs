@@ -197,7 +197,11 @@ fn test_data_type_from_str_case_insensitive_for_all_variants() {
                 }
             })
             .collect();
-        assert_eq!(DataType::from_str(&alternating_case).unwrap(), data_type);
+        assert_eq!(
+            DataType::from_str(&alternating_case)
+                .expect("alternating-case data type name should parse"),
+            data_type
+        );
     }
 }
 

@@ -16,7 +16,8 @@ fn test_numeric_comparison_policy_default_and_serde() {
         NumericComparisonPolicy::Exact
     );
     assert_eq!(
-        serde_json::to_string(&NumericComparisonPolicy::Approximate).unwrap(),
+        serde_json::to_string(&NumericComparisonPolicy::Approximate)
+            .expect("numeric comparison policy should serialize"),
         "\"approximate\""
     );
 }

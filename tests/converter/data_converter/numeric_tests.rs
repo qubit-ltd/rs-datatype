@@ -618,7 +618,8 @@ fn test_data_converter_core_numeric_parser_covers_decimal_boundaries() {
 #[test]
 #[cfg(feature = "big-number")]
 fn test_data_converter_big_integer_target_covers_numeric_sources() {
-    let integral_decimal = BigDecimal::from_str("12.0").unwrap();
+    let integral_decimal = BigDecimal::from_str("12.0")
+        .expect("integral decimal fixture should parse");
     let sources = [
         (DataConverter::from(true), BigInt::from(1)),
         (DataConverter::from('A'), BigInt::from(65)),
@@ -658,7 +659,8 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
         DataConverter::from(f64::NAN).to::<BigInt>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::NonFinite)
     )));
-    let fractional_decimal = BigDecimal::from_str("12.5").unwrap();
+    let fractional_decimal = BigDecimal::from_str("12.5")
+        .expect("fractional decimal fixture should parse");
     assert!(matches!(
         DataConverter::from(&fractional_decimal).to::<BigInt>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
@@ -673,7 +675,8 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
         DataConverter::from(&imprecise_integer).to_with::<f64>(&lossy),
         Ok(9_007_199_254_740_992.0)
     );
-    let imprecise_decimal = BigDecimal::from_str("0.1").unwrap();
+    let imprecise_decimal = BigDecimal::from_str("0.1")
+        .expect("imprecise decimal fixture should parse");
     assert!(matches!(
         DataConverter::from(&imprecise_decimal).to::<f64>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
@@ -743,13 +746,23 @@ fn test_data_converter_numeric_boundary_branches() {
     assert!(DataConverter::from(u64::MAX).to::<u32>().is_err());
     assert!(DataConverter::from(u128::MAX).to::<u64>().is_err());
 
-    assert!(DataConverter::from("nan").to::<f32>().unwrap().is_nan());
+    assert!(
+        DataConverter::from("nan")
+            .to::<f32>()
+            .expect("NaN text should convert to f32")
+            .is_nan()
+    );
     assert_eq!(DataConverter::from("inf").to::<f32>(), Ok(f32::INFINITY));
     assert_eq!(
         DataConverter::from("-infinity").to::<f32>(),
         Ok(f32::NEG_INFINITY),
     );
-    assert!(DataConverter::from("NaN").to::<f64>().unwrap().is_nan());
+    assert!(
+        DataConverter::from("NaN")
+            .to::<f64>()
+            .expect("NaN text should convert to f64")
+            .is_nan()
+    );
     assert_eq!(
         DataConverter::from("+infinity").to::<f64>(),
         Ok(f64::INFINITY)
@@ -780,9 +793,11 @@ fn test_data_converter_numeric_boundary_branches() {
     {
         let zero = BigDecimal::from(0);
         assert_eq!(DataConverter::from(&zero).to::<i32>(), Ok(0));
-        let integral_decimal = BigDecimal::from_str("12.0").unwrap();
+        let integral_decimal = BigDecimal::from_str("12.0")
+            .expect("integral decimal fixture should parse");
         assert_eq!(DataConverter::from(&integral_decimal).to::<i32>(), Ok(12));
-        let fractional = BigDecimal::from_str("12.9").unwrap();
+        let fractional = BigDecimal::from_str("12.9")
+            .expect("fractional decimal fixture should parse");
         let lossy = DataConversionOptions::lossy();
         assert_eq!(
             DataConverter::from(&fractional).to_with::<i32>(&lossy),
@@ -791,11 +806,13 @@ fn test_data_converter_numeric_boundary_branches() {
 
         assert_eq!(
             DataConverter::from(1.25f32).to::<BigDecimal>(),
-            Ok(BigDecimal::from_str("1.25").unwrap()),
+            Ok(BigDecimal::from_str("1.25")
+                .expect("decimal fixture should parse")),
         );
         assert_eq!(
             DataConverter::from(1.25f64).to::<BigDecimal>(),
-            Ok(BigDecimal::from_str("1.25").unwrap()),
+            Ok(BigDecimal::from_str("1.25")
+                .expect("decimal fixture should parse")),
         );
         assert_eq!(
             DataConverter::from("12").to::<BigDecimal>(),
@@ -813,11 +830,14 @@ fn test_data_converter_numeric_boundary_branches() {
 ))]
 #[test]
 fn test_data_converter_big_decimal_rejects_rich_non_numeric_sources() {
-    let date = NaiveDate::from_ymd_opt(2026, 7, 12).unwrap();
-    let time = NaiveTime::from_hms_opt(1, 2, 3).unwrap();
+    let date = NaiveDate::from_ymd_opt(2026, 7, 12)
+        .expect("date fixture should be valid");
+    let time =
+        NaiveTime::from_hms_opt(1, 2, 3).expect("time fixture should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
-    let url = Url::parse("https://example.com").unwrap();
+    let url =
+        Url::parse("https://example.com").expect("URL fixture should parse");
     let map = HashMap::from([("k".to_string(), "v".to_string())]);
     let json = serde_json::json!({"k": "v"});
     assert!(DataConverter::from(date).to::<BigDecimal>().is_err());

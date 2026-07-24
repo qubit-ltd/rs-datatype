@@ -106,9 +106,11 @@ fn test_data_type_of_url_inferred_from_value() {
         T::DATA_TYPE
     }
 
-    let https = url::Url::parse("https://example.com/path?x=1#frag").unwrap();
+    let https = url::Url::parse("https://example.com/path?x=1#frag")
+        .expect("HTTPS URL fixture should parse");
     assert_eq!(mapping_for(&https), DataType::Url);
 
-    let file = url::Url::parse("file:///tmp/a.txt").unwrap();
+    let file = url::Url::parse("file:///tmp/a.txt")
+        .expect("file URL fixture should parse");
     assert_eq!(mapping_for(&file), DataType::Url);
 }
