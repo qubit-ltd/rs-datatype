@@ -10,6 +10,8 @@
 //! The modules in this namespace are intended for use with
 //! `#[serde(with = "...")]` on fields that need a stable interchange format.
 
+mod internal;
+
 pub mod duration_millis;
 pub mod duration_millis_with_unit;
 pub mod duration_with_unit;

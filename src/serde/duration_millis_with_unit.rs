@@ -13,19 +13,12 @@
 //! matching, untrimmed `<integer>ms` grammar and applies
 //! [`crate::DurationTextOptions::DEFAULT_MAX_TEXT_BYTES`].
 
-use std::{
-    fmt,
-    time::Duration,
-};
+use std::time::Duration;
 
 use crate::{
     DurationParseError,
     DurationTextOptions,
     DurationUnit,
-};
-use serde::de::{
-    Error as DeserializeError,
-    Visitor,
 };
 use serde::{
     Deserializer,
@@ -33,71 +26,14 @@ use serde::{
 };
 
 use super::duration_millis::rounded_millis;
-
-/// Parses borrowed or owned fixed-millisecond duration text.
-struct DurationMillisWithUnitVisitor;
-
-impl Visitor<'_> for DurationMillisWithUnitVisitor {
-    type Value = Duration;
-
-    /// Describes the fixed-millisecond string accepted by this visitor.
-    ///
-    /// # Parameters
-    ///
-    /// * `formatter` - Formatter receiving the expected input description.
-    ///
-    /// # Returns
-    ///
-    /// The formatter result after writing the duration grammar.
-    #[inline(always)]
-    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str("a duration string in the `<integer>ms` format")
-    }
-
-    /// Parses a borrowed or transient string without taking ownership.
-    ///
-    /// # Parameters
-    ///
-    /// * `value` - Duration text supplied by the deserializer.
-    ///
-    /// # Returns
-    ///
-    /// The parsed [`Duration`].
-    ///
-    /// # Errors
-    ///
-    /// Returns the visitor error when [`parse`] rejects the text.
-    #[inline(always)]
-    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-    where
-        E: DeserializeError,
-    {
-        parse(value).map_err(E::custom)
-    }
-
-    /// Parses an owned string supplied by a non-borrowing deserializer.
-    ///
-    /// # Parameters
-    ///
-    /// * `value` - Owned duration text supplied by the deserializer.
-    ///
-    /// # Returns
-    ///
-    /// The parsed [`Duration`].
-    ///
-    /// # Errors
-    ///
-    /// Returns the visitor error when [`parse`] rejects the text.
-    #[inline(always)]
-    fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
-    where
-        E: DeserializeError,
-    {
-        self.visit_str(&value)
-    }
-}
+use super::internal::DurationMillisWithUnitVisitor;
 
 /// Deserializes fixed millisecond text matching the required grammar.
+///
+/// # Type Parameters
+///
+/// - `'de`: Lifetime of data borrowed from the deserializer input.
+/// - `D`: Serde deserializer type.
 ///
 /// # Parameters
 ///
@@ -175,6 +111,10 @@ pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
 
 /// Serializes a [`Duration`] as rounded whole milliseconds with an `ms`
 /// suffix.
+///
+/// # Type Parameters
+///
+/// - `S`: Serde serializer type.
 ///
 /// # Parameters
 ///
