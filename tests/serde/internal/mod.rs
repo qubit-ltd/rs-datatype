@@ -10,7 +10,9 @@
 mod borrowed_str_only_deserializer_tests;
 mod duration_millis_holder_tests;
 mod duration_millis_with_unit_holder_tests;
+mod duration_millis_with_unit_visitor_tests;
 mod duration_with_unit_holder_tests;
+mod duration_with_unit_visitor_tests;
 
 pub(crate) use borrowed_str_only_deserializer_tests::BorrowedStrOnlyDeserializer;
 pub(crate) use duration_millis_holder_tests::DurationMillisHolder;

@@ -11,15 +11,8 @@ use std::time::Duration;
 
 use qubit_datatype::DurationParseError;
 use qubit_datatype::serde::duration_with_unit;
-use serde::de::value::{
-    Error as ValueError,
-    StringDeserializer,
-};
 
-use super::internal::{
-    BorrowedStrOnlyDeserializer,
-    DurationWithUnitHolder,
-};
+use super::internal::DurationWithUnitHolder;
 
 /// Verifies exact Duration serialization emits a unit-suffixed string.
 #[test]
@@ -70,28 +63,6 @@ fn test_duration_with_unit_deserialize_from_integer_millis() {
         serde_json::from_str::<DurationWithUnitHolder>(r#"{"duration":250}"#)
             .is_err()
     );
-}
-
-/// Verifies the exact adapter accepts an owned string deserializer.
-#[test]
-fn test_duration_with_unit_deserialize_from_owned_string() {
-    let deserializer =
-        StringDeserializer::<ValueError>::new("42ns".to_string());
-    let duration = duration_with_unit::deserialize(deserializer)
-        .expect("owned duration text should deserialize");
-
-    assert_eq!(duration, Duration::from_nanos(42));
-}
-
-/// Verifies the exact adapter can consume borrowed text without requesting an
-/// owned string.
-#[test]
-fn test_duration_with_unit_deserialize_from_borrowed_only_str() {
-    let deserializer = BorrowedStrOnlyDeserializer::new("42ns");
-    let duration = duration_with_unit::deserialize(deserializer)
-        .expect("borrowed duration text should deserialize");
-
-    assert_eq!(duration, Duration::from_nanos(42));
 }
 
 /// Verifies the exact adapter rejects non-string scalar input.

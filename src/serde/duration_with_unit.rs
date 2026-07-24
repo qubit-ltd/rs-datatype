@@ -12,10 +12,7 @@
 //! represented as `0ms`. Deserialization accepts the broader strict grammar
 //! with `ns`, `us`, `µs`, `μs`, `ms`, `s`, `min`, `h`, or `d` suffixes.
 
-use std::{
-    fmt,
-    time::Duration,
-};
+use std::time::Duration;
 
 use crate::{
     DurationParseError,
@@ -25,14 +22,12 @@ use crate::{
     format_duration_exact,
     parse_duration_text,
 };
-use serde::de::{
-    Error as DeserializeError,
-    Visitor,
-};
 use serde::{
     Deserializer,
     Serializer,
 };
+
+use super::internal::DurationWithUnitVisitor;
 
 /// Strict Duration text profile.
 const DURATION_TEXT_OPTIONS: DurationTextOptions = DurationTextOptions::new(
@@ -40,70 +35,11 @@ const DURATION_TEXT_OPTIONS: DurationTextOptions = DurationTextOptions::new(
     DurationUnitParseMode::Strict,
 );
 
-/// Parses borrowed or owned exact unit-suffixed duration text.
-struct DurationWithUnitVisitor;
-
-impl Visitor<'_> for DurationWithUnitVisitor {
-    type Value = Duration;
-
-    /// Describes the strict unit-suffixed string accepted by this visitor.
-    ///
-    /// # Parameters
-    ///
-    /// * `formatter` - Formatter receiving the expected input description.
-    ///
-    /// # Returns
-    ///
-    /// The formatter result after writing the duration grammar.
-    #[inline(always)]
-    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str("a strict unit-suffixed duration string")
-    }
-
-    /// Parses a borrowed or transient string without taking ownership.
-    ///
-    /// # Parameters
-    ///
-    /// * `value` - Duration text supplied by the deserializer.
-    ///
-    /// # Returns
-    ///
-    /// The parsed [`Duration`].
-    ///
-    /// # Errors
-    ///
-    /// Returns the visitor error when [`parse`] rejects the text.
-    #[inline(always)]
-    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-    where
-        E: DeserializeError,
-    {
-        parse(value).map_err(E::custom)
-    }
-
-    /// Parses an owned string supplied by a non-borrowing deserializer.
-    ///
-    /// # Parameters
-    ///
-    /// * `value` - Owned duration text supplied by the deserializer.
-    ///
-    /// # Returns
-    ///
-    /// The parsed [`Duration`].
-    ///
-    /// # Errors
-    ///
-    /// Returns the visitor error when [`parse`] rejects the text.
-    #[inline(always)]
-    fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
-    where
-        E: DeserializeError,
-    {
-        self.visit_str(&value)
-    }
-}
-
 /// Serializes a [`Duration`] as an exact string such as `"500µs"`.
+///
+/// # Type Parameters
+///
+/// - `S`: Serde serializer type.
 ///
 /// # Parameters
 ///
@@ -130,6 +66,11 @@ where
 }
 
 /// Deserializes a [`Duration`] from an exact strict unit-suffixed string.
+///
+/// # Type Parameters
+///
+/// - `'de`: Lifetime of data borrowed from the deserializer input.
+/// - `D`: Serde deserializer type.
 ///
 /// # Parameters
 ///
