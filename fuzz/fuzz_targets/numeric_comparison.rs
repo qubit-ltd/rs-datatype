@@ -5,6 +5,13 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
+//! Fuzzes cross-representation numeric comparison.
+//!
+//! Generated fixed-width, floating-point, integer, and decimal values must
+//! compare antisymmetrically under both policies. Exact comparison must also
+//! remain transitive. NaN is excluded because the public API intentionally
+//! leaves it unordered.
+
 #![no_main]
 
 use std::cmp::Ordering;
@@ -17,7 +24,9 @@ use qubit_datatype::{
     NumericComparisonPolicy,
 };
 
+/// Bytes required for the two integers, float bits, and decimal scale fields.
 const FIXED_INPUT_SIZE: usize = 42;
+/// Bounds arbitrary-precision coefficient allocation and comparison cost.
 const MAX_COEFFICIENT_SIZE: usize = 128;
 
 fuzz_target!(|data: &[u8]| {

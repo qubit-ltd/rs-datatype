@@ -5,6 +5,12 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
+//! Fuzzes bounded scalar-string splitting and collection conversion.
+//!
+//! Successful vector conversion must respect the configured retained-item
+//! limit, and first-item conversion must agree with the vector's first value.
+//! Policy failures are accepted outcomes and must not panic.
+
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
@@ -15,7 +21,9 @@ use qubit_datatype::{
     ScalarStringDataConverters,
 };
 
+/// Caps text scanning and item materialization for each fuzz iteration.
 const MAX_INPUT_SIZE: usize = 16 * 1024;
+/// Bounds delimiter-set construction while covering the large-set lookup path.
 const MAX_DELIMITERS: usize = 64;
 
 fuzz_target!(|data: &[u8]| {
