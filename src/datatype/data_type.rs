@@ -10,17 +10,18 @@
 //! Provides cross-module reusable common data type enum `DataType` and type
 //! mapping `DataTypeOf`.
 
+use std::fmt::{
+    self,
+    Display,
+    Formatter,
+};
+use std::str::FromStr;
+
 use super::data_type_parse_error::DataTypeParseError;
 
 use serde::{
     Deserialize,
     Serialize,
-};
-use strum::{
-    Display,
-    EnumString,
-    IntoStaticStr,
-    VariantArray,
 };
 
 /// Universal data type enumeration for cross-module type representation
@@ -91,27 +92,8 @@ use strum::{
 /// exhaustive downstream mappings. Adding a variant is a deliberate breaking
 /// change.
 #[must_use]
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Hash,
-    Serialize,
-    Deserialize,
-    Display,
-    EnumString,
-    IntoStaticStr,
-    VariantArray,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-#[strum(
-    serialize_all = "lowercase",
-    ascii_case_insensitive,
-    parse_err_ty = DataTypeParseError,
-    parse_err_fn = DataTypeParseError::new
-)]
 pub enum DataType {
     /// Boolean type
     Bool,
@@ -167,7 +149,33 @@ pub enum DataType {
 
 impl DataType {
     /// All data type variants in their stable declaration order.
-    pub const ALL: &'static [DataType] = <DataType as VariantArray>::VARIANTS;
+    pub const ALL: &'static [DataType] = &[
+        DataType::Bool,
+        DataType::Char,
+        DataType::Int8,
+        DataType::Int16,
+        DataType::Int32,
+        DataType::Int64,
+        DataType::Int128,
+        DataType::UInt8,
+        DataType::UInt16,
+        DataType::UInt32,
+        DataType::UInt64,
+        DataType::UInt128,
+        DataType::Float32,
+        DataType::Float64,
+        DataType::String,
+        DataType::Date,
+        DataType::Time,
+        DataType::DateTime,
+        DataType::Instant,
+        DataType::BigInteger,
+        DataType::BigDecimal,
+        DataType::Duration,
+        DataType::Url,
+        DataType::StringMap,
+        DataType::Json,
+    ];
 
     /// Returns the stable lowercase name of this data type.
     ///
@@ -176,8 +184,34 @@ impl DataType {
     /// The stable lowercase serialization and display name.
     #[must_use]
     #[inline(always)]
-    pub fn as_str(self) -> &'static str {
-        <&'static str>::from(self)
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            DataType::Bool => "bool",
+            DataType::Char => "char",
+            DataType::Int8 => "int8",
+            DataType::Int16 => "int16",
+            DataType::Int32 => "int32",
+            DataType::Int64 => "int64",
+            DataType::Int128 => "int128",
+            DataType::UInt8 => "uint8",
+            DataType::UInt16 => "uint16",
+            DataType::UInt32 => "uint32",
+            DataType::UInt64 => "uint64",
+            DataType::UInt128 => "uint128",
+            DataType::Float32 => "float32",
+            DataType::Float64 => "float64",
+            DataType::String => "string",
+            DataType::Date => "date",
+            DataType::Time => "time",
+            DataType::DateTime => "datetime",
+            DataType::Instant => "instant",
+            DataType::BigInteger => "biginteger",
+            DataType::BigDecimal => "bigdecimal",
+            DataType::Duration => "duration",
+            DataType::Url => "url",
+            DataType::StringMap => "stringmap",
+            DataType::Json => "json",
+        }
     }
 
     /// Tests whether this type belongs to the numeric family.
@@ -258,5 +292,38 @@ impl DataType {
     #[inline(always)]
     pub const fn is_big_number(self) -> bool {
         matches!(self, DataType::BigInteger | DataType::BigDecimal)
+    }
+}
+
+impl Display for DataType {
+    #[inline(always)]
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        formatter.write_str(self.as_str())
+    }
+}
+
+impl FromStr for DataType {
+    type Err = DataTypeParseError;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        Self::ALL
+            .iter()
+            .copied()
+            .find(|data_type| input.eq_ignore_ascii_case(data_type.as_str()))
+            .ok_or_else(|| DataTypeParseError::new(input))
+    }
+}
+
+impl From<DataType> for &'static str {
+    #[inline(always)]
+    fn from(value: DataType) -> Self {
+        value.as_str()
+    }
+}
+
+impl From<&DataType> for &'static str {
+    #[inline(always)]
+    fn from(value: &DataType) -> Self {
+        value.as_str()
     }
 }
