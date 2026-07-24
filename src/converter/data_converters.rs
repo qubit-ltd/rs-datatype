@@ -55,6 +55,8 @@ use super::options::DataConversionOptions;
 pub struct DataConverters<I> {
     /// The iterator of source values.
     sources: I,
+    /// Exact source length supplied only by trusted collection adapters.
+    trusted_capacity: Option<usize>,
 }
 
 impl<I> DataConverters<I>
@@ -74,7 +76,10 @@ where
     /// requested.
     #[inline(always)]
     pub fn from_iterator(sources: I) -> Self {
-        Self { sources }
+        Self {
+            sources,
+            trusted_capacity: None,
+        }
     }
 }
 
@@ -149,7 +154,9 @@ where
         T: DataConversionTarget,
     {
         let sources = self.sources;
-        let mut converted = Vec::new();
+        let mut converted = self
+            .trusted_capacity
+            .map_or_else(Vec::new, Vec::with_capacity);
         for (index, source) in sources.enumerate() {
             let value = match source.into().into_target_with::<T>(options) {
                 Ok(value) => value,
@@ -277,7 +284,10 @@ impl<'a, V> From<&'a [V]> for DataConverters<std::slice::Iter<'a, V>> {
     /// A converter iterating over borrowed elements without cloning them.
     #[inline(always)]
     fn from(values: &'a [V]) -> Self {
-        Self::from_iterator(values.iter())
+        Self {
+            sources: values.iter(),
+            trusted_capacity: Some(values.len()),
+        }
     }
 }
 
@@ -309,6 +319,10 @@ impl<V> From<Vec<V>> for DataConverters<std::vec::IntoIter<V>> {
     /// A converter consuming elements from the vector.
     #[inline(always)]
     fn from(values: Vec<V>) -> Self {
-        Self::from_iterator(values.into_iter())
+        let trusted_capacity = values.len();
+        Self {
+            sources: values.into_iter(),
+            trusted_capacity: Some(trusted_capacity),
+        }
     }
 }
