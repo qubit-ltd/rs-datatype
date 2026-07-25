@@ -72,8 +72,8 @@ macro_rules! data_converter_data_type_match {
 /// does not require cloning it.
 ///
 /// When the wrapper does not need to be reused, [`Self::into_target`] and
-/// [`Self::into_target_with`] can move an owned value into a matching target
-/// instead of cloning its allocation.
+/// [`Self::into_target_with`] can move owned storage into targets that can
+/// preserve it instead of cloning its allocation.
 ///
 /// Use this type when the source type is known at run time, such as values read
 /// from configuration, command-line arguments, or heterogeneous metadata. For
@@ -309,7 +309,7 @@ impl DataConverter<'_> {
     /// Consumes this source and converts it using the shared default options.
     ///
     /// Consuming the wrapper allows targets to reuse owned source allocations
-    /// when the source and target types match. Borrowed sources retain the same
+    /// when the conversion can preserve them. Borrowed sources retain the same
     /// behavior as [`Self::to`].
     ///
     /// # Type Parameters

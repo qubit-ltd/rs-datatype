@@ -112,6 +112,8 @@ domain rule.
 
 `DataConverter` borrows or owns a runtime source. `to` uses strict defaults;
 `to_with` accepts a `DataConversionOptions` profile.
+`into_target` and `into_target_with` consume an owned source when it is no
+longer needed, allowing compatible targets to reuse owned storage.
 
 ```rust
 use qubit_datatype::{DataConversionOptions, DataConverter};
@@ -257,6 +259,8 @@ Canonical rich strings are: `YYYY-MM-DD` for dates,
 JSON, and JSON objects with unique keys and string values for StringMap. Date,
 date-time, and instant formatting accepts only years `0000` through `9999`;
 values outside that canonical four-digit domain are rejected.
+StringMap JSON objects emit members in lexicographic key order, including when
+the dependency graph enables `serde_json`'s `preserve_order` feature.
 Date and time fields are zero-padded ASCII digits with separators in the exact
 positions shown; internal whitespace, signed years, alternate separators, and
 Unicode digits are rejected before Chrono performs range validation.

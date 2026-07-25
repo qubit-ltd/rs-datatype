@@ -9,12 +9,7 @@
 
 use qubit_datatype::converter::DataConversionErrorKind;
 
-#[cfg(all(
-    feature = "big-number",
-    feature = "chrono",
-    feature = "url",
-    feature = "json"
-))]
+#[cfg(feature = "json")]
 use std::collections::HashMap;
 #[cfg(all(
     feature = "big-number",
@@ -580,6 +575,52 @@ fn test_data_converter_consuming_string_identity_reuses_owned_storage() {
         .into_target_with::<String>(&options)
         .expect("consuming String conversion should still trim text");
     assert_eq!(trimmed, "payload");
+}
+
+/// Verifies StringMap text conversion emits JSON members in canonical key
+/// order even when the JSON dependency preserves insertion order.
+#[test]
+#[cfg(feature = "json")]
+fn test_data_converter_string_map_to_string_orders_keys() {
+    let source = (0..64)
+        .find_map(|_| {
+            let source = HashMap::from([
+                ("zeta".to_owned(), "last".to_owned()),
+                ("alpha".to_owned(), "first".to_owned()),
+                ("omega".to_owned(), "middle".to_owned()),
+                ("beta".to_owned(), "second".to_owned()),
+            ]);
+            let keys = source.keys().map(String::as_str).collect::<Vec<_>>();
+            (!keys.is_sorted()).then_some(source)
+        })
+        .expect(
+            "randomized HashMap iteration should produce a noncanonical order",
+        );
+
+    let converted = DataConverter::from(&source)
+        .to::<String>()
+        .expect("string map should convert to canonical JSON text");
+
+    assert_eq!(
+        converted,
+        r#"{"alpha":"first","beta":"second","omega":"middle","zeta":"last"}"#,
+    );
+}
+
+/// Verifies consuming URL-to-String conversion reuses the URL text storage.
+#[test]
+#[cfg(feature = "url")]
+fn test_data_converter_consuming_url_to_string_reuses_storage() {
+    let source = Url::parse("https://example.com/owned-payload")
+        .expect("test URL should parse");
+    let source_pointer = source.as_str().as_ptr();
+
+    let converted = DataConverter::from(source)
+        .into_target::<String>()
+        .expect("owned URL should convert to String");
+
+    assert_eq!(converted, "https://example.com/owned-payload");
+    assert_eq!(converted.as_ptr(), source_pointer);
 }
 
 /// Verifies consuming URL conversion reuses owned URL storage.
