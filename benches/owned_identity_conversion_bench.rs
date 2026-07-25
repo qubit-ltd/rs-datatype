@@ -5,7 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Owned and borrowed identity conversion benchmarks.
+//! Owned and borrowed conversion benchmarks.
 
 use std::collections::HashMap;
 use std::hint::black_box;
@@ -234,6 +234,90 @@ fn benchmark_json_identity(c: &mut Criterion) {
     group.finish();
 }
 
+/// Benchmarks StringMap-to-JSON conversion across payload sizes.
+#[cfg(feature = "json")]
+fn benchmark_string_map_to_json(c: &mut Criterion) {
+    let mut group = c.benchmark_group("string_map_to_json");
+    for (name, bytes) in TEXT_SIZES {
+        let value = string_map_payload(bytes);
+        let borrowed: JsonValue = DataConverter::from(&value).to().expect(
+            "borrowed StringMap-to-JSON benchmark fixture should convert",
+        );
+        let owned: JsonValue = DataConverter::from(value.clone())
+            .into_target()
+            .expect("owned StringMap-to-JSON benchmark fixture should convert");
+        black_box((borrowed, owned));
+
+        group.throughput(Throughput::Bytes(bytes as u64));
+        group.bench_with_input(
+            BenchmarkId::new("borrowed_to_json", name),
+            &value,
+            |b, value| {
+                b.iter(|| {
+                    black_box(
+                        DataConverter::from(black_box(value)).to::<JsonValue>(),
+                    )
+                })
+            },
+        );
+        group.bench_function(BenchmarkId::new("owned_to_json", name), |b| {
+            b.iter_batched(
+                || value.clone(),
+                |value| {
+                    black_box(
+                        DataConverter::from(black_box(value))
+                            .into_target::<JsonValue>(),
+                    )
+                },
+                BatchSize::LargeInput,
+            );
+        });
+    }
+    group.finish();
+}
+
+/// Benchmarks StringMap-to-text conversion across payload sizes.
+#[cfg(feature = "json")]
+fn benchmark_string_map_to_string(c: &mut Criterion) {
+    let mut group = c.benchmark_group("string_map_to_string");
+    for (name, bytes) in TEXT_SIZES {
+        let value = string_map_payload(bytes);
+        let borrowed: String = DataConverter::from(&value).to().expect(
+            "borrowed StringMap-to-text benchmark fixture should convert",
+        );
+        let owned: String = DataConverter::from(value.clone())
+            .into_target()
+            .expect("owned StringMap-to-text benchmark fixture should convert");
+        black_box((borrowed, owned));
+
+        group.throughput(Throughput::Bytes(bytes as u64));
+        group.bench_with_input(
+            BenchmarkId::new("borrowed_to_string", name),
+            &value,
+            |b, value| {
+                b.iter(|| {
+                    black_box(
+                        DataConverter::from(black_box(value)).to::<String>(),
+                    )
+                })
+            },
+        );
+        group.bench_function(BenchmarkId::new("owned_to_string", name), |b| {
+            b.iter_batched(
+                || value.clone(),
+                |value| {
+                    black_box(
+                        DataConverter::from(black_box(value))
+                            .into_target::<String>(),
+                    )
+                },
+                BatchSize::LargeInput,
+            );
+        });
+    }
+    group.finish();
+}
+
 /// Benchmarks URL identity conversion when URL support is enabled.
 #[cfg(feature = "url")]
 fn benchmark_url_identity(c: &mut Criterion) {
@@ -242,6 +326,49 @@ fn benchmark_url_identity(c: &mut Criterion) {
         let source = format!("https://example.com/{}", "x".repeat(bytes));
         let value = Url::parse(&source).expect("benchmark URL should parse");
         benchmark_identity_case(&mut group, name, source.len(), value);
+    }
+    group.finish();
+}
+
+/// Benchmarks URL-to-String conversion across payload sizes.
+#[cfg(feature = "url")]
+fn benchmark_url_to_string(c: &mut Criterion) {
+    let mut group = c.benchmark_group("url_to_string");
+    for (name, bytes) in TEXT_SIZES {
+        let source = format!("https://example.com/{}", "x".repeat(bytes));
+        let value = Url::parse(&source).expect("benchmark URL should parse");
+        let borrowed: String = DataConverter::from(&value)
+            .to()
+            .expect("borrowed URL-to-String benchmark fixture should convert");
+        let owned: String = DataConverter::from(value.clone())
+            .into_target()
+            .expect("owned URL-to-String benchmark fixture should convert");
+        black_box((borrowed, owned));
+
+        group.throughput(Throughput::Bytes(source.len() as u64));
+        group.bench_with_input(
+            BenchmarkId::new("borrowed_to_string", name),
+            &value,
+            |b, value| {
+                b.iter(|| {
+                    black_box(
+                        DataConverter::from(black_box(value)).to::<String>(),
+                    )
+                })
+            },
+        );
+        group.bench_function(BenchmarkId::new("owned_to_string", name), |b| {
+            b.iter_batched(
+                || value.clone(),
+                |value| {
+                    black_box(
+                        DataConverter::from(black_box(value))
+                            .into_target::<String>(),
+                    )
+                },
+                BatchSize::LargeInput,
+            );
+        });
     }
     group.finish();
 }
@@ -273,12 +400,18 @@ fn benchmark_big_decimal_identity(c: &mut Criterion) {
     group.finish();
 }
 
-/// Runs every rich-type identity benchmark enabled by Cargo features.
-fn benchmark_rich_identity(c: &mut Criterion) {
+/// Runs every rich-type conversion benchmark enabled by Cargo features.
+fn benchmark_rich_conversions(c: &mut Criterion) {
     #[cfg(feature = "json")]
     benchmark_json_identity(c);
+    #[cfg(feature = "json")]
+    benchmark_string_map_to_json(c);
+    #[cfg(feature = "json")]
+    benchmark_string_map_to_string(c);
     #[cfg(feature = "url")]
     benchmark_url_identity(c);
+    #[cfg(feature = "url")]
+    benchmark_url_to_string(c);
     #[cfg(feature = "big-integer")]
     benchmark_big_integer_identity(c);
     #[cfg(feature = "big-decimal")]
@@ -297,6 +430,6 @@ criterion_group!(
     benchmark_string_identity,
     benchmark_string_map_identity,
     benchmark_string_batch_identity,
-    benchmark_rich_identity,
+    benchmark_rich_conversions,
 );
 criterion_main!(benches);

@@ -345,6 +345,59 @@ fn test_data_converter_consuming_json_identity_reuses_owned_storage() {
     );
 }
 
+/// Verifies consuming StringMap-to-JSON conversion emits object members in
+/// canonical key order.
+#[test]
+#[cfg(feature = "json")]
+fn test_data_converter_consuming_string_map_to_json_orders_keys() {
+    let source = (0..64)
+        .find_map(|_| {
+            let source = HashMap::from([
+                ("zeta".to_owned(), "last".to_owned()),
+                ("alpha".to_owned(), "first".to_owned()),
+                ("omega".to_owned(), "middle".to_owned()),
+                ("beta".to_owned(), "second".to_owned()),
+            ]);
+            let keys = source.keys().map(String::as_str).collect::<Vec<_>>();
+            (!keys.is_sorted()).then_some(source)
+        })
+        .expect(
+            "randomized HashMap iteration should produce a noncanonical order",
+        );
+
+    let converted = DataConverter::from(source)
+        .into_target::<serde_json::Value>()
+        .expect("owned string map should convert to JSON");
+
+    assert_eq!(
+        converted.to_string(),
+        r#"{"alpha":"first","beta":"second","omega":"middle","zeta":"last"}"#,
+    );
+}
+
+/// Verifies consuming StringMap-to-JSON conversion preserves value storage.
+#[test]
+#[cfg(feature = "json")]
+fn test_data_converter_consuming_string_map_to_json_reuses_storage() {
+    let source = HashMap::from([("alpha".to_owned(), "first".to_owned())]);
+    let source_pointer = source
+        .get("alpha")
+        .expect("test map should contain alpha")
+        .as_ptr();
+
+    let converted = DataConverter::from(source)
+        .into_target::<serde_json::Value>()
+        .expect("owned string map should convert to JSON");
+
+    assert_eq!(
+        converted["alpha"]
+            .as_str()
+            .expect("converted JSON should contain alpha")
+            .as_ptr(),
+        source_pointer,
+    );
+}
+
 /// Verifies consuming structured conversions delegate non-identity sources to
 /// the shared borrowed conversion path.
 #[test]

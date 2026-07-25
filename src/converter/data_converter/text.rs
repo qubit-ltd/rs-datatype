@@ -22,8 +22,12 @@ use url::Url;
 use super::DataConverter;
 use super::duration::format_duration;
 use super::string_source::normalize;
+#[cfg(feature = "json")]
+use super::structured::string_map_to_json_text;
 #[cfg(feature = "url")]
 use crate::converter::ConversionLimit;
+#[cfg(feature = "json")]
+use crate::converter::DataFormat;
 use crate::converter::{
     DataConversionError,
     DataConversionOptions,
@@ -188,15 +192,15 @@ impl DataConversionTarget for String {
             }
             DataConverter::Duration(value) => format_duration(*value, options),
             #[cfg(feature = "json")]
-            DataConverter::StringMap(value) => Ok(serde_json::Value::Object(
-                value
-                    .iter()
-                    .map(|(key, value)| {
-                        (key.clone(), serde_json::Value::String(value.clone()))
-                    })
-                    .collect(),
-            )
-            .to_string()),
+            DataConverter::StringMap(value) => string_map_to_json_text(value)
+                .map_err(|_| {
+                    source.invalid(
+                        DataType::String,
+                        InvalidValueReason::Serialization {
+                            format: DataFormat::Json,
+                        },
+                    )
+                }),
             #[cfg(not(feature = "json"))]
             DataConverter::StringMap(_) => {
                 Err(source.unsupported(DataType::String))
@@ -214,7 +218,8 @@ impl DataConversionTarget for String {
     ///
     /// # Returns
     ///
-    /// The canonical text; unchanged owned strings reuse their storage.
+    /// The canonical text; unchanged owned strings and owned URLs reuse their
+    /// text storage.
     ///
     /// # Errors
     ///
@@ -234,6 +239,8 @@ impl DataConversionTarget for String {
                     Ok(normalized.to_owned())
                 }
             }
+            #[cfg(feature = "url")]
+            DataConverter::Url(value) => Ok(value.into_owned().into()),
             source => Self::convert_from(&source, options),
         }
     }

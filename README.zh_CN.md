@@ -97,7 +97,8 @@ assert_eq!(
 ## 5. 单值转换
 
 `DataConverter` 借用或持有一个运行时来源值。`to` 使用严格默认配置，`to_with`
-接收显式的 `DataConversionOptions`。
+接收显式的 `DataConversionOptions`。当不再需要持有的来源值时，`into_target`
+和 `into_target_with` 会消费它，使兼容目标可以复用其已分配的存储。
 
 ```rust
 use qubit_datatype::{DataConversionOptions, DataConverter};
@@ -226,6 +227,8 @@ struct Timeout {
 instant 的 RFC 3339、绝对 URL、标准 JSON，以及 key 唯一且 value 全为字符串的
 StringMap JSON object。日期、date-time 与 instant 仅格式化 `0000` 至 `9999`
 年份；超出四位规范年份范围的值会被拒绝。
+StringMap JSON object 的成员始终按 key 的字典序输出，即使依赖图启用了
+`serde_json` 的 `preserve_order` feature 也是如此。
 日期和时间字段必须由零填充的 ASCII 数字组成，分隔符必须位于上述精确位置；
 Chrono 执行范围校验前会拒绝内部空白、带符号年份、替代分隔符和 Unicode 数字。
 
