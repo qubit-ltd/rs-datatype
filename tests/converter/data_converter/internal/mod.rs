@@ -7,5 +7,6 @@
 // =============================================================================
 //! Tests mirroring internal data conversion responsibilities.
 
+mod canonical_string_map_tests;
 mod numeric;
 mod string_map_visitor_tests;
