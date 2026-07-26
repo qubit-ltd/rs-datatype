@@ -144,11 +144,9 @@ fn benchmark_big_integer_text(c: &mut Criterion) {
                 |b, source| {
                     b.iter(|| {
                         black_box(
-                            DataConverter::from(black_box(source.as_str()))
-                                .to_with::<num_bigint::BigInt>(black_box(
-                                    &options,
-                                )),
-                        )
+                        DataConverter::from(black_box(source.as_str()))
+                            .to_with::<num_bigint::BigInt>(black_box(&options)),
+                    )
                     });
                 },
             );
