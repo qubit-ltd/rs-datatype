@@ -192,15 +192,17 @@ impl DataConversionTarget for String {
             }
             DataConverter::Duration(value) => format_duration(*value, options),
             #[cfg(feature = "json")]
-            DataConverter::StringMap(value) => string_map_to_json_text(value)
-                .map_err(|_| {
-                    source.invalid(
+            DataConverter::StringMap(value) => {
+                match string_map_to_json_text(value) {
+                    Ok(value) => Ok(value),
+                    Err(_) => Err(source.invalid(
                         DataType::String,
                         InvalidValueReason::Serialization {
                             format: DataFormat::Json,
                         },
-                    )
-                }),
+                    )),
+                }
+            }
             #[cfg(not(feature = "json"))]
             DataConverter::StringMap(_) => {
                 Err(source.unsupported(DataType::String))

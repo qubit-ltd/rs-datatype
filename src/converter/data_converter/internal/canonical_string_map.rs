@@ -9,7 +9,6 @@
 
 use std::collections::HashMap;
 
-use serde::ser::SerializeMap;
 use serde::{
     Serialize,
     Serializer,
@@ -63,10 +62,6 @@ impl Serialize for CanonicalStringMap<'_> {
         S: Serializer,
     {
         let entries = sorted_string_map_entries(self.value);
-        let mut map = serializer.serialize_map(Some(entries.len()))?;
-        for (key, value) in entries {
-            map.serialize_entry(key, value)?;
-        }
-        map.end()
+        serializer.collect_map(entries)
     }
 }
