@@ -7,9 +7,16 @@
 // =============================================================================
 //! Private implementation details for runtime data conversion.
 
+#[cfg(feature = "json")]
+mod canonical_string_map;
 pub(super) mod numeric;
 #[cfg(feature = "json")]
 mod string_map_visitor;
 
+#[cfg(feature = "json")]
+pub(super) use canonical_string_map::{
+    CanonicalStringMap,
+    sorted_string_map_entries,
+};
 #[cfg(feature = "json")]
 pub(super) use string_map_visitor::StringMapVisitor;

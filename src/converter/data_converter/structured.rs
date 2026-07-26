@@ -11,17 +11,14 @@ use std::collections::HashMap;
 
 #[cfg(feature = "json")]
 use serde::Deserializer;
-#[cfg(feature = "json")]
-use serde::ser::SerializeMap;
-#[cfg(feature = "json")]
-use serde::{
-    Serialize,
-    Serializer,
-};
 
 use super::DataConverter;
 #[cfg(feature = "json")]
-use super::internal::StringMapVisitor;
+use super::internal::{
+    CanonicalStringMap,
+    StringMapVisitor,
+    sorted_string_map_entries,
+};
 #[cfg(feature = "json")]
 use super::string_source::normalize;
 #[cfg(feature = "json")]
@@ -36,36 +33,6 @@ use crate::converter::{
     DataConversionTarget,
 };
 use crate::datatype::DataType;
-
-/// Borrows a string map and serializes its entries in lexicographic key order.
-#[cfg(feature = "json")]
-struct CanonicalStringMap<'a>(&'a HashMap<String, String>);
-
-/// Collects borrowed map entries in lexicographic key order.
-#[cfg(feature = "json")]
-fn sorted_string_map_entries(
-    value: &HashMap<String, String>,
-) -> Vec<(&String, &String)> {
-    let mut entries = value.iter().collect::<Vec<_>>();
-    entries.sort_unstable_by_key(|(key, _)| *key);
-    entries
-}
-
-#[cfg(feature = "json")]
-impl Serialize for CanonicalStringMap<'_> {
-    /// Serializes map entries in lexicographic key order.
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let entries = sorted_string_map_entries(self.0);
-        let mut map = serializer.serialize_map(Some(entries.len()))?;
-        for (key, value) in entries {
-            map.serialize_entry(key, value)?;
-        }
-        map.end()
-    }
-}
 
 /// Converts a borrowed string map to a JSON object with canonical key order.
 #[cfg(feature = "json")]
@@ -106,7 +73,7 @@ fn string_map_into_json(value: HashMap<String, String>) -> serde_json::Value {
 pub(super) fn string_map_to_json_text(
     value: &HashMap<String, String>,
 ) -> Result<String, serde_json::Error> {
-    serde_json::to_string(&CanonicalStringMap(value))
+    serde_json::to_string(&CanonicalStringMap { value })
 }
 
 #[cfg(feature = "json")]
