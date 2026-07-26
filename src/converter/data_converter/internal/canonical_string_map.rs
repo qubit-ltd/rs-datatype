@@ -56,8 +56,8 @@ impl Serialize for CanonicalStringMap<'_> {
     ///
     /// # Errors
     ///
-    /// Returns the serializer error when writing an entry or ending the map
-    /// fails.
+    /// Returns the serializer error when initializing the map, writing an
+    /// entry, or ending the map fails.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
