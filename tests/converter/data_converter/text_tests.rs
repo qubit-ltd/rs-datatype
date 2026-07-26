@@ -575,6 +575,11 @@ fn test_data_converter_consuming_string_identity_reuses_owned_storage() {
         .into_target_with::<String>(&options)
         .expect("consuming String conversion should still trim text");
     assert_eq!(trimmed, "payload");
+
+    assert_eq!(
+        DataConverter::from(7i32).into_target::<String>(),
+        Ok("7".to_owned()),
+    );
 }
 
 /// Verifies StringMap text conversion emits JSON members in canonical key
