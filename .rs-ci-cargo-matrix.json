@@ -94,8 +94,7 @@
     {
       "name": "all",
       "commands": ["check", "test", "doc", "clippy"],
-      "defaultFeatures": false,
-      "features": ["all"]
+      "allFeatures": true
     }
   ]
 }
