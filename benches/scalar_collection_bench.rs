@@ -9,18 +9,14 @@
 
 use std::hint::black_box;
 
-use criterion::{
-    BenchmarkId,
-    Criterion,
-    criterion_group,
-    criterion_main,
-};
-use qubit_datatype::{
-    CollectionConversionOptions,
-    DataConversionOptions,
-    DataConverters,
-    ScalarStringDataConverters,
-};
+use criterion::BenchmarkId;
+use criterion::Criterion;
+use criterion::criterion_group;
+use criterion::criterion_main;
+use qubit_datatype::CollectionConversionOptions;
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConverters;
+use qubit_datatype::ScalarStringDataConverters;
 
 const ITEM_COUNTS: [usize; 4] = [1, 16, 256, 4096];
 

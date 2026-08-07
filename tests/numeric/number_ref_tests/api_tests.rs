@@ -13,10 +13,8 @@ use std::cmp::Ordering;
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-use qubit_datatype::{
-    NumberRef,
-    NumericComparisonPolicy,
-};
+use qubit_datatype::NumberRef;
+use qubit_datatype::NumericComparisonPolicy;
 
 /// Verifies classification and sign properties for fixed-width values.
 #[test]

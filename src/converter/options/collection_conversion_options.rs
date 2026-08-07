@@ -9,12 +9,11 @@
 //!
 //! Defines options that control scalar-string-to-collection conversion.
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use super::super::scalar_items::ScalarItems;
 use super::empty_item_policy::EmptyItemPolicy;
-use serde::{
-    Deserialize,
-    Serialize,
-};
 
 /// Controls how one scalar string is exposed as collection items.
 ///

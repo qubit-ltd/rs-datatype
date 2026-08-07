@@ -7,10 +7,8 @@
 // =============================================================================
 //! Numeric comparison policy definitions.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Selects exact or floating-projection numeric comparison.
 ///

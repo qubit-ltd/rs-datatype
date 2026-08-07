@@ -7,15 +7,11 @@
 // =============================================================================
 //! Visitor for exact unit-suffixed duration text.
 
-use std::{
-    fmt,
-    time::Duration,
-};
+use std::fmt;
+use std::time::Duration;
 
-use serde::de::{
-    Error as DeserializeError,
-    Visitor,
-};
+use serde::de::Error as DeserializeError;
+use serde::de::Visitor;
 
 use super::super::duration_with_unit::parse;
 

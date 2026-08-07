@@ -9,12 +9,11 @@
 //!
 //! Tests for data type parse errors.
 
-use qubit_datatype::{
-    DataType,
-    DataTypeParseError,
-};
 use std::error::Error;
 use std::str::FromStr;
+
+use qubit_datatype::DataType;
+use qubit_datatype::DataTypeParseError;
 
 #[test]
 fn test_data_type_from_str_invalid_returns_parse_error() {

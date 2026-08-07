@@ -7,10 +7,8 @@
 // =============================================================================
 //! Resource limits for numeric conversions.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Bounds allocations and work introduced by numeric conversion.
 ///

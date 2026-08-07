@@ -10,11 +10,9 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use qubit_datatype::{
-    DataConverter,
-    DataType,
-    DataTypeOf,
-};
+use qubit_datatype::DataConverter;
+use qubit_datatype::DataType;
+use qubit_datatype::DataTypeOf;
 
 /// Asserts that compile-time and runtime source mappings agree.
 fn assert_mapping<T>(value: T, expected: DataType)
@@ -55,13 +53,11 @@ fn test_data_type_mapping_base_consumers_agree() {
 #[test]
 #[cfg(feature = "chrono")]
 fn test_data_type_mapping_chrono_consumers_agree() {
-    use chrono::{
-        DateTime,
-        NaiveDate,
-        NaiveDateTime,
-        NaiveTime,
-        Utc,
-    };
+    use chrono::DateTime;
+    use chrono::NaiveDate;
+    use chrono::NaiveDateTime;
+    use chrono::NaiveTime;
+    use chrono::Utc;
 
     let date = NaiveDate::from_ymd_opt(2026, 7, 20)
         .expect("test date should be valid");

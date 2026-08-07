@@ -12,13 +12,12 @@
 
 use std::time::Duration;
 
-use crate::DurationUnit;
+use serde::Deserialize;
+use serde::Deserializer;
+use serde::Serializer;
 use serde::ser::Error as SerializeError;
-use serde::{
-    Deserialize,
-    Deserializer,
-    Serializer,
-};
+
+use crate::DurationUnit;
 
 /// Converts a duration to whole milliseconds using half-up rounding.
 ///

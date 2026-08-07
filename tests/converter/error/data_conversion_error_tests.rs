@@ -10,13 +10,11 @@
 //! Tests for reusable data conversion errors.
 
 use qubit_datatype::DataType;
-use qubit_datatype::converter::{
-    ConversionLimit,
-    DataConversionError,
-    DataConversionErrorKind,
-    DataListConversionError,
-    InvalidValueReason,
-};
+use qubit_datatype::converter::ConversionLimit;
+use qubit_datatype::converter::DataConversionError;
+use qubit_datatype::converter::DataConversionErrorKind;
+use qubit_datatype::converter::DataListConversionError;
+use qubit_datatype::converter::InvalidValueReason;
 
 /// Test the conversion error constructors and accessors.
 #[test]

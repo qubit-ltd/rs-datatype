@@ -9,9 +9,10 @@
 //!
 //! Tests for data type enum functionality.
 
-use qubit_datatype::DataType;
 use std::collections::HashSet;
 use std::str::FromStr;
+
+use qubit_datatype::DataType;
 
 /// Canonical protocol spelling for every data type in declaration order.
 const DATA_TYPE_CASES: [(DataType, &str); 25] = [

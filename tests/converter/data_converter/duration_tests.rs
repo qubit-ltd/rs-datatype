@@ -7,36 +7,29 @@
 // =============================================================================
 //! Duration conversion tests.
 
-use qubit_datatype::converter::DataConversionErrorKind;
-
 use std::time::Duration;
 
 #[cfg(feature = "chrono")]
 use chrono::NaiveDate;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-use proptest::strategy::{
-    Just,
-    Strategy,
-};
-use proptest::{
-    prop_assert_eq,
-    prop_oneof,
-    proptest,
-};
-use qubit_datatype::{
-    ConversionLimit,
-    DataConversionOptions,
-    DataConverter,
-    DataType,
-    DurationConversionOptions,
-    DurationRoundingPolicy,
-    DurationUnit,
-    DurationUnitParseMode,
-    InvalidValueReason,
-    NumericConversionOptions,
-    SuffixlessDurationPolicy,
-};
+use proptest::prop_assert_eq;
+use proptest::prop_oneof;
+use proptest::proptest;
+use proptest::strategy::Just;
+use proptest::strategy::Strategy;
+use qubit_datatype::ConversionLimit;
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConverter;
+use qubit_datatype::DataType;
+use qubit_datatype::DurationConversionOptions;
+use qubit_datatype::DurationRoundingPolicy;
+use qubit_datatype::DurationUnit;
+use qubit_datatype::DurationUnitParseMode;
+use qubit_datatype::InvalidValueReason;
+use qubit_datatype::NumericConversionOptions;
+use qubit_datatype::SuffixlessDurationPolicy;
+use qubit_datatype::converter::DataConversionErrorKind;
 
 /// Test Duration string formatting and parsing.
 #[test]

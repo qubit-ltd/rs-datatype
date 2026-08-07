@@ -14,20 +14,16 @@
 
 use std::time::Duration;
 
-use crate::{
-    DurationParseError,
-    DurationTextOptions,
-    DurationUnitParseMode,
-    SuffixlessDurationPolicy,
-    format_duration_exact,
-    parse_duration_text,
-};
-use serde::{
-    Deserializer,
-    Serializer,
-};
+use serde::Deserializer;
+use serde::Serializer;
 
 use super::internal::DurationWithUnitVisitor;
+use crate::DurationParseError;
+use crate::DurationTextOptions;
+use crate::DurationUnitParseMode;
+use crate::SuffixlessDurationPolicy;
+use crate::format_duration_exact;
+use crate::parse_duration_text;
 
 /// Strict Duration text profile.
 const DURATION_TEXT_OPTIONS: DurationTextOptions = DurationTextOptions::new(

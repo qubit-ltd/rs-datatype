@@ -7,9 +7,10 @@
 // =============================================================================
 //! Source constructors for DataConverter.
 
+use std::borrow::Cow;
+
 use super::DataConverter;
 use crate::datatype::for_each_data_type_mapping;
-use std::borrow::Cow;
 
 /// Implements owned and borrowed constructors for copied scalar sources.
 macro_rules! impl_from_copy {

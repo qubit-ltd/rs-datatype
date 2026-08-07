@@ -12,22 +12,18 @@ use std::hint::black_box;
 
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-use criterion::{
-    BatchSize,
-    BenchmarkId,
-    Criterion,
-    Throughput,
-    criterion_group,
-    criterion_main,
-};
+use criterion::BatchSize;
+use criterion::BenchmarkId;
+use criterion::Criterion;
+use criterion::Throughput;
+use criterion::criterion_group;
+use criterion::criterion_main;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-use qubit_datatype::{
-    DataConversionError,
-    DataConversionTarget,
-    DataConverter,
-    DataConverters,
-};
+use qubit_datatype::DataConversionError;
+use qubit_datatype::DataConversionTarget;
+use qubit_datatype::DataConverter;
+use qubit_datatype::DataConverters;
 #[cfg(feature = "json")]
 use serde_json::Value as JsonValue;
 #[cfg(feature = "url")]

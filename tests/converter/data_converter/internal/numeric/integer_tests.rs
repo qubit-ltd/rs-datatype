@@ -7,17 +7,13 @@
 // =============================================================================
 //! Fixed-width integer conversion tests.
 
-use proptest::{
-    prop_assert_eq,
-    proptest,
-};
-use qubit_datatype::{
-    DataConversionOptions,
-    DataConverter,
-    FloatRoundingPolicy,
-    InvalidValueReason,
-    NumericConversionOptions,
-};
+use proptest::prop_assert_eq;
+use proptest::proptest;
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConverter;
+use qubit_datatype::FloatRoundingPolicy;
+use qubit_datatype::InvalidValueReason;
+use qubit_datatype::NumericConversionOptions;
 
 /// Verifies exact and lossy integer-to-f32 conversion at the mantissa boundary.
 #[test]

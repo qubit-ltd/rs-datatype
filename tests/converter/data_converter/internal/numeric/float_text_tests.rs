@@ -7,13 +7,11 @@
 // =============================================================================
 //! Floating-point text conversion regression tests.
 
-use qubit_datatype::{
-    DataConversionOptions,
-    DataConverter,
-    FloatRoundingPolicy,
-    InvalidValueReason,
-    NumericConversionOptions,
-};
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConverter;
+use qubit_datatype::FloatRoundingPolicy;
+use qubit_datatype::InvalidValueReason;
+use qubit_datatype::NumericConversionOptions;
 
 /// Returns the decimal digits of five raised to `exponent`.
 ///

@@ -9,11 +9,9 @@
 //!
 //! Tests for string-source normalization options.
 
-use qubit_datatype::converter::{
-    BlankStringPolicy,
-    StringConversionOptions,
-    StringNormalizationError,
-};
+use qubit_datatype::converter::BlankStringPolicy;
+use qubit_datatype::converter::StringConversionOptions;
+use qubit_datatype::converter::StringNormalizationError;
 
 /// Test the environment-variable string profile.
 #[test]

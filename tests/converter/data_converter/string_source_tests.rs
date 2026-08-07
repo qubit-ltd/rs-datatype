@@ -7,15 +7,13 @@
 // =============================================================================
 //! String-source normalization tests.
 
-use qubit_datatype::{
-    BlankStringPolicy,
-    DataConversionError,
-    DataConversionOptions,
-    DataConverter,
-    DataType,
-    InvalidValueReason,
-    StringConversionOptions,
-};
+use qubit_datatype::BlankStringPolicy;
+use qubit_datatype::DataConversionError;
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConverter;
+use qubit_datatype::DataType;
+use qubit_datatype::InvalidValueReason;
+use qubit_datatype::StringConversionOptions;
 
 /// Test that blank-string policy outcomes retain the requested target context.
 #[test]

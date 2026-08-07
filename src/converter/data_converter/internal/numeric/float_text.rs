@@ -8,12 +8,10 @@
 //! Exact decimal-text parsing for primitive floating-point targets.
 
 use super::syntax::invalid_numeric_syntax;
-use crate::converter::{
-    DataConversionError,
-    DataConversionOptions,
-    FloatRoundingPolicy,
-    InvalidValueReason,
-};
+use crate::converter::DataConversionError;
+use crate::converter::DataConversionOptions;
+use crate::converter::FloatRoundingPolicy;
+use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
 
 /// Decomposes a non-zero finite float into an integer significand and a power

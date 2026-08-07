@@ -18,13 +18,11 @@ use num_bigint::BigInt;
 use super::super::super::string_source::normalize;
 #[cfg(feature = "big-decimal")]
 use super::parsed_number::ParsedNumber;
-use crate::converter::{
-    ConversionLimit,
-    DataConversionError,
-    DataConversionOptions,
-    FractionalToIntegerPolicy,
-    InvalidValueReason,
-};
+use crate::converter::ConversionLimit;
+use crate::converter::DataConversionError;
+use crate::converter::DataConversionOptions;
+use crate::converter::FractionalToIntegerPolicy;
+use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
 
 /// Normalizes numeric text and enforces its configured byte limit.

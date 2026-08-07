@@ -7,10 +7,8 @@
 // =============================================================================
 //! Policy for rounding Duration output units.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Controls Duration conversion when the selected output unit has a remainder.
 ///

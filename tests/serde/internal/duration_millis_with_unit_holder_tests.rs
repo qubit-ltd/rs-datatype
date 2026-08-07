@@ -9,15 +9,14 @@
 
 use std::time::Duration;
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use qubit_datatype::serde::duration_millis_with_unit;
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Holds a Duration encoded as fixed millisecond text.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub(crate) struct DurationMillisWithUnitHolder {
     /// Duration encoded through the fixed millisecond text adapter.
-    #[serde(with = "qubit_datatype::serde::duration_millis_with_unit")]
+    #[serde(with = "duration_millis_with_unit")]
     pub(crate) duration: Duration,
 }

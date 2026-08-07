@@ -9,11 +9,9 @@
 
 use std::time::Duration;
 
-use qubit_datatype::{
-    DurationOverflowError,
-    DurationParseError,
-    DurationUnit,
-};
+use qubit_datatype::DurationOverflowError;
+use qubit_datatype::DurationParseError;
+use qubit_datatype::DurationUnit;
 
 /// Tests strict and lenient Duration unit symbol parsing.
 #[test]

@@ -15,16 +15,12 @@ use num_bigint::BigInt;
 #[cfg(feature = "big-number")]
 use num_rational::BigRational;
 use proptest::arbitrary::any;
+use proptest::prop_assert_eq;
+use proptest::prop_assert_ne;
+use proptest::proptest;
 use proptest::test_runner::Config as ProptestConfig;
-use proptest::{
-    prop_assert_eq,
-    prop_assert_ne,
-    proptest,
-};
-use qubit_datatype::{
-    NumberRef,
-    NumericComparisonPolicy,
-};
+use qubit_datatype::NumberRef;
+use qubit_datatype::NumericComparisonPolicy;
 
 /// Compares two number views through the public method API.
 fn compare_numbers(

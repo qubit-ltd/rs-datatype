@@ -9,13 +9,11 @@
 
 #[cfg(feature = "chrono")]
 use chrono::NaiveDate;
+use qubit_datatype::DataConversionError;
+use qubit_datatype::DataConverter;
+use qubit_datatype::DataType;
 #[cfg(feature = "chrono")]
 use qubit_datatype::InvalidValueReason;
-use qubit_datatype::{
-    DataConversionError,
-    DataConverter,
-    DataType,
-};
 
 #[cfg(feature = "chrono")]
 use super::internal::MatrixOutcome;

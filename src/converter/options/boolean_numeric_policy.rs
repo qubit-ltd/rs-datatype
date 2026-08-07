@@ -9,10 +9,8 @@
 //!
 //! Defines how integer values may be converted to booleans.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Controls conversion from integer values to booleans.
 ///

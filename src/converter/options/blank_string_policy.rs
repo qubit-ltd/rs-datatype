@@ -9,10 +9,8 @@
 //!
 //! Defines how blank string sources are interpreted during conversion.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Controls how blank string sources are interpreted during conversion.
 ///

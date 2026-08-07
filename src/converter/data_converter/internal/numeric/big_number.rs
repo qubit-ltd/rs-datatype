@@ -15,26 +15,20 @@ use num_bigint::BigInt;
 use num_traits::FromPrimitive;
 
 use super::super::super::DataConverter;
-use super::integer::{
-    duration_to_u128,
-    scalar_integer_magnitude,
-};
+use super::integer::duration_to_u128;
+use super::integer::scalar_integer_magnitude;
 #[cfg(feature = "big-decimal")]
 use super::parsed_number::ParsedNumber;
+use super::syntax::normalize_numeric_text;
 #[cfg(feature = "big-decimal")]
 use super::syntax::parse_number;
-use super::syntax::{
-    normalize_numeric_text,
-    parse_text_bigint,
-};
-use crate::converter::{
-    ConversionLimit,
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    FractionalToIntegerPolicy,
-    InvalidValueReason,
-};
+use super::syntax::parse_text_bigint;
+use crate::converter::ConversionLimit;
+use crate::converter::DataConversionError;
+use crate::converter::DataConversionOptions;
+use crate::converter::DataConversionTarget;
+use crate::converter::FractionalToIntegerPolicy;
+use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
 
 /// Tests whether a non-zero BigInteger exceeds a decimal digit budget.

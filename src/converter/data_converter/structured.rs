@@ -14,24 +14,22 @@ use serde::Deserializer;
 
 use super::DataConverter;
 #[cfg(feature = "json")]
-use super::internal::{
-    CanonicalStringMap,
-    StringMapVisitor,
-    sorted_string_map_entries,
-};
+use super::internal::CanonicalStringMap;
+#[cfg(feature = "json")]
+use super::internal::StringMapVisitor;
+#[cfg(feature = "json")]
+use super::internal::sorted_string_map_entries;
 #[cfg(feature = "json")]
 use super::string_source::normalize;
 #[cfg(feature = "json")]
-use crate::converter::{
-    ConversionLimit,
-    DataFormat,
-    InvalidValueReason,
-};
-use crate::converter::{
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-};
+use crate::converter::ConversionLimit;
+use crate::converter::DataConversionError;
+use crate::converter::DataConversionOptions;
+use crate::converter::DataConversionTarget;
+#[cfg(feature = "json")]
+use crate::converter::DataFormat;
+#[cfg(feature = "json")]
+use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
 
 /// Converts a borrowed string map to a JSON object with canonical key order.

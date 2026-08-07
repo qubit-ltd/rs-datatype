@@ -84,11 +84,9 @@ mod serde_impl;
 /// stable numeric or unit-suffixed Duration representation.
 #[cfg(feature = "duration")]
 pub mod serde {
-    pub use super::serde_impl::{
-        duration_millis,
-        duration_millis_with_unit,
-        duration_with_unit,
-    };
+    pub use super::serde_impl::duration_millis;
+    pub use super::serde_impl::duration_millis_with_unit;
+    pub use super::serde_impl::duration_with_unit;
 }
 
 /// Runtime value conversion utilities.
@@ -96,54 +94,81 @@ pub mod serde {
 pub mod converter;
 
 #[cfg(feature = "converter")]
-pub use converter::{
-    BlankStringPolicy,
-    BooleanConversionOptions,
-    BooleanLiteralConflictError,
-    BooleanNumericPolicy,
-    CollectionConversionOptions,
-    ConversionLimit,
-    DataConversionError,
-    DataConversionErrorKind,
-    DataConversionOptions,
-    DataConversionTarget,
-    DataConverter,
-    DataConverters,
-    DataFormat,
-    DataListConversionError,
-    DurationConversionOptions,
-    DurationRoundingPolicy,
-    EmptyItemPolicy,
-    FloatRoundingPolicy,
-    FractionalToIntegerPolicy,
-    InvalidValueReason,
-    NumericConversionLimits,
-    NumericConversionOptions,
-    ScalarItem,
-    ScalarItemError,
-    ScalarItems,
-    ScalarStringDataConverters,
-    StringConversionOptions,
-    StringNormalizationError,
-    StructuredConversionLimits,
-};
-pub use datatype::{
-    DataType,
-    DataTypeOf,
-    DataTypeParseError,
-};
+pub use converter::BlankStringPolicy;
+#[cfg(feature = "converter")]
+pub use converter::BooleanConversionOptions;
+#[cfg(feature = "converter")]
+pub use converter::BooleanLiteralConflictError;
+#[cfg(feature = "converter")]
+pub use converter::BooleanNumericPolicy;
+#[cfg(feature = "converter")]
+pub use converter::CollectionConversionOptions;
+#[cfg(feature = "converter")]
+pub use converter::ConversionLimit;
+#[cfg(feature = "converter")]
+pub use converter::DataConversionError;
+#[cfg(feature = "converter")]
+pub use converter::DataConversionErrorKind;
+#[cfg(feature = "converter")]
+pub use converter::DataConversionOptions;
+#[cfg(feature = "converter")]
+pub use converter::DataConversionTarget;
+#[cfg(feature = "converter")]
+pub use converter::DataConverter;
+#[cfg(feature = "converter")]
+pub use converter::DataConverters;
+#[cfg(feature = "converter")]
+pub use converter::DataFormat;
+#[cfg(feature = "converter")]
+pub use converter::DataListConversionError;
+#[cfg(feature = "converter")]
+pub use converter::DurationConversionOptions;
+#[cfg(feature = "converter")]
+pub use converter::DurationRoundingPolicy;
+#[cfg(feature = "converter")]
+pub use converter::EmptyItemPolicy;
+#[cfg(feature = "converter")]
+pub use converter::FloatRoundingPolicy;
+#[cfg(feature = "converter")]
+pub use converter::FractionalToIntegerPolicy;
+#[cfg(feature = "converter")]
+pub use converter::InvalidValueReason;
+#[cfg(feature = "converter")]
+pub use converter::NumericConversionLimits;
+#[cfg(feature = "converter")]
+pub use converter::NumericConversionOptions;
+#[cfg(feature = "converter")]
+pub use converter::ScalarItem;
+#[cfg(feature = "converter")]
+pub use converter::ScalarItemError;
+#[cfg(feature = "converter")]
+pub use converter::ScalarItems;
+#[cfg(feature = "converter")]
+pub use converter::ScalarStringDataConverters;
+#[cfg(feature = "converter")]
+pub use converter::StringConversionOptions;
+#[cfg(feature = "converter")]
+pub use converter::StringNormalizationError;
+#[cfg(feature = "converter")]
+pub use converter::StructuredConversionLimits;
+pub use datatype::DataType;
+pub use datatype::DataTypeOf;
+pub use datatype::DataTypeParseError;
 #[cfg(feature = "duration")]
-pub use duration::{
-    DurationOverflowError,
-    DurationParseError,
-    DurationTextOptions,
-    DurationUnit,
-    DurationUnitParseMode,
-    SuffixlessDurationPolicy,
-    format_duration_exact,
-    parse_duration_text,
-};
-pub use numeric::{
-    NumberRef,
-    NumericComparisonPolicy,
-};
+pub use duration::DurationOverflowError;
+#[cfg(feature = "duration")]
+pub use duration::DurationParseError;
+#[cfg(feature = "duration")]
+pub use duration::DurationTextOptions;
+#[cfg(feature = "duration")]
+pub use duration::DurationUnit;
+#[cfg(feature = "duration")]
+pub use duration::DurationUnitParseMode;
+#[cfg(feature = "duration")]
+pub use duration::SuffixlessDurationPolicy;
+#[cfg(feature = "duration")]
+pub use duration::format_duration_exact;
+#[cfg(feature = "duration")]
+pub use duration::parse_duration_text;
+pub use numeric::NumberRef;
+pub use numeric::NumericComparisonPolicy;

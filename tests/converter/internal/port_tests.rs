@@ -7,14 +7,12 @@
 // =============================================================================
 //! Downstream-owned target used by conversion extension tests.
 
-use qubit_datatype::{
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    DataConverter,
-    DataType,
-    DataTypeOf,
-};
+use qubit_datatype::DataConversionError;
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConversionTarget;
+use qubit_datatype::DataConverter;
+use qubit_datatype::DataType;
+use qubit_datatype::DataTypeOf;
 
 /// Port newtype proving downstream target extensibility.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

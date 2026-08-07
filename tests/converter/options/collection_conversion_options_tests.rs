@@ -9,12 +9,10 @@
 //!
 //! Tests for scalar string collection conversion options.
 
-use qubit_datatype::converter::{
-    CollectionConversionOptions,
-    EmptyItemPolicy,
-    ScalarItem,
-    ScalarItems,
-};
+use qubit_datatype::converter::CollectionConversionOptions;
+use qubit_datatype::converter::EmptyItemPolicy;
+use qubit_datatype::converter::ScalarItem;
+use qubit_datatype::converter::ScalarItems;
 
 /// Test the environment-variable collection profile.
 #[test]

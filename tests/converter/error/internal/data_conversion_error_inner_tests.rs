@@ -7,12 +7,10 @@
 // =============================================================================
 //! Tests for variant-specific data conversion error details.
 
-use qubit_datatype::{
-    ConversionLimit,
-    DataConversionError,
-    DataType,
-    InvalidValueReason,
-};
+use qubit_datatype::ConversionLimit;
+use qubit_datatype::DataConversionError;
+use qubit_datatype::DataType;
+use qubit_datatype::InvalidValueReason;
 
 /// Tests the public diagnostics produced by every private error variant.
 #[test]

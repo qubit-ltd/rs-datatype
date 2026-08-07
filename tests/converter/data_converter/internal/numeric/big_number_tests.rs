@@ -14,16 +14,18 @@ use std::str::FromStr;
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
+#[cfg(feature = "big-integer")]
+use qubit_datatype::ConversionLimit;
+#[cfg(feature = "big-integer")]
+use qubit_datatype::DataConversionErrorKind;
+#[cfg(feature = "big-integer")]
+use qubit_datatype::DataConversionOptions;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use qubit_datatype::DataConverter;
 #[cfg(feature = "big-integer")]
-use qubit_datatype::{
-    ConversionLimit,
-    DataConversionErrorKind,
-    DataConversionOptions,
-    NumericConversionLimits,
-    NumericConversionOptions,
-};
+use qubit_datatype::NumericConversionLimits;
+#[cfg(feature = "big-integer")]
+use qubit_datatype::NumericConversionOptions;
 
 /// Creates strict options with the supplied BigInteger digit limit.
 ///

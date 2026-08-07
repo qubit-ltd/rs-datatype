@@ -7,16 +7,12 @@
 // =============================================================================
 //! Independently configurable numeric conversion options.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
-use super::{
-    FloatRoundingPolicy,
-    FractionalToIntegerPolicy,
-    NumericConversionLimits,
-};
+use super::FloatRoundingPolicy;
+use super::FractionalToIntegerPolicy;
+use super::NumericConversionLimits;
 
 /// Groups policies and resource limits for numeric conversion.
 #[must_use]

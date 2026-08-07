@@ -7,11 +7,10 @@
 // =============================================================================
 //! Borrowed-string-only deserializer used by serde adapter tests.
 
-use serde::de::{
-    Deserializer,
-    Visitor,
-    value::Error as ValueError,
-};
+use serde::de::Deserializer;
+use serde::de::Error as DeError;
+use serde::de::Visitor;
+use serde::de::value::Error as ValueError;
 use serde::forward_to_deserialize_any;
 
 /// Exposes borrowed string input without supporting owned string requests.
@@ -51,7 +50,7 @@ impl<'de> Deserializer<'de> for BorrowedStrOnlyDeserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        Err(<ValueError as serde::de::Error>::custom(
+        Err(<ValueError as DeError>::custom(
             "only deserialize_str is supported",
         ))
     }

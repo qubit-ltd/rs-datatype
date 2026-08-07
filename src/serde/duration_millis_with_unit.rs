@@ -15,18 +15,14 @@
 
 use std::time::Duration;
 
-use crate::{
-    DurationParseError,
-    DurationTextOptions,
-    DurationUnit,
-};
-use serde::{
-    Deserializer,
-    Serializer,
-};
+use serde::Deserializer;
+use serde::Serializer;
 
 use super::duration_millis::rounded_millis;
 use super::internal::DurationMillisWithUnitVisitor;
+use crate::DurationParseError;
+use crate::DurationTextOptions;
+use crate::DurationUnit;
 
 /// Deserializes fixed millisecond text matching the required grammar.
 ///

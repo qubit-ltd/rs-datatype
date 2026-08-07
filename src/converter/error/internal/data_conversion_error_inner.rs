@@ -9,10 +9,9 @@
 //!
 //! Defines the private variant representation of data conversion errors.
 
-use crate::datatype::DataType;
-
 use super::super::conversion_limit::ConversionLimit;
 use super::super::invalid_value_reason::InvalidValueReason;
+use crate::datatype::DataType;
 
 /// Variant-specific details stored by a public conversion error.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]

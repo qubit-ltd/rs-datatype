@@ -15,26 +15,20 @@ use num_bigint::Sign;
 use num_traits::ToPrimitive;
 
 use super::DataConverter;
-use super::numeric::{
-    duration_to_u128,
-    source_to_integer,
-};
+use super::numeric::duration_to_u128;
+use super::numeric::source_to_integer;
 use super::string_source::normalize;
-use crate::converter::{
-    ConversionLimit,
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    InvalidValueReason,
-};
+use crate::converter::ConversionLimit;
+use crate::converter::DataConversionError;
+use crate::converter::DataConversionOptions;
+use crate::converter::DataConversionTarget;
+use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
-use crate::duration::{
-    DurationParseError,
-    DurationTextOptions,
-    DurationUnitParseMode,
-    SuffixlessDurationPolicy,
-    parse_duration_text,
-};
+use crate::duration::DurationParseError;
+use crate::duration::DurationTextOptions;
+use crate::duration::DurationUnitParseMode;
+use crate::duration::SuffixlessDurationPolicy;
+use crate::duration::parse_duration_text;
 
 /// Converts a duration unit count to a duration.
 ///

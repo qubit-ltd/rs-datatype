@@ -7,8 +7,6 @@
 // =============================================================================
 //! Textual and temporal conversion tests.
 
-use qubit_datatype::converter::DataConversionErrorKind;
-
 #[cfg(feature = "json")]
 use std::collections::HashMap;
 #[cfg(all(
@@ -28,13 +26,15 @@ use std::time::Duration;
 ))]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "chrono")]
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::DateTime;
+#[cfg(feature = "chrono")]
+use chrono::NaiveDate;
+#[cfg(feature = "chrono")]
+use chrono::NaiveDateTime;
+#[cfg(feature = "chrono")]
+use chrono::NaiveTime;
+#[cfg(feature = "chrono")]
+use chrono::Utc;
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",
@@ -42,14 +42,13 @@ use chrono::{
     feature = "json"
 ))]
 use num_bigint::BigInt;
-use qubit_datatype::{
-    DataConversionError,
-    DataConversionOptions,
-    DataConverter,
-    DataType,
-    InvalidValueReason,
-    StringConversionOptions,
-};
+use qubit_datatype::DataConversionError;
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConverter;
+use qubit_datatype::DataType;
+use qubit_datatype::InvalidValueReason;
+use qubit_datatype::StringConversionOptions;
+use qubit_datatype::converter::DataConversionErrorKind;
 #[cfg(feature = "url")]
 use url::Url;
 

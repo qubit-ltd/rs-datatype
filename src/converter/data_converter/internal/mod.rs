@@ -14,9 +14,8 @@ pub(super) mod numeric;
 mod string_map_visitor;
 
 #[cfg(feature = "json")]
-pub(super) use canonical_string_map::{
-    CanonicalStringMap,
-    sorted_string_map_entries,
-};
+pub(super) use canonical_string_map::CanonicalStringMap;
+#[cfg(feature = "json")]
+pub(super) use canonical_string_map::sorted_string_map_entries;
 #[cfg(feature = "json")]
 pub(super) use string_map_visitor::StringMapVisitor;

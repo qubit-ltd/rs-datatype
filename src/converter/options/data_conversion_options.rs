@@ -11,10 +11,8 @@
 
 use std::sync::LazyLock;
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 use super::blank_string_policy::BlankStringPolicy;
 use super::boolean_conversion_options::BooleanConversionOptions;

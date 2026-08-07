@@ -7,15 +7,11 @@
 // =============================================================================
 //! Options for Duration text parsing.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
-use super::{
-    DurationUnitParseMode,
-    SuffixlessDurationPolicy,
-};
+use super::DurationUnitParseMode;
+use super::SuffixlessDurationPolicy;
 
 /// Controls suffixless input and Duration unit parsing.
 #[must_use]

@@ -9,15 +9,11 @@
 
 use std::time::Duration;
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
-use super::{
-    DurationOverflowError,
-    DurationParseError,
-};
+use super::DurationOverflowError;
+use super::DurationParseError;
 
 /// Unit used to interpret or format a Duration value.
 ///

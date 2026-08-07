@@ -7,22 +7,18 @@
 // =============================================================================
 //! Numeric text conversion benchmarks.
 
-use criterion::{
-    BenchmarkId,
-    Criterion,
-    criterion_group,
-    criterion_main,
-};
-use qubit_datatype::{
-    DataConversionOptions,
-    DataConverter,
-};
-#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-use qubit_datatype::{
-    NumericConversionLimits,
-    NumericConversionOptions,
-};
 use std::hint::black_box;
+
+use criterion::BenchmarkId;
+use criterion::Criterion;
+use criterion::criterion_group;
+use criterion::criterion_main;
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConverter;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use qubit_datatype::NumericConversionLimits;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use qubit_datatype::NumericConversionOptions;
 
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 const BIG_NUMBER_TEXT_SIZES: [(&str, usize); 4] = [

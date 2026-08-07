@@ -7,11 +7,9 @@
 // =============================================================================
 //! Tests for lazy scalar collection item iteration.
 
-use qubit_datatype::converter::{
-    CollectionConversionOptions,
-    EmptyItemPolicy,
-    ScalarItems,
-};
+use qubit_datatype::converter::CollectionConversionOptions;
+use qubit_datatype::converter::EmptyItemPolicy;
+use qubit_datatype::converter::ScalarItems;
 
 /// Test lazy splitting, trimming, skipping, and original source indices.
 #[test]

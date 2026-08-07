@@ -7,10 +7,8 @@
 // =============================================================================
 //! Resource limits for structured text conversions.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Bounds parsing work and allocations introduced by structured text
 /// conversion.

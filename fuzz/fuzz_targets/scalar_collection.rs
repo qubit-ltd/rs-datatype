@@ -14,12 +14,10 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use qubit_datatype::{
-    CollectionConversionOptions,
-    DataConversionOptions,
-    EmptyItemPolicy,
-    ScalarStringDataConverters,
-};
+use qubit_datatype::CollectionConversionOptions;
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::EmptyItemPolicy;
+use qubit_datatype::ScalarStringDataConverters;
 
 /// Caps text scanning and item materialization for each fuzz iteration.
 const MAX_INPUT_SIZE: usize = 16 * 1024;

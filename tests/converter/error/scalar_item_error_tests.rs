@@ -9,13 +9,11 @@
 
 use std::error::Error;
 
-use qubit_datatype::{
-    ConversionLimit,
-    DataConversionErrorKind,
-    DataType,
-    InvalidValueReason,
-    ScalarItemError,
-};
+use qubit_datatype::ConversionLimit;
+use qubit_datatype::DataConversionErrorKind;
+use qubit_datatype::DataType;
+use qubit_datatype::InvalidValueReason;
+use qubit_datatype::ScalarItemError;
 
 /// Test construction and access to the encapsulated source index.
 #[test]

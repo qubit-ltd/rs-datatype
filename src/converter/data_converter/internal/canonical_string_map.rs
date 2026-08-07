@@ -9,10 +9,8 @@
 
 use std::collections::HashMap;
 
-use serde::{
-    Serialize,
-    Serializer,
-};
+use serde::Serialize;
+use serde::Serializer;
 
 /// Borrows a string map and serializes its entries in lexicographic key order.
 pub(in crate::converter::data_converter) struct CanonicalStringMap<'a> {

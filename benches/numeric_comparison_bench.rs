@@ -12,17 +12,13 @@ use std::hint::black_box;
 use std::str::FromStr;
 
 use bigdecimal::BigDecimal;
-use criterion::{
-    BenchmarkId,
-    Criterion,
-    criterion_group,
-    criterion_main,
-};
+use criterion::BenchmarkId;
+use criterion::Criterion;
+use criterion::criterion_group;
+use criterion::criterion_main;
 use num_bigint::BigInt;
-use qubit_datatype::{
-    NumberRef,
-    NumericComparisonPolicy,
-};
+use qubit_datatype::NumberRef;
+use qubit_datatype::NumericComparisonPolicy;
 
 /// Benchmarks exact and approximate comparison at the `f64` integer boundary.
 fn benchmark_u64_f64_boundary(c: &mut Criterion) {

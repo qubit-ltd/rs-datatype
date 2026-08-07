@@ -10,19 +10,15 @@
 //! Provides cross-module reusable common data type enum `DataType` and type
 //! mapping `DataTypeOf`.
 
-use std::fmt::{
-    self,
-    Display,
-    Formatter,
-};
+use std::fmt;
+use std::fmt::Display;
+use std::fmt::Formatter;
 use std::str::FromStr;
 
-use super::data_type_parse_error::DataTypeParseError;
+use serde::Deserialize;
+use serde::Serialize;
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use super::data_type_parse_error::DataTypeParseError;
 
 /// Universal data type enumeration for cross-module type representation
 ///
