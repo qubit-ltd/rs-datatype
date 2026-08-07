@@ -9,12 +9,11 @@
 //!
 //! Defines errors returned by reusable data conversions.
 
-use crate::datatype::DataType;
-
 use super::conversion_limit::ConversionLimit;
 use super::data_conversion_error_kind::DataConversionErrorKind;
 use super::internal::DataConversionErrorInner;
 use super::invalid_value_reason::InvalidValueReason;
+use crate::datatype::DataType;
 
 /// Describes why a source value could not be converted.
 ///

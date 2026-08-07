@@ -11,16 +11,12 @@
 
 use proptest::arbitrary::any;
 use proptest::collection;
+use proptest::prop_assert_eq;
+use proptest::prop_oneof;
+use proptest::proptest;
 use proptest::strategy::Just;
-use proptest::{
-    prop_assert_eq,
-    prop_oneof,
-    proptest,
-};
-use qubit_datatype::converter::{
-    BooleanConversionOptions,
-    BooleanNumericPolicy,
-};
+use qubit_datatype::converter::BooleanConversionOptions;
+use qubit_datatype::converter::BooleanNumericPolicy;
 
 /// Test boolean option literals and case-sensitive parsing.
 #[test]

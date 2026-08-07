@@ -8,10 +8,8 @@
 //! Lazy scalar collection item iterator.
 
 use super::error::ScalarItemError;
-use super::options::{
-    CollectionConversionOptions,
-    EmptyItemPolicy,
-};
+use super::options::CollectionConversionOptions;
+use super::options::EmptyItemPolicy;
 use super::scalar_item::ScalarItem;
 
 /// A lazy iterator over scalar collection items.

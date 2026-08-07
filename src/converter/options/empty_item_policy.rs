@@ -9,10 +9,8 @@
 //!
 //! Defines how empty collection items are interpreted after splitting.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Controls how empty collection items are interpreted after splitting.
 ///

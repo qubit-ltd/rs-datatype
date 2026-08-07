@@ -8,11 +8,9 @@
 use std::error::Error;
 
 use qubit_datatype::DataType;
-use qubit_datatype::converter::{
-    DataConversionError,
-    DataListConversionError,
-    InvalidValueReason,
-};
+use qubit_datatype::converter::DataConversionError;
+use qubit_datatype::converter::DataListConversionError;
+use qubit_datatype::converter::InvalidValueReason;
 
 /// Test construction and access to the encapsulated error context.
 #[test]

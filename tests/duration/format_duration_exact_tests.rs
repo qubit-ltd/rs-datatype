@@ -9,11 +9,9 @@
 
 use std::time::Duration;
 
-use qubit_datatype::{
-    DurationTextOptions,
-    format_duration_exact,
-    parse_duration_text,
-};
+use qubit_datatype::DurationTextOptions;
+use qubit_datatype::format_duration_exact;
+use qubit_datatype::parse_duration_text;
 
 /// Tests canonical formatting and round-tripping at semantic boundaries.
 #[test]

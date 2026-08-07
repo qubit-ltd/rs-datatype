@@ -17,28 +17,26 @@ use std::time::Duration;
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "chrono")]
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::DateTime;
+#[cfg(feature = "chrono")]
+use chrono::NaiveDate;
+#[cfg(feature = "chrono")]
+use chrono::NaiveDateTime;
+#[cfg(feature = "chrono")]
+use chrono::NaiveTime;
+#[cfg(feature = "chrono")]
+use chrono::Utc;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 #[cfg(feature = "url")]
 use url::Url;
 
 use super::data_conversion_target::DataConversionTarget;
-use super::error::{
-    DataConversionError,
-    InvalidValueReason,
-};
+use super::error::DataConversionError;
+use super::error::InvalidValueReason;
 use super::options::DataConversionOptions;
-use crate::datatype::{
-    DataType,
-    for_each_data_type_mapping,
-};
+use crate::datatype::DataType;
+use crate::datatype::for_each_data_type_mapping;
 
 mod boolean;
 mod duration;

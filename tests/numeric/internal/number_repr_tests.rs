@@ -9,10 +9,8 @@
 
 use std::cmp::Ordering;
 
-use qubit_datatype::{
-    NumberRef,
-    NumericComparisonPolicy,
-};
+use qubit_datatype::NumberRef;
+use qubit_datatype::NumericComparisonPolicy;
 
 /// Verifies that distinct internal primitive representations compare exactly.
 #[test]

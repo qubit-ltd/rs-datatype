@@ -11,10 +11,8 @@
 
 use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
-use super::error::{
-    DataConversionError,
-    DataListConversionError,
-};
+use super::error::DataConversionError;
+use super::error::DataListConversionError;
 use super::options::DataConversionOptions;
 
 /// Converts a scalar string as a configurable collection source.

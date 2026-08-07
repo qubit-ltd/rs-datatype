@@ -8,14 +8,17 @@
 //! Textual and temporal conversion implementations.
 
 #[cfg(feature = "chrono")]
-use chrono::{
-    DateTime,
-    Datelike,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::DateTime;
+#[cfg(feature = "chrono")]
+use chrono::Datelike;
+#[cfg(feature = "chrono")]
+use chrono::NaiveDate;
+#[cfg(feature = "chrono")]
+use chrono::NaiveDateTime;
+#[cfg(feature = "chrono")]
+use chrono::NaiveTime;
+#[cfg(feature = "chrono")]
+use chrono::Utc;
 #[cfg(feature = "url")]
 use url::Url;
 
@@ -26,14 +29,12 @@ use super::string_source::normalize;
 use super::structured::string_map_to_json_text;
 #[cfg(feature = "url")]
 use crate::converter::ConversionLimit;
+use crate::converter::DataConversionError;
+use crate::converter::DataConversionOptions;
+use crate::converter::DataConversionTarget;
 #[cfg(feature = "json")]
 use crate::converter::DataFormat;
-use crate::converter::{
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    InvalidValueReason,
-};
+use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
 
 /// Validates the four-digit year required by canonical temporal text.

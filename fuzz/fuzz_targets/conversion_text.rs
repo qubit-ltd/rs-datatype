@@ -18,20 +18,16 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use bigdecimal::BigDecimal;
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::DateTime;
+use chrono::NaiveDate;
+use chrono::NaiveDateTime;
+use chrono::NaiveTime;
+use chrono::Utc;
 use libfuzzer_sys::fuzz_target;
 use num_bigint::BigInt;
-use qubit_datatype::{
-    DataConversionOptions,
-    DataConversionTarget,
-    DataConverter,
-};
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConversionTarget;
+use qubit_datatype::DataConverter;
 use serde_json::Value;
 use url::Url;
 

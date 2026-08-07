@@ -7,10 +7,8 @@
 // =============================================================================
 //! Tests for duration parsing errors.
 
-use qubit_datatype::{
-    DurationParseError,
-    DurationUnit,
-};
+use qubit_datatype::DurationParseError;
+use qubit_datatype::DurationUnit;
 
 /// Verifies unit errors contain only bounded, copyable diagnostics.
 #[test]

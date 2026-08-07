@@ -10,18 +10,16 @@
 //! Tests for scalar string collection conversion behavior.
 
 use qubit_datatype::DataType;
-use qubit_datatype::converter::{
-    BlankStringPolicy,
-    CollectionConversionOptions,
-    ConversionLimit,
-    DataConversionError,
-    DataConversionErrorKind,
-    DataConversionOptions,
-    EmptyItemPolicy,
-    InvalidValueReason,
-    ScalarStringDataConverters,
-    StringConversionOptions,
-};
+use qubit_datatype::converter::BlankStringPolicy;
+use qubit_datatype::converter::CollectionConversionOptions;
+use qubit_datatype::converter::ConversionLimit;
+use qubit_datatype::converter::DataConversionError;
+use qubit_datatype::converter::DataConversionErrorKind;
+use qubit_datatype::converter::DataConversionOptions;
+use qubit_datatype::converter::EmptyItemPolicy;
+use qubit_datatype::converter::InvalidValueReason;
+use qubit_datatype::converter::ScalarStringDataConverters;
+use qubit_datatype::converter::StringConversionOptions;
 
 /// Test default scalar string conversion without splitting.
 #[test]

@@ -18,7 +18,6 @@ mod invalid_value_reason;
 mod scalar_item_error;
 mod string_normalization_error;
 
-pub use crate::duration::DurationOverflowError;
 pub use boolean_literal_conflict_error::BooleanLiteralConflictError;
 pub use conversion_limit::ConversionLimit;
 pub use data_conversion_error::DataConversionError;
@@ -28,3 +27,5 @@ pub use data_list_conversion_error::DataListConversionError;
 pub use invalid_value_reason::InvalidValueReason;
 pub use scalar_item_error::ScalarItemError;
 pub use string_normalization_error::StringNormalizationError;
+
+pub use crate::duration::DurationOverflowError;

@@ -7,10 +7,8 @@
 // =============================================================================
 //! Policy for converting fractional values to integers.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Controls whether a fractional numeric value may be converted to an integer.
 ///

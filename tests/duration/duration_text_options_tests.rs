@@ -7,11 +7,9 @@
 // =============================================================================
 //! Tests for Duration text options.
 
-use qubit_datatype::{
-    DurationTextOptions,
-    DurationUnitParseMode,
-    SuffixlessDurationPolicy,
-};
+use qubit_datatype::DurationTextOptions;
+use qubit_datatype::DurationUnitParseMode;
+use qubit_datatype::SuffixlessDurationPolicy;
 
 /// Tests defaults, construction, and immutable option updates.
 #[test]

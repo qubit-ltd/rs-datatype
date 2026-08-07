@@ -7,28 +7,27 @@
 // =============================================================================
 //! Source construction and public wrapper tests.
 
-use qubit_datatype::converter::DataConversionErrorKind;
-
 use std::collections::HashMap;
 use std::time::Duration;
 
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "chrono")]
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::DateTime;
+#[cfg(feature = "chrono")]
+use chrono::NaiveDate;
+#[cfg(feature = "chrono")]
+use chrono::NaiveDateTime;
+#[cfg(feature = "chrono")]
+use chrono::NaiveTime;
+#[cfg(feature = "chrono")]
+use chrono::Utc;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-use qubit_datatype::{
-    DataConversionError,
-    DataConverter,
-    DataType,
-};
+use qubit_datatype::DataConversionError;
+use qubit_datatype::DataConverter;
+use qubit_datatype::DataType;
+use qubit_datatype::converter::DataConversionErrorKind;
 #[cfg(feature = "url")]
 use url::Url;
 

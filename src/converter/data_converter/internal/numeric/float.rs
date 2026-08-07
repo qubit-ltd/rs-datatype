@@ -9,28 +9,22 @@
 
 use super::super::super::DataConverter;
 #[cfg(feature = "big-integer")]
-use super::float_big_number::{
-    bigint_to_f32,
-    bigint_to_f64,
-};
+use super::float_big_number::bigint_to_f32;
+#[cfg(feature = "big-integer")]
+use super::float_big_number::bigint_to_f64;
 #[cfg(feature = "big-decimal")]
-use super::float_big_number::{
-    decimal_to_f32,
-    decimal_to_f64,
-};
-use super::float_text::{
-    parse_text_f32,
-    parse_text_f64,
-};
+use super::float_big_number::decimal_to_f32;
+#[cfg(feature = "big-decimal")]
+use super::float_big_number::decimal_to_f64;
+use super::float_text::parse_text_f32;
+use super::float_text::parse_text_f64;
 use super::integer::scalar_integer_magnitude;
 use super::syntax::normalize_numeric_text;
-use crate::converter::{
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    FloatRoundingPolicy,
-    InvalidValueReason,
-};
+use crate::converter::DataConversionError;
+use crate::converter::DataConversionOptions;
+use crate::converter::DataConversionTarget;
+use crate::converter::FloatRoundingPolicy;
+use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
 
 /// Tests whether an unsigned integer fits a floating-point mantissa exactly.

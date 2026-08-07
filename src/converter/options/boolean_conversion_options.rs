@@ -11,12 +11,10 @@
 
 use std::collections::HashSet;
 
+use serde::Deserialize;
+use serde::Deserializer;
+use serde::Serialize;
 use serde::de::Error as DeError;
-use serde::{
-    Deserialize,
-    Deserializer,
-    Serialize,
-};
 
 use super::super::error::BooleanLiteralConflictError;
 use super::boolean_numeric_policy::BooleanNumericPolicy;

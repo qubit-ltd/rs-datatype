@@ -9,15 +9,14 @@
 
 use std::time::Duration;
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use qubit_datatype::serde::duration_with_unit;
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Holds a Duration encoded as exact unit-suffixed text.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub(crate) struct DurationWithUnitHolder {
     /// Duration encoded through the exact unit-suffixed adapter.
-    #[serde(with = "qubit_datatype::serde::duration_with_unit")]
+    #[serde(with = "duration_with_unit")]
     pub(crate) duration: Duration,
 }

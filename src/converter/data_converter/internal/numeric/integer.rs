@@ -15,18 +15,14 @@ use num_traits::ToPrimitive;
 use super::super::super::DataConverter;
 #[cfg(feature = "big-decimal")]
 use super::big_number::decimal_to_bigint;
-use super::syntax::{
-    normalize_numeric_text,
-    parse_text_integer,
-};
-use crate::converter::{
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    DurationRoundingPolicy,
-    FractionalToIntegerPolicy,
-    InvalidValueReason,
-};
+use super::syntax::normalize_numeric_text;
+use super::syntax::parse_text_integer;
+use crate::converter::DataConversionError;
+use crate::converter::DataConversionOptions;
+use crate::converter::DataConversionTarget;
+use crate::converter::DurationRoundingPolicy;
+use crate::converter::FractionalToIntegerPolicy;
+use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
 
 /// Returns a platform-independent `(negative, magnitude)` representation.

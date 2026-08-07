@@ -9,13 +9,11 @@
 
 use std::time::Duration;
 
-use super::{
-    DurationParseError,
-    DurationTextOptions,
-    DurationUnit,
-    DurationUnitParseMode,
-    SuffixlessDurationPolicy,
-};
+use super::DurationParseError;
+use super::DurationTextOptions;
+use super::DurationUnit;
+use super::DurationUnitParseMode;
+use super::SuffixlessDurationPolicy;
 
 /// Parses non-negative integer Duration text according to explicit policies.
 ///

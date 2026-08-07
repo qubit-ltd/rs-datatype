@@ -9,10 +9,9 @@
 //!
 //! Defines policy outcomes produced before target-specific parsing.
 
-use crate::datatype::DataType;
-
 use super::data_conversion_error::DataConversionError;
 use super::invalid_value_reason::InvalidValueReason;
+use crate::datatype::DataType;
 
 /// Error returned while normalizing a string source.
 #[must_use]

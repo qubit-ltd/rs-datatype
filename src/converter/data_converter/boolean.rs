@@ -13,18 +13,14 @@ use num_bigint::BigInt;
 use num_traits::Zero;
 
 use super::DataConverter;
-use super::numeric::{
-    check_numeric_text_limit,
-    is_integer_syntax,
-};
+use super::numeric::check_numeric_text_limit;
+use super::numeric::is_integer_syntax;
 use super::string_source::normalize;
-use crate::converter::{
-    BooleanNumericPolicy,
-    DataConversionError,
-    DataConversionOptions,
-    DataConversionTarget,
-    InvalidValueReason,
-};
+use crate::converter::BooleanNumericPolicy;
+use crate::converter::DataConversionError;
+use crate::converter::DataConversionOptions;
+use crate::converter::DataConversionTarget;
+use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
 
 /// Applies the configured integer-to-boolean policy.

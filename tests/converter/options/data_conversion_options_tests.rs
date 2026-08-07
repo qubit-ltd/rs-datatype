@@ -11,26 +11,24 @@
 
 use qubit_datatype::DataType;
 use qubit_datatype::DurationUnitParseMode;
-use qubit_datatype::converter::{
-    BlankStringPolicy,
-    BooleanConversionOptions,
-    BooleanNumericPolicy,
-    CollectionConversionOptions,
-    DataConversionError,
-    DataConversionOptions,
-    DataConverter,
-    DurationConversionOptions,
-    DurationRoundingPolicy,
-    DurationUnit,
-    EmptyItemPolicy,
-    FloatRoundingPolicy,
-    FractionalToIntegerPolicy,
-    InvalidValueReason,
-    NumericConversionLimits,
-    NumericConversionOptions,
-    StringConversionOptions,
-    SuffixlessDurationPolicy,
-};
+use qubit_datatype::converter::BlankStringPolicy;
+use qubit_datatype::converter::BooleanConversionOptions;
+use qubit_datatype::converter::BooleanNumericPolicy;
+use qubit_datatype::converter::CollectionConversionOptions;
+use qubit_datatype::converter::DataConversionError;
+use qubit_datatype::converter::DataConversionOptions;
+use qubit_datatype::converter::DataConverter;
+use qubit_datatype::converter::DurationConversionOptions;
+use qubit_datatype::converter::DurationRoundingPolicy;
+use qubit_datatype::converter::DurationUnit;
+use qubit_datatype::converter::EmptyItemPolicy;
+use qubit_datatype::converter::FloatRoundingPolicy;
+use qubit_datatype::converter::FractionalToIntegerPolicy;
+use qubit_datatype::converter::InvalidValueReason;
+use qubit_datatype::converter::NumericConversionLimits;
+use qubit_datatype::converter::NumericConversionOptions;
+use qubit_datatype::converter::StringConversionOptions;
+use qubit_datatype::converter::SuffixlessDurationPolicy;
 
 /// Test the complete strict and lossy profile contracts.
 #[test]

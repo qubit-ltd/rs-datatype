@@ -15,10 +15,9 @@ use std::str::FromStr;
 #[cfg(feature = "big-number")]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-number")]
-use qubit_datatype::{
-    NumberRef,
-    NumericComparisonPolicy,
-};
+use qubit_datatype::NumberRef;
+#[cfg(feature = "big-number")]
+use qubit_datatype::NumericComparisonPolicy;
 
 /// Verifies decimal scale does not change exact mathematical equality.
 #[cfg(feature = "big-number")]

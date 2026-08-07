@@ -7,12 +7,11 @@
 // =============================================================================
 //! Scalar item iteration error.
 
-use crate::datatype::DataType;
-
 use super::conversion_limit::ConversionLimit;
 use super::data_conversion_error::DataConversionError;
 use super::data_list_conversion_error::DataListConversionError;
 use super::invalid_value_reason::InvalidValueReason;
+use crate::datatype::DataType;
 
 /// Target-independent error discovered while iterating scalar items.
 #[must_use]

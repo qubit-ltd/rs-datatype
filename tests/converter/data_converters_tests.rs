@@ -12,14 +12,12 @@
 use std::error::Error;
 
 use qubit_datatype::DataType;
-use qubit_datatype::converter::{
-    BlankStringPolicy,
-    DataConversionError,
-    DataConversionOptions,
-    DataConverters,
-    InvalidValueReason,
-    StringConversionOptions,
-};
+use qubit_datatype::converter::BlankStringPolicy;
+use qubit_datatype::converter::DataConversionError;
+use qubit_datatype::converter::DataConversionOptions;
+use qubit_datatype::converter::DataConverters;
+use qubit_datatype::converter::InvalidValueReason;
+use qubit_datatype::converter::StringConversionOptions;
 
 use super::internal::InflatedSizeHintIterator;
 

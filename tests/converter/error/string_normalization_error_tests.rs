@@ -7,12 +7,10 @@
 // =============================================================================
 //! Tests for string normalization policy outcomes.
 
-use qubit_datatype::{
-    DataConversionErrorKind,
-    DataType,
-    InvalidValueReason,
-    StringNormalizationError,
-};
+use qubit_datatype::DataConversionErrorKind;
+use qubit_datatype::DataType;
+use qubit_datatype::InvalidValueReason;
+use qubit_datatype::StringNormalizationError;
 
 /// Test normalization error identity and value-free display.
 #[test]

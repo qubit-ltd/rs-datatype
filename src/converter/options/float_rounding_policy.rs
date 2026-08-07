@@ -7,10 +7,8 @@
 // =============================================================================
 //! Policy for conversions that may round to a floating-point value.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Controls whether floating-point rounding is permitted.
 ///

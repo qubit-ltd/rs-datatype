@@ -7,10 +7,8 @@
 // =============================================================================
 //! Tests for structured conversion error reasons.
 
-use qubit_datatype::converter::{
-    DataFormat,
-    InvalidValueReason,
-};
+use qubit_datatype::converter::DataFormat;
+use qubit_datatype::converter::InvalidValueReason;
 
 /// Test stable, value-free invalid-value reason formatting.
 #[test]

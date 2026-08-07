@@ -7,10 +7,8 @@
 // =============================================================================
 //! Strictness modes for Duration unit symbols.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Selects the accepted Duration unit symbol set.
 ///

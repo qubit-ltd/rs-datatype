@@ -19,10 +19,8 @@ use std::cmp::Ordering;
 use bigdecimal::BigDecimal;
 use libfuzzer_sys::fuzz_target;
 use num_bigint::BigInt;
-use qubit_datatype::{
-    NumberRef,
-    NumericComparisonPolicy,
-};
+use qubit_datatype::NumberRef;
+use qubit_datatype::NumericComparisonPolicy;
 
 /// Bytes required for the two integers, float bits, and decimal scale fields.
 const FIXED_INPUT_SIZE: usize = 42;

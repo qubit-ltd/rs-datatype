@@ -9,18 +9,14 @@
 //!
 //! Defines options that control duration conversion.
 
-use crate::duration::{
-    DurationTextOptions,
-    DurationUnit,
-    DurationUnitParseMode,
-    SuffixlessDurationPolicy,
-};
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 use super::DurationRoundingPolicy;
+use crate::duration::DurationTextOptions;
+use crate::duration::DurationUnit;
+use crate::duration::DurationUnitParseMode;
+use crate::duration::SuffixlessDurationPolicy;
 
 /// Controls scalar conversions to and from [`std::time::Duration`].
 ///

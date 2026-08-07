@@ -7,12 +7,10 @@
 // =============================================================================
 //! Tests for independently configurable numeric conversion options.
 
-use qubit_datatype::converter::{
-    FloatRoundingPolicy,
-    FractionalToIntegerPolicy,
-    NumericConversionLimits,
-    NumericConversionOptions,
-};
+use qubit_datatype::converter::FloatRoundingPolicy;
+use qubit_datatype::converter::FractionalToIntegerPolicy;
+use qubit_datatype::converter::NumericConversionLimits;
+use qubit_datatype::converter::NumericConversionOptions;
 
 /// Tests strict, lossy, and environment-friendly profile contracts.
 #[test]

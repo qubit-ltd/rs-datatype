@@ -11,16 +11,12 @@
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-use num_traits::{
-    FromPrimitive,
-    ToPrimitive,
-};
+use num_traits::FromPrimitive;
+use num_traits::ToPrimitive;
 
-use crate::converter::{
-    DataConversionError,
-    FloatRoundingPolicy,
-    InvalidValueReason,
-};
+use crate::converter::DataConversionError;
+use crate::converter::FloatRoundingPolicy;
+use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
 
 /// Converts an integer to a float under an explicit rounding policy.

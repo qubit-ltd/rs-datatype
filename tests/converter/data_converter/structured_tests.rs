@@ -7,14 +7,6 @@
 // =============================================================================
 //! Structured conversion tests.
 
-#[cfg(all(
-    feature = "big-number",
-    feature = "chrono",
-    feature = "url",
-    feature = "json"
-))]
-use qubit_datatype::converter::DataConversionErrorKind;
-
 use std::collections::HashMap;
 #[cfg(all(
     feature = "big-number",
@@ -37,13 +29,35 @@ use bigdecimal::BigDecimal;
     feature = "url",
     feature = "json"
 ))]
-use chrono::{
-    DateTime,
-    NaiveDate,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::DateTime;
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
+use chrono::NaiveDate;
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
+use chrono::NaiveDateTime;
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
+use chrono::NaiveTime;
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
+use chrono::Utc;
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",
@@ -51,25 +65,38 @@ use chrono::{
     feature = "json"
 ))]
 use num_bigint::BigInt;
-use qubit_datatype::DataConverter;
 #[cfg(any(feature = "json", feature = "url"))]
-use qubit_datatype::{
-    ConversionLimit,
-    DataConversionError,
-    DataConversionOptions,
-    StructuredConversionLimits,
-};
+use qubit_datatype::ConversionLimit;
+#[cfg(any(feature = "json", feature = "url"))]
+use qubit_datatype::DataConversionError;
+#[cfg(any(feature = "json", feature = "url"))]
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConverter;
 #[cfg(all(
     feature = "big-number",
     feature = "chrono",
     feature = "url",
     feature = "json"
 ))]
-use qubit_datatype::{
-    DataFormat,
-    DataType,
-    InvalidValueReason,
-};
+use qubit_datatype::DataFormat;
+#[cfg(any(feature = "json", feature = "url"))]
+use qubit_datatype::DataType;
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
+use qubit_datatype::InvalidValueReason;
+#[cfg(any(feature = "json", feature = "url"))]
+use qubit_datatype::StructuredConversionLimits;
+#[cfg(all(
+    feature = "big-number",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
+use qubit_datatype::converter::DataConversionErrorKind;
 #[cfg(feature = "url")]
 use url::Url;
 
@@ -133,8 +160,8 @@ fn test_data_converter_rejects_oversize_structured_text() {
     assert_eq!(
         DataConverter::from("[0]").to_with::<serde_json::Value>(&options),
         Err(DataConversionError::limit_exceeded(
-            qubit_datatype::DataType::String,
-            qubit_datatype::DataType::Json,
+            DataType::String,
+            DataType::Json,
             ConversionLimit::StructuredTextBytes { maximum: 2 },
         )),
     );
@@ -148,8 +175,8 @@ fn test_data_converter_rejects_oversize_structured_text() {
         DataConverter::from(r#"{"a":"b"}"#)
             .to_with::<HashMap<String, String>>(&options),
         Err(DataConversionError::limit_exceeded(
-            qubit_datatype::DataType::String,
-            qubit_datatype::DataType::StringMap,
+            DataType::String,
+            DataType::StringMap,
             ConversionLimit::StructuredTextBytes { maximum: 2 },
         )),
     );
@@ -170,8 +197,8 @@ fn test_data_converter_rejects_oversize_url_text() {
     assert_eq!(
         DataConverter::from("https://a.test/x").to_with::<Url>(&options),
         Err(DataConversionError::limit_exceeded(
-            qubit_datatype::DataType::String,
-            qubit_datatype::DataType::Url,
+            DataType::String,
+            DataType::Url,
             ConversionLimit::StructuredTextBytes { maximum: 14 },
         )),
     );

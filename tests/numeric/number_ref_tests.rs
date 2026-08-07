@@ -12,15 +12,12 @@ mod exact_decimal_tests;
 
 use std::cmp::Ordering;
 
-use qubit_datatype::{
-    NumberRef,
-    NumericComparisonPolicy,
-};
-
 #[cfg(feature = "big-number")]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-number")]
 use num_bigint::BigInt;
+use qubit_datatype::NumberRef;
+use qubit_datatype::NumericComparisonPolicy;
 
 /// Asserts that two number references have the same exact value.
 fn assert_exactly_equal(left: NumberRef<'_>, right: NumberRef<'_>) {

@@ -16,25 +16,22 @@ use num_bigint::BigInt;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_rational::BigRational;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-use num_traits::{
-    Signed,
-    ToPrimitive,
-    Zero,
-};
+use num_traits::Signed;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use num_traits::ToPrimitive;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use num_traits::Zero;
 
 use super::NumericComparisonPolicy;
+use super::internal::NumberRepr;
+use super::internal::compare_magnitude;
 #[cfg(feature = "big-decimal")]
 use super::internal::decimal_rational;
-use super::internal::{
-    NumberRepr,
-    compare_magnitude,
-    finite_parts,
-};
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-use super::internal::{
-    f32_rational,
-    f64_rational,
-};
+use super::internal::f32_rational;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use super::internal::f64_rational;
+use super::internal::finite_parts;
 
 /// Compares an arbitrary-precision integer with a signed fixed-width value.
 ///

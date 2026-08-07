@@ -10,10 +10,8 @@
 use std::time::Duration;
 
 use qubit_datatype::serde::duration_with_unit;
-use serde::de::value::{
-    Error as ValueError,
-    StringDeserializer,
-};
+use serde::de::value::Error as ValueError;
+use serde::de::value::StringDeserializer;
 
 use super::BorrowedStrOnlyDeserializer;
 

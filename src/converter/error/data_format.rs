@@ -9,10 +9,8 @@
 //!
 //! Identifies structured formats involved in conversion errors.
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Structured data format used by a conversion operation.
 ///

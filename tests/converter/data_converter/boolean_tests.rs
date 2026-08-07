@@ -7,21 +7,18 @@
 // =============================================================================
 //! Boolean conversion tests.
 
-use qubit_datatype::converter::DataConversionErrorKind;
-
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use proptest::proptest;
-use qubit_datatype::{
-    ConversionLimit,
-    DataConversionError,
-    DataConversionOptions,
-    DataConverter,
-    DataType,
-    InvalidValueReason,
-    NumericConversionLimits,
-    NumericConversionOptions,
-};
+use qubit_datatype::ConversionLimit;
+use qubit_datatype::DataConversionError;
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConverter;
+use qubit_datatype::DataType;
+use qubit_datatype::InvalidValueReason;
+use qubit_datatype::NumericConversionLimits;
+use qubit_datatype::NumericConversionOptions;
+use qubit_datatype::converter::DataConversionErrorKind;
 
 /// Test bool target conversions for all supported source variants.
 #[test]

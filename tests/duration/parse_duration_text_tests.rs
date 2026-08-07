@@ -9,14 +9,12 @@
 
 use std::time::Duration;
 
-use qubit_datatype::{
-    DurationParseError,
-    DurationTextOptions,
-    DurationUnit,
-    DurationUnitParseMode,
-    SuffixlessDurationPolicy,
-    parse_duration_text,
-};
+use qubit_datatype::DurationParseError;
+use qubit_datatype::DurationTextOptions;
+use qubit_datatype::DurationUnit;
+use qubit_datatype::DurationUnitParseMode;
+use qubit_datatype::SuffixlessDurationPolicy;
+use qubit_datatype::parse_duration_text;
 
 /// Tests strict and lenient unit symbol parsing.
 #[test]

@@ -9,12 +9,11 @@
 //!
 //! Defines options that control string-source normalization.
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use super::super::error::StringNormalizationError;
 use super::blank_string_policy::BlankStringPolicy;
-use serde::{
-    Deserialize,
-    Serialize,
-};
 
 /// Controls normalization applied once before parsing a string source.
 ///

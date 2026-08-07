@@ -7,8 +7,6 @@
 // =============================================================================
 //! Numeric conversion tests.
 
-use qubit_datatype::converter::DataConversionErrorKind;
-
 #[cfg(feature = "big-number")]
 use std::collections::HashMap;
 #[cfg(feature = "big-decimal")]
@@ -17,6 +15,13 @@ use std::time::Duration;
 
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
+#[cfg(all(
+    feature = "big-decimal",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
+use chrono::DateTime;
 #[cfg(feature = "chrono")]
 use chrono::NaiveDate;
 #[cfg(all(
@@ -25,25 +30,33 @@ use chrono::NaiveDate;
     feature = "url",
     feature = "json"
 ))]
-use chrono::{
-    DateTime,
-    NaiveDateTime,
-    NaiveTime,
-    Utc,
-};
+use chrono::NaiveDateTime;
+#[cfg(all(
+    feature = "big-decimal",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
+use chrono::NaiveTime;
+#[cfg(all(
+    feature = "big-decimal",
+    feature = "chrono",
+    feature = "url",
+    feature = "json"
+))]
+use chrono::Utc;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use proptest::proptest;
-use qubit_datatype::{
-    ConversionLimit,
-    DataConversionOptions,
-    DataConverter,
-    DataType,
-    InvalidValueReason,
-    NumericConversionLimits,
-    NumericConversionOptions,
-    StringConversionOptions,
-};
+use qubit_datatype::ConversionLimit;
+use qubit_datatype::DataConversionOptions;
+use qubit_datatype::DataConverter;
+use qubit_datatype::DataType;
+use qubit_datatype::InvalidValueReason;
+use qubit_datatype::NumericConversionLimits;
+use qubit_datatype::NumericConversionOptions;
+use qubit_datatype::StringConversionOptions;
+use qubit_datatype::converter::DataConversionErrorKind;
 #[cfg(all(
     feature = "big-decimal",
     feature = "chrono",
@@ -536,7 +549,7 @@ fn test_data_converter_big_decimal_non_finite_classification_is_consistent() {
             result,
             Err(conversion_error)
                 if conversion_error.kind() == DataConversionErrorKind::InvalidValue
-                    && conversion_error.to_type() == qubit_datatype::DataType::BigDecimal
+                    && conversion_error.to_type() == DataType::BigDecimal
                     && matches!(
                         conversion_error.reason(),
                         Some(InvalidValueReason::NonFinite)

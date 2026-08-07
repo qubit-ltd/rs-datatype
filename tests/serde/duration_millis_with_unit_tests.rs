@@ -9,11 +9,9 @@
 
 use std::time::Duration;
 
+use qubit_datatype::DurationParseError;
+use qubit_datatype::DurationTextOptions;
 use qubit_datatype::serde::duration_millis_with_unit;
-use qubit_datatype::{
-    DurationParseError,
-    DurationTextOptions,
-};
 
 use super::internal::DurationMillisWithUnitHolder;
 

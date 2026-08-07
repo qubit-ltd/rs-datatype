@@ -7,10 +7,8 @@
 // =============================================================================
 //! Tests for suffixless Duration string policies.
 
-use qubit_datatype::{
-    DurationUnit,
-    SuffixlessDurationPolicy,
-};
+use qubit_datatype::DurationUnit;
+use qubit_datatype::SuffixlessDurationPolicy;
 
 /// Tests the default and Serde representation of suffixless policies.
 #[test]
