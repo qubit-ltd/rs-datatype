@@ -9,6 +9,8 @@
 
 use std::time::Duration;
 
+use qubit_budget::ResourceLimit;
+
 use super::DurationParseError;
 use super::DurationTextOptions;
 use super::DurationUnit;
@@ -40,11 +42,11 @@ pub fn parse_duration_text(
     text: &str,
     options: &DurationTextOptions,
 ) -> Result<Duration, DurationParseError> {
-    if text.len() > options.max_text_bytes() {
-        return Err(DurationParseError::LimitExceeded {
-            maximum: options.max_text_bytes(),
-        });
-    }
+    ResourceLimit::new(options.max_text_bytes())
+        .check((), text.len())
+        .map_err(|error| DurationParseError::LimitExceeded {
+            maximum: error.maximum(),
+        })?;
     let split_at = text
         .bytes()
         .position(|byte| !byte.is_ascii_digit())

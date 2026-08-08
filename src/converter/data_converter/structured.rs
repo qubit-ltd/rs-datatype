@@ -9,6 +9,8 @@
 
 use std::collections::HashMap;
 
+#[cfg(any(feature = "json", feature = "url"))]
+use qubit_budget::ResourceLimit;
 #[cfg(feature = "json")]
 use serde::Deserializer;
 
@@ -21,7 +23,7 @@ use super::internal::StringMapVisitor;
 use super::internal::sorted_string_map_entries;
 #[cfg(feature = "json")]
 use super::string_source::normalize;
-#[cfg(feature = "json")]
+#[cfg(any(feature = "json", feature = "url"))]
 use crate::converter::ConversionLimit;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionOptions;
@@ -31,6 +33,42 @@ use crate::converter::DataFormat;
 #[cfg(feature = "json")]
 use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
+
+/// Enforces the configured normalized structured-text byte limit.
+///
+/// # Parameters
+///
+/// * `value` - Normalized text whose byte length is checked.
+/// * `from` - Source data type retained in a limit error.
+/// * `to` - Target data type retained in a limit error.
+/// * `options` - Structured conversion limits.
+///
+/// # Returns
+///
+/// `Ok(())` when `value` is within the configured limit.
+///
+/// # Errors
+///
+/// Returns a [`ConversionLimit::StructuredTextBytes`] conversion error when
+/// `value` exceeds the configured maximum.
+#[inline]
+#[cfg(any(feature = "json", feature = "url"))]
+pub(super) fn check_structured_text_limit(
+    value: &str,
+    from: DataType,
+    to: DataType,
+    options: &DataConversionOptions,
+) -> Result<(), DataConversionError> {
+    let maximum = options.structured().max_text_bytes();
+    ResourceLimit::new(maximum)
+        .check(
+            ConversionLimit::StructuredTextBytes { maximum },
+            value.len(),
+        )
+        .map_err(|error| {
+            DataConversionError::limit_exceeded(from, to, error.into_kind())
+        })
+}
 
 /// Converts a borrowed string map to a JSON object with canonical key order.
 #[cfg(feature = "json")]
@@ -99,14 +137,12 @@ impl DataConversionTarget for serde_json::Value {
             DataConverter::Json(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Json)?;
-                let maximum = options.structured().max_text_bytes();
-                if value.len() > maximum {
-                    return Err(DataConversionError::limit_exceeded(
-                        source.data_type(),
-                        DataType::Json,
-                        ConversionLimit::StructuredTextBytes { maximum },
-                    ));
-                }
+                check_structured_text_limit(
+                    value,
+                    source.data_type(),
+                    DataType::Json,
+                    options,
+                )?;
                 match serde_json::from_str(value) {
                     Ok(value) => Ok(value),
                     Err(_) => Err(source.invalid(
@@ -205,14 +241,12 @@ impl DataConversionTarget for HashMap<String, String> {
             #[cfg(feature = "json")]
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::StringMap)?;
-                let maximum = options.structured().max_text_bytes();
-                if value.len() > maximum {
-                    return Err(DataConversionError::limit_exceeded(
-                        source.data_type(),
-                        DataType::StringMap,
-                        ConversionLimit::StructuredTextBytes { maximum },
-                    ));
-                }
+                check_structured_text_limit(
+                    value,
+                    source.data_type(),
+                    DataType::StringMap,
+                    options,
+                )?;
                 match deserialize_string_map(value) {
                     Ok(value) => Ok(value),
                     Err(_) => Err(source.invalid(
