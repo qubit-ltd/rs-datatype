@@ -25,10 +25,10 @@ use url::Url;
 use super::DataConverter;
 use super::duration::format_duration;
 use super::string_source::normalize;
+#[cfg(feature = "url")]
+use super::structured::check_structured_text_limit;
 #[cfg(feature = "json")]
 use super::structured::string_map_to_json_text;
-#[cfg(feature = "url")]
-use crate::converter::ConversionLimit;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
@@ -496,14 +496,12 @@ impl DataConversionTarget for Url {
             DataConverter::Url(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Url)?;
-                let maximum = options.structured().max_text_bytes();
-                if value.len() > maximum {
-                    return Err(DataConversionError::limit_exceeded(
-                        DataType::String,
-                        DataType::Url,
-                        ConversionLimit::StructuredTextBytes { maximum },
-                    ));
-                }
+                check_structured_text_limit(
+                    value,
+                    DataType::String,
+                    DataType::Url,
+                    options,
+                )?;
                 match Url::parse(value) {
                     Ok(value) => Ok(value),
                     Err(_) => Err(source.invalid(

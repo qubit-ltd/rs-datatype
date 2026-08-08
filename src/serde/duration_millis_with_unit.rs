@@ -15,6 +15,7 @@
 
 use std::time::Duration;
 
+use qubit_budget::ResourceLimit;
 use serde::Deserializer;
 use serde::Serializer;
 
@@ -88,9 +89,11 @@ where
 /// ```
 pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
     let maximum = DurationTextOptions::DEFAULT_MAX_TEXT_BYTES;
-    if text.len() > maximum {
-        return Err(DurationParseError::LimitExceeded { maximum });
-    }
+    ResourceLimit::new(maximum)
+        .check((), text.len())
+        .map_err(|error| DurationParseError::LimitExceeded {
+            maximum: error.maximum(),
+        })?;
     let Some(digits) = text.strip_suffix("ms") else {
         return Err(DurationParseError::InvalidSyntax);
     };
