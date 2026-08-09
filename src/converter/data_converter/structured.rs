@@ -60,13 +60,15 @@ pub(super) fn check_structured_text_limit(
     options: &DataConversionOptions,
 ) -> Result<(), DataConversionError> {
     let maximum = options.structured().max_text_bytes();
-    ResourceLimit::bounded(
-        ConversionLimit::StructuredTextBytes { maximum },
-        maximum,
+    ResourceLimit::new(
+        u64::try_from(maximum).expect("usize text limit must fit in u64"),
     )
-    .check(value.len())
+    .check(
+        ConversionLimit::StructuredTextBytes { maximum },
+        u64::try_from(value.len()).expect("usize input length must fit in u64"),
+    )
     .map_err(|error| {
-        DataConversionError::limit_exceeded(from, to, error.into_kind())
+        DataConversionError::limit_exceeded(from, to, error.into_resource())
     })
 }
 

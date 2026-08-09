@@ -49,14 +49,17 @@ pub fn parse_duration_text(
     text: &str,
     options: &DurationTextOptions,
 ) -> Result<Duration, DurationParseError> {
-    ResourceLimit::bounded(
-        DurationTextLimit::TextBytes,
-        options.max_text_bytes(),
+    ResourceLimit::new(
+        u64::try_from(options.max_text_bytes())
+            .expect("usize text limit must fit in u64"),
     )
-    .check(text.len())
-        .map_err(|error| DurationParseError::LimitExceeded {
-            maximum: error.maximum(),
-        })?;
+    .check(
+        DurationTextLimit::TextBytes,
+        u64::try_from(text.len()).expect("usize input length must fit in u64"),
+    )
+    .map_err(|_| DurationParseError::LimitExceeded {
+        maximum: options.max_text_bytes(),
+    })?;
     let split_at = text
         .bytes()
         .position(|byte| !byte.is_ascii_digit())
