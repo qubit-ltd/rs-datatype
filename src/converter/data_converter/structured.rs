@@ -9,8 +9,6 @@
 
 use std::collections::HashMap;
 
-#[cfg(any(feature = "json", feature = "url"))]
-use qubit_budget::ResourceLimit;
 #[cfg(feature = "json")]
 use serde::Deserializer;
 
@@ -60,16 +58,14 @@ pub(super) fn check_structured_text_limit(
     options: &DataConversionOptions,
 ) -> Result<(), DataConversionError> {
     let maximum = options.structured().max_text_bytes();
-    ResourceLimit::new(
-        u64::try_from(maximum).expect("usize text limit must fit in u64"),
-    )
-    .check(
-        ConversionLimit::StructuredTextBytes { maximum },
-        u64::try_from(value.len()).expect("usize input length must fit in u64"),
-    )
-    .map_err(|error| {
-        DataConversionError::limit_exceeded(from, to, error.into_resource())
-    })
+    if value.len() > maximum {
+        return Err(DataConversionError::limit_exceeded(
+            from,
+            to,
+            ConversionLimit::StructuredTextBytes { maximum },
+        ));
+    }
+    Ok(())
 }
 
 /// Converts a borrowed string map to a JSON object with canonical key order.

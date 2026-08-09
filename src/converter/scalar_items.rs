@@ -8,7 +8,6 @@
 //! Lazy scalar collection item iterator.
 
 use qubit_budget::ResourceBudget;
-use qubit_budget::ResourceLimit;
 
 use super::error::ScalarItemError;
 use super::options::CollectionConversionOptions;
@@ -49,7 +48,7 @@ pub struct ScalarItems<'a> {
     /// Maximum number of retained items.
     max_items: usize,
     /// Monotonic accounting for retained scalar items.
-    item_budget: ResourceBudget<ScalarItemResource>,
+    item_budget: ResourceBudget<ScalarItemResource, usize>,
     /// Byte offset of the next raw item, or `None` after the final item.
     next_start: Option<usize>,
     /// Index of the next raw item before filtering.
@@ -139,10 +138,7 @@ impl<'a> ScalarItems<'a> {
             max_items: options.max_items(),
             item_budget: ResourceBudget::new(
                 ScalarItemResource::Items,
-                ResourceLimit::new(
-                    u64::try_from(options.max_items())
-                        .expect("usize item limit must fit in u64"),
-                ),
+                options.max_items(),
             ),
             next_start: Some(0),
             next_source_index: 0,
