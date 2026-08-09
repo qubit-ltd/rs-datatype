@@ -56,7 +56,7 @@ pub struct ScalarItems<'a> {
     next_source_index: usize,
 }
 
-/// The resource dimension charged for each retained scalar item.
+/// The resource dimension consumed by each retained scalar item.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ScalarItemResource {
     /// One scalar item that survived normalization and empty-item policy.
@@ -64,19 +64,21 @@ enum ScalarItemResource {
 }
 
 impl Clone for ScalarItems<'_> {
-    /// Clones the iterator, including its already retained-item charge.
+    /// Clones the iterator, including its retained-item consumption.
     ///
     /// # Returns
     ///
     /// An independent iterator at the same source position. The item budget is
-    /// recreated open with the same accumulated charge; this is valid because
-    /// `ScalarItems` never closes its budget and every original charge had
-    /// already succeeded.
+    /// recreated with the same accumulated consumption, which is valid because
+    /// every original consumption had already succeeded.
     fn clone(&self) -> Self {
-        let mut item_budget = ResourceBudget::new(*self.item_budget.limit());
+        let mut item_budget = ResourceBudget::new(
+            *self.item_budget.resource(),
+            self.item_budget.limit(),
+        );
         item_budget
-            .try_charge(self.item_budget.charged())
-            .expect("an accepted retained-item charge must fit its cloned limit");
+            .try_consume(self.item_budget.used())
+            .expect("accepted retained items must fit the cloned limit");
         Self {
             value: self.value,
             delimiters: self.delimiters,
@@ -135,10 +137,13 @@ impl<'a> ScalarItems<'a> {
             trim_items: options.trim_items(),
             empty_item_policy: options.empty_item_policy(),
             max_items: options.max_items(),
-            item_budget: ResourceBudget::new(ResourceLimit::bounded(
+            item_budget: ResourceBudget::new(
                 ScalarItemResource::Items,
-                options.max_items(),
-            )),
+                ResourceLimit::new(
+                    u64::try_from(options.max_items())
+                        .expect("usize item limit must fit in u64"),
+                ),
+            ),
             next_start: Some(0),
             next_source_index: 0,
         }
@@ -216,7 +221,7 @@ impl<'a> ScalarItems<'a> {
         &mut self,
         item: ScalarItem<'a>,
     ) -> Result<ScalarItem<'a>, ScalarItemError> {
-        if self.item_budget.try_charge(1).is_err() {
+        if self.item_budget.try_consume(1).is_err() {
             self.next_start = None;
             return Err(ScalarItemError::item_limit_exceeded(
                 item.source_index,

@@ -96,11 +96,14 @@ where
 /// ```
 pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
     let maximum = DurationTextOptions::DEFAULT_MAX_TEXT_BYTES;
-    ResourceLimit::bounded(DurationMillisWithUnitLimit::TextBytes, maximum)
-        .check(text.len())
-        .map_err(|error| DurationParseError::LimitExceeded {
-            maximum: error.maximum(),
-        })?;
+    ResourceLimit::new(
+        u64::try_from(maximum).expect("usize text limit must fit in u64"),
+    )
+    .check(
+        DurationMillisWithUnitLimit::TextBytes,
+        u64::try_from(text.len()).expect("usize input length must fit in u64"),
+    )
+    .map_err(|_| DurationParseError::LimitExceeded { maximum })?;
     let Some(digits) = text.strip_suffix("ms") else {
         return Err(DurationParseError::InvalidSyntax);
     };

@@ -79,16 +79,18 @@ pub(in crate::converter::data_converter) fn check_numeric_text_limit(
     to: DataType,
 ) -> Result<(), DataConversionError> {
     let maximum = options.numeric().limits().max_text_bytes();
-    ResourceLimit::bounded(
-        ConversionLimit::NumericTextBytes { maximum },
-        maximum,
+    ResourceLimit::new(
+        u64::try_from(maximum).expect("usize text limit must fit in u64"),
     )
-    .check(value.len())
+    .check(
+        ConversionLimit::NumericTextBytes { maximum },
+        u64::try_from(value.len()).expect("usize input length must fit in u64"),
+    )
     .map_err(|error| {
         DataConversionError::limit_exceeded(
             DataType::String,
             to,
-            error.into_kind(),
+            error.into_resource(),
         )
     })
 }
