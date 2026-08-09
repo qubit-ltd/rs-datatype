@@ -25,6 +25,13 @@ use crate::DurationParseError;
 use crate::DurationTextOptions;
 use crate::DurationUnit;
 
+/// The stateless source-text limit checked by fixed-unit Duration parsing.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum DurationMillisWithUnitLimit {
+    /// Bytes in the fixed-unit Duration source text.
+    TextBytes,
+}
+
 /// Deserializes fixed millisecond text matching the required grammar.
 ///
 /// # Type Parameters
@@ -89,8 +96,8 @@ where
 /// ```
 pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
     let maximum = DurationTextOptions::DEFAULT_MAX_TEXT_BYTES;
-    ResourceLimit::new(maximum)
-        .check((), text.len())
+    ResourceLimit::bounded(DurationMillisWithUnitLimit::TextBytes, maximum)
+        .check(text.len())
         .map_err(|error| DurationParseError::LimitExceeded {
             maximum: error.maximum(),
         })?;

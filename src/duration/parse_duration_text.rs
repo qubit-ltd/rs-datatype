@@ -17,6 +17,13 @@ use super::DurationUnit;
 use super::DurationUnitParseMode;
 use super::SuffixlessDurationPolicy;
 
+/// The stateless source-text limit checked before Duration parsing.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum DurationTextLimit {
+    /// Bytes in the Duration source text.
+    TextBytes,
+}
+
 /// Parses non-negative integer Duration text according to explicit policies.
 ///
 /// This function does not trim or otherwise normalize `text`.
@@ -42,8 +49,11 @@ pub fn parse_duration_text(
     text: &str,
     options: &DurationTextOptions,
 ) -> Result<Duration, DurationParseError> {
-    ResourceLimit::new(options.max_text_bytes())
-        .check((), text.len())
+    ResourceLimit::bounded(
+        DurationTextLimit::TextBytes,
+        options.max_text_bytes(),
+    )
+    .check(text.len())
         .map_err(|error| DurationParseError::LimitExceeded {
             maximum: error.maximum(),
         })?;

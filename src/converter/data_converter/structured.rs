@@ -60,14 +60,14 @@ pub(super) fn check_structured_text_limit(
     options: &DataConversionOptions,
 ) -> Result<(), DataConversionError> {
     let maximum = options.structured().max_text_bytes();
-    ResourceLimit::new(maximum)
-        .check(
-            ConversionLimit::StructuredTextBytes { maximum },
-            value.len(),
-        )
-        .map_err(|error| {
-            DataConversionError::limit_exceeded(from, to, error.into_kind())
-        })
+    ResourceLimit::bounded(
+        ConversionLimit::StructuredTextBytes { maximum },
+        maximum,
+    )
+    .check(value.len())
+    .map_err(|error| {
+        DataConversionError::limit_exceeded(from, to, error.into_kind())
+    })
 }
 
 /// Converts a borrowed string map to a JSON object with canonical key order.
