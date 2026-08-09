@@ -7,6 +7,9 @@
 // =============================================================================
 //! Lazy scalar collection item iterator.
 
+use qubit_budget::ResourceBudget;
+use qubit_budget::ResourceLimit;
+
 use super::error::ScalarItemError;
 use super::options::CollectionConversionOptions;
 use super::options::EmptyItemPolicy;
@@ -27,7 +30,7 @@ use super::scalar_item::ScalarItem;
 ///
 /// * `'a` - Lifetime shared by the borrowed source text and collection options.
 #[must_use]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ScalarItems<'a> {
     /// Original scalar source.
     value: &'a str,
@@ -45,12 +48,49 @@ pub struct ScalarItems<'a> {
     empty_item_policy: EmptyItemPolicy,
     /// Maximum number of retained items.
     max_items: usize,
-    /// Number of retained items already returned successfully.
-    retained_items: usize,
+    /// Monotonic accounting for retained scalar items.
+    item_budget: ResourceBudget<ScalarItemResource>,
     /// Byte offset of the next raw item, or `None` after the final item.
     next_start: Option<usize>,
     /// Index of the next raw item before filtering.
     next_source_index: usize,
+}
+
+/// The resource dimension charged for each retained scalar item.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ScalarItemResource {
+    /// One scalar item that survived normalization and empty-item policy.
+    Items,
+}
+
+impl Clone for ScalarItems<'_> {
+    /// Clones the iterator, including its already retained-item charge.
+    ///
+    /// # Returns
+    ///
+    /// An independent iterator at the same source position. The item budget is
+    /// recreated open with the same accumulated charge; this is valid because
+    /// `ScalarItems` never closes its budget and every original charge had
+    /// already succeeded.
+    fn clone(&self) -> Self {
+        let mut item_budget = ResourceBudget::new(*self.item_budget.limit());
+        item_budget
+            .try_charge(self.item_budget.charged())
+            .expect("an accepted retained-item charge must fit its cloned limit");
+        Self {
+            value: self.value,
+            delimiters: self.delimiters,
+            ascii_delimiters: self.ascii_delimiters,
+            non_ascii_delimiters: self.non_ascii_delimiters.clone(),
+            split_scalar_strings: self.split_scalar_strings,
+            trim_items: self.trim_items,
+            empty_item_policy: self.empty_item_policy,
+            max_items: self.max_items,
+            item_budget,
+            next_start: self.next_start,
+            next_source_index: self.next_source_index,
+        }
+    }
 }
 
 impl<'a> ScalarItems<'a> {
@@ -95,7 +135,10 @@ impl<'a> ScalarItems<'a> {
             trim_items: options.trim_items(),
             empty_item_policy: options.empty_item_policy(),
             max_items: options.max_items(),
-            retained_items: 0,
+            item_budget: ResourceBudget::new(ResourceLimit::bounded(
+                ScalarItemResource::Items,
+                options.max_items(),
+            )),
             next_start: Some(0),
             next_source_index: 0,
         }
@@ -173,14 +216,13 @@ impl<'a> ScalarItems<'a> {
         &mut self,
         item: ScalarItem<'a>,
     ) -> Result<ScalarItem<'a>, ScalarItemError> {
-        if self.retained_items >= self.max_items {
+        if self.item_budget.try_charge(1).is_err() {
             self.next_start = None;
             return Err(ScalarItemError::item_limit_exceeded(
                 item.source_index,
                 self.max_items,
             ));
         }
-        self.retained_items += 1;
         Ok(item)
     }
 }

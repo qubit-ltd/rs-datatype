@@ -79,15 +79,18 @@ pub(in crate::converter::data_converter) fn check_numeric_text_limit(
     to: DataType,
 ) -> Result<(), DataConversionError> {
     let maximum = options.numeric().limits().max_text_bytes();
-    ResourceLimit::new(maximum)
-        .check(ConversionLimit::NumericTextBytes { maximum }, value.len())
-        .map_err(|error| {
-            DataConversionError::limit_exceeded(
-                DataType::String,
-                to,
-                error.into_kind(),
-            )
-        })
+    ResourceLimit::bounded(
+        ConversionLimit::NumericTextBytes { maximum },
+        maximum,
+    )
+    .check(value.len())
+    .map_err(|error| {
+        DataConversionError::limit_exceeded(
+            DataType::String,
+            to,
+            error.into_kind(),
+        )
+    })
 }
 
 /// Parses a normalized number without selecting a target primitive first.
