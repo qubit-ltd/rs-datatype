@@ -15,7 +15,6 @@
 
 use std::time::Duration;
 
-use qubit_budget::ResourceLimit;
 use serde::Deserializer;
 use serde::Serializer;
 
@@ -24,13 +23,6 @@ use super::internal::DurationMillisWithUnitVisitor;
 use crate::DurationParseError;
 use crate::DurationTextOptions;
 use crate::DurationUnit;
-
-/// The stateless source-text limit checked by fixed-unit Duration parsing.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum DurationMillisWithUnitLimit {
-    /// Bytes in the fixed-unit Duration source text.
-    TextBytes,
-}
 
 /// Deserializes fixed millisecond text matching the required grammar.
 ///
@@ -96,14 +88,9 @@ where
 /// ```
 pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
     let maximum = DurationTextOptions::DEFAULT_MAX_TEXT_BYTES;
-    ResourceLimit::new(
-        u64::try_from(maximum).expect("usize text limit must fit in u64"),
-    )
-    .check(
-        DurationMillisWithUnitLimit::TextBytes,
-        u64::try_from(text.len()).expect("usize input length must fit in u64"),
-    )
-    .map_err(|_| DurationParseError::LimitExceeded { maximum })?;
+    if text.len() > maximum {
+        return Err(DurationParseError::LimitExceeded { maximum });
+    }
     let Some(digits) = text.strip_suffix("ms") else {
         return Err(DurationParseError::InvalidSyntax);
     };

@@ -14,7 +14,6 @@ use std::str::FromStr;
 use bigdecimal::BigDecimal;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_bigint::BigInt;
-use qubit_budget::ResourceLimit;
 
 use super::super::super::string_source::normalize;
 #[cfg(feature = "big-decimal")]
@@ -79,20 +78,14 @@ pub(in crate::converter::data_converter) fn check_numeric_text_limit(
     to: DataType,
 ) -> Result<(), DataConversionError> {
     let maximum = options.numeric().limits().max_text_bytes();
-    ResourceLimit::new(
-        u64::try_from(maximum).expect("usize text limit must fit in u64"),
-    )
-    .check(
-        ConversionLimit::NumericTextBytes { maximum },
-        u64::try_from(value.len()).expect("usize input length must fit in u64"),
-    )
-    .map_err(|error| {
-        DataConversionError::limit_exceeded(
+    if value.len() > maximum {
+        return Err(DataConversionError::limit_exceeded(
             DataType::String,
             to,
-            error.into_resource(),
-        )
-    })
+            ConversionLimit::NumericTextBytes { maximum },
+        ));
+    }
+    Ok(())
 }
 
 /// Parses a normalized number without selecting a target primitive first.

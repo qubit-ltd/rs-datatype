@@ -9,20 +9,11 @@
 
 use std::time::Duration;
 
-use qubit_budget::ResourceLimit;
-
 use super::DurationParseError;
 use super::DurationTextOptions;
 use super::DurationUnit;
 use super::DurationUnitParseMode;
 use super::SuffixlessDurationPolicy;
-
-/// The stateless source-text limit checked before Duration parsing.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum DurationTextLimit {
-    /// Bytes in the Duration source text.
-    TextBytes,
-}
 
 /// Parses non-negative integer Duration text according to explicit policies.
 ///
@@ -49,17 +40,10 @@ pub fn parse_duration_text(
     text: &str,
     options: &DurationTextOptions,
 ) -> Result<Duration, DurationParseError> {
-    ResourceLimit::new(
-        u64::try_from(options.max_text_bytes())
-            .expect("usize text limit must fit in u64"),
-    )
-    .check(
-        DurationTextLimit::TextBytes,
-        u64::try_from(text.len()).expect("usize input length must fit in u64"),
-    )
-    .map_err(|_| DurationParseError::LimitExceeded {
-        maximum: options.max_text_bytes(),
-    })?;
+    let maximum = options.max_text_bytes();
+    if text.len() > maximum {
+        return Err(DurationParseError::LimitExceeded { maximum });
+    }
     let split_at = text
         .bytes()
         .position(|byte| !byte.is_ascii_digit())
