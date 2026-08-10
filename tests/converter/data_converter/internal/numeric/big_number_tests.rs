@@ -38,14 +38,10 @@ use qubit_datatype::NumericConversionOptions;
 ///
 /// Strict conversion options carrying the requested digit limit.
 #[cfg(feature = "big-integer")]
-fn options_with_big_integer_digit_limit(
-    maximum: usize,
-) -> DataConversionOptions {
+fn options_with_big_integer_digit_limit(maximum: usize) -> DataConversionOptions {
     DataConversionOptions::strict().with_numeric_options(
-        NumericConversionOptions::strict().with_limits(
-            NumericConversionLimits::default()
-                .with_max_big_integer_digits(maximum),
-        ),
+        NumericConversionOptions::strict()
+            .with_limits(NumericConversionLimits::default().with_max_big_integer_digits(maximum)),
     )
 }
 
@@ -109,9 +105,8 @@ fn test_bigint_to_bigint_enforces_result_digit_limit() {
 fn test_positive_scale_decimal_to_bigint_enforces_result_digit_limit() {
     let source = BigDecimal::new(BigInt::from(12_345_u32), 1);
     let options = DataConversionOptions::lossy().with_numeric_options(
-        NumericConversionOptions::lossy().with_limits(
-            NumericConversionLimits::default().with_max_big_integer_digits(3),
-        ),
+        NumericConversionOptions::lossy()
+            .with_limits(NumericConversionLimits::default().with_max_big_integer_digits(3)),
     );
     let error = DataConverter::from(&source)
         .to_with::<BigInt>(&options)

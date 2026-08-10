@@ -82,8 +82,7 @@ fn test_integer_to_f32_rejects_overflow() {
 #[test]
 fn test_numeric_to_float_rounding_is_independent() {
     let options = DataConversionOptions::strict().with_numeric_options(
-        NumericConversionOptions::strict()
-            .with_numeric_to_float(FloatRoundingPolicy::NearestEven),
+        NumericConversionOptions::strict().with_numeric_to_float(FloatRoundingPolicy::NearestEven),
     );
 
     assert_eq!(

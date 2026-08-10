@@ -193,21 +193,17 @@ impl DataConversionTarget for String {
             }
             DataConverter::Duration(value) => format_duration(*value, options),
             #[cfg(feature = "json")]
-            DataConverter::StringMap(value) => {
-                match string_map_to_json_text(value) {
-                    Ok(value) => Ok(value),
-                    Err(_) => Err(source.invalid(
-                        DataType::String,
-                        InvalidValueReason::Serialization {
-                            format: DataFormat::Json,
-                        },
-                    )),
-                }
-            }
+            DataConverter::StringMap(value) => match string_map_to_json_text(value) {
+                Ok(value) => Ok(value),
+                Err(_) => Err(source.invalid(
+                    DataType::String,
+                    InvalidValueReason::Serialization {
+                        format: DataFormat::Json,
+                    },
+                )),
+            },
             #[cfg(not(feature = "json"))]
-            DataConverter::StringMap(_) => {
-                Err(source.unsupported(DataType::String))
-            }
+            DataConverter::StringMap(_) => Err(source.unsupported(DataType::String)),
             _ => Err(source.unsupported(DataType::String)),
         }
     }
@@ -234,8 +230,7 @@ impl DataConversionTarget for String {
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::String(value) => {
-                let normalized =
-                    normalize(value.as_ref(), options, DataType::String)?;
+                let normalized = normalize(value.as_ref(), options, DataType::String)?;
                 if normalized.len() == value.len() {
                     Ok(value.into_owned())
                 } else {
@@ -282,9 +277,7 @@ macro_rules! impl_text_or_copy_target {
                             Some(value) => Ok(value),
                             None => Err(source.invalid(
                                 $data_type,
-                                InvalidValueReason::InvalidSyntax {
-                                    expected: $format,
-                                },
+                                InvalidValueReason::InvalidSyntax { expected: $format },
                             )),
                         }
                     }
@@ -407,13 +400,7 @@ fn parse_datetime(value: &str) -> Option<NaiveDateTime> {
 }
 
 #[cfg(feature = "chrono")]
-impl_text_or_copy_target!(
-    NaiveDate,
-    Date,
-    DataType::Date,
-    "YYYY-MM-DD",
-    parse_date
-);
+impl_text_or_copy_target!(NaiveDate, Date, DataType::Date, "YYYY-MM-DD", parse_date);
 #[cfg(feature = "chrono")]
 impl_text_or_copy_target!(
     NaiveTime,
@@ -496,12 +483,7 @@ impl DataConversionTarget for Url {
             DataConverter::Url(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Url)?;
-                check_structured_text_limit(
-                    value,
-                    DataType::String,
-                    DataType::Url,
-                    options,
-                )?;
+                check_structured_text_limit(value, DataType::String, DataType::Url, options)?;
                 match Url::parse(value) {
                     Ok(value) => Ok(value),
                     Err(_) => Err(source.invalid(
