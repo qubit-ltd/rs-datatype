@@ -44,9 +44,15 @@ impl<'a> ConversionSession<'a> {
             .with_map_entries_limit(*structured.max_map_entries_limit());
         Self {
             options,
-            items: ResourceBudget::from_limit(*options.budget().max_items_limit()),
-            input_bytes: ResourceBudget::from_limit(*options.budget().max_input_bytes_limit()),
-            output_bytes: ResourceBudget::from_limit(*options.budget().max_output_bytes_limit()),
+            items: ResourceBudget::from_limit(
+                *options.budget().max_items_limit(),
+            ),
+            input_bytes: ResourceBudget::from_limit(
+                *options.budget().max_input_bytes_limit(),
+            ),
+            output_bytes: ResourceBudget::from_limit(
+                *options.budget().max_output_bytes_limit(),
+            ),
             json: JsonLimits::empty()
                 .with_structure_limits(structure_limits)
                 .budget(),
@@ -62,7 +68,10 @@ impl<'a> ConversionSession<'a> {
     /// Delegates a nested conversion without charging a new top-level item or
     /// input payload.
     #[inline(always)]
-    pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
+    pub fn delegate<T>(
+        &mut self,
+        source: &DataConverter<'_>,
+    ) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -71,7 +80,10 @@ impl<'a> ConversionSession<'a> {
 
     /// Delegates an owned nested conversion while preserving this session.
     #[inline(always)]
-    pub fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
+    pub fn delegate_owned<T>(
+        &mut self,
+        source: DataConverter<'_>,
+    ) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -80,7 +92,9 @@ impl<'a> ConversionSession<'a> {
 
     /// Consumes one top-level conversion item.
     #[inline]
-    pub fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, usize>> {
+    pub fn consume_item(
+        &mut self,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
         self.items.try_consume(1)
     }
 
@@ -120,7 +134,9 @@ impl<'a> ConversionSession<'a> {
     ) -> Result<String, BudgetedStringError<ConversionResource, E>>
     where
         E: std::fmt::Debug + std::fmt::Display,
-        F: FnOnce(&mut BudgetedStringWriter<'_, ConversionResource>) -> Result<(), E>,
+        F: FnOnce(
+            &mut BudgetedStringWriter<'_, ConversionResource>,
+        ) -> Result<(), E>,
     {
         self.output_bytes.try_write_string(render)
     }
@@ -194,7 +210,10 @@ impl<'a> ConversionSession<'a> {
 
     /// Checks a structured depth without changing session state.
     #[inline]
-    pub fn check_depth(&self, depth: usize) -> Result<(), BudgetError<ConversionResource, usize>> {
+    pub fn check_depth(
+        &self,
+        depth: usize,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
         self.json.check_depth(depth)
     }
 
@@ -251,7 +270,9 @@ impl<'a> ConversionSession<'a> {
     /// Returns the mutable JSON budget shared by this conversion session.
     #[cfg(feature = "json")]
     #[inline(always)]
-    pub(crate) fn json_budget_mut(&mut self) -> &mut JsonBudget<ConversionResource, usize> {
+    pub(crate) fn json_budget_mut(
+        &mut self,
+    ) -> &mut JsonBudget<ConversionResource, usize> {
         &mut self.json
     }
 }

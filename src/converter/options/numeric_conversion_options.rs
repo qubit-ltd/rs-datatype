@@ -96,7 +96,10 @@ impl NumericConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_fractional_to_integer(mut self, policy: FractionalToIntegerPolicy) -> Self {
+    pub const fn with_fractional_to_integer(
+        mut self,
+        policy: FractionalToIntegerPolicy,
+    ) -> Self {
         self.fractional_to_integer = policy;
         self
     }
@@ -121,7 +124,10 @@ impl NumericConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_numeric_to_float(mut self, policy: FloatRoundingPolicy) -> Self {
+    pub const fn with_numeric_to_float(
+        mut self,
+        policy: FloatRoundingPolicy,
+    ) -> Self {
         self.numeric_to_float = policy;
         self
     }
@@ -146,7 +152,10 @@ impl NumericConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_text_to_float(mut self, policy: FloatRoundingPolicy) -> Self {
+    pub const fn with_text_to_float(
+        mut self,
+        policy: FloatRoundingPolicy,
+    ) -> Self {
         self.text_to_float = policy;
         self
     }
@@ -179,7 +188,10 @@ impl NumericConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_limits(mut self, limits: NumericConversionLimits) -> Self {
+    pub const fn with_limits(
+        mut self,
+        limits: NumericConversionLimits,
+    ) -> Self {
         self.limits = limits;
         self
     }

@@ -13,10 +13,10 @@ use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
 use qubit_datatype::StructuredConversionLimits;
 
-use super::internal::Port;
-use super::internal::Text;
 #[cfg(feature = "json")]
 use super::internal::Document;
+use super::internal::Port;
+use super::internal::Text;
 
 /// Verifies that a downstream newtype can own its target conversion.
 #[test]
@@ -49,7 +49,9 @@ fn test_delegate_does_not_double_charge_item_or_input_budgets() {
     let mut session = options.session();
     let port = DataConverter::from("42")
         .to_in::<Port>(&mut session)
-        .expect("transparent delegation should fit one item and two input bytes");
+        .expect(
+            "transparent delegation should fit one item and two input bytes",
+        );
     assert_eq!(port, Port(42));
     assert_eq!(session.used_items(), 1);
     assert_eq!(session.used_input_bytes(), 2);

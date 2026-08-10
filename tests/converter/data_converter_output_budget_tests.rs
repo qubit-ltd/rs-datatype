@@ -18,8 +18,9 @@ use qubit_datatype::DurationConversionOptions;
 use qubit_datatype::DurationUnit;
 
 fn options_with_output_limit(maximum: usize) -> DataConversionOptions {
-    DataConversionOptions::default()
-        .with_budget_limits(ConversionBudgetLimits::default().with_max_output_bytes(maximum))
+    DataConversionOptions::default().with_budget_limits(
+        ConversionBudgetLimits::default().with_max_output_bytes(maximum),
+    )
 }
 
 #[test]
@@ -33,7 +34,8 @@ fn test_string_output_budget_counts_borrowed_and_owned_payloads_equally() {
         Ok("42".to_owned())
     );
     assert_eq!(
-        DataConverter::from(42_i32).into_target_in::<String>(&mut owned_session),
+        DataConverter::from(42_i32)
+            .into_target_in::<String>(&mut owned_session),
         Ok("42".to_owned())
     );
     assert_eq!(borrowed_session.used_output_bytes(), 2);
@@ -70,9 +72,13 @@ fn test_string_map_json_output_does_not_consume_string_budget() {
     {
         let options = options_with_output_limit(0);
         let mut session = options.session();
-        let source = std::collections::HashMap::from([("key".to_owned(), "value".to_owned())]);
+        let source = std::collections::HashMap::from([(
+            "key".to_owned(),
+            "value".to_owned(),
+        )]);
 
-        let result = DataConverter::from(source).to_in::<serde_json::Value>(&mut session);
+        let result = DataConverter::from(source)
+            .to_in::<serde_json::Value>(&mut session);
         assert!(result.is_ok());
         assert_eq!(session.used_output_bytes(), 0);
     }
@@ -95,7 +101,8 @@ fn test_builtin_string_outputs_use_exact_utf8_payload_lengths() {
     );
     let mut duration_session = duration_options.session();
     assert_eq!(
-        DataConverter::from(Duration::from_secs(1)).to_in::<String>(&mut duration_session),
+        DataConverter::from(Duration::from_secs(1))
+            .to_in::<String>(&mut duration_session),
         Ok("1s".to_owned())
     );
     assert_eq!(duration_session.used_output_bytes(), 2);
@@ -129,7 +136,8 @@ fn test_string_map_output_budget_has_exact_and_one_below_boundaries() {
         let exact = options_with_output_limit(expected.len());
         let mut exact_session = exact.session();
         assert_eq!(
-            DataConverter::from(source.clone()).to_in::<String>(&mut exact_session),
+            DataConverter::from(source.clone())
+                .to_in::<String>(&mut exact_session),
             Ok(expected.to_owned())
         );
         assert_eq!(exact_session.used_output_bytes(), expected.len());

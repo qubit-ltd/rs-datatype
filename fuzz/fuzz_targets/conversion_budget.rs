@@ -41,9 +41,7 @@ fuzz_target!(|data: &[u8]| {
         return;
     }
 
-    let output_limit = data
-        .first()
-        .map_or(0, |value| usize::from(*value));
+    let output_limit = data.first().map_or(0, |value| usize::from(*value));
     let options = DataConversionOptions::strict().with_budget_limits(
         ConversionBudgetLimits::default().with_max_output_bytes(output_limit),
     );
@@ -78,24 +76,21 @@ fn assert_borrowed_and_owned_number(
 ) {
     let mut borrowed = options.session();
     let mut owned = options.session();
-    let borrowed_result = DataConverter::from(number)
-        .to_in::<String>(&mut borrowed);
-    let owned_result = DataConverter::from(number)
-        .into_target_in::<String>(&mut owned);
+    let borrowed_result =
+        DataConverter::from(number).to_in::<String>(&mut borrowed);
+    let owned_result =
+        DataConverter::from(number).into_target_in::<String>(&mut owned);
     assert_equivalent_results(&borrowed_result, &owned_result);
     assert_output_accounting(&borrowed_result, &borrowed);
     assert_output_accounting(&owned_result, &owned);
 }
 
 /// Compares borrowed and owned Unicode text conversion accounting.
-fn assert_borrowed_and_owned_text(
-    text: &str,
-    options: &DataConversionOptions,
-) {
+fn assert_borrowed_and_owned_text(text: &str, options: &DataConversionOptions) {
     let mut borrowed = options.session();
     let mut owned = options.session();
-    let borrowed_result = DataConverter::from(text)
-        .to_in::<String>(&mut borrowed);
+    let borrowed_result =
+        DataConverter::from(text).to_in::<String>(&mut borrowed);
     let owned_result = DataConverter::from(text.to_owned())
         .into_target_in::<String>(&mut owned);
     assert_equivalent_results(&borrowed_result, &owned_result);
@@ -110,9 +105,10 @@ fn assert_borrowed_and_owned_map(
 ) {
     let mut borrowed = options.session();
     let mut owned = options.session();
-    let borrowed_result = DataConverter::from(map).to_in::<String>(&mut borrowed);
-    let owned_result = DataConverter::from(map.clone())
-        .into_target_in::<String>(&mut owned);
+    let borrowed_result =
+        DataConverter::from(map).to_in::<String>(&mut borrowed);
+    let owned_result =
+        DataConverter::from(map.clone()).into_target_in::<String>(&mut owned);
     assert_equivalent_results(&borrowed_result, &owned_result);
     assert_output_accounting(&borrowed_result, &borrowed);
     assert_output_accounting(&owned_result, &owned);
