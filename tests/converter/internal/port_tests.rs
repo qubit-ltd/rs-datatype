@@ -8,11 +8,11 @@
 //! Downstream-owned target used by conversion extension tests.
 
 use qubit_datatype::DataConversionError;
-use qubit_datatype::DataConversionOptions;
 use qubit_datatype::DataConversionTarget;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
 use qubit_datatype::DataTypeOf;
+use qubit_datatype::ConversionSession;
 
 /// Port newtype proving downstream target extensibility.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -25,8 +25,52 @@ impl DataTypeOf for Port {
 impl DataConversionTarget for Port {
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
-        u16::convert_from(source, options).map(Self)
+        session.delegate::<u16>(source).map(Self)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(in crate::converter) struct Text(pub(in crate::converter) String);
+
+impl DataTypeOf for Text {
+    const DATA_TYPE: DataType = DataType::String;
+}
+
+impl DataConversionTarget for Text {
+    fn convert_from(
+        source: &DataConverter<'_>,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<Self, DataConversionError> {
+        session.delegate::<String>(source).map(Self)
+    }
+
+    fn convert_owned(
+        source: DataConverter<'_>,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<Self, DataConversionError> {
+        session.delegate_owned::<String>(source).map(Self)
+    }
+}
+
+#[cfg(feature = "json")]
+#[derive(Debug, PartialEq)]
+pub(in crate::converter) struct Document(
+    pub(in crate::converter) serde_json::Value,
+);
+
+#[cfg(feature = "json")]
+impl DataTypeOf for Document {
+    const DATA_TYPE: DataType = DataType::Json;
+}
+
+#[cfg(feature = "json")]
+impl DataConversionTarget for Document {
+    fn convert_from(
+        source: &DataConverter<'_>,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<Self, DataConversionError> {
+        session.delegate::<serde_json::Value>(source).map(Self)
     }
 }

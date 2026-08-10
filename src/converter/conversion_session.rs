@@ -14,6 +14,9 @@ use qubit_budget::ResourceBudget;
 use qubit_budget::StructureLimits;
 
 use super::conversion_resource::ConversionResource;
+use super::data_conversion_target::DataConversionTarget;
+use super::data_converter::DataConverter;
+use super::error::DataConversionError;
 use super::options::DataConversionOptions;
 
 /// Mutable conversion accounting shared by nested and batch conversions.
@@ -58,6 +61,31 @@ impl<'a> ConversionSession<'a> {
     #[inline(always)]
     pub const fn options(&self) -> &'a DataConversionOptions {
         self.options
+    }
+
+    /// Delegates a nested conversion without charging a new top-level item or
+    /// input payload.
+    #[inline(always)]
+    pub fn delegate<T>(
+        &mut self,
+        source: &DataConverter<'_>,
+    ) -> Result<T, DataConversionError>
+    where
+        T: DataConversionTarget,
+    {
+        T::convert_from(source, self)
+    }
+
+    /// Delegates an owned nested conversion while preserving this session.
+    #[inline(always)]
+    pub fn delegate_owned<T>(
+        &mut self,
+        source: DataConverter<'_>,
+    ) -> Result<T, DataConversionError>
+    where
+        T: DataConversionTarget,
+    {
+        T::convert_owned(source, self)
     }
 
     /// Consumes one top-level conversion item.

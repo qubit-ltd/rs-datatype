@@ -328,7 +328,7 @@ impl DataConverter<'_> {
         })?;
         self.charge_input_for_target(T::DATA_TYPE, session)?;
 
-        T::convert_from_in(self, session)
+        T::convert_from(self, session)
     }
 
     /// Consumes this source and converts it using the shared default options.
@@ -401,7 +401,7 @@ impl DataConverter<'_> {
             DataConversionError::limit_exceeded(from, T::DATA_TYPE, limit)
         })?;
         self.charge_input_for_target(T::DATA_TYPE, session)?;
-        T::convert_owned_in(self, session)
+        T::convert_owned(self, session)
     }
 
     /// Charges textual input and supported structured values before a target

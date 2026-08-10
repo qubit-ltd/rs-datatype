@@ -23,6 +23,7 @@ use super::syntax::normalize_numeric_text;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
+use crate::converter::ConversionSession;
 use crate::converter::FloatRoundingPolicy;
 use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
@@ -210,8 +211,9 @@ impl DataConversionTarget for f64 {
     #[inline(always)]
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        let options = session.options();
         source_to_f64(source, options, DataType::Float64)
     }
 }
@@ -234,8 +236,9 @@ impl DataConversionTarget for f32 {
     /// or resource-limit error.
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        let options = session.options();
         let to = DataType::Float32;
         if let Some(value) = scalar_integer_magnitude(source) {
             return integer_to_f32(
