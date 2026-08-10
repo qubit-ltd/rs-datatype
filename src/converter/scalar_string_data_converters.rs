@@ -114,13 +114,19 @@ impl<'a> ScalarStringDataConverters<'a> {
         let items = options.collection().scalar_items(self.source);
         let mut converted = Vec::new();
         for item in items {
-            let item = item.map_err(|error| error.into_list_conversion_error(T::DATA_TYPE))?;
-            let value = match DataConverter::from(item.value).to_in::<T>(session) {
-                Ok(value) => value,
-                Err(source) => {
-                    return Err(DataListConversionError::new(item.source_index, source));
-                }
-            };
+            let item = item.map_err(|error| {
+                error.into_list_conversion_error(T::DATA_TYPE)
+            })?;
+            let value =
+                match DataConverter::from(item.value).to_in::<T>(session) {
+                    Ok(value) => value,
+                    Err(source) => {
+                        return Err(DataListConversionError::new(
+                            item.source_index,
+                            source,
+                        ));
+                    }
+                };
             converted.push(value);
         }
         Ok(converted)

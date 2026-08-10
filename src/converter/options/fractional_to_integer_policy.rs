@@ -15,7 +15,9 @@ use serde::Serialize;
 /// This enum intentionally defines a closed policy set. Exhaustive matching is
 /// part of its API contract; adding a variant is a deliberate breaking change.
 #[must_use]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum FractionalToIntegerPolicy {
     /// Reject values with a non-zero fractional component.
