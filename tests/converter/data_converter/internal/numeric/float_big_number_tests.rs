@@ -26,8 +26,7 @@ fn test_bigint_to_f32_applies_target_width_precision() {
     let value = BigInt::from(16_777_217_u32);
     assert!(DataConverter::from(&value).to::<f32>().is_err());
     assert_eq!(
-        DataConverter::from(&value)
-            .to_with::<f32>(&DataConversionOptions::lossy()),
+        DataConverter::from(&value).to_with::<f32>(&DataConversionOptions::lossy()),
         Ok(16_777_216.0),
     );
 }

@@ -67,8 +67,7 @@ fn test_scalar_item_error_reports_source_index() {
 /// Test conversion into a target-aware scalar conversion error.
 #[test]
 fn test_scalar_item_error_into_data_conversion_error() {
-    let error =
-        ScalarItemError::new(3).into_data_conversion_error(DataType::UInt16);
+    let error = ScalarItemError::new(3).into_data_conversion_error(DataType::UInt16);
 
     assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
     assert_eq!(error.from_type(), Some(DataType::String));
@@ -79,8 +78,7 @@ fn test_scalar_item_error_into_data_conversion_error() {
 /// Test conversion into a list error preserving the original source index.
 #[test]
 fn test_scalar_item_error_into_list_conversion_error() {
-    let error =
-        ScalarItemError::new(3).into_list_conversion_error(DataType::Bool);
+    let error = ScalarItemError::new(3).into_list_conversion_error(DataType::Bool);
 
     assert_eq!(error.source_index(), 3);
     assert_eq!(

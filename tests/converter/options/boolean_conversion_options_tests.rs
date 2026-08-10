@@ -143,10 +143,8 @@ fn test_boolean_conversion_options_only_reject_cross_set_conflicts() {
 /// Characterizes validation for large disjoint literal collections.
 #[test]
 fn test_boolean_conversion_options_validate_large_disjoint_sets() {
-    let true_literals =
-        (0..4096).map(|index| format!("true-{index}")).collect();
-    let false_literals =
-        (0..4096).map(|index| format!("false-{index}")).collect();
+    let true_literals = (0..4096).map(|index| format!("true-{index}")).collect();
+    let false_literals = (0..4096).map(|index| format!("false-{index}")).collect();
 
     assert!(
         BooleanConversionOptions::try_new(
@@ -167,8 +165,7 @@ fn test_boolean_conversion_options_serde_and_defaults() {
     assert_eq!(BooleanConversionOptions::DEFAULT_FALSE_LITERALS, &["false"],);
     assert_eq!(defaults.true_literals(), &["true".to_string()]);
     assert_eq!(defaults.false_literals(), &["false".to_string()]);
-    let wire = serde_json::to_string(&defaults)
-        .expect("boolean options should serialize");
+    let wire = serde_json::to_string(&defaults).expect("boolean options should serialize");
     assert_eq!(
         serde_json::from_str::<BooleanConversionOptions>(&wire)
             .expect("boolean options should deserialize"),

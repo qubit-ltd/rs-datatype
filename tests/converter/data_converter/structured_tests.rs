@@ -148,9 +148,8 @@ fn assert_invalid_reason<T>(
 #[cfg(feature = "json")]
 #[test]
 fn test_data_converter_rejects_oversize_structured_text() {
-    let options = DataConversionOptions::default().with_structured_limits(
-        StructuredConversionLimits::default().with_max_text_bytes(2),
-    );
+    let options = DataConversionOptions::default()
+        .with_structured_limits(StructuredConversionLimits::default().with_max_text_bytes(2));
 
     assert!(
         DataConverter::from("[]")
@@ -172,8 +171,7 @@ fn test_data_converter_rejects_oversize_structured_text() {
             .is_ok()
     );
     assert_eq!(
-        DataConverter::from(r#"{"a":"b"}"#)
-            .to_with::<HashMap<String, String>>(&options),
+        DataConverter::from(r#"{"a":"b"}"#).to_with::<HashMap<String, String>>(&options),
         Err(DataConversionError::limit_exceeded(
             DataType::String,
             DataType::StringMap,
@@ -186,9 +184,8 @@ fn test_data_converter_rejects_oversize_structured_text() {
 #[cfg(feature = "url")]
 #[test]
 fn test_data_converter_rejects_oversize_url_text() {
-    let options = DataConversionOptions::default().with_structured_limits(
-        StructuredConversionLimits::default().with_max_text_bytes(14),
-    );
+    let options = DataConversionOptions::default()
+        .with_structured_limits(StructuredConversionLimits::default().with_max_text_bytes(14));
 
     assert_eq!(
         DataConverter::from("https://a.test").to_with::<Url>(&options),
@@ -279,8 +276,7 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
         },
     );
     assert_invalid_reason(
-        DataConverter::from(r#"{"key":"value"} []"#)
-            .to::<HashMap<String, String>>(),
+        DataConverter::from(r#"{"key":"value"} []"#).to::<HashMap<String, String>>(),
         DataType::StringMap,
         InvalidValueReason::Deserialization {
             format: DataFormat::Json,
@@ -315,8 +311,7 @@ fn test_data_converter_string_map_identity_without_json() {
 /// a borrowed source remains independently owned.
 #[test]
 fn test_data_converter_consuming_string_map_identity_reuses_owned_storage() {
-    let source =
-        HashMap::from([("key".to_owned(), "owned payload".to_owned())]);
+    let source = HashMap::from([("key".to_owned(), "owned payload".to_owned())]);
     let source_pointer = source
         .get("key")
         .expect("test map should contain key")
@@ -332,8 +327,7 @@ fn test_data_converter_consuming_string_map_identity_reuses_owned_storage() {
         source_pointer,
     );
 
-    let borrowed =
-        HashMap::from([("key".to_owned(), "borrowed payload".to_owned())]);
+    let borrowed = HashMap::from([("key".to_owned(), "borrowed payload".to_owned())]);
     let borrowed_pointer = borrowed
         .get("key")
         .expect("test map should contain key")
@@ -388,9 +382,7 @@ fn test_data_converter_consuming_string_map_to_json_orders_keys() {
             let keys = source.keys().map(String::as_str).collect::<Vec<_>>();
             (!keys.is_sorted()).then_some(source)
         })
-        .expect(
-            "randomized HashMap iteration should produce a noncanonical order",
-        );
+        .expect("randomized HashMap iteration should produce a noncanonical order");
 
     let converted = DataConverter::from(source)
         .into_target::<serde_json::Value>()
