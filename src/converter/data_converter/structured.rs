@@ -27,9 +27,9 @@ use super::internal::sorted_string_map_entries;
 use super::string_source::normalize;
 #[cfg(feature = "json")]
 use crate::converter::ConversionResource;
-#[cfg(feature = "json")]
 use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
+#[cfg(any(feature = "json", feature = "url"))]
 use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
 #[cfg(feature = "json")]
