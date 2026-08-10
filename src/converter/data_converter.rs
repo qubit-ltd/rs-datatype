@@ -29,6 +29,8 @@ use chrono::Utc;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use qubit_budget::BudgetError;
+#[cfg(feature = "json")]
+use serde_json::Value;
 #[cfg(feature = "url")]
 use url::Url;
 
@@ -249,7 +251,7 @@ pub enum DataConverter<'a> {
     #[cfg(feature = "json")]
     Json(
         /// Borrowed or owned JSON source value.
-        Cow<'a, serde_json::Value>,
+        Cow<'a, Value>,
     ),
 }
 
@@ -562,12 +564,12 @@ fn account_string_map_structure(
 /// Accounts nodes and point structural limits in a borrowed JSON value.
 #[cfg(feature = "json")]
 fn account_json_structure(
-    value: &serde_json::Value,
+    value: &Value,
     depth: usize,
     session: &mut ConversionSession<'_>,
 ) -> Result<(), BudgetError<ConversionResource, usize>> {
     match value {
-        serde_json::Value::Array(values) => {
+        Value::Array(values) => {
             session.enter_sequence(depth, values.len())?;
             for value in values {
                 account_json_structure(
@@ -577,7 +579,7 @@ fn account_json_structure(
                 )?;
             }
         }
-        serde_json::Value::Object(values) => {
+        Value::Object(values) => {
             session.enter_map(depth, values.len())?;
             for value in values.values() {
                 account_json_structure(
