@@ -203,10 +203,7 @@ impl DataConversionOptions {
     ///
     /// Returns the updated options value.
     #[inline(always)]
-    pub fn with_numeric_options(
-        mut self,
-        numeric: NumericConversionOptions,
-    ) -> Self {
+    pub fn with_numeric_options(mut self, numeric: NumericConversionOptions) -> Self {
         self.numeric = numeric;
         self
     }
@@ -232,10 +229,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_string_options(
-        mut self,
-        string: StringConversionOptions,
-    ) -> Self {
+    pub fn with_string_options(mut self, string: StringConversionOptions) -> Self {
         self.string = string;
         self
     }
@@ -250,10 +244,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_blank_string_policy(
-        mut self,
-        policy: BlankStringPolicy,
-    ) -> Self {
+    pub fn with_blank_string_policy(mut self, policy: BlankStringPolicy) -> Self {
         self.string = self.string.with_blank_string_policy(policy);
         self
     }
@@ -279,10 +270,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_boolean_options(
-        mut self,
-        boolean: BooleanConversionOptions,
-    ) -> Self {
+    pub fn with_boolean_options(mut self, boolean: BooleanConversionOptions) -> Self {
         self.boolean = boolean;
         self
     }
@@ -308,10 +296,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_collection_options(
-        mut self,
-        collection: CollectionConversionOptions,
-    ) -> Self {
+    pub fn with_collection_options(mut self, collection: CollectionConversionOptions) -> Self {
         self.collection = collection;
         self
     }
@@ -352,10 +337,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_duration_options(
-        mut self,
-        duration: DurationConversionOptions,
-    ) -> Self {
+    pub fn with_duration_options(mut self, duration: DurationConversionOptions) -> Self {
         self.duration = duration;
         self
     }
@@ -382,10 +364,7 @@ impl DataConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_structured_limits(
-        mut self,
-        structured: StructuredConversionLimits,
-    ) -> Self {
+    pub fn with_structured_limits(mut self, structured: StructuredConversionLimits) -> Self {
         self.structured = structured;
         self
     }
@@ -399,10 +378,7 @@ impl DataConversionOptions {
 
     /// Returns a copy with different cumulative conversion budgets.
     #[inline(always)]
-    pub fn with_budget_limits(
-        mut self,
-        budget: ConversionBudgetLimits,
-    ) -> Self {
+    pub fn with_budget_limits(mut self, budget: ConversionBudgetLimits) -> Self {
         self.budget = budget;
         self
     }

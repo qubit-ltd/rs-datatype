@@ -51,9 +51,7 @@ impl NumericConversionLimits {
 
     /// Returns the numeric text resource limit.
     #[inline(always)]
-    pub const fn max_text_bytes_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, usize> {
+    pub const fn max_text_bytes_limit(&self) -> &ResourceLimit<ConversionResource, usize> {
         &self.max_text_bytes
     }
 
@@ -68,8 +66,7 @@ impl NumericConversionLimits {
     /// Updated limits.
     #[inline(always)]
     pub const fn with_max_text_bytes(mut self, maximum: usize) -> Self {
-        self.max_text_bytes =
-            ResourceLimit::new(ConversionResource::NumericTextBytes, maximum);
+        self.max_text_bytes = ResourceLimit::new(ConversionResource::NumericTextBytes, maximum);
         self
     }
 
@@ -86,9 +83,7 @@ impl NumericConversionLimits {
 
     /// Returns the BigInteger digit resource limit.
     #[inline(always)]
-    pub const fn max_big_integer_digits_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, usize> {
+    pub const fn max_big_integer_digits_limit(&self) -> &ResourceLimit<ConversionResource, usize> {
         &self.max_big_integer_digits
     }
 

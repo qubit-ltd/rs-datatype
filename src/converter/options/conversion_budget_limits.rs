@@ -44,9 +44,7 @@ impl ConversionBudgetLimits {
 
     /// Returns the item resource limit.
     #[inline(always)]
-    pub const fn max_items_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, usize> {
+    pub const fn max_items_limit(&self) -> &ResourceLimit<ConversionResource, usize> {
         &self.max_items
     }
 
@@ -65,17 +63,14 @@ impl ConversionBudgetLimits {
 
     /// Returns the input byte resource limit.
     #[inline(always)]
-    pub const fn max_input_bytes_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, usize> {
+    pub const fn max_input_bytes_limit(&self) -> &ResourceLimit<ConversionResource, usize> {
         &self.max_input_bytes
     }
 
     /// Returns a copy with a different cumulative input byte maximum.
     #[inline(always)]
     pub const fn with_max_input_bytes(mut self, maximum: usize) -> Self {
-        self.max_input_bytes =
-            ResourceLimit::new(ConversionResource::InputBytes, maximum);
+        self.max_input_bytes = ResourceLimit::new(ConversionResource::InputBytes, maximum);
         self
     }
 
@@ -87,17 +82,14 @@ impl ConversionBudgetLimits {
 
     /// Returns the output byte resource limit.
     #[inline(always)]
-    pub const fn max_output_bytes_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, usize> {
+    pub const fn max_output_bytes_limit(&self) -> &ResourceLimit<ConversionResource, usize> {
         &self.max_output_bytes
     }
 
     /// Returns a copy with a different cumulative output byte maximum.
     #[inline(always)]
     pub const fn with_max_output_bytes(mut self, maximum: usize) -> Self {
-        self.max_output_bytes =
-            ResourceLimit::new(ConversionResource::OutputBytes, maximum);
+        self.max_output_bytes = ResourceLimit::new(ConversionResource::OutputBytes, maximum);
         self
     }
 
@@ -109,9 +101,7 @@ impl ConversionBudgetLimits {
 
     /// Returns the structured node resource limit.
     #[inline(always)]
-    pub const fn max_structured_nodes_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, usize> {
+    pub const fn max_structured_nodes_limit(&self) -> &ResourceLimit<ConversionResource, usize> {
         &self.max_structured_nodes
     }
 
@@ -129,10 +119,7 @@ impl Default for ConversionBudgetLimits {
     #[inline]
     fn default() -> Self {
         Self {
-            max_items: ResourceLimit::new(
-                ConversionResource::Items,
-                Self::DEFAULT_MAX_ITEMS,
-            ),
+            max_items: ResourceLimit::new(ConversionResource::Items, Self::DEFAULT_MAX_ITEMS),
             max_input_bytes: ResourceLimit::new(
                 ConversionResource::InputBytes,
                 Self::DEFAULT_MAX_INPUT_BYTES,

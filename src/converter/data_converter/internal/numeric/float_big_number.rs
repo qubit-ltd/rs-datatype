@@ -56,9 +56,7 @@ pub(super) fn bigint_to_f64(
             InvalidValueReason::OutOfRange,
         ));
     }
-    if policy == FloatRoundingPolicy::Exact
-        && BigInt::from_f64(converted).as_ref() != Some(value)
-    {
+    if policy == FloatRoundingPolicy::Exact && BigInt::from_f64(converted).as_ref() != Some(value) {
         Err(DataConversionError::invalid(
             from,
             to,
@@ -101,9 +99,7 @@ pub(super) fn bigint_to_f32(
             InvalidValueReason::OutOfRange,
         ));
     }
-    if policy == FloatRoundingPolicy::Exact
-        && BigInt::from_f32(converted).as_ref() != Some(value)
-    {
+    if policy == FloatRoundingPolicy::Exact && BigInt::from_f32(converted).as_ref() != Some(value) {
         Err(DataConversionError::invalid(
             from,
             to,

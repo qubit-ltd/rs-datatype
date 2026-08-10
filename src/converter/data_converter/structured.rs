@@ -16,15 +16,9 @@ use qubit_budget::from_slice_seed_with_budget;
 #[cfg(feature = "json")]
 use qubit_budget::from_slice_with_budget;
 #[cfg(feature = "json")]
-use serde_json::Error as JsonError;
-#[cfg(feature = "json")]
 use serde_json::Value;
-#[cfg(feature = "json")]
-use serde_json::to_string;
 
 use super::DataConverter;
-#[cfg(feature = "json")]
-use super::internal::CanonicalStringMap;
 #[cfg(feature = "json")]
 use super::internal::StringMapVisitor;
 #[cfg(feature = "json")]
@@ -102,18 +96,6 @@ fn string_map_into_json(value: HashMap<String, String>) -> Value {
     )
 }
 
-/// Serializes a string map as canonical JSON text without cloning its entries.
-///
-/// # Errors
-///
-/// Returns a JSON serialization error if the serializer rejects the output.
-#[cfg(feature = "json")]
-pub(super) fn string_map_to_json_text(
-    value: &HashMap<String, String>,
-) -> Result<String, JsonError> {
-    to_string(&CanonicalStringMap { value })
-}
-
 #[cfg(feature = "json")]
 impl DataConversionTarget for Value {
     /// Converts a borrowed runtime value to JSON.
@@ -140,19 +122,9 @@ impl DataConversionTarget for Value {
             DataConverter::Json(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Json)?;
-                check_structured_text_limit(
-                    value,
-                    source.data_type(),
-                    DataType::Json,
-                    options,
-                )?;
-                from_slice_with_budget(
-                    value.as_bytes(),
-                    session.json_budget_mut(),
-                )
-                .map_err(|error| {
-                    map_json_decode_error(source, DataType::Json, error)
-                })
+                check_structured_text_limit(value, source.data_type(), DataType::Json, options)?;
+                from_slice_with_budget(value.as_bytes(), session.json_budget_mut())
+                    .map_err(|error| map_json_decode_error(source, DataType::Json, error))
             }
             DataConverter::StringMap(value) => Ok(string_map_to_json(value)),
             DataConverter::Unset(_) => Err(source.missing(DataType::Json)),
@@ -182,9 +154,7 @@ impl DataConversionTarget for Value {
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::Json(value) => Ok(value.into_owned()),
-            DataConverter::StringMap(value) => {
-                Ok(string_map_into_json(value.into_owned()))
-            }
+            DataConverter::StringMap(value) => Ok(string_map_into_json(value.into_owned())),
             source => Self::convert_from(&source, session),
         }
     }
@@ -229,18 +199,14 @@ fn map_json_decode_error_from_type(
     error: JsonSerdeError<ConversionResource>,
 ) -> DataConversionError {
     match error {
-        JsonSerdeError::Budget(error) => {
-            DataConversionError::limit_exceeded(source, target, error)
-        }
-        JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => {
-            DataConversionError::invalid(
-                source,
-                target,
-                InvalidValueReason::Deserialization {
-                    format: DataFormat::Json,
-                },
-            )
-        }
+        JsonSerdeError::Budget(error) => DataConversionError::limit_exceeded(source, target, error),
+        JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => DataConversionError::invalid(
+            source,
+            target,
+            InvalidValueReason::Deserialization {
+                format: DataFormat::Json,
+            },
+        ),
     }
 }
 
@@ -284,9 +250,7 @@ impl DataConversionTarget for HashMap<String, String> {
                     StringMapVisitor,
                     session.json_budget_mut(),
                 )
-                .map_err(|error| {
-                    map_json_decode_error(source, DataType::StringMap, error)
-                })
+                .map_err(|error| map_json_decode_error(source, DataType::StringMap, error))
             }
             DataConverter::Unset(_) => Err(source.missing(DataType::StringMap)),
             _ => Err(source.unsupported(DataType::StringMap)),

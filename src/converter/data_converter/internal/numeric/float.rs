@@ -20,10 +20,10 @@ use super::float_text::parse_text_f32;
 use super::float_text::parse_text_f64;
 use super::integer::scalar_integer_magnitude;
 use super::syntax::normalize_numeric_text;
+use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
-use crate::converter::ConversionSession;
 use crate::converter::FloatRoundingPolicy;
 use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
@@ -262,12 +262,9 @@ impl DataConversionTarget for f32 {
                 }
                 let converted = *value as f32;
                 if !converted.is_finite() {
-                    return Err(
-                        source.invalid(to, InvalidValueReason::OutOfRange)
-                    );
+                    return Err(source.invalid(to, InvalidValueReason::OutOfRange));
                 }
-                if options.numeric().numeric_to_float()
-                    == FloatRoundingPolicy::Exact
+                if options.numeric().numeric_to_float() == FloatRoundingPolicy::Exact
                     && f64::from(converted) != *value
                 {
                     Err(source.invalid(to, InvalidValueReason::PrecisionLoss))
