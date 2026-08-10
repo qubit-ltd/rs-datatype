@@ -270,10 +270,12 @@ assert_eq!(values, [1, 2, 3]);
 
 ## 10. 扩展下游目标类型
 
-下游 crate 可以为自己的 newtype 实现 `DataConversionTarget`，并委托给内置目标。
+下游 crate 可以为自己的 newtype 实现 `DataConversionTarget`，并通过调用方的
+`ConversionSession` 委托给内置目标。委托会共享当前的条目、输入、输出和结构预算，
+不会把嵌套转换重复计为新的顶层条目。
 
 ```rust
-use qubit_datatype::{DataConversionError, DataConversionOptions,
+use qubit_datatype::{ConversionSession, DataConversionError,
     DataConversionTarget, DataConverter, DataType, DataTypeOf};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -284,10 +286,13 @@ impl DataTypeOf for Port {
 }
 
 impl DataConversionTarget for Port {
-    fn convert_from(source: &DataConverter<'_>, options: &DataConversionOptions)
+    fn convert_from(
+        source: &DataConverter<'_>,
+        session: &mut ConversionSession<'_>,
+    )
         -> Result<Self, DataConversionError>
     {
-        u16::convert_from(source, options).map(Self)
+        session.delegate::<u16>(source).map(Self)
     }
 }
 
