@@ -109,7 +109,11 @@ impl DataConversionError {
     ///
     /// An invalid-value conversion error.
     #[inline(always)]
-    pub const fn invalid(from: DataType, to: DataType, reason: InvalidValueReason) -> Self {
+    pub const fn invalid(
+        from: DataType,
+        to: DataType,
+        reason: InvalidValueReason,
+    ) -> Self {
         Self {
             inner: DataConversionErrorInner::InvalidValue { from, to, reason },
         }
@@ -145,12 +149,18 @@ impl DataConversionError {
     #[inline(always)]
     pub const fn kind(&self) -> DataConversionErrorKind {
         match &self.inner {
-            DataConversionErrorInner::Missing { .. } => DataConversionErrorKind::Missing,
+            DataConversionErrorInner::Missing { .. } => {
+                DataConversionErrorKind::Missing
+            }
             DataConversionErrorInner::EmptyCollection { .. } => {
                 DataConversionErrorKind::EmptyCollection
             }
-            DataConversionErrorInner::Unsupported { .. } => DataConversionErrorKind::Unsupported,
-            DataConversionErrorInner::InvalidValue { .. } => DataConversionErrorKind::InvalidValue,
+            DataConversionErrorInner::Unsupported { .. } => {
+                DataConversionErrorKind::Unsupported
+            }
+            DataConversionErrorInner::InvalidValue { .. } => {
+                DataConversionErrorKind::InvalidValue
+            }
             DataConversionErrorInner::LimitExceeded { .. } => {
                 DataConversionErrorKind::LimitExceeded
             }
@@ -188,7 +198,9 @@ impl DataConversionError {
             DataConversionErrorInner::Missing { from, .. }
             | DataConversionErrorInner::Unsupported { from, .. }
             | DataConversionErrorInner::InvalidValue { from, .. }
-            | DataConversionErrorInner::LimitExceeded { from, .. } => Some(*from),
+            | DataConversionErrorInner::LimitExceeded { from, .. } => {
+                Some(*from)
+            }
             DataConversionErrorInner::EmptyCollection { .. } => None,
         }
     }
@@ -218,7 +230,9 @@ impl DataConversionError {
     #[inline(always)]
     pub const fn reason(&self) -> Option<&InvalidValueReason> {
         match &self.inner {
-            DataConversionErrorInner::InvalidValue { reason, .. } => Some(reason),
+            DataConversionErrorInner::InvalidValue { reason, .. } => {
+                Some(reason)
+            }
             _ => None,
         }
     }
@@ -229,9 +243,13 @@ impl DataConversionError {
     ///
     /// `Some` for a resource-limit error, or `None` for every other error kind.
     #[inline(always)]
-    pub const fn budget_error(&self) -> Option<&BudgetError<ConversionResource, usize>> {
+    pub const fn budget_error(
+        &self,
+    ) -> Option<&BudgetError<ConversionResource, usize>> {
         match &self.inner {
-            DataConversionErrorInner::LimitExceeded { source, .. } => Some(source),
+            DataConversionErrorInner::LimitExceeded { source, .. } => {
+                Some(source)
+            }
             _ => None,
         }
     }
