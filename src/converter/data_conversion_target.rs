@@ -22,8 +22,8 @@ use crate::DataTypeOf;
 ///
 /// ```
 /// use qubit_datatype::{
-///     DataConversionError, DataConversionOptions, DataConversionTarget,
-///     DataConverter, DataType, DataTypeOf,
+///     ConversionSession, DataConversionError, DataConversionOptions,
+///     DataConversionTarget, DataConverter, DataType, DataTypeOf,
 /// };
 ///
 /// struct Port(u16);
@@ -38,6 +38,20 @@ use crate::DataTypeOf;
 ///         options: &DataConversionOptions,
 ///     ) -> Result<Self, DataConversionError> {
 ///         u16::convert_from(source, options).map(Self)
+///     }
+///
+///     fn convert_from_in(
+///         source: &DataConverter<'_>,
+///         session: &mut ConversionSession<'_>,
+///     ) -> Result<Self, DataConversionError> {
+///         u16::convert_from_in(source, session).map(Self)
+///     }
+///
+///     fn convert_owned_in(
+///         source: DataConverter<'_>,
+///         session: &mut ConversionSession<'_>,
+///     ) -> Result<Self, DataConversionError> {
+///         u16::convert_owned_in(source, session).map(Self)
 ///     }
 /// }
 ///
@@ -94,8 +108,10 @@ pub trait DataConversionTarget: DataTypeOf + Sized {
     /// Converts a borrowed source with a reusable session.
     ///
     /// The default implementation delegates to the established options-based
-    /// target hook. Built-in conversion facades use this hook to share their
-    /// outer accounting session without changing downstream target code.
+    /// target hook and therefore does not pass `session` to another target.
+    /// Custom targets that delegate to built-in targets and need their nested
+    /// conversion to share item, byte, or structural budgets must override this
+    /// hook and pass the same session onward.
     #[inline(always)]
     fn convert_from_in(
         source: &DataConverter<'_>,
@@ -105,6 +121,11 @@ pub trait DataConversionTarget: DataTypeOf + Sized {
     }
 
     /// Converts an owned source with a reusable session.
+    ///
+    /// The default implementation delegates to the options-based owned hook.
+    /// Custom targets that delegate to another target and need its nested
+    /// conversion to share session accounting must override this hook and pass
+    /// the same session onward.
     #[inline(always)]
     fn convert_owned_in(
         source: DataConverter<'_>,

@@ -10,12 +10,42 @@
 use std::collections::HashMap;
 use std::fmt;
 
+use serde::Deserializer;
+use serde::de::DeserializeSeed;
 use serde::de::Error as DeError;
 use serde::de::MapAccess;
 use serde::de::Visitor;
 
 /// Accepts JSON objects whose keys are unique and values are strings.
 pub(in crate::converter::data_converter) struct StringMapVisitor;
+
+impl<'de> DeserializeSeed<'de> for StringMapVisitor {
+    type Value = HashMap<String, String>;
+
+    /// Deserializes exactly one JSON object with unique string keys and values.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `D` - Serde deserializer supplying one JSON value.
+    ///
+    /// # Parameters
+    ///
+    /// * `deserializer` - Source from which the JSON object is decoded.
+    ///
+    /// # Returns
+    ///
+    /// Returns an owned string map when each object member is valid and unique.
+    ///
+    /// # Errors
+    ///
+    /// Returns the deserializer error when the value is not a valid string map.
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_map(self)
+    }
+}
 
 impl<'de> Visitor<'de> for StringMapVisitor {
     type Value = HashMap<String, String>;
