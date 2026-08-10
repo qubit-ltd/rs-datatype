@@ -67,6 +67,8 @@ use chrono::Utc;
 use num_bigint::BigInt;
 #[cfg(any(feature = "json", feature = "url"))]
 use qubit_budget::BudgetError;
+#[cfg(feature = "json")]
+use qubit_datatype::ConversionBudgetLimits;
 #[cfg(any(feature = "json", feature = "url"))]
 use qubit_datatype::ConversionResource;
 #[cfg(any(feature = "json", feature = "url"))]
@@ -146,6 +148,23 @@ fn assert_invalid_reason<T>(
     ));
 }
 
+/// Asserts that a conversion fails because the expected budget resource was
+/// exceeded.
+#[cfg(feature = "json")]
+fn assert_budget_resource<T>(
+    result: Result<T, DataConversionError>,
+    expected: ConversionResource,
+) {
+    let error = match result {
+        Ok(_) => panic!("conversion should exceed the configured budget"),
+        Err(error) => error,
+    };
+    assert_eq!(
+        error.budget_error().map(|error| *error.resource()),
+        Some(expected),
+    );
+}
+
 /// Tests that structured text conversions enforce the configured byte limit.
 #[cfg(feature = "json")]
 #[test]
@@ -189,6 +208,107 @@ fn test_data_converter_rejects_oversize_structured_text() {
                 maximum: 2,
             },
         )),
+    );
+}
+
+/// Tests that JSON text decoding enforces every configured structural point
+/// limit before constructing a target value.
+#[cfg(feature = "json")]
+#[test]
+fn test_data_converter_rejects_json_text_exceeding_structure_limits() {
+    let depth_options = DataConversionOptions::default()
+        .with_structured_limits(
+            StructuredConversionLimits::default().with_max_depth(2),
+        );
+    assert_budget_resource(
+        DataConverter::from("[[0]]")
+            .to_with::<serde_json::Value>(&depth_options),
+        ConversionResource::StructuredDepth,
+    );
+
+    let sequence_options = DataConversionOptions::default()
+        .with_structured_limits(
+            StructuredConversionLimits::default().with_max_sequence_items(1),
+        );
+    assert_budget_resource(
+        DataConverter::from("[0,1]")
+            .to_with::<serde_json::Value>(&sequence_options),
+        ConversionResource::SequenceItems,
+    );
+
+    let map_options = DataConversionOptions::default().with_structured_limits(
+        StructuredConversionLimits::default().with_max_map_entries(1),
+    );
+    assert_budget_resource(
+        DataConverter::from(r#"{"first":"1","second":"2"}"#).to_with::<HashMap<
+            String,
+            String,
+        >>(
+            &map_options
+        ),
+        ConversionResource::MapEntries,
+    );
+}
+
+/// Tests that JSON text decoding consumes the shared structural node budget.
+#[cfg(feature = "json")]
+#[test]
+fn test_data_converter_json_text_accumulates_structured_nodes_in_session() {
+    let options = DataConversionOptions::default().with_budget_limits(
+        ConversionBudgetLimits::default().with_max_structured_nodes(2),
+    );
+    let mut session = options.session();
+
+    DataConverter::from("[0]")
+        .to_in::<serde_json::Value>(&mut session)
+        .expect("the first two JSON nodes should fit");
+    assert_budget_resource(
+        DataConverter::from("0").to_in::<serde_json::Value>(&mut session),
+        ConversionResource::StructuredNodes,
+    );
+}
+
+/// Tests that structured-source budget enforcement does not depend on source
+/// ownership or whether the target type changes.
+#[cfg(feature = "json")]
+#[test]
+fn test_data_converter_structured_budget_is_content_invariant() {
+    let json_options = DataConversionOptions::default().with_budget_limits(
+        ConversionBudgetLimits::default().with_max_structured_nodes(1),
+    );
+    let json = serde_json::json!(["value"]);
+    assert_budget_resource(
+        DataConverter::from(&json).to_with::<serde_json::Value>(&json_options),
+        ConversionResource::StructuredNodes,
+    );
+    assert_budget_resource(
+        DataConverter::from(json)
+            .into_target_with::<serde_json::Value>(&json_options),
+        ConversionResource::StructuredNodes,
+    );
+
+    let map_options = DataConversionOptions::default().with_budget_limits(
+        ConversionBudgetLimits::default().with_max_structured_nodes(1),
+    );
+    let map = HashMap::from([("key".to_owned(), "value".to_owned())]);
+    assert_budget_resource(
+        DataConverter::from(&map)
+            .to_with::<HashMap<String, String>>(&map_options),
+        ConversionResource::StructuredNodes,
+    );
+    assert_budget_resource(
+        DataConverter::from(map)
+            .into_target_with::<HashMap<String, String>>(&map_options),
+        ConversionResource::StructuredNodes,
+    );
+
+    let string_options = DataConversionOptions::default().with_budget_limits(
+        ConversionBudgetLimits::default().with_max_structured_nodes(1),
+    );
+    let json = serde_json::json!(["value"]);
+    assert_budget_resource(
+        DataConverter::from(json).into_target_with::<String>(&string_options),
+        ConversionResource::StructuredNodes,
     );
 }
 

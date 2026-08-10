@@ -25,9 +25,11 @@ use chrono::NaiveTime;
 use chrono::Utc;
 use libfuzzer_sys::fuzz_target;
 use num_bigint::BigInt;
+use qubit_datatype::ConversionBudgetLimits;
 use qubit_datatype::DataConversionOptions;
 use qubit_datatype::DataConversionTarget;
 use qubit_datatype::DataConverter;
+use qubit_datatype::StructuredConversionLimits;
 use serde_json::Value;
 use url::Url;
 
@@ -46,6 +48,16 @@ fuzz_target!(|data: &[u8]| {
         DataConversionOptions::strict(),
         DataConversionOptions::lossy(),
         DataConversionOptions::env_friendly(),
+        DataConversionOptions::strict()
+            .with_structured_limits(
+                StructuredConversionLimits::default()
+                    .with_max_depth(2)
+                    .with_max_sequence_items(2)
+                    .with_max_map_entries(2),
+            )
+            .with_budget_limits(
+                ConversionBudgetLimits::default().with_max_structured_nodes(4),
+            ),
     ];
 
     exercise_conversion::<bool>(&converter, &options);

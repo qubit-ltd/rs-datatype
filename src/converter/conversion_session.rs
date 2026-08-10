@@ -8,8 +8,9 @@
 //! Reusable accounting session for one or more data conversions.
 
 use qubit_budget::BudgetError;
+use qubit_budget::JsonBudget;
+use qubit_budget::JsonLimits;
 use qubit_budget::ResourceBudget;
-use qubit_budget::StructureBudget;
 use qubit_budget::StructureLimits;
 
 use super::conversion_resource::ConversionResource;
@@ -23,7 +24,7 @@ pub struct ConversionSession<'a> {
     items: ResourceBudget<ConversionResource, usize>,
     input_bytes: ResourceBudget<ConversionResource, usize>,
     output_bytes: ResourceBudget<ConversionResource, usize>,
-    structure: StructureBudget<ConversionResource, usize>,
+    json: JsonBudget<ConversionResource, usize>,
 }
 
 impl<'a> ConversionSession<'a> {
@@ -47,7 +48,9 @@ impl<'a> ConversionSession<'a> {
             output_bytes: ResourceBudget::from_limit(
                 *options.budget().max_output_bytes_limit(),
             ),
-            structure: structure_limits.budget(),
+            json: JsonLimits::empty()
+                .with_structure_limits(structure_limits)
+                .budget(),
         }
     }
 
@@ -136,7 +139,7 @@ impl<'a> ConversionSession<'a> {
         &mut self,
         depth: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.structure.enter_node(depth)
+        self.json.enter_node(depth)
     }
 
     /// Enters one structured sequence node after checking its item count.
@@ -146,7 +149,7 @@ impl<'a> ConversionSession<'a> {
         depth: usize,
         items: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.structure.enter_sequence(depth, items)
+        self.json.enter_array(depth, items)
     }
 
     /// Enters one structured map node after checking its entry count.
@@ -156,7 +159,7 @@ impl<'a> ConversionSession<'a> {
         depth: usize,
         entries: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.structure.enter_map(depth, entries)
+        self.json.enter_object(depth, entries)
     }
 
     /// Checks a structured depth without changing session state.
@@ -165,7 +168,7 @@ impl<'a> ConversionSession<'a> {
         &self,
         depth: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.structure.check_depth(depth)
+        self.json.check_depth(depth)
     }
 
     /// Checks one sequence item count without changing session state.
@@ -174,7 +177,7 @@ impl<'a> ConversionSession<'a> {
         &self,
         items: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.structure.check_sequence_items(items)
+        self.json.check_sequence_items(items)
     }
 
     /// Checks one map entry count without changing session state.
@@ -183,7 +186,24 @@ impl<'a> ConversionSession<'a> {
         &self,
         entries: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.structure.check_map_entries(entries)
+        self.json.check_map_entries(entries)
+    }
+
+    /// Returns the shared JSON budget for budget-aware structured decoding.
+    ///
+    /// This crate-private hook must be used only by converters that have
+    /// already selected a supported JSON target and normalized any textual
+    /// input.
+    ///
+    /// # Returns
+    ///
+    /// Returns the mutable JSON budget shared by this conversion session.
+    #[cfg(feature = "json")]
+    #[inline(always)]
+    pub(crate) fn json_budget_mut(
+        &mut self,
+    ) -> &mut JsonBudget<ConversionResource, usize> {
+        &mut self.json
     }
 
     /// Returns cumulative item usage.

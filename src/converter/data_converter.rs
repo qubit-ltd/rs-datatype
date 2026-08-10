@@ -28,12 +28,10 @@ use chrono::NaiveTime;
 use chrono::Utc;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-#[cfg(feature = "json")]
 use qubit_budget::BudgetError;
 #[cfg(feature = "url")]
 use url::Url;
 
-#[cfg(feature = "json")]
 use super::conversion_resource::ConversionResource;
 use super::conversion_session::ConversionSession;
 use super::data_conversion_target::DataConversionTarget;
@@ -404,8 +402,8 @@ impl DataConverter<'_> {
         T::convert_owned_in(self, session)
     }
 
-    /// Charges textual input and borrowed structured traversal work before a
-    /// target parser can allocate or recurse.
+    /// Charges textual input and supported structured values before a target
+    /// parser can allocate or recurse.
     fn charge_input_for_target(
         &self,
         target: DataType,
@@ -429,8 +427,8 @@ impl DataConverter<'_> {
                 )?;
             }
             #[cfg(feature = "json")]
-            Self::Json(Cow::Borrowed(value))
-                if matches!(target, DataType::Json | DataType::StringMap) =>
+            Self::Json(value)
+                if matches!(target, DataType::Json | DataType::String) =>
             {
                 account_json_structure(value, 1, session).map_err(|limit| {
                     DataConversionError::limit_exceeded(
@@ -440,26 +438,30 @@ impl DataConverter<'_> {
                     )
                 })?;
             }
-            #[cfg(feature = "json")]
-            Self::StringMap(Cow::Borrowed(value))
-                if matches!(target, DataType::Json | DataType::String) =>
-            {
-                session.enter_map(1, value.len()).map_err(|limit| {
-                    DataConversionError::limit_exceeded(
-                        self.data_type(),
-                        target,
-                        limit,
-                    )
-                })?;
-                for _ in value.keys() {
-                    session.enter_node(2).map_err(|limit| {
+            Self::StringMap(value) if target == DataType::StringMap => {
+                account_string_map_structure(value, 1, session).map_err(
+                    |limit| {
                         DataConversionError::limit_exceeded(
                             self.data_type(),
                             target,
                             limit,
                         )
-                    })?;
-                }
+                    },
+                )?;
+            }
+            #[cfg(feature = "json")]
+            Self::StringMap(value)
+                if matches!(target, DataType::Json | DataType::String) =>
+            {
+                account_string_map_structure(value, 1, session).map_err(
+                    |limit| {
+                        DataConversionError::limit_exceeded(
+                            self.data_type(),
+                            target,
+                            limit,
+                        )
+                    },
+                )?;
             }
             _ => {}
         }
@@ -526,6 +528,35 @@ impl DataConverter<'_> {
     ) -> DataConversionError {
         DataConversionError::invalid(self.data_type(), to, reason)
     }
+}
+
+/// Accounts one string map and its scalar values against a conversion session.
+///
+/// # Parameters
+///
+/// * `value` - Map whose container and string values are traversed.
+/// * `depth` - Root-inclusive depth of the map container.
+/// * `session` - Shared budget that records the traversal.
+///
+/// # Returns
+///
+/// Returns successfully after every node fits the configured point and
+/// cumulative limits.
+///
+/// # Errors
+///
+/// Returns a budget error when the map depth, entry count, or cumulative node
+/// usage exceeds its configured maximum.
+fn account_string_map_structure(
+    value: &HashMap<String, String>,
+    depth: usize,
+    session: &mut ConversionSession<'_>,
+) -> Result<(), BudgetError<ConversionResource, usize>> {
+    session.enter_map(depth, value.len())?;
+    for _ in value {
+        session.enter_node(depth.saturating_add(1))?;
+    }
+    Ok(())
 }
 
 /// Accounts nodes and point structural limits in a borrowed JSON value.
