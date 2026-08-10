@@ -36,3 +36,10 @@ path = "fuzz_targets/numeric_comparison.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "conversion_budget"
+path = "fuzz_targets/conversion_budget.rs"
+test = false
+doc = false
+bench = false
