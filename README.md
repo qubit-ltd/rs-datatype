@@ -314,10 +314,12 @@ first retained value matters.
 ## 10. Downstream target types
 
 Downstream crates can implement `DataConversionTarget` for their own newtypes
-and delegate to a built-in target.
+and delegate through the caller's `ConversionSession`. Delegation shares the
+active item, input, output, and structured budgets without charging the nested
+conversion as a second top-level item.
 
 ```rust
-use qubit_datatype::{DataConversionError, DataConversionOptions,
+use qubit_datatype::{ConversionSession, DataConversionError,
     DataConversionTarget, DataConverter, DataType, DataTypeOf};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -328,10 +330,13 @@ impl DataTypeOf for Port {
 }
 
 impl DataConversionTarget for Port {
-    fn convert_from(source: &DataConverter<'_>, options: &DataConversionOptions)
+    fn convert_from(
+        source: &DataConverter<'_>,
+        session: &mut ConversionSession<'_>,
+    )
         -> Result<Self, DataConversionError>
     {
-        u16::convert_from(source, options).map(Self)
+        session.delegate::<u16>(source).map(Self)
     }
 }
 
