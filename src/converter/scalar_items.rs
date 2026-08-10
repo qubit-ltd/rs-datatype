@@ -9,6 +9,7 @@
 
 use qubit_budget::ResourceBudget;
 
+use super::ConversionResource;
 use super::error::ScalarItemError;
 use super::options::CollectionConversionOptions;
 use super::options::EmptyItemPolicy;
@@ -48,18 +49,11 @@ pub struct ScalarItems<'a> {
     /// Maximum number of retained items.
     max_items: usize,
     /// Monotonic accounting for retained scalar items.
-    item_budget: ResourceBudget<ScalarItemResource, usize>,
+    item_budget: ResourceBudget<ConversionResource, usize>,
     /// Byte offset of the next raw item, or `None` after the final item.
     next_start: Option<usize>,
     /// Index of the next raw item before filtering.
     next_source_index: usize,
-}
-
-/// The resource dimension consumed by each retained scalar item.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ScalarItemResource {
-    /// One scalar item that survived normalization and empty-item policy.
-    Items,
 }
 
 impl Clone for ScalarItems<'_> {
@@ -71,10 +65,8 @@ impl Clone for ScalarItems<'_> {
     /// recreated with the same accumulated consumption, which is valid because
     /// every original consumption had already succeeded.
     fn clone(&self) -> Self {
-        let mut item_budget = ResourceBudget::new(
-            *self.item_budget.resource(),
-            self.item_budget.limit(),
-        );
+        let mut item_budget =
+            ResourceBudget::new(*self.item_budget.resource(), self.item_budget.limit());
         item_budget
             .try_consume(self.item_budget.used())
             .expect("accepted retained items must fit the cloned limit");
@@ -106,10 +98,7 @@ impl<'a> ScalarItems<'a> {
     ///
     /// An iterator borrowing both inputs and deferring all processing until
     /// iteration.
-    pub(super) fn new(
-        options: &'a CollectionConversionOptions,
-        value: &'a str,
-    ) -> Self {
+    pub(super) fn new(options: &'a CollectionConversionOptions, value: &'a str) -> Self {
         let delimiters = options.delimiters();
         let (ascii_delimiters, non_ascii_delimiters) = if delimiters.len() > 8 {
             let mut ascii = [false; 128];
@@ -136,10 +125,7 @@ impl<'a> ScalarItems<'a> {
             trim_items: options.trim_items(),
             empty_item_policy: options.empty_item_policy(),
             max_items: options.max_items(),
-            item_budget: ResourceBudget::new(
-                ScalarItemResource::Items,
-                options.max_items(),
-            ),
+            item_budget: ResourceBudget::new(ConversionResource::Items, options.max_items()),
             next_start: Some(0),
             next_source_index: 0,
         }
@@ -175,9 +161,7 @@ impl<'a> ScalarItems<'a> {
             if character.is_ascii() {
                 ascii[*character as usize]
             } else {
-                non_ascii_delimiters.is_some_and(|sorted| {
-                    sorted.binary_search(character).is_ok()
-                })
+                non_ascii_delimiters.is_some_and(|sorted| sorted.binary_search(character).is_ok())
             }
         }) {
             Some((relative_end, delimiter)) => {
@@ -213,10 +197,7 @@ impl<'a> ScalarItems<'a> {
     /// Returns [`ScalarItemError::ItemLimitExceeded`] for the first item beyond
     /// `max_items`. The iterator is exhausted before returning that error.
     #[inline]
-    fn retain_item(
-        &mut self,
-        item: ScalarItem<'a>,
-    ) -> Result<ScalarItem<'a>, ScalarItemError> {
+    fn retain_item(&mut self, item: ScalarItem<'a>) -> Result<ScalarItem<'a>, ScalarItemError> {
         if self.item_budget.try_consume(1).is_err() {
             self.next_start = None;
             return Err(ScalarItemError::item_limit_exceeded(

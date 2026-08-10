@@ -9,6 +9,7 @@
 
 mod boolean_literal_conflict_error;
 mod conversion_limit;
+mod conversion_limit_exceeded;
 mod data_conversion_error;
 mod data_conversion_error_kind;
 mod data_format;
@@ -20,6 +21,7 @@ mod string_normalization_error;
 
 pub use boolean_literal_conflict_error::BooleanLiteralConflictError;
 pub use conversion_limit::ConversionLimit;
+pub use conversion_limit_exceeded::ConversionLimitExceeded;
 pub use data_conversion_error::DataConversionError;
 pub use data_conversion_error_kind::DataConversionErrorKind;
 pub use data_format::DataFormat;

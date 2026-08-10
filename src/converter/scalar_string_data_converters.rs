@@ -9,6 +9,7 @@
 //!
 //! Provides conversion of a single scalar string into collection values.
 
+use super::conversion_session::ConversionSession;
 use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::DataConversionError;
@@ -97,19 +98,27 @@ impl<'a> ScalarStringDataConverters<'a> {
         'a: 'b,
         T: DataConversionTarget,
     {
+        let mut session = options.session();
+        self.to_vec_in(&mut session)
+    }
+
+    /// Converts the scalar string using an existing conversion session.
+    pub fn to_vec_in<T>(
+        self,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<Vec<T>, DataListConversionError>
+    where
+        T: DataConversionTarget,
+    {
+        let options = session.options();
         let items = options.collection().scalar_items(self.source);
         let mut converted = Vec::new();
         for item in items {
-            let item = item.map_err(|error| {
-                error.into_list_conversion_error(T::DATA_TYPE)
-            })?;
-            let value = match DataConverter::from(item.value).to_with(options) {
+            let item = item.map_err(|error| error.into_list_conversion_error(T::DATA_TYPE))?;
+            let value = match DataConverter::from(item.value).to_in::<T>(session) {
                 Ok(value) => value,
                 Err(source) => {
-                    return Err(DataListConversionError::new(
-                        item.source_index,
-                        source,
-                    ));
+                    return Err(DataListConversionError::new(item.source_index, source));
                 }
             };
             converted.push(value);
@@ -170,13 +179,27 @@ impl<'a> ScalarStringDataConverters<'a> {
         'a: 'b,
         T: DataConversionTarget,
     {
+        let mut session = options.session();
+        self.to_first_in(&mut session)
+    }
+
+    /// Converts the first scalar item using an existing conversion session.
+    #[inline]
+    pub fn to_first_in<T>(
+        self,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<T, DataConversionError>
+    where
+        T: DataConversionTarget,
+    {
+        let options = session.options();
         let first = options
             .collection()
             .scalar_items(self.source)
             .next()
             .ok_or(DataConversionError::empty_collection(T::DATA_TYPE))?
             .map_err(|error| error.into_data_conversion_error(T::DATA_TYPE))?;
-        DataConverter::from(first.value).to_with::<T>(options)
+        DataConverter::from(first.value).to_in::<T>(session)
     }
 }
 

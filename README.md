@@ -167,7 +167,10 @@ resource caps. Errors retain type context but never retain the source value.
 - `duration`: numeric input unit, suffixless input policy, unit parse mode,
   output unit, suffix formatting, rounding, and source-text byte limit.
 - `structured`: normalized input byte limits for URL, JSON, and StringMap
-  parsing; the default limit is 1 MiB.
+  parsing, plus depth and per-container entry limits; the default text limit is
+  1 MiB.
+- `budget`: cumulative item, input-byte, output-byte, and structured-node
+  budgets for one conversion session.
 
 `strict()` is the default. `env_friendly()` trims strings, accepts common
 Boolean literals, enables comma-separated scalar collections, and relaxes only
@@ -212,6 +215,12 @@ let options = DataConversionOptions::strict().with_structured_limits(
     StructuredConversionLimits::default().with_max_text_bytes(64 * 1024),
 );
 ```
+
+Each convenience conversion creates a fresh finite session. Reuse one session
+with `DataConversionOptions::session()` and the `to_in`, `into_target_in`, or
+`to_vec_in` methods when limits must accumulate across nested or batch work.
+Limit errors expose resource and observed or remaining-budget facts through
+`DataConversionError::limit_facts()`.
 
 Boolean literal builders are fallible because true and false sets must remain
 disjoint under the selected case-sensitivity rule.
@@ -276,7 +285,8 @@ The limit is checked after trimming and empty-item filtering, so skipped items
 do not consume the budget. A zero limit permits only an empty retained result;
 the first additional retained item returns `LimitExceeded` with its original
 source index. Use `CollectionConversionOptions::with_max_items` to select a
-different bound.
+different bound. This per-string splitting limit is separate from the session
+budget, which also applies to ordinary iterator batches.
 
 ```rust
 use qubit_datatype::{DataConversionOptions, DataConverters, ScalarStringDataConverters};

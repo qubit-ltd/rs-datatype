@@ -104,7 +104,15 @@ pub use converter::BooleanNumericPolicy;
 #[cfg(feature = "converter")]
 pub use converter::CollectionConversionOptions;
 #[cfg(feature = "converter")]
+pub use converter::ConversionBudgetLimits;
+#[cfg(feature = "converter")]
 pub use converter::ConversionLimit;
+#[cfg(feature = "converter")]
+pub use converter::ConversionLimitExceeded;
+#[cfg(feature = "converter")]
+pub use converter::ConversionResource;
+#[cfg(feature = "converter")]
+pub use converter::ConversionSession;
 #[cfg(feature = "converter")]
 pub use converter::DataConversionError;
 #[cfg(feature = "converter")]

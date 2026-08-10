@@ -11,6 +11,7 @@
 //! batches of common runtime values with the single-value [`DataConverter`]
 //! rules.
 
+use super::conversion_session::ConversionSession;
 use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::DataConversionError;
@@ -151,12 +152,26 @@ where
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,
     {
+        let mut session = options.session();
+        self.to_vec_in(&mut session)
+    }
+
+    /// Converts every source item using an existing conversion session.
+    pub fn to_vec_in<'a, T>(
+        self,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<Vec<T>, DataListConversionError>
+    where
+        I::Item: Into<DataConverter<'a>>,
+        T: DataConversionTarget,
+    {
         let sources = self.sources;
-        let mut converted = self
+        let capacity = self
             .trusted_capacity
-            .map_or_else(Vec::new, Vec::with_capacity);
+            .map_or(0, |capacity| capacity.min(session.remaining_items()));
+        let mut converted = Vec::with_capacity(capacity);
         for (index, source) in sources.enumerate() {
-            let value = match source.into().into_target_with::<T>(options) {
+            let value = match source.into().into_target_in::<T>(session) {
                 Ok(value) => value,
                 Err(source) => {
                     return Err(DataListConversionError::new(index, source));
@@ -235,9 +250,23 @@ where
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,
     {
+        let mut session = options.session();
+        self.to_first_in(&mut session)
+    }
+
+    /// Converts the first source item using an existing conversion session.
+    #[inline]
+    pub fn to_first_in<'a, T>(
+        self,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<T, DataConversionError>
+    where
+        I::Item: Into<DataConverter<'a>>,
+        T: DataConversionTarget,
+    {
         let mut sources = self.sources;
         match sources.next() {
-            Some(source) => source.into().into_target_with::<T>(options),
+            Some(source) => source.into().into_target_in::<T>(session),
             None => Err(DataConversionError::empty_collection(T::DATA_TYPE)),
         }
     }

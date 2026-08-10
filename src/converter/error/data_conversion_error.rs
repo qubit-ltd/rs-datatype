@@ -10,6 +10,7 @@
 //! Defines errors returned by reusable data conversions.
 
 use super::conversion_limit::ConversionLimit;
+use super::conversion_limit_exceeded::ConversionLimitExceeded;
 use super::data_conversion_error_kind::DataConversionErrorKind;
 use super::internal::DataConversionErrorInner;
 use super::invalid_value_reason::InvalidValueReason;
@@ -107,11 +108,7 @@ impl DataConversionError {
     ///
     /// An invalid-value conversion error.
     #[inline(always)]
-    pub const fn invalid(
-        from: DataType,
-        to: DataType,
-        reason: InvalidValueReason,
-    ) -> Self {
+    pub const fn invalid(from: DataType, to: DataType, reason: InvalidValueReason) -> Self {
         Self {
             inner: DataConversionErrorInner::InvalidValue { from, to, reason },
         }
@@ -129,13 +126,19 @@ impl DataConversionError {
     ///
     /// A resource-limit conversion error.
     #[inline(always)]
-    pub const fn limit_exceeded(
-        from: DataType,
-        to: DataType,
-        limit: ConversionLimit,
-    ) -> Self {
+    pub fn limit_exceeded<L>(from: DataType, to: DataType, source: L) -> Self
+    where
+        L: Into<ConversionLimitExceeded>,
+    {
+        let source = source.into();
+        let limit = ConversionLimit::from_source(&source);
         Self {
-            inner: DataConversionErrorInner::LimitExceeded { from, to, limit },
+            inner: DataConversionErrorInner::LimitExceeded {
+                from,
+                to,
+                source,
+                limit,
+            },
         }
     }
 
@@ -147,18 +150,12 @@ impl DataConversionError {
     #[inline(always)]
     pub const fn kind(&self) -> DataConversionErrorKind {
         match &self.inner {
-            DataConversionErrorInner::Missing { .. } => {
-                DataConversionErrorKind::Missing
-            }
+            DataConversionErrorInner::Missing { .. } => DataConversionErrorKind::Missing,
             DataConversionErrorInner::EmptyCollection { .. } => {
                 DataConversionErrorKind::EmptyCollection
             }
-            DataConversionErrorInner::Unsupported { .. } => {
-                DataConversionErrorKind::Unsupported
-            }
-            DataConversionErrorInner::InvalidValue { .. } => {
-                DataConversionErrorKind::InvalidValue
-            }
+            DataConversionErrorInner::Unsupported { .. } => DataConversionErrorKind::Unsupported,
+            DataConversionErrorInner::InvalidValue { .. } => DataConversionErrorKind::InvalidValue,
             DataConversionErrorInner::LimitExceeded { .. } => {
                 DataConversionErrorKind::LimitExceeded
             }
@@ -196,9 +193,7 @@ impl DataConversionError {
             DataConversionErrorInner::Missing { from, .. }
             | DataConversionErrorInner::Unsupported { from, .. }
             | DataConversionErrorInner::InvalidValue { from, .. }
-            | DataConversionErrorInner::LimitExceeded { from, .. } => {
-                Some(*from)
-            }
+            | DataConversionErrorInner::LimitExceeded { from, .. } => Some(*from),
             DataConversionErrorInner::EmptyCollection { .. } => None,
         }
     }
@@ -228,9 +223,7 @@ impl DataConversionError {
     #[inline(always)]
     pub const fn reason(&self) -> Option<&InvalidValueReason> {
         match &self.inner {
-            DataConversionErrorInner::InvalidValue { reason, .. } => {
-                Some(reason)
-            }
+            DataConversionErrorInner::InvalidValue { reason, .. } => Some(reason),
             _ => None,
         }
     }
@@ -244,9 +237,16 @@ impl DataConversionError {
     #[inline(always)]
     pub const fn limit(&self) -> Option<&ConversionLimit> {
         match &self.inner {
-            DataConversionErrorInner::LimitExceeded { limit, .. } => {
-                Some(limit)
-            }
+            DataConversionErrorInner::LimitExceeded { limit, .. } => Some(limit),
+            _ => None,
+        }
+    }
+
+    /// Returns complete point or cumulative resource facts, if a limit failed.
+    #[inline(always)]
+    pub const fn limit_facts(&self) -> Option<&ConversionLimitExceeded> {
+        match &self.inner {
+            DataConversionErrorInner::LimitExceeded { source, .. } => Some(source),
             _ => None,
         }
     }

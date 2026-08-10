@@ -145,8 +145,9 @@ unset，`EmptyCollection` 表示请求首值时集合为空，`InvalidValue` 表
 - `boolean`：文字集合、大小写和数值布尔策略。
 - `collection`：标量拆分、分隔符、trim、空项策略和最终保留项数上限。
 - `duration`：数值输入单位、无后缀输入策略、单位解析模式、输出单位、后缀格式、舍入和源文本字节上限。
-- `structured`：URL、JSON 和 StringMap 解析使用的规范化输入字节上限，
-  默认值为 1 MiB。
+- `structured`：URL、JSON 和 StringMap 解析使用的规范化输入字节、深度和
+  单容器条目上限，文本默认值为 1 MiB。
+- `budget`：一次转换会话共享的累计条目、输入字节、输出字节和结构节点预算。
 
 `strict()` 是默认值。`env_friendly()` 会 trim 字符串、接受常见布尔文字，并开启
 逗号分隔的标量集合；它只把文本转浮点放宽为 nearest-even，不会开启小数转整数
@@ -187,6 +188,11 @@ let options = DataConversionOptions::strict().with_structured_limits(
     StructuredConversionLimits::default().with_max_text_bytes(64 * 1024),
 );
 ```
+
+每个便捷转换入口都会创建新的有限会话。需要跨批次或嵌套转换累计时，使用
+`DataConversionOptions::session()`，并调用 `to_in`、`into_target_in` 或
+`to_vec_in`。限制错误可通过 `DataConversionError::limit_facts()` 读取资源身份及
+实际观测值或失败前剩余额度。
 
 布尔文字 builder 返回 `Result`，保证在选定大小写规则下 true/false 集合互不重叠。
 
@@ -241,6 +247,7 @@ Chrono 执行范围校验前会拒绝内部空白、带符号年份、替代分�
 因此被跳过的项不占配额。上限为零时只允许空结果；第一个额外保留项返回
 `LimitExceeded`，并保留其原始源索引。可通过
 `CollectionConversionOptions::with_max_items` 调整上限。
+该选项只限制一次标量字符串拆分；会话预算还会限制普通迭代器批量转换。
 
 ```rust
 use qubit_datatype::{DataConversionOptions, DataConverters, ScalarStringDataConverters};
