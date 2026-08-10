@@ -189,23 +189,6 @@ impl<'a> ConversionSession<'a> {
         self.json.check_map_entries(entries)
     }
 
-    /// Returns the shared JSON budget for budget-aware structured decoding.
-    ///
-    /// This crate-private hook must be used only by converters that have
-    /// already selected a supported JSON target and normalized any textual
-    /// input.
-    ///
-    /// # Returns
-    ///
-    /// Returns the mutable JSON budget shared by this conversion session.
-    #[cfg(feature = "json")]
-    #[inline(always)]
-    pub(crate) fn json_budget_mut(
-        &mut self,
-    ) -> &mut JsonBudget<ConversionResource, usize> {
-        &mut self.json
-    }
-
     /// Returns cumulative item usage.
     #[inline(always)]
     pub fn used_items(&self) -> usize {
@@ -228,5 +211,22 @@ impl<'a> ConversionSession<'a> {
     #[inline(always)]
     pub const fn remaining_items(&self) -> usize {
         self.items.remaining()
+    }
+
+    /// Returns the shared JSON budget for budget-aware structured decoding.
+    ///
+    /// This crate-private hook must be used only by converters that have
+    /// already selected a supported JSON target and normalized any textual
+    /// input.
+    ///
+    /// # Returns
+    ///
+    /// Returns the mutable JSON budget shared by this conversion session.
+    #[cfg(feature = "json")]
+    #[inline(always)]
+    pub(crate) fn json_budget_mut(
+        &mut self,
+    ) -> &mut JsonBudget<ConversionResource, usize> {
+        &mut self.json
     }
 }

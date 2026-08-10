@@ -92,47 +92,6 @@ impl DurationUnit {
             .ok_or(DurationParseError::UnsupportedUnit)
     }
 
-    /// Resolves a stable symbol accepted by strict mode.
-    ///
-    /// # Parameters
-    ///
-    /// * `symbol` - Unit suffix without its numeric prefix.
-    ///
-    /// # Returns
-    ///
-    /// `Some` containing the represented unit when `symbol` is accepted by
-    /// strict mode; otherwise, `None`.
-    fn strict_symbol(symbol: &str) -> Option<Self> {
-        match symbol {
-            "ns" => Some(Self::Nanoseconds),
-            "us" | "µs" | "μs" => Some(Self::Microseconds),
-            "ms" => Some(Self::Milliseconds),
-            "s" => Some(Self::Seconds),
-            "min" => Some(Self::Minutes),
-            "h" => Some(Self::Hours),
-            "d" => Some(Self::Days),
-            _ => None,
-        }
-    }
-
-    /// Resolves an alias accepted only by lenient mode.
-    ///
-    /// # Parameters
-    ///
-    /// * `symbol` - Unit suffix without its numeric prefix.
-    ///
-    /// # Returns
-    ///
-    /// `Some` containing the represented unit and its preferred output symbol
-    /// when `symbol` is a Lenient-only alias; otherwise, `None`.
-    #[inline(always)]
-    fn lenient_alias(symbol: &str) -> Option<(Self, &'static str)> {
-        match symbol {
-            "m" => Some((Self::Minutes, "min")),
-            _ => None,
-        }
-    }
-
     /// Returns the preferred Duration unit symbol for output.
     ///
     /// # Returns
@@ -268,6 +227,47 @@ impl DurationUnit {
             Self::Minutes => 60 * 1_000_000_000,
             Self::Hours => 60 * 60 * 1_000_000_000,
             Self::Days => 24 * 60 * 60 * 1_000_000_000,
+        }
+    }
+
+    /// Resolves a stable symbol accepted by strict mode.
+    ///
+    /// # Parameters
+    ///
+    /// * `symbol` - Unit suffix without its numeric prefix.
+    ///
+    /// # Returns
+    ///
+    /// `Some` containing the represented unit when `symbol` is accepted by
+    /// strict mode; otherwise, `None`.
+    fn strict_symbol(symbol: &str) -> Option<Self> {
+        match symbol {
+            "ns" => Some(Self::Nanoseconds),
+            "us" | "µs" | "μs" => Some(Self::Microseconds),
+            "ms" => Some(Self::Milliseconds),
+            "s" => Some(Self::Seconds),
+            "min" => Some(Self::Minutes),
+            "h" => Some(Self::Hours),
+            "d" => Some(Self::Days),
+            _ => None,
+        }
+    }
+
+    /// Resolves an alias accepted only by lenient mode.
+    ///
+    /// # Parameters
+    ///
+    /// * `symbol` - Unit suffix without its numeric prefix.
+    ///
+    /// # Returns
+    ///
+    /// `Some` containing the represented unit and its preferred output symbol
+    /// when `symbol` is a Lenient-only alias; otherwise, `None`.
+    #[inline(always)]
+    fn lenient_alias(symbol: &str) -> Option<(Self, &'static str)> {
+        match symbol {
+            "m" => Some((Self::Minutes, "min")),
+            _ => None,
         }
     }
 }
