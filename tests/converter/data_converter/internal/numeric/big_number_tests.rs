@@ -15,7 +15,9 @@ use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 #[cfg(feature = "big-integer")]
-use qubit_datatype::ConversionLimit;
+use qubit_budget::BudgetError;
+#[cfg(feature = "big-integer")]
+use qubit_datatype::ConversionResource;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::DataConversionErrorKind;
 #[cfg(feature = "big-integer")]
@@ -38,10 +40,14 @@ use qubit_datatype::NumericConversionOptions;
 ///
 /// Strict conversion options carrying the requested digit limit.
 #[cfg(feature = "big-integer")]
-fn options_with_big_integer_digit_limit(maximum: usize) -> DataConversionOptions {
+fn options_with_big_integer_digit_limit(
+    maximum: usize,
+) -> DataConversionOptions {
     DataConversionOptions::strict().with_numeric_options(
-        NumericConversionOptions::strict()
-            .with_limits(NumericConversionLimits::default().with_max_big_integer_digits(maximum)),
+        NumericConversionOptions::strict().with_limits(
+            NumericConversionLimits::default()
+                .with_max_big_integer_digits(maximum),
+        ),
     )
 }
 
@@ -77,8 +83,12 @@ fn test_primitive_to_bigint_enforces_result_digit_limit() {
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(
-        error.limit(),
-        Some(&ConversionLimit::BigIntegerDigits { maximum: 3 }),
+        error.budget_error(),
+        Some(&BudgetError::LimitExceeded {
+            resource: ConversionResource::BigIntegerDigits,
+            actual: 4,
+            maximum: 3,
+        }),
     );
 }
 
@@ -94,8 +104,12 @@ fn test_bigint_to_bigint_enforces_result_digit_limit() {
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(
-        error.limit(),
-        Some(&ConversionLimit::BigIntegerDigits { maximum: 3 }),
+        error.budget_error(),
+        Some(&BudgetError::LimitExceeded {
+            resource: ConversionResource::BigIntegerDigits,
+            actual: 4,
+            maximum: 3,
+        }),
     );
 }
 
@@ -105,8 +119,9 @@ fn test_bigint_to_bigint_enforces_result_digit_limit() {
 fn test_positive_scale_decimal_to_bigint_enforces_result_digit_limit() {
     let source = BigDecimal::new(BigInt::from(12_345_u32), 1);
     let options = DataConversionOptions::lossy().with_numeric_options(
-        NumericConversionOptions::lossy()
-            .with_limits(NumericConversionLimits::default().with_max_big_integer_digits(3)),
+        NumericConversionOptions::lossy().with_limits(
+            NumericConversionLimits::default().with_max_big_integer_digits(3),
+        ),
     );
     let error = DataConverter::from(&source)
         .to_with::<BigInt>(&options)
@@ -114,8 +129,12 @@ fn test_positive_scale_decimal_to_bigint_enforces_result_digit_limit() {
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(
-        error.limit(),
-        Some(&ConversionLimit::BigIntegerDigits { maximum: 3 }),
+        error.budget_error(),
+        Some(&BudgetError::LimitExceeded {
+            resource: ConversionResource::BigIntegerDigits,
+            actual: 4,
+            maximum: 3,
+        }),
     );
 }
 

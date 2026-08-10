@@ -45,8 +45,8 @@ use crate::datatype::DataType;
 ///
 /// # Errors
 ///
-/// Returns a [`ConversionLimit::StructuredTextBytes`] conversion error when
-/// `value` exceeds the configured maximum.
+/// Returns a structured-text budget error when `value` exceeds the configured
+/// maximum.
 #[inline]
 #[cfg(any(feature = "json", feature = "url"))]
 pub(super) fn check_structured_text_limit(
@@ -59,22 +59,20 @@ pub(super) fn check_structured_text_limit(
         .structured()
         .max_text_bytes_limit()
         .check(value.len())
-        .map_err(|error| {
-            DataConversionError::limit_exceeded(
-                from,
-                to,
-                crate::converter::ConversionLimitExceeded::from_budget_error(error),
-            )
-        })
+        .map_err(|error| DataConversionError::limit_exceeded(from, to, error))
 }
 
 /// Converts a borrowed string map to a JSON object with canonical key order.
 #[cfg(feature = "json")]
-pub(super) fn string_map_to_json(value: &HashMap<String, String>) -> serde_json::Value {
+pub(super) fn string_map_to_json(
+    value: &HashMap<String, String>,
+) -> serde_json::Value {
     serde_json::Value::Object(
         sorted_string_map_entries(value)
             .into_iter()
-            .map(|(key, value)| (key.clone(), serde_json::Value::String(value.clone())))
+            .map(|(key, value)| {
+                (key.clone(), serde_json::Value::String(value.clone()))
+            })
             .collect(),
     )
 }
@@ -131,7 +129,12 @@ impl DataConversionTarget for serde_json::Value {
             DataConverter::Json(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Json)?;
-                check_structured_text_limit(value, source.data_type(), DataType::Json, options)?;
+                check_structured_text_limit(
+                    value,
+                    source.data_type(),
+                    DataType::Json,
+                    options,
+                )?;
                 match serde_json::from_str(value) {
                     Ok(value) => Ok(value),
                     Err(_) => Err(source.invalid(
@@ -170,7 +173,9 @@ impl DataConversionTarget for serde_json::Value {
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::Json(value) => Ok(value.into_owned()),
-            DataConverter::StringMap(value) => Ok(string_map_into_json(value.into_owned())),
+            DataConverter::StringMap(value) => {
+                Ok(string_map_into_json(value.into_owned()))
+            }
             source => Self::convert_from(&source, options),
         }
     }
@@ -192,7 +197,9 @@ impl DataConversionTarget for serde_json::Value {
 /// keys, or non-string values.
 #[cfg(feature = "json")]
 #[inline(always)]
-fn deserialize_string_map(value: &str) -> Result<HashMap<String, String>, serde_json::Error> {
+fn deserialize_string_map(
+    value: &str,
+) -> Result<HashMap<String, String>, serde_json::Error> {
     let mut deserializer = serde_json::Deserializer::from_str(value);
     let result = deserializer.deserialize_map(StringMapVisitor)?;
     deserializer.end()?;

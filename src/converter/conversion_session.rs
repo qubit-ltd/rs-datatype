@@ -7,10 +7,12 @@
 // =============================================================================
 //! Reusable accounting session for one or more data conversions.
 
-use qubit_budget::{ResourceBudget, StructureBudget, StructureLimits};
+use qubit_budget::BudgetError;
+use qubit_budget::ResourceBudget;
+use qubit_budget::StructureBudget;
+use qubit_budget::StructureLimits;
 
 use super::conversion_resource::ConversionResource;
-use super::error::ConversionLimitExceeded;
 use super::options::DataConversionOptions;
 
 /// Mutable conversion accounting shared by nested and batch conversions.
@@ -36,9 +38,15 @@ impl<'a> ConversionSession<'a> {
             .with_map_entries_limit(*structured.max_map_entries_limit());
         Self {
             options,
-            items: ResourceBudget::from_limit(*options.budget().max_items_limit()),
-            input_bytes: ResourceBudget::from_limit(*options.budget().max_input_bytes_limit()),
-            output_bytes: ResourceBudget::from_limit(*options.budget().max_output_bytes_limit()),
+            items: ResourceBudget::from_limit(
+                *options.budget().max_items_limit(),
+            ),
+            input_bytes: ResourceBudget::from_limit(
+                *options.budget().max_input_bytes_limit(),
+            ),
+            output_bytes: ResourceBudget::from_limit(
+                *options.budget().max_output_bytes_limit(),
+            ),
             structure: structure_limits.budget(),
         }
     }
@@ -51,48 +59,63 @@ impl<'a> ConversionSession<'a> {
 
     /// Consumes one top-level conversion item.
     #[inline]
-    pub fn consume_item(&mut self) -> Result<(), ConversionLimitExceeded> {
-        self.items
-            .try_consume(1)
-            .map_err(ConversionLimitExceeded::from_budget_error)
+    pub fn consume_item(
+        &mut self,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        self.items.try_consume(1)
     }
 
     /// Consumes cumulative normalized input bytes.
     #[inline]
-    pub fn consume_input_bytes(&mut self, amount: usize) -> Result<(), ConversionLimitExceeded> {
-        self.input_bytes
-            .try_consume(amount)
-            .map_err(ConversionLimitExceeded::from_budget_error)
+    pub fn consume_input_bytes(
+        &mut self,
+        amount: usize,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        self.input_bytes.try_consume(amount)
     }
 
-    /// Consumes cumulative newly allocated output bytes.
+    /// Checks cumulative built-in String output payload bytes.
     #[inline]
-    pub fn consume_output_bytes(&mut self, amount: usize) -> Result<(), ConversionLimitExceeded> {
-        self.output_bytes
-            .try_consume(amount)
-            .map_err(ConversionLimitExceeded::from_budget_error)
+    pub fn check_output_bytes(
+        &self,
+        amount: usize,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        self.output_bytes.check_available(amount)
+    }
+
+    /// Consumes cumulative output payload bytes after a successful pre-check.
+    #[inline]
+    pub fn consume_output_bytes(
+        &mut self,
+        amount: usize,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        self.output_bytes.try_consume(amount)
     }
 
     /// Checks one numeric text measurement.
     #[inline]
-    pub fn check_numeric_text_bytes(&self, actual: usize) -> Result<(), ConversionLimitExceeded> {
+    pub fn check_numeric_text_bytes(
+        &self,
+        actual: usize,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
         self.options()
             .numeric()
             .limits()
             .max_text_bytes_limit()
             .check(actual)
-            .map_err(ConversionLimitExceeded::from_budget_error)
     }
 
     /// Checks one BigInteger digit measurement.
     #[inline]
-    pub fn check_big_integer_digits(&self, actual: usize) -> Result<(), ConversionLimitExceeded> {
+    pub fn check_big_integer_digits(
+        &self,
+        actual: usize,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
         self.options()
             .numeric()
             .limits()
             .max_big_integer_digits_limit()
             .check(actual)
-            .map_err(ConversionLimitExceeded::from_budget_error)
     }
 
     /// Checks one structured text measurement.
@@ -100,20 +123,20 @@ impl<'a> ConversionSession<'a> {
     pub fn check_structured_text_bytes(
         &self,
         actual: usize,
-    ) -> Result<(), ConversionLimitExceeded> {
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
         self.options()
             .structured()
             .max_text_bytes_limit()
             .check(actual)
-            .map_err(ConversionLimitExceeded::from_budget_error)
     }
 
     /// Enters one structured scalar or container node.
     #[inline]
-    pub fn enter_node(&mut self, depth: usize) -> Result<(), ConversionLimitExceeded> {
-        self.structure
-            .enter_node(depth)
-            .map_err(ConversionLimitExceeded::from_budget_error)
+    pub fn enter_node(
+        &mut self,
+        depth: usize,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        self.structure.enter_node(depth)
     }
 
     /// Enters one structured sequence node after checking its item count.
@@ -122,10 +145,8 @@ impl<'a> ConversionSession<'a> {
         &mut self,
         depth: usize,
         items: usize,
-    ) -> Result<(), ConversionLimitExceeded> {
-        self.structure
-            .enter_sequence(depth, items)
-            .map_err(ConversionLimitExceeded::from_budget_error)
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        self.structure.enter_sequence(depth, items)
     }
 
     /// Enters one structured map node after checking its entry count.
@@ -134,34 +155,35 @@ impl<'a> ConversionSession<'a> {
         &mut self,
         depth: usize,
         entries: usize,
-    ) -> Result<(), ConversionLimitExceeded> {
-        self.structure
-            .enter_map(depth, entries)
-            .map_err(ConversionLimitExceeded::from_budget_error)
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        self.structure.enter_map(depth, entries)
     }
 
     /// Checks a structured depth without changing session state.
     #[inline]
-    pub fn check_depth(&self, depth: usize) -> Result<(), ConversionLimitExceeded> {
-        self.structure
-            .check_depth(depth)
-            .map_err(ConversionLimitExceeded::from_budget_error)
+    pub fn check_depth(
+        &self,
+        depth: usize,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        self.structure.check_depth(depth)
     }
 
     /// Checks one sequence item count without changing session state.
     #[inline]
-    pub fn check_sequence_items(&self, items: usize) -> Result<(), ConversionLimitExceeded> {
-        self.structure
-            .check_sequence_items(items)
-            .map_err(ConversionLimitExceeded::from_budget_error)
+    pub fn check_sequence_items(
+        &self,
+        items: usize,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        self.structure.check_sequence_items(items)
     }
 
     /// Checks one map entry count without changing session state.
     #[inline]
-    pub fn check_map_entries(&self, entries: usize) -> Result<(), ConversionLimitExceeded> {
-        self.structure
-            .check_map_entries(entries)
-            .map_err(ConversionLimitExceeded::from_budget_error)
+    pub fn check_map_entries(
+        &self,
+        entries: usize,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        self.structure.check_map_entries(entries)
     }
 
     /// Returns cumulative item usage.

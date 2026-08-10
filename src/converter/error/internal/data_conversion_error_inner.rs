@@ -9,9 +9,10 @@
 //!
 //! Defines the private variant representation of data conversion errors.
 
-use super::super::conversion_limit::ConversionLimit;
-use super::super::conversion_limit_exceeded::ConversionLimitExceeded;
+use qubit_budget::BudgetError;
+
 use super::super::invalid_value_reason::InvalidValueReason;
+use crate::converter::ConversionResource;
 use crate::datatype::DataType;
 
 /// Variant-specific details stored by a public conversion error.
@@ -50,7 +51,7 @@ pub(in crate::converter::error) enum DataConversionErrorInner {
         reason: InvalidValueReason,
     },
     /// The conversion would exceed a configured resource limit.
-    #[error("Conversion limit exceeded from {from} to {to}: {limit}")]
+    #[error("Conversion limit exceeded from {from} to {to}: {source}")]
     LimitExceeded {
         /// Declared source data type.
         from: DataType,
@@ -58,8 +59,6 @@ pub(in crate::converter::error) enum DataConversionErrorInner {
         to: DataType,
         /// Complete point-limit or cumulative-budget facts.
         #[source]
-        source: ConversionLimitExceeded,
-        /// Legacy maximum-only view retained for source compatibility.
-        limit: ConversionLimit,
+        source: BudgetError<ConversionResource, usize>,
     },
 }

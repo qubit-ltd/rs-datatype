@@ -1,4 +1,14 @@
-use qubit_datatype::converter::{ConversionBudgetLimits, ConversionResource};
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
+//! Conversion budget limit tests.
+
+use qubit_datatype::converter::ConversionBudgetLimits;
+use qubit_datatype::converter::ConversionResource;
 
 #[test]
 fn test_conversion_budget_limits_bind_resources() {

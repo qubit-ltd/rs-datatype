@@ -26,9 +26,10 @@ use super::internal::InflatedSizeHintIterator;
 /// Verifies batch conversion does not allocate from an untrusted size hint.
 #[test]
 fn test_data_converters_ignore_inflated_size_hint() {
-    let converted = DataConverters::from_iterator(InflatedSizeHintIterator::new("42"))
-        .to_vec::<u16>()
-        .expect("actual iterator elements should determine allocation");
+    let converted =
+        DataConverters::from_iterator(InflatedSizeHintIterator::new("42"))
+            .to_vec::<u16>()
+            .expect("actual iterator elements should determine allocation");
 
     assert_eq!(converted, vec![42]);
 }
@@ -137,9 +138,10 @@ fn test_data_converters_from_owned_vec_of_borrowed_values() {
 fn test_data_converters_from_iterator_converts_all_values() {
     let values = ["1", "2", "3"];
 
-    let converted: Vec<u16> = DataConverters::from_iterator(values.iter().copied())
-        .to_vec()
-        .expect("string iterator should convert to u16 vector");
+    let converted: Vec<u16> =
+        DataConverters::from_iterator(values.iter().copied())
+            .to_vec()
+            .expect("string iterator should convert to u16 vector");
 
     assert_eq!(converted, vec![1, 2, 3]);
 }
@@ -153,17 +155,19 @@ fn test_data_converters_to_vec_with_applies_options() {
             .with_blank_string_policy(BlankStringPolicy::Reject),
     );
 
-    let ports: Vec<u16> = DataConverters::from(vec![" 8080 ".to_string(), " 8081 ".to_string()])
-        .to_vec_with(&options)
-        .expect("trimmed string values should parse into ports");
+    let ports: Vec<u16> =
+        DataConverters::from(vec![" 8080 ".to_string(), " 8081 ".to_string()])
+            .to_vec_with(&options)
+            .expect("trimmed string values should parse into ports");
 
     assert_eq!(ports, vec![8080, 8081]);
 }
 
 #[test]
 fn test_data_converters_to_vec_in_enforces_session_item_budget() {
-    let options = DataConversionOptions::default()
-        .with_budget_limits(ConversionBudgetLimits::default().with_max_items(2));
+    let options = DataConversionOptions::default().with_budget_limits(
+        ConversionBudgetLimits::default().with_max_items(2),
+    );
     let mut session = options.session();
     let error = DataConverters::from_iterator(["1", "2", "3"].into_iter())
         .to_vec_in::<u16>(&mut session)
@@ -172,8 +176,8 @@ fn test_data_converters_to_vec_in_enforces_session_item_budget() {
     assert_eq!(
         error
             .conversion_error()
-            .limit_facts()
-            .map(|facts| facts.resource()),
+            .budget_error()
+            .map(|facts| *facts.resource()),
         Some(ConversionResource::Items),
     );
 }

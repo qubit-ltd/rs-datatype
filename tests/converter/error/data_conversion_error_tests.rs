@@ -9,8 +9,9 @@
 //!
 //! Tests for reusable data conversion errors.
 
+use qubit_budget::BudgetError;
+use qubit_datatype::ConversionResource;
 use qubit_datatype::DataType;
-use qubit_datatype::converter::ConversionLimit;
 use qubit_datatype::converter::DataConversionError;
 use qubit_datatype::converter::DataConversionErrorKind;
 use qubit_datatype::converter::DataListConversionError;
@@ -20,39 +21,54 @@ use qubit_datatype::converter::InvalidValueReason;
 #[test]
 fn test_data_conversion_error_constructors_and_accessors() {
     let reason = InvalidValueReason::OutOfRange;
-    let error = DataConversionError::invalid(DataType::Int64, DataType::UInt8, reason.clone());
+    let error = DataConversionError::invalid(
+        DataType::Int64,
+        DataType::UInt8,
+        reason.clone(),
+    );
     assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
     assert!(!error.is_missing());
     assert_eq!(error.from_type(), Some(DataType::Int64));
     assert_eq!(error.to_type(), DataType::UInt8);
     assert_eq!(error.reason(), Some(&reason));
-    assert_eq!(error.limit(), None);
+    assert_eq!(error.budget_error(), None);
 
     let empty = DataConversionError::empty_collection(DataType::String);
     assert_eq!(empty.kind(), DataConversionErrorKind::EmptyCollection);
     assert_eq!(empty.from_type(), None);
     assert_eq!(empty.to_type(), DataType::String);
     assert_eq!(empty.reason(), None);
-    assert_eq!(empty.limit(), None);
+    assert_eq!(empty.budget_error(), None);
 }
 
 /// Test the resource-limit constructor, accessors, and list wrapping.
 #[test]
 fn test_data_conversion_error_limit_exceeded_contract() {
-    let limit = ConversionLimit::BigIntegerDigits { maximum: 12 };
-    let error = DataConversionError::limit_exceeded(DataType::String, DataType::BigInteger, limit);
+    let budget_error = BudgetError::LimitExceeded {
+        resource: ConversionResource::BigIntegerDigits,
+        actual: 13,
+        maximum: 12,
+    };
+    let error = DataConversionError::limit_exceeded(
+        DataType::String,
+        DataType::BigInteger,
+        budget_error.clone(),
+    );
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert!(!error.is_missing());
     assert_eq!(error.from_type(), Some(DataType::String));
     assert_eq!(error.to_type(), DataType::BigInteger);
     assert_eq!(error.reason(), None);
-    assert_eq!(error.limit(), Some(&limit));
+    assert_eq!(error.budget_error(), Some(&budget_error));
 
     let list_error = DataListConversionError::new(7, error.clone());
     assert_eq!(list_error.source_index(), 7);
     assert_eq!(list_error.conversion_error(), &error);
-    assert_eq!(list_error.conversion_error().limit(), Some(&limit));
+    assert_eq!(
+        list_error.conversion_error().budget_error(),
+        Some(&budget_error)
+    );
 }
 
 /// Test that structured errors cannot reveal source text.

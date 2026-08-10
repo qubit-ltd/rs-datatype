@@ -220,15 +220,20 @@ Each convenience conversion creates a fresh finite session. Reuse one session
 with `DataConversionOptions::session()` and the `to_in`, `into_target_in`, or
 `to_vec_in` methods when limits must accumulate across nested or batch work.
 Limit errors expose resource and observed or remaining-budget facts through
-`DataConversionError::limit_facts()`.
+`DataConversionError::budget_error()`, which returns the original
+`qubit_budget::BudgetError` without a datatype-specific wrapper. Output-byte
+budgets count the cumulative UTF-8 payload of successful built-in `String`
+targets across a session, regardless of whether the source is borrowed or
+owned; non-`String` targets do not consume this output budget.
 
 Boolean literal builders are fallible because true and false sets must remain
 disjoint under the selected case-sensitivity rule.
 
 ## 8. Strings, duration, and rich formats
 
-Strings are not trimmed by default. Blank values can be preserved, treated as
-missing, or rejected. The default Duration policy rejects suffixless text and
+Strings are not trimmed by default and each conversion normalizes a String
+source exactly once. Blank values can be preserved, treated as missing, or
+rejected. The default Duration policy rejects suffixless text and
 uses Strict parsing: `[0-9]+(ns|us|µs|μs|ms|s|min|h|d)`. Strict accepts the
 ASCII `us`, micro-sign `µs`, and Greek-mu `μs` microsecond spellings. Lenient
 parsing additionally accepts the non-canonical minute alias `m`:
