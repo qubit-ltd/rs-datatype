@@ -8,8 +8,7 @@
 //! Tests for data conversion errors and rejection reasons.
 
 mod boolean_literal_conflict_error_tests;
-mod conversion_limit_exceeded_tests;
-mod conversion_limit_tests;
+mod budget_error_tests;
 mod data_conversion_error_kind_tests;
 mod data_conversion_error_tests;
 mod data_format_tests;

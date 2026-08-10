@@ -26,8 +26,6 @@ pub use data_conversion_target::DataConversionTarget;
 pub use data_converter::DataConverter;
 pub use data_converters::DataConverters;
 pub use error::BooleanLiteralConflictError;
-pub use error::ConversionLimit;
-pub use error::ConversionLimitExceeded;
 pub use error::DataConversionError;
 pub use error::DataConversionErrorKind;
 pub use error::DataFormat;

@@ -13,6 +13,7 @@ use serde::Deserializer;
 use serde::Serialize;
 use serde::Serializer;
 
+use super::internal::NumericConversionLimitsWire;
 use crate::converter::ConversionResource;
 
 /// Bounds allocations and work introduced by numeric conversion.
@@ -50,7 +51,9 @@ impl NumericConversionLimits {
 
     /// Returns the numeric text resource limit.
     #[inline(always)]
-    pub const fn max_text_bytes_limit(&self) -> &ResourceLimit<ConversionResource, usize> {
+    pub const fn max_text_bytes_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, usize> {
         &self.max_text_bytes
     }
 
@@ -65,7 +68,8 @@ impl NumericConversionLimits {
     /// Updated limits.
     #[inline(always)]
     pub const fn with_max_text_bytes(mut self, maximum: usize) -> Self {
-        self.max_text_bytes = ResourceLimit::new(ConversionResource::NumericTextBytes, maximum);
+        self.max_text_bytes =
+            ResourceLimit::new(ConversionResource::NumericTextBytes, maximum);
         self
     }
 
@@ -82,7 +86,9 @@ impl NumericConversionLimits {
 
     /// Returns the BigInteger digit resource limit.
     #[inline(always)]
-    pub const fn max_big_integer_digits_limit(&self) -> &ResourceLimit<ConversionResource, usize> {
+    pub const fn max_big_integer_digits_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, usize> {
         &self.max_big_integer_digits
     }
 
@@ -120,23 +126,6 @@ impl Default for NumericConversionLimits {
                 ConversionResource::BigIntegerDigits,
                 Self::DEFAULT_MAX_BIG_INTEGER_DIGITS,
             ),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(default, deny_unknown_fields)]
-struct NumericConversionLimitsWire {
-    max_text_bytes: usize,
-    max_big_integer_digits: usize,
-}
-
-impl Default for NumericConversionLimitsWire {
-    fn default() -> Self {
-        let limits = NumericConversionLimits::default();
-        Self {
-            max_text_bytes: limits.max_text_bytes(),
-            max_big_integer_digits: limits.max_big_integer_digits(),
         }
     }
 }

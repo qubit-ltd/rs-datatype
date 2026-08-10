@@ -24,7 +24,7 @@ pub enum ConversionResource {
     Items,
     /// Cumulative normalized input bytes.
     InputBytes,
-    /// Cumulative newly allocated output bytes.
+    /// Cumulative UTF-8 payload bytes produced by built-in String targets.
     OutputBytes,
     /// Maximum root-inclusive structured value depth.
     StructuredDepth,

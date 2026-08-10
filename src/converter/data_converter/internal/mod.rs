@@ -9,6 +9,7 @@
 
 #[cfg(feature = "json")]
 mod canonical_string_map;
+mod counting_writer;
 pub(super) mod numeric;
 #[cfg(feature = "json")]
 mod string_map_visitor;
@@ -17,5 +18,6 @@ mod string_map_visitor;
 pub(super) use canonical_string_map::CanonicalStringMap;
 #[cfg(feature = "json")]
 pub(super) use canonical_string_map::sorted_string_map_entries;
+pub(super) use counting_writer::CountingWriter;
 #[cfg(feature = "json")]
 pub(super) use string_map_visitor::StringMapVisitor;

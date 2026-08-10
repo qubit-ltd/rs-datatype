@@ -5,9 +5,14 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Tests mirroring internal option validation responsibilities.
+//! Conversion resource identity tests.
 
-mod conversion_budget_limits_wire_tests;
-mod numeric_conversion_limits_wire_tests;
-mod structured_conversion_limits_wire_tests;
-mod unchecked_boolean_conversion_options_tests;
+use qubit_datatype::ConversionResource;
+
+#[test]
+fn test_conversion_resource_output_bytes_is_distinct() {
+    assert_ne!(
+        ConversionResource::OutputBytes,
+        ConversionResource::InputBytes
+    );
+}

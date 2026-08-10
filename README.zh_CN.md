@@ -191,14 +191,16 @@ let options = DataConversionOptions::strict().with_structured_limits(
 
 每个便捷转换入口都会创建新的有限会话。需要跨批次或嵌套转换累计时，使用
 `DataConversionOptions::session()`，并调用 `to_in`、`into_target_in` 或
-`to_vec_in`。限制错误可通过 `DataConversionError::limit_facts()` 读取资源身份及
-实际观测值或失败前剩余额度。
+`to_vec_in`。限制错误可通过 `DataConversionError::budget_error()` 读取原始
+`qubit_budget::BudgetError` 及完整预算事实，不再经过 datatype 专用包装。
+输出字节预算按会话累计内置 `String` 目标成功产生的 UTF-8 payload，借用和拥有
+来源采用相同计费规则；非 `String` 目标不消耗该预算。
 
 布尔文字 builder 返回 `Result`，保证在选定大小写规则下 true/false 集合互不重叠。
 
 ## 8. 字符串、Duration 与富格式
 
-默认不 trim 字符串。空白值可保留、视为缺失或拒绝。默认 Duration 策略拒绝无后缀
+默认不 trim 字符串，每次转换只规范化一次。空白值可保留、视为缺失或拒绝。默认 Duration 策略拒绝无后缀
 文本，并使用 Strict 解析：`[0-9]+(ns|us|µs|μs|ms|s|min|h|d)`。Strict 同时接受
 ASCII `us`、微符号 `µs` 与希腊 mu `μs` 三种微秒拼写。Lenient 额外接受非规范的
 分钟别名 `m`：`[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)`。

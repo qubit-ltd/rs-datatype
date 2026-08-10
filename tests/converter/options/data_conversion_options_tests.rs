@@ -74,7 +74,8 @@ fn test_data_conversion_options_serde_keeps_numeric_budget_wire() {
             .with_max_output_bytes(7)
             .with_max_structured_nodes(11),
     );
-    let json = serde_json::to_value(&options).expect("options should serialize");
+    let json =
+        serde_json::to_value(&options).expect("options should serialize");
     assert_eq!(json["budget"]["max_items"], 3);
     assert_eq!(json["budget"]["max_input_bytes"], 5);
     assert_eq!(json["budget"]["max_output_bytes"], 7);
@@ -87,14 +88,16 @@ fn test_data_conversion_options_serde_keeps_numeric_budget_wire() {
 /// Test that misspelled top-level option fields are rejected.
 #[test]
 fn test_data_conversion_options_reject_unknown_fields() {
-    let error = serde_json::from_str::<DataConversionOptions>(r#"{"unexpected":true}"#)
-        .expect_err("unknown top-level fields must be rejected");
+    let error =
+        serde_json::from_str::<DataConversionOptions>(r#"{"unexpected":true}"#)
+            .expect_err("unknown top-level fields must be rejected");
 
     assert!(error.to_string().contains("unknown field `unexpected`"));
 
-    let legacy_error =
-        serde_json::from_str::<DataConversionOptions>(r#"{"numeric_policy":"exact"}"#)
-            .expect_err("the legacy numeric policy field must be rejected");
+    let legacy_error = serde_json::from_str::<DataConversionOptions>(
+        r#"{"numeric_policy":"exact"}"#,
+    )
+    .expect_err("the legacy numeric policy field must be rejected");
     assert!(
         legacy_error
             .to_string()
@@ -303,11 +306,12 @@ fn test_data_conversion_options_fractional_policy_is_source_independent() {
             3,
         );
     }
-    for converter in [DataConverter::from(-3.9f64), DataConverter::from("-3.9")] {
+    for converter in [DataConverter::from(-3.9f64), DataConverter::from("-3.9")]
+    {
         assert_eq!(
-            converter
-                .to_with::<i32>(&lossy)
-                .expect("lossy negative conversion should truncate toward zero"),
+            converter.to_with::<i32>(&lossy).expect(
+                "lossy negative conversion should truncate toward zero"
+            ),
             -3,
         );
     }
@@ -317,7 +321,8 @@ fn test_data_conversion_options_fractional_policy_is_source_independent() {
 #[test]
 fn test_data_conversion_options_boolean_numeric_policy_is_source_independent() {
     let zero_or_one = DataConversionOptions::default().with_boolean_options(
-        BooleanConversionOptions::default().with_numeric_policy(BooleanNumericPolicy::ZeroOrOne),
+        BooleanConversionOptions::default()
+            .with_numeric_policy(BooleanNumericPolicy::ZeroOrOne),
     );
     for (converter, from) in [
         (DataConverter::from(2i32), DataType::Int32),
@@ -346,7 +351,8 @@ fn test_data_conversion_options_boolean_numeric_policy_is_source_independent() {
     }
 
     let non_zero = DataConversionOptions::default().with_boolean_options(
-        BooleanConversionOptions::default().with_numeric_policy(BooleanNumericPolicy::NonZero),
+        BooleanConversionOptions::default()
+            .with_numeric_policy(BooleanNumericPolicy::NonZero),
     );
     for converter in [DataConverter::from(2i32), DataConverter::from("2")] {
         assert!(
@@ -371,7 +377,8 @@ fn test_data_conversion_options_boolean_numeric_policy_is_source_independent() {
     }
 
     let reject = DataConversionOptions::default().with_boolean_options(
-        BooleanConversionOptions::default().with_numeric_policy(BooleanNumericPolicy::Reject),
+        BooleanConversionOptions::default()
+            .with_numeric_policy(BooleanNumericPolicy::Reject),
     );
     for (converter, from) in [
         (DataConverter::from(1i32), DataType::Int32),
@@ -404,7 +411,8 @@ fn test_data_conversion_options_serde_and_default_ref() {
             .expect("empty options object should use defaults"),
         defaults,
     );
-    let wire = serde_json::to_string(&defaults).expect("conversion options should serialize");
+    let wire = serde_json::to_string(&defaults)
+        .expect("conversion options should serialize");
     assert_eq!(
         serde_json::from_str::<DataConversionOptions>(&wire)
             .expect("conversion options should deserialize"),
@@ -420,7 +428,8 @@ fn test_data_conversion_options_serde_and_default_ref() {
                     .with_max_big_integer_digits(16),
             ),
     );
-    let value = serde_json::to_value(&custom).expect("custom conversion options should serialize");
+    let value = serde_json::to_value(&custom)
+        .expect("custom conversion options should serialize");
     assert!(value.get("numeric").is_some());
     assert!(value.get("numeric_policy").is_none());
     assert_eq!(value["numeric"]["limits"]["max_text_bytes"], 64);

@@ -7,6 +7,8 @@
 // =============================================================================
 //! Textual and temporal conversion implementations.
 
+use std::fmt;
+
 #[cfg(feature = "chrono")]
 use chrono::DateTime;
 #[cfg(feature = "chrono")]
@@ -24,11 +26,13 @@ use url::Url;
 
 use super::DataConverter;
 use super::duration::format_duration;
+use super::internal::CountingWriter;
 use super::string_source::normalize;
 #[cfg(feature = "url")]
 use super::structured::check_structured_text_limit;
 #[cfg(feature = "json")]
 use super::structured::string_map_to_json_text;
+use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
@@ -78,34 +82,67 @@ fn validate_canonical_temporal_year(
 /// # Returns
 ///
 /// The formatted value for a directly displayable source, otherwise `None`.
-fn format_display_source(source: &DataConverter<'_>) -> Option<String> {
+fn format_display_source<W>(
+    source: &DataConverter<'_>,
+    writer: &mut W,
+) -> Result<bool, fmt::Error>
+where
+    W: fmt::Write,
+{
     match source {
-        DataConverter::Bool(value) => Some(value.to_string()),
-        DataConverter::Char(value) => Some(value.to_string()),
-        DataConverter::Int8(value) => Some(value.to_string()),
-        DataConverter::Int16(value) => Some(value.to_string()),
-        DataConverter::Int32(value) => Some(value.to_string()),
-        DataConverter::Int64(value) => Some(value.to_string()),
-        DataConverter::Int128(value) => Some(value.to_string()),
-        DataConverter::UInt8(value) => Some(value.to_string()),
-        DataConverter::UInt16(value) => Some(value.to_string()),
-        DataConverter::UInt32(value) => Some(value.to_string()),
-        DataConverter::UInt64(value) => Some(value.to_string()),
-        DataConverter::UInt128(value) => Some(value.to_string()),
-        DataConverter::Float32(value) => Some(value.to_string()),
-        DataConverter::Float64(value) => Some(value.to_string()),
+        DataConverter::Bool(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::Char(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::Int8(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::Int16(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::Int32(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::Int64(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::Int128(value) => {
+            write!(writer, "{value}").map(|()| true)
+        }
+        DataConverter::UInt8(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::UInt16(value) => {
+            write!(writer, "{value}").map(|()| true)
+        }
+        DataConverter::UInt32(value) => {
+            write!(writer, "{value}").map(|()| true)
+        }
+        DataConverter::UInt64(value) => {
+            write!(writer, "{value}").map(|()| true)
+        }
+        DataConverter::UInt128(value) => {
+            write!(writer, "{value}").map(|()| true)
+        }
+        DataConverter::Float32(value) => {
+            write!(writer, "{value}").map(|()| true)
+        }
+        DataConverter::Float64(value) => {
+            write!(writer, "{value}").map(|()| true)
+        }
         #[cfg(feature = "big-integer")]
-        DataConverter::BigInteger(value) => Some(value.to_string()),
+        DataConverter::BigInteger(value) => {
+            write!(writer, "{value}").map(|()| true)
+        }
         #[cfg(feature = "big-decimal")]
-        DataConverter::BigDecimal(value) => Some(value.to_string()),
+        DataConverter::BigDecimal(value) => {
+            write!(writer, "{value}").map(|()| true)
+        }
         #[cfg(feature = "chrono")]
-        DataConverter::Time(value) => Some(value.to_string()),
+        DataConverter::Time(value) => write!(writer, "{value}").map(|()| true),
         #[cfg(feature = "url")]
-        DataConverter::Url(value) => Some(value.to_string()),
+        DataConverter::Url(value) => write!(writer, "{value}").map(|()| true),
         #[cfg(feature = "json")]
-        DataConverter::Json(value) => Some(value.to_string()),
-        _ => None,
+        DataConverter::Json(value) => write!(writer, "{value}").map(|()| true),
+        _ => Ok(false),
     }
+}
+
+/// Counts a directly displayable source without materializing its String.
+fn count_display_source(source: &DataConverter<'_>) -> Option<usize> {
+    let mut writer = CountingWriter::new();
+    format_display_source(source, &mut writer)
+        .ok()
+        .filter(|written| *written)
+        .map(|_| writer.bytes())
 }
 
 impl DataConversionTarget for char {
@@ -168,7 +205,10 @@ impl DataConversionTarget for String {
         source: &DataConverter<'_>,
         options: &DataConversionOptions,
     ) -> Result<Self, DataConversionError> {
-        if let Some(value) = format_display_source(source) {
+        let mut value = String::new();
+        if format_display_source(source, &mut value)
+            .is_ok_and(|written| written)
+        {
             return Ok(value);
         }
         match source {
@@ -193,17 +233,21 @@ impl DataConversionTarget for String {
             }
             DataConverter::Duration(value) => format_duration(*value, options),
             #[cfg(feature = "json")]
-            DataConverter::StringMap(value) => match string_map_to_json_text(value) {
-                Ok(value) => Ok(value),
-                Err(_) => Err(source.invalid(
-                    DataType::String,
-                    InvalidValueReason::Serialization {
-                        format: DataFormat::Json,
-                    },
-                )),
-            },
+            DataConverter::StringMap(value) => {
+                match string_map_to_json_text(value) {
+                    Ok(value) => Ok(value),
+                    Err(_) => Err(source.invalid(
+                        DataType::String,
+                        InvalidValueReason::Serialization {
+                            format: DataFormat::Json,
+                        },
+                    )),
+                }
+            }
             #[cfg(not(feature = "json"))]
-            DataConverter::StringMap(_) => Err(source.unsupported(DataType::String)),
+            DataConverter::StringMap(_) => {
+                Err(source.unsupported(DataType::String))
+            }
             _ => Err(source.unsupported(DataType::String)),
         }
     }
@@ -230,7 +274,8 @@ impl DataConversionTarget for String {
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::String(value) => {
-                let normalized = normalize(value.as_ref(), options, DataType::String)?;
+                let normalized =
+                    normalize(value.as_ref(), options, DataType::String)?;
                 if normalized.len() == value.len() {
                     Ok(value.into_owned())
                 } else {
@@ -242,6 +287,96 @@ impl DataConversionTarget for String {
             source => Self::convert_from(&source, options),
         }
     }
+
+    /// Converts a borrowed source and charges the resulting String payload.
+    fn convert_from_in(
+        source: &DataConverter<'_>,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<Self, DataConversionError> {
+        if let DataConverter::String(value) = source {
+            let normalized =
+                normalize(value, session.options(), DataType::String)?;
+            check_string_output(source.data_type(), normalized.len(), session)?;
+            let result = normalized.to_owned();
+            consume_string_output(source.data_type(), result, session)
+        } else if let Some(bytes) = count_display_source(source) {
+            check_string_output(source.data_type(), bytes, session)?;
+            let value = Self::convert_from(source, session.options())?;
+            consume_string_output(source.data_type(), value, session)
+        } else {
+            let value = Self::convert_from(source, session.options())?;
+            charge_string_output(source, value, session)
+        }
+    }
+
+    /// Converts an owned source and charges the resulting String payload.
+    fn convert_owned_in(
+        source: DataConverter<'_>,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<Self, DataConversionError> {
+        let from = source.data_type();
+        if let DataConverter::String(value) = source {
+            let normalized =
+                normalize(value.as_ref(), session.options(), DataType::String)?;
+            check_string_output(from, normalized.len(), session)?;
+            let result = if normalized.len() == value.len() {
+                value.into_owned()
+            } else {
+                normalized.to_owned()
+            };
+            consume_string_output(from, result, session)
+        } else if let Some(bytes) = count_display_source(&source) {
+            check_string_output(from, bytes, session)?;
+            let value = Self::convert_owned(source, session.options())?;
+            consume_string_output(from, value, session)
+        } else {
+            let value = Self::convert_owned(source, session.options())?;
+            charge_string_output_type(from, value, session)
+        }
+    }
+}
+
+/// Checks and consumes the output payload of a successful String conversion.
+fn charge_string_output(
+    source: &DataConverter<'_>,
+    value: String,
+    session: &mut ConversionSession<'_>,
+) -> Result<String, DataConversionError> {
+    charge_string_output_type(source.data_type(), value, session)
+}
+
+/// Checks and consumes a String payload with the source type in error context.
+fn charge_string_output_type(
+    from: DataType,
+    value: String,
+    session: &mut ConversionSession<'_>,
+) -> Result<String, DataConversionError> {
+    check_string_output(from, value.len(), session)?;
+    consume_string_output(from, value, session)
+}
+
+/// Checks a String payload before its final allocation is retained.
+fn check_string_output(
+    from: DataType,
+    bytes: usize,
+    session: &ConversionSession<'_>,
+) -> Result<(), DataConversionError> {
+    session.check_output_bytes(bytes).map_err(|error| {
+        DataConversionError::limit_exceeded(from, DataType::String, error)
+    })
+}
+
+/// Consumes a previously checked String payload budget.
+fn consume_string_output(
+    from: DataType,
+    value: String,
+    session: &mut ConversionSession<'_>,
+) -> Result<String, DataConversionError> {
+    let bytes = value.len();
+    session.consume_output_bytes(bytes).map_err(|error| {
+        DataConversionError::limit_exceeded(from, DataType::String, error)
+    })?;
+    Ok(value)
 }
 
 /// Implements a canonical temporal target from text or an identical source.
@@ -277,7 +412,9 @@ macro_rules! impl_text_or_copy_target {
                             Some(value) => Ok(value),
                             None => Err(source.invalid(
                                 $data_type,
-                                InvalidValueReason::InvalidSyntax { expected: $format },
+                                InvalidValueReason::InvalidSyntax {
+                                    expected: $format,
+                                },
                             )),
                         }
                     }
@@ -400,7 +537,13 @@ fn parse_datetime(value: &str) -> Option<NaiveDateTime> {
 }
 
 #[cfg(feature = "chrono")]
-impl_text_or_copy_target!(NaiveDate, Date, DataType::Date, "YYYY-MM-DD", parse_date);
+impl_text_or_copy_target!(
+    NaiveDate,
+    Date,
+    DataType::Date,
+    "YYYY-MM-DD",
+    parse_date
+);
 #[cfg(feature = "chrono")]
 impl_text_or_copy_target!(
     NaiveTime,
@@ -483,7 +626,12 @@ impl DataConversionTarget for Url {
             DataConverter::Url(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Url)?;
-                check_structured_text_limit(value, DataType::String, DataType::Url, options)?;
+                check_structured_text_limit(
+                    value,
+                    DataType::String,
+                    DataType::Url,
+                    options,
+                )?;
                 match Url::parse(value) {
                     Ok(value) => Ok(value),
                     Err(_) => Err(source.invalid(

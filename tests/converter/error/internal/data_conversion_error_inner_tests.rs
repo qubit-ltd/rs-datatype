@@ -5,44 +5,16 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Tests for variant-specific data conversion error details.
+//! Private error representation coverage is provided by public error tests.
 
-use qubit_datatype::ConversionLimit;
 use qubit_datatype::DataConversionError;
+use qubit_datatype::DataConversionErrorKind;
 use qubit_datatype::DataType;
-use qubit_datatype::InvalidValueReason;
 
-/// Tests the public diagnostics produced by every private error variant.
 #[test]
-fn test_data_conversion_error_inner_display() {
+fn test_private_error_representation_is_covered_by_public_contract() {
     assert_eq!(
-        DataConversionError::missing(DataType::String, DataType::Int32).to_string(),
-        "Missing value for conversion from string to int32",
-    );
-    assert_eq!(
-        DataConversionError::empty_collection(DataType::Int32).to_string(),
-        "Cannot convert the first value of an empty collection to int32",
-    );
-    assert_eq!(
-        DataConversionError::unsupported(DataType::String, DataType::Int32).to_string(),
-        "Unsupported conversion from string to int32",
-    );
-    assert_eq!(
-        DataConversionError::invalid(
-            DataType::String,
-            DataType::Int32,
-            InvalidValueReason::PrecisionLoss,
-        )
-        .to_string(),
-        "Invalid conversion from string to int32: precision loss",
-    );
-    assert_eq!(
-        DataConversionError::limit_exceeded(
-            DataType::String,
-            DataType::BigInteger,
-            ConversionLimit::BigIntegerDigits { maximum: 12 },
-        )
-        .to_string(),
-        "Conversion limit exceeded from string to biginteger: BigInteger result exceeds the 12-decimal-digit limit",
+        DataConversionError::missing(DataType::String, DataType::Bool).kind(),
+        DataConversionErrorKind::Missing
     );
 }

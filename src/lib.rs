@@ -36,6 +36,12 @@
 //! require exact divisibility unless `DurationRoundingPolicy::HalfUp` is
 //! selected explicitly.
 //!
+//! A reusable conversion session exposes the original
+//! `qubit_budget::BudgetError` through `DataConversionError::budget_error()`.
+//! Its output-byte budget counts successful built-in `String` payloads
+//! cumulatively for both borrowed and owned sources; each String source is
+//! normalized exactly once.
+//!
 //! Strings are not trimmed by default and are normalized exactly once.
 //! Boolean text defaults to `true` and `false`; numeric 0/1 handling is
 //! controlled independently by `BooleanNumericPolicy`. By default, Duration
@@ -105,10 +111,6 @@ pub use converter::BooleanNumericPolicy;
 pub use converter::CollectionConversionOptions;
 #[cfg(feature = "converter")]
 pub use converter::ConversionBudgetLimits;
-#[cfg(feature = "converter")]
-pub use converter::ConversionLimit;
-#[cfg(feature = "converter")]
-pub use converter::ConversionLimitExceeded;
 #[cfg(feature = "converter")]
 pub use converter::ConversionResource;
 #[cfg(feature = "converter")]

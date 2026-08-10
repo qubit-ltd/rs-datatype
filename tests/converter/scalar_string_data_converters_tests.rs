@@ -9,10 +9,11 @@
 //!
 //! Tests for scalar string collection conversion behavior.
 
+use qubit_budget::BudgetError;
+use qubit_datatype::ConversionResource;
 use qubit_datatype::DataType;
 use qubit_datatype::converter::BlankStringPolicy;
 use qubit_datatype::converter::CollectionConversionOptions;
-use qubit_datatype::converter::ConversionLimit;
 use qubit_datatype::converter::DataConversionError;
 use qubit_datatype::converter::DataConversionErrorKind;
 use qubit_datatype::converter::DataConversionOptions;
@@ -54,9 +55,10 @@ fn test_scalar_string_data_converters_to_vec_with_splits_items() {
                 .with_empty_item_policy(EmptyItemPolicy::Skip),
         );
 
-    let ports: Vec<u16> = ScalarStringDataConverters::from(" 8080, 8081;; 8082 ")
-        .to_vec_with(&options)
-        .expect("scalar string should split and parse into ports");
+    let ports: Vec<u16> =
+        ScalarStringDataConverters::from(" 8080, 8081;; 8082 ")
+            .to_vec_with(&options)
+            .expect("scalar string should split and parse into ports");
 
     assert_eq!(ports, vec![8080, 8081, 8082]);
 }
@@ -156,8 +158,12 @@ fn test_scalar_string_data_converters_to_vec_with_enforces_item_limit() {
     assert_eq!(error.conversion_error().from_type(), Some(DataType::String));
     assert_eq!(error.conversion_error().to_type(), DataType::UInt16);
     assert_eq!(
-        error.conversion_error().limit(),
-        Some(&ConversionLimit::CollectionItems { maximum: 2 }),
+        error.conversion_error().budget_error(),
+        Some(&BudgetError::LimitExceeded {
+            resource: ConversionResource::Items,
+            actual: 3,
+            maximum: 2,
+        }),
     );
 }
 
@@ -184,8 +190,12 @@ fn test_scalar_string_data_converters_to_first_with_item_limit() {
         .expect_err("zero limit must reject the first retained item");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(
-        error.limit(),
-        Some(&ConversionLimit::CollectionItems { maximum: 0 }),
+        error.budget_error(),
+        Some(&BudgetError::LimitExceeded {
+            resource: ConversionResource::Items,
+            actual: 1,
+            maximum: 0,
+        }),
     );
 }
 

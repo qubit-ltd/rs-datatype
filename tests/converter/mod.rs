@@ -9,9 +9,11 @@
 //!
 //! Tests for the reusable data conversion module.
 
+mod conversion_resource_tests;
 mod conversion_session_tests;
 mod data_conversion_target_tests;
 mod data_converter;
+mod data_converter_output_budget_tests;
 mod data_converter_tests;
 mod data_converters_tests;
 mod error;

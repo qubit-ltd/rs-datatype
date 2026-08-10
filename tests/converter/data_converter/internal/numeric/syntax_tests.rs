@@ -7,7 +7,8 @@
 // =============================================================================
 //! Numeric syntax validation tests.
 
-use qubit_datatype::ConversionLimit;
+use qubit_budget::BudgetError;
+use qubit_datatype::ConversionResource;
 use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConversionOptions;
 use qubit_datatype::DataConverter;
@@ -30,8 +31,9 @@ fn test_numeric_text_rejects_duplicate_signs() {
 #[test]
 fn test_numeric_text_limit_preserves_conversion_limit_fact() {
     let options = DataConversionOptions::default().with_numeric_options(
-        NumericConversionOptions::default()
-            .with_limits(NumericConversionLimits::default().with_max_text_bytes(3)),
+        NumericConversionOptions::default().with_limits(
+            NumericConversionLimits::default().with_max_text_bytes(3),
+        ),
     );
 
     assert_eq!(DataConverter::from("123").to_with::<u32>(&options), Ok(123),);
@@ -40,7 +42,11 @@ fn test_numeric_text_limit_preserves_conversion_limit_fact() {
         Err(DataConversionError::limit_exceeded(
             DataType::String,
             DataType::UInt32,
-            ConversionLimit::NumericTextBytes { maximum: 3 },
+            BudgetError::LimitExceeded {
+                resource: ConversionResource::NumericTextBytes,
+                actual: 4,
+                maximum: 3,
+            },
         )),
     );
 }
