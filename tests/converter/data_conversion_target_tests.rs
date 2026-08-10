@@ -7,10 +7,12 @@
 // =============================================================================
 
 use qubit_datatype::ConversionBudgetLimits;
+#[cfg(feature = "json")]
 use qubit_datatype::DataConversionErrorKind;
 use qubit_datatype::DataConversionOptions;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
+#[cfg(feature = "json")]
 use qubit_datatype::StructuredConversionLimits;
 
 #[cfg(feature = "json")]
