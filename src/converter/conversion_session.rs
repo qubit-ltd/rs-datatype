@@ -8,6 +8,8 @@
 //! Reusable accounting session for one or more data conversions.
 
 use qubit_budget::BudgetError;
+use qubit_budget::BudgetedStringError;
+use qubit_budget::BudgetedStringWriter;
 use qubit_budget::JsonBudget;
 use qubit_budget::JsonLimits;
 use qubit_budget::ResourceBudget;
@@ -42,15 +44,9 @@ impl<'a> ConversionSession<'a> {
             .with_map_entries_limit(*structured.max_map_entries_limit());
         Self {
             options,
-            items: ResourceBudget::from_limit(
-                *options.budget().max_items_limit(),
-            ),
-            input_bytes: ResourceBudget::from_limit(
-                *options.budget().max_input_bytes_limit(),
-            ),
-            output_bytes: ResourceBudget::from_limit(
-                *options.budget().max_output_bytes_limit(),
-            ),
+            items: ResourceBudget::from_limit(*options.budget().max_items_limit()),
+            input_bytes: ResourceBudget::from_limit(*options.budget().max_input_bytes_limit()),
+            output_bytes: ResourceBudget::from_limit(*options.budget().max_output_bytes_limit()),
             json: JsonLimits::empty()
                 .with_structure_limits(structure_limits)
                 .budget(),
@@ -66,10 +62,7 @@ impl<'a> ConversionSession<'a> {
     /// Delegates a nested conversion without charging a new top-level item or
     /// input payload.
     #[inline(always)]
-    pub fn delegate<T>(
-        &mut self,
-        source: &DataConverter<'_>,
-    ) -> Result<T, DataConversionError>
+    pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -78,10 +71,7 @@ impl<'a> ConversionSession<'a> {
 
     /// Delegates an owned nested conversion while preserving this session.
     #[inline(always)]
-    pub fn delegate_owned<T>(
-        &mut self,
-        source: DataConverter<'_>,
-    ) -> Result<T, DataConversionError>
+    pub fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -90,9 +80,7 @@ impl<'a> ConversionSession<'a> {
 
     /// Consumes one top-level conversion item.
     #[inline]
-    pub fn consume_item(
-        &mut self,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+    pub fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, usize>> {
         self.items.try_consume(1)
     }
 
@@ -107,7 +95,7 @@ impl<'a> ConversionSession<'a> {
 
     /// Checks cumulative built-in String output payload bytes.
     #[inline]
-    pub fn check_output_bytes(
+    pub(crate) fn check_output_bytes(
         &self,
         amount: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
@@ -116,11 +104,25 @@ impl<'a> ConversionSession<'a> {
 
     /// Consumes cumulative output payload bytes after a successful pre-check.
     #[inline]
-    pub fn consume_output_bytes(
+    pub(crate) fn consume_output_bytes(
         &mut self,
         amount: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
         self.output_bytes.try_consume(amount)
+    }
+
+    /// Renders a String payload in one pass and commits its UTF-8 bytes only
+    /// after the renderer succeeds.
+    #[inline]
+    pub(crate) fn try_write_string<E, F>(
+        &mut self,
+        render: F,
+    ) -> Result<String, BudgetedStringError<ConversionResource, E>>
+    where
+        E: std::fmt::Debug + std::fmt::Display,
+        F: FnOnce(&mut BudgetedStringWriter<'_, ConversionResource>) -> Result<(), E>,
+    {
+        self.output_bytes.try_write_string(render)
     }
 
     /// Checks one numeric text measurement.
@@ -192,10 +194,7 @@ impl<'a> ConversionSession<'a> {
 
     /// Checks a structured depth without changing session state.
     #[inline]
-    pub fn check_depth(
-        &self,
-        depth: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+    pub fn check_depth(&self, depth: usize) -> Result<(), BudgetError<ConversionResource, usize>> {
         self.json.check_depth(depth)
     }
 
@@ -252,9 +251,7 @@ impl<'a> ConversionSession<'a> {
     /// Returns the mutable JSON budget shared by this conversion session.
     #[cfg(feature = "json")]
     #[inline(always)]
-    pub(crate) fn json_budget_mut(
-        &mut self,
-    ) -> &mut JsonBudget<ConversionResource, usize> {
+    pub(crate) fn json_budget_mut(&mut self) -> &mut JsonBudget<ConversionResource, usize> {
         &mut self.json
     }
 }

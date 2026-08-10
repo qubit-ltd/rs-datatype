@@ -17,10 +17,10 @@ use super::super::super::DataConverter;
 use super::big_number::decimal_to_bigint;
 use super::syntax::normalize_numeric_text;
 use super::syntax::parse_text_integer;
+use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
-use crate::converter::ConversionSession;
 use crate::converter::DurationRoundingPolicy;
 use crate::converter::FractionalToIntegerPolicy;
 use crate::converter::InvalidValueReason;
@@ -53,24 +53,14 @@ pub(super) fn signed_magnitude(value: i128) -> (bool, u128) {
 /// # Returns
 ///
 /// The exact sign and magnitude for a supported scalar integer source.
-pub(super) fn scalar_integer_magnitude(
-    source: &DataConverter<'_>,
-) -> Option<(bool, u128)> {
+pub(super) fn scalar_integer_magnitude(source: &DataConverter<'_>) -> Option<(bool, u128)> {
     match source {
         DataConverter::Bool(value) => Some((false, u128::from(*value))),
         DataConverter::Char(value) => Some((false, u128::from(*value as u32))),
-        DataConverter::Int8(value) => {
-            Some(signed_magnitude(i128::from(*value)))
-        }
-        DataConverter::Int16(value) => {
-            Some(signed_magnitude(i128::from(*value)))
-        }
-        DataConverter::Int32(value) => {
-            Some(signed_magnitude(i128::from(*value)))
-        }
-        DataConverter::Int64(value) => {
-            Some(signed_magnitude(i128::from(*value)))
-        }
+        DataConverter::Int8(value) => Some(signed_magnitude(i128::from(*value))),
+        DataConverter::Int16(value) => Some(signed_magnitude(i128::from(*value))),
+        DataConverter::Int32(value) => Some(signed_magnitude(i128::from(*value))),
+        DataConverter::Int64(value) => Some(signed_magnitude(i128::from(*value))),
         DataConverter::Int128(value) => Some(signed_magnitude(*value)),
         DataConverter::UInt8(value) => Some((false, u128::from(*value))),
         DataConverter::UInt16(value) => Some((false, u128::from(*value))),
@@ -214,15 +204,9 @@ pub(in crate::converter::data_converter) fn source_to_integer(
         }
         DataConverter::String(value) => {
             let value = normalize_numeric_text(value, options, to)?;
-            parse_text_integer(
-                value,
-                options.numeric().fractional_to_integer(),
-                to,
-            )
+            parse_text_integer(value, options.numeric().fractional_to_integer(), to)
         }
-        DataConverter::Duration(value) => {
-            Ok((false, duration_to_u128(*value, options, to)?))
-        }
+        DataConverter::Duration(value) => Ok((false, duration_to_u128(*value, options, to)?)),
         DataConverter::Unset(_) => Err(source.missing(to)),
         _ => Err(source.unsupported(to)),
     }
@@ -439,11 +423,7 @@ macro_rules! impl_signed_target {
                 session: &mut ConversionSession<'_>,
             ) -> Result<Self, DataConversionError> {
                 let options = session.options();
-                checked_signed(
-                    to_i128(source, options, $data_type)?,
-                    source,
-                    $data_type,
-                )
+                checked_signed(to_i128(source, options, $data_type)?, source, $data_type)
             }
         }
     };
@@ -475,11 +455,7 @@ macro_rules! impl_unsigned_target {
                 session: &mut ConversionSession<'_>,
             ) -> Result<Self, DataConversionError> {
                 let options = session.options();
-                checked_unsigned(
-                    to_u128(source, options, $data_type)?,
-                    source,
-                    $data_type,
-                )
+                checked_unsigned(to_u128(source, options, $data_type)?, source, $data_type)
             }
         }
     };

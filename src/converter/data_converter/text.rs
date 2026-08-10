@@ -8,6 +8,7 @@
 //! Textual and temporal conversion implementations.
 
 use std::fmt;
+use std::fmt::Write as _;
 
 #[cfg(feature = "chrono")]
 use chrono::DateTime;
@@ -25,21 +26,21 @@ use chrono::Utc;
 use url::Url;
 
 use super::DataConverter;
-use super::duration::format_duration;
-use super::internal::CountingWriter;
+use super::duration::duration_text_parts;
+#[cfg(feature = "json")]
+use super::internal::CanonicalStringMap;
 use super::string_source::normalize;
 #[cfg(feature = "url")]
 use super::structured::check_structured_text_limit;
-#[cfg(feature = "json")]
-use super::structured::string_map_to_json_text;
+use crate::converter::ConversionResource;
 use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
 #[cfg(feature = "json")]
 use crate::converter::DataFormat;
 use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
+use qubit_budget::BudgetedStringError;
 
 /// Validates the four-digit year required by canonical temporal text.
 ///
@@ -82,10 +83,7 @@ fn validate_canonical_temporal_year(
 /// # Returns
 ///
 /// The formatted value for a directly displayable source, otherwise `None`.
-fn format_display_source<W>(
-    source: &DataConverter<'_>,
-    writer: &mut W,
-) -> Result<bool, fmt::Error>
+fn format_display_source<W>(source: &DataConverter<'_>, writer: &mut W) -> Result<bool, fmt::Error>
 where
     W: fmt::Write,
 {
@@ -96,36 +94,18 @@ where
         DataConverter::Int16(value) => write!(writer, "{value}").map(|()| true),
         DataConverter::Int32(value) => write!(writer, "{value}").map(|()| true),
         DataConverter::Int64(value) => write!(writer, "{value}").map(|()| true),
-        DataConverter::Int128(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
+        DataConverter::Int128(value) => write!(writer, "{value}").map(|()| true),
         DataConverter::UInt8(value) => write!(writer, "{value}").map(|()| true),
-        DataConverter::UInt16(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
-        DataConverter::UInt32(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
-        DataConverter::UInt64(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
-        DataConverter::UInt128(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
-        DataConverter::Float32(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
-        DataConverter::Float64(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
+        DataConverter::UInt16(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::UInt32(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::UInt64(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::UInt128(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::Float32(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::Float64(value) => write!(writer, "{value}").map(|()| true),
         #[cfg(feature = "big-integer")]
-        DataConverter::BigInteger(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
+        DataConverter::BigInteger(value) => write!(writer, "{value}").map(|()| true),
         #[cfg(feature = "big-decimal")]
-        DataConverter::BigDecimal(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
+        DataConverter::BigDecimal(value) => write!(writer, "{value}").map(|()| true),
         #[cfg(feature = "chrono")]
         DataConverter::Time(value) => write!(writer, "{value}").map(|()| true),
         #[cfg(feature = "url")]
@@ -136,13 +116,89 @@ where
     }
 }
 
-/// Counts a directly displayable source without materializing its String.
-fn count_display_source(source: &DataConverter<'_>) -> Option<usize> {
-    let mut writer = CountingWriter::new();
-    format_display_source(source, &mut writer)
-        .ok()
-        .filter(|written| *written)
-        .map(|_| writer.bytes())
+fn is_display_source(source: &DataConverter<'_>) -> bool {
+    match source {
+        DataConverter::Bool(_)
+        | DataConverter::Char(_)
+        | DataConverter::Int8(_)
+        | DataConverter::Int16(_)
+        | DataConverter::Int32(_)
+        | DataConverter::Int64(_)
+        | DataConverter::Int128(_)
+        | DataConverter::UInt8(_)
+        | DataConverter::UInt16(_)
+        | DataConverter::UInt32(_)
+        | DataConverter::UInt64(_)
+        | DataConverter::UInt128(_)
+        | DataConverter::Float32(_)
+        | DataConverter::Float64(_) => true,
+        #[cfg(feature = "big-integer")]
+        DataConverter::BigInteger(_) => true,
+        #[cfg(feature = "big-decimal")]
+        DataConverter::BigDecimal(_) => true,
+        #[cfg(feature = "chrono")]
+        DataConverter::Time(_) => true,
+        #[cfg(feature = "url")]
+        DataConverter::Url(_) => true,
+        #[cfg(feature = "json")]
+        DataConverter::Json(_) => true,
+        _ => false,
+    }
+}
+
+fn map_fmt_output_error(
+    source: &DataConverter<'_>,
+    error: BudgetedStringError<ConversionResource, fmt::Error>,
+) -> DataConversionError {
+    map_fmt_output_error_from_type(source.data_type(), error)
+}
+
+fn map_fmt_output_error_from_type(
+    from: DataType,
+    error: BudgetedStringError<ConversionResource, fmt::Error>,
+) -> DataConversionError {
+    match error {
+        BudgetedStringError::Budget(error) => {
+            DataConversionError::limit_exceeded(from, DataType::String, error)
+        }
+        BudgetedStringError::Render(_)
+        | BudgetedStringError::InvalidUtf8(_)
+        | BudgetedStringError::LengthOverflow => {
+            DataConversionError::invalid(from, DataType::String, InvalidValueReason::OutOfRange)
+        }
+    }
+}
+
+#[cfg(feature = "json")]
+fn map_json_output_error(
+    source: &DataConverter<'_>,
+    error: BudgetedStringError<ConversionResource, serde_json::Error>,
+) -> DataConversionError {
+    map_json_output_error_from_type(source.data_type(), error)
+}
+
+#[cfg(feature = "json")]
+fn map_json_output_error_from_type(
+    from: DataType,
+    error: BudgetedStringError<ConversionResource, serde_json::Error>,
+) -> DataConversionError {
+    match error {
+        BudgetedStringError::Budget(error) => {
+            DataConversionError::limit_exceeded(from, DataType::String, error)
+        }
+        BudgetedStringError::Render(_) | BudgetedStringError::InvalidUtf8(_) => {
+            DataConversionError::invalid(
+                from,
+                DataType::String,
+                InvalidValueReason::Serialization {
+                    format: DataFormat::Json,
+                },
+            )
+        }
+        BudgetedStringError::LengthOverflow => {
+            DataConversionError::invalid(from, DataType::String, InvalidValueReason::OutOfRange)
+        }
+    }
 }
 
 impl DataConversionTarget for char {
@@ -186,81 +242,13 @@ impl DataConversionTarget for char {
     }
 }
 
-fn convert_string_with_options(
-    source: &DataConverter<'_>,
-    options: &DataConversionOptions,
-) -> Result<String, DataConversionError> {
-    let mut value = String::new();
-    if format_display_source(source, &mut value)
-        .is_ok_and(|written| written)
-    {
-        return Ok(value);
-    }
-    match source {
-        DataConverter::Unset(_) => Err(source.missing(DataType::String)),
-        DataConverter::String(value) => {
-            normalize(value, options, DataType::String).map(str::to_owned)
-        }
-        #[cfg(feature = "chrono")]
-        DataConverter::Date(value) => {
-            validate_canonical_temporal_year(source, value.year())?;
-            Ok(value.format("%Y-%m-%d").to_string())
-        }
-        #[cfg(feature = "chrono")]
-        DataConverter::DateTime(value) => {
-            validate_canonical_temporal_year(source, value.year())?;
-            Ok(value.format("%Y-%m-%dT%H:%M:%S%.f").to_string())
-        }
-        #[cfg(feature = "chrono")]
-        DataConverter::Instant(value) => {
-            validate_canonical_temporal_year(source, value.year())?;
-            Ok(value.to_rfc3339())
-        }
-        DataConverter::Duration(value) => format_duration(*value, options),
-        #[cfg(feature = "json")]
-        DataConverter::StringMap(value) => {
-            match string_map_to_json_text(value) {
-                Ok(value) => Ok(value),
-                Err(_) => Err(source.invalid(
-                    DataType::String,
-                    InvalidValueReason::Serialization {
-                        format: DataFormat::Json,
-                    },
-                )),
-            }
-        }
-        #[cfg(not(feature = "json"))]
-        DataConverter::StringMap(_) => Err(source.unsupported(DataType::String)),
-        _ => Err(source.unsupported(DataType::String)),
-    }
-}
-
-fn convert_owned_string_with_options(
-    source: DataConverter<'_>,
-    options: &DataConversionOptions,
-) -> Result<String, DataConversionError> {
-    match source {
-        DataConverter::String(value) => {
-            let normalized = normalize(value.as_ref(), options, DataType::String)?;
-            if normalized.len() == value.len() {
-                Ok(value.into_owned())
-            } else {
-                Ok(normalized.to_owned())
-            }
-        }
-        #[cfg(feature = "url")]
-        DataConverter::Url(value) => Ok(value.into_owned().into()),
-        source => convert_string_with_options(&source, options),
-    }
-}
-
 impl DataConversionTarget for String {
     /// Formats a borrowed runtime value as canonical text.
     ///
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to format.
-    /// * `options` - String, duration, and structured conversion policies.
+    /// * `session` - Shared conversion policies and output budget.
     ///
     /// # Returns
     ///
@@ -270,110 +258,128 @@ impl DataConversionTarget for String {
     ///
     /// Returns a missing, unsupported, normalization, range, precision, or
     /// serialization error as applicable to the source.
-    /// Formats a runtime value as canonical text, consuming it when possible.
-    ///
-    /// # Parameters
-    ///
-    /// * `source` - Runtime value to consume.
-    /// * `options` - String, duration, and structured conversion policies.
-    ///
-    /// # Returns
-    ///
-    /// The canonical text; unchanged owned strings and owned URLs reuse their
-    /// text storage.
-    ///
-    /// # Errors
-    ///
-    /// Returns the same conversion errors as [`Self::convert_from`].
-    /// Converts a borrowed source and charges the resulting String payload.
     fn convert_from(
         source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        let options = session.options();
         if let DataConverter::String(value) = source {
-            let normalized =
-                normalize(value, session.options(), DataType::String)?;
-            check_string_output(source.data_type(), normalized.len(), session)?;
-            let result = normalized.to_owned();
-            consume_string_output(source.data_type(), result, session)
-        } else if let Some(bytes) = count_display_source(source) {
-            check_string_output(source.data_type(), bytes, session)?;
-            let value = convert_string_with_options(source, session.options())?;
-            consume_string_output(source.data_type(), value, session)
-        } else {
-            let value = convert_string_with_options(source, session.options())?;
-            charge_string_output(source, value, session)
+            let normalized = normalize(value, options, DataType::String)?;
+            return session
+                .try_write_string(|writer| {
+                    let mut output = writer.as_fmt();
+                    fmt::Write::write_str(&mut output, normalized)
+                })
+                .map_err(|error| map_fmt_output_error(source, error));
+        }
+        if is_display_source(source) {
+            return session
+                .try_write_string(|writer| {
+                    let mut output = writer.as_fmt();
+                    format_display_source(source, &mut output).map(|_| ())
+                })
+                .map_err(|error| map_fmt_output_error(source, error));
+        }
+        match source {
+            DataConverter::Unset(_) => Err(source.missing(DataType::String)),
+            #[cfg(feature = "chrono")]
+            DataConverter::Date(value) => {
+                validate_canonical_temporal_year(source, value.year())?;
+                session
+                    .try_write_string(|writer| {
+                        let mut output = writer.as_fmt();
+                        write!(output, "{}", value.format("%Y-%m-%d"))
+                    })
+                    .map_err(|error| map_fmt_output_error(source, error))
+            }
+            #[cfg(feature = "chrono")]
+            DataConverter::DateTime(value) => {
+                validate_canonical_temporal_year(source, value.year())?;
+                session
+                    .try_write_string(|writer| {
+                        let mut output = writer.as_fmt();
+                        write!(output, "{}", value.format("%Y-%m-%dT%H:%M:%S%.f"))
+                    })
+                    .map_err(|error| map_fmt_output_error(source, error))
+            }
+            #[cfg(feature = "chrono")]
+            DataConverter::Instant(value) => {
+                validate_canonical_temporal_year(source, value.year())?;
+                session
+                    .try_write_string(|writer| {
+                        let mut output = writer.as_fmt();
+                        write!(output, "{}", value.format("%+"))
+                    })
+                    .map_err(|error| map_fmt_output_error(source, error))
+            }
+            DataConverter::Duration(value) => {
+                let (units, suffix) = duration_text_parts(*value, options)?;
+                session
+                    .try_write_string(|writer| {
+                        let mut output = writer.as_fmt();
+                        match suffix {
+                            Some(suffix) => write!(output, "{units}{suffix}"),
+                            None => write!(output, "{units}"),
+                        }
+                    })
+                    .map_err(|error| map_fmt_output_error(source, error))
+            }
+            #[cfg(feature = "json")]
+            DataConverter::StringMap(value) => session
+                .try_write_string(|writer| {
+                    serde_json::to_writer(writer.as_io(), &CanonicalStringMap { value })
+                })
+                .map_err(|error| map_json_output_error(source, error)),
+            #[cfg(not(feature = "json"))]
+            DataConverter::StringMap(_) => Err(source.unsupported(DataType::String)),
+            _ => Err(source.unsupported(DataType::String)),
         }
     }
 
-    /// Converts an owned source and charges the resulting String payload.
+    /// Converts an owned source while reusing unchanged string storage.
     fn convert_owned(
         source: DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
         let from = source.data_type();
         if let DataConverter::String(value) = source {
-            let normalized =
-                normalize(value.as_ref(), session.options(), DataType::String)?;
-            check_string_output(from, normalized.len(), session)?;
-            let result = if normalized.len() == value.len() {
-                value.into_owned()
-            } else {
-                normalized.to_owned()
-            };
-            consume_string_output(from, result, session)
-        } else if let Some(bytes) = count_display_source(&source) {
-            check_string_output(from, bytes, session)?;
-            let value = convert_owned_string_with_options(source, session.options())?;
-            consume_string_output(from, value, session)
-        } else {
-            let value = convert_owned_string_with_options(source, session.options())?;
-            charge_string_output_type(from, value, session)
+            let normalized = normalize(value.as_ref(), session.options(), DataType::String)?;
+            if normalized.len() == value.len() {
+                session
+                    .check_output_bytes(normalized.len())
+                    .map_err(|error| {
+                        DataConversionError::limit_exceeded(from, DataType::String, error)
+                    })?;
+                let result = value.into_owned();
+                session
+                    .consume_output_bytes(result.len())
+                    .map_err(|error| {
+                        DataConversionError::limit_exceeded(from, DataType::String, error)
+                    })?;
+                return Ok(result);
+            }
+            return session
+                .try_write_string(|writer| {
+                    let mut output = writer.as_fmt();
+                    fmt::Write::write_str(&mut output, normalized)
+                })
+                .map_err(|error| map_fmt_output_error_from_type(from, error));
         }
+        #[cfg(feature = "url")]
+        if let DataConverter::Url(value) = source {
+            let result: String = value.into_owned().into();
+            session.check_output_bytes(result.len()).map_err(|error| {
+                DataConversionError::limit_exceeded(from, DataType::String, error)
+            })?;
+            session
+                .consume_output_bytes(result.len())
+                .map_err(|error| {
+                    DataConversionError::limit_exceeded(from, DataType::String, error)
+                })?;
+            return Ok(result);
+        }
+        Self::convert_from(&source, session)
     }
-}
-
-/// Checks and consumes the output payload of a successful String conversion.
-fn charge_string_output(
-    source: &DataConverter<'_>,
-    value: String,
-    session: &mut ConversionSession<'_>,
-) -> Result<String, DataConversionError> {
-    charge_string_output_type(source.data_type(), value, session)
-}
-
-/// Checks and consumes a String payload with the source type in error context.
-fn charge_string_output_type(
-    from: DataType,
-    value: String,
-    session: &mut ConversionSession<'_>,
-) -> Result<String, DataConversionError> {
-    check_string_output(from, value.len(), session)?;
-    consume_string_output(from, value, session)
-}
-
-/// Checks a String payload before its final allocation is retained.
-fn check_string_output(
-    from: DataType,
-    bytes: usize,
-    session: &ConversionSession<'_>,
-) -> Result<(), DataConversionError> {
-    session.check_output_bytes(bytes).map_err(|error| {
-        DataConversionError::limit_exceeded(from, DataType::String, error)
-    })
-}
-
-/// Consumes a previously checked String payload budget.
-fn consume_string_output(
-    from: DataType,
-    value: String,
-    session: &mut ConversionSession<'_>,
-) -> Result<String, DataConversionError> {
-    let bytes = value.len();
-    session.consume_output_bytes(bytes).map_err(|error| {
-        DataConversionError::limit_exceeded(from, DataType::String, error)
-    })?;
-    Ok(value)
 }
 
 /// Implements a canonical temporal target from text or an identical source.
@@ -410,9 +416,7 @@ macro_rules! impl_text_or_copy_target {
                             Some(value) => Ok(value),
                             None => Err(source.invalid(
                                 $data_type,
-                                InvalidValueReason::InvalidSyntax {
-                                    expected: $format,
-                                },
+                                InvalidValueReason::InvalidSyntax { expected: $format },
                             )),
                         }
                     }
@@ -535,13 +539,7 @@ fn parse_datetime(value: &str) -> Option<NaiveDateTime> {
 }
 
 #[cfg(feature = "chrono")]
-impl_text_or_copy_target!(
-    NaiveDate,
-    Date,
-    DataType::Date,
-    "YYYY-MM-DD",
-    parse_date
-);
+impl_text_or_copy_target!(NaiveDate, Date, DataType::Date, "YYYY-MM-DD", parse_date);
 #[cfg(feature = "chrono")]
 impl_text_or_copy_target!(
     NaiveTime,
@@ -626,12 +624,7 @@ impl DataConversionTarget for Url {
             DataConverter::Url(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Url)?;
-                check_structured_text_limit(
-                    value,
-                    DataType::String,
-                    DataType::Url,
-                    options,
-                )?;
+                check_structured_text_limit(value, DataType::String, DataType::Url, options)?;
                 match Url::parse(value) {
                     Ok(value) => Ok(value),
                     Err(_) => Err(source.invalid(
