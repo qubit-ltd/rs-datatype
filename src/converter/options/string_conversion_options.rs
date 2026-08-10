@@ -119,7 +119,10 @@ impl StringConversionOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_blank_string_policy(mut self, policy: BlankStringPolicy) -> Self {
+    pub fn with_blank_string_policy(
+        mut self,
+        policy: BlankStringPolicy,
+    ) -> Self {
         self.blank_string_policy = policy;
         self
     }
@@ -143,13 +146,20 @@ impl StringConversionOptions {
     /// Returns [`StringNormalizationError::Missing`] when blank strings are
     /// treated as missing, or [`StringNormalizationError::BlankRejected`] when
     /// blank strings are rejected.
-    pub fn normalize<'a>(&self, value: &'a str) -> Result<&'a str, StringNormalizationError> {
+    pub fn normalize<'a>(
+        &self,
+        value: &'a str,
+    ) -> Result<&'a str, StringNormalizationError> {
         let value = if self.trim { value.trim() } else { value };
         if value.trim().is_empty() {
             match self.blank_string_policy {
                 BlankStringPolicy::Preserve => Ok(value),
-                BlankStringPolicy::TreatAsMissing => Err(StringNormalizationError::Missing),
-                BlankStringPolicy::Reject => Err(StringNormalizationError::BlankRejected),
+                BlankStringPolicy::TreatAsMissing => {
+                    Err(StringNormalizationError::Missing)
+                }
+                BlankStringPolicy::Reject => {
+                    Err(StringNormalizationError::BlankRejected)
+                }
             }
         } else {
             Ok(value)
