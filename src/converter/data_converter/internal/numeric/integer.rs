@@ -20,6 +20,7 @@ use super::syntax::parse_text_integer;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
+use crate::converter::ConversionSession;
 use crate::converter::DurationRoundingPolicy;
 use crate::converter::FractionalToIntegerPolicy;
 use crate::converter::InvalidValueReason;
@@ -435,8 +436,9 @@ macro_rules! impl_signed_target {
             #[inline(always)]
             fn convert_from(
                 source: &DataConverter<'_>,
-                options: &DataConversionOptions,
+                session: &mut ConversionSession<'_>,
             ) -> Result<Self, DataConversionError> {
+                let options = session.options();
                 checked_signed(
                     to_i128(source, options, $data_type)?,
                     source,
@@ -470,8 +472,9 @@ macro_rules! impl_unsigned_target {
             #[inline(always)]
             fn convert_from(
                 source: &DataConverter<'_>,
-                options: &DataConversionOptions,
+                session: &mut ConversionSession<'_>,
             ) -> Result<Self, DataConversionError> {
+                let options = session.options();
                 checked_unsigned(
                     to_u128(source, options, $data_type)?,
                     source,

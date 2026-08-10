@@ -22,6 +22,7 @@ use super::string_source::normalize;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
+use crate::converter::ConversionSession;
 use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
 use crate::duration::DurationParseError;
@@ -230,8 +231,9 @@ impl DataConversionTarget for Duration {
     /// configured resource-limit error as applicable to the source.
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        let options = session.options();
         match source {
             DataConverter::Duration(value) => Ok(*value),
             DataConverter::String(value) => parse_duration(value, options),

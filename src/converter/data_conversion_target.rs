@@ -3,13 +3,22 @@
 //
 //    SPDX-License-Identifier: Apache-2.0
 //
-//    Licensed under the Apache License, Version 2.0.
+//    Licensed under the Apache License, Version 2.0 (the "License");
+//    you may not use this file except in compliance with the License.
+//    You may obtain a copy of the License at
+//
+//        http://www.apache.org/licenses/LICENSE-2.0
+//
+//    Unless required by applicable law or agreed to in writing, software
+//    distributed under the License is distributed on an "AS IS" BASIS,
+//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//    See the License for the specific language governing permissions and
+//    limitations under the License.
 // =============================================================================
 //! Target-side data conversion extension point.
 
 use super::ConversionSession;
 use super::DataConversionError;
-use super::DataConversionOptions;
 use super::DataConverter;
 use crate::DataTypeOf;
 
@@ -22,8 +31,8 @@ use crate::DataTypeOf;
 ///
 /// ```
 /// use qubit_datatype::{
-///     ConversionSession, DataConversionError, DataConversionOptions,
-///     DataConversionTarget, DataConverter, DataType, DataTypeOf,
+///     ConversionSession, DataConversionError, DataConversionTarget,
+///     DataConverter, DataType, DataTypeOf,
 /// };
 ///
 /// struct Port(u16);
@@ -35,23 +44,9 @@ use crate::DataTypeOf;
 /// impl DataConversionTarget for Port {
 ///     fn convert_from(
 ///         source: &DataConverter<'_>,
-///         options: &DataConversionOptions,
-///     ) -> Result<Self, DataConversionError> {
-///         u16::convert_from(source, options).map(Self)
-///     }
-///
-///     fn convert_from_in(
-///         source: &DataConverter<'_>,
 ///         session: &mut ConversionSession<'_>,
 ///     ) -> Result<Self, DataConversionError> {
-///         u16::convert_from_in(source, session).map(Self)
-///     }
-///
-///     fn convert_owned_in(
-///         source: DataConverter<'_>,
-///         session: &mut ConversionSession<'_>,
-///     ) -> Result<Self, DataConversionError> {
-///         u16::convert_owned_in(source, session).map(Self)
+///         session.delegate::<u16>(source).map(Self)
 ///     }
 /// }
 ///
@@ -59,12 +54,12 @@ use crate::DataTypeOf;
 /// assert_eq!(port.0, 8080);
 /// ```
 pub trait DataConversionTarget: DataTypeOf + Sized {
-    /// Converts `source` into this target type using `options`.
+    /// Converts `source` into this target type using a shared session.
     ///
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `options` - Policies controlling parsing and lossy conversion.
+    /// * `session` - Policies and cumulative budgets for this conversion.
     ///
     /// # Returns
     ///
@@ -76,18 +71,18 @@ pub trait DataConversionTarget: DataTypeOf + Sized {
     /// and target are unsupported, or the value violates a conversion policy.
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError>;
 
-    /// Converts a consumed source into this target type using `options`.
+    /// Converts a consumed source into this target type using a shared session.
     ///
-    /// The default implementation delegates to [`Self::convert_from`]. Targets
-    /// that can reuse an owned source allocation may override this method.
+    /// The default implementation borrows the consumed source. Targets that
+    /// can reuse an owned source allocation may override this method.
     ///
     /// # Parameters
     ///
     /// * `source` - Runtime value consumed by the conversion.
-    /// * `options` - Policies controlling parsing and lossy conversion.
+    /// * `session` - Policies and cumulative budgets for this conversion.
     ///
     /// # Returns
     ///
@@ -100,37 +95,8 @@ pub trait DataConversionTarget: DataTypeOf + Sized {
     #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
-        options: &DataConversionOptions,
-    ) -> Result<Self, DataConversionError> {
-        Self::convert_from(&source, options)
-    }
-
-    /// Converts a borrowed source with a reusable session.
-    ///
-    /// The default implementation delegates to the established options-based
-    /// target hook and therefore does not pass `session` to another target.
-    /// Custom targets that delegate to built-in targets and need their nested
-    /// conversion to share item, byte, or structural budgets must override this
-    /// hook and pass the same session onward.
-    #[inline(always)]
-    fn convert_from_in(
-        source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
-        Self::convert_from(source, session.options())
-    }
-
-    /// Converts an owned source with a reusable session.
-    ///
-    /// The default implementation delegates to the options-based owned hook.
-    /// Custom targets that delegate to another target and need its nested
-    /// conversion to share session accounting must override this hook and pass
-    /// the same session onward.
-    #[inline(always)]
-    fn convert_owned_in(
-        source: DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
-    ) -> Result<Self, DataConversionError> {
-        Self::convert_owned(source, session.options())
+        Self::convert_from(&source, session)
     }
 }

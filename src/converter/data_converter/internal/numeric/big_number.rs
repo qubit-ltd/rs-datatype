@@ -27,6 +27,7 @@ use super::syntax::parse_text_bigint;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
+use crate::converter::ConversionSession;
 use crate::converter::FractionalToIntegerPolicy;
 use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
@@ -452,8 +453,9 @@ impl DataConversionTarget for BigInt {
     #[inline(always)]
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        let options = session.options();
         source_to_bigint(source, options, DataType::BigInteger)
     }
 
@@ -475,8 +477,9 @@ impl DataConversionTarget for BigInt {
     #[inline]
     fn convert_owned(
         source: DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        let options = session.options();
         match source {
             DataConverter::BigInteger(value) => {
                 let maximum_digits =
@@ -489,7 +492,7 @@ impl DataConversionTarget for BigInt {
                 )?;
                 Ok(value.into_owned())
             }
-            source => Self::convert_from(&source, options),
+            source => Self::convert_from(&source, session),
         }
     }
 }
@@ -513,8 +516,9 @@ impl DataConversionTarget for BigDecimal {
     /// resource-limit error.
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        let options = session.options();
         match source {
             DataConverter::BigDecimal(value) => Ok(value.as_ref().clone()),
             DataConverter::Float32(value) => BigDecimal::from_f32(*value)
@@ -571,11 +575,11 @@ impl DataConversionTarget for BigDecimal {
     #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::BigDecimal(value) => Ok(value.into_owned()),
-            source => Self::convert_from(&source, options),
+            source => Self::convert_from(&source, session),
         }
     }
 }

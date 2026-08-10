@@ -16,15 +16,9 @@ use qubit_budget::from_slice_seed_with_budget;
 #[cfg(feature = "json")]
 use qubit_budget::from_slice_with_budget;
 #[cfg(feature = "json")]
-use serde::Deserializer;
-#[cfg(feature = "json")]
-use serde_json::Deserializer as JsonDeserializer;
-#[cfg(feature = "json")]
 use serde_json::Error as JsonError;
 #[cfg(feature = "json")]
 use serde_json::Value;
-#[cfg(feature = "json")]
-use serde_json::from_str;
 #[cfg(feature = "json")]
 use serde_json::to_string;
 
@@ -139,8 +133,9 @@ impl DataConversionTarget for Value {
     /// text-limit errors.
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        let options = session.options();
         match source {
             DataConverter::Json(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
@@ -151,15 +146,13 @@ impl DataConversionTarget for Value {
                     DataType::Json,
                     options,
                 )?;
-                match from_str(value) {
-                    Ok(value) => Ok(value),
-                    Err(_) => Err(source.invalid(
-                        DataType::Json,
-                        InvalidValueReason::Deserialization {
-                            format: DataFormat::Json,
-                        },
-                    )),
-                }
+                from_slice_with_budget(
+                    value.as_bytes(),
+                    session.json_budget_mut(),
+                )
+                .map_err(|error| {
+                    map_json_decode_error(source, DataType::Json, error)
+                })
             }
             DataConverter::StringMap(value) => Ok(string_map_to_json(value)),
             DataConverter::Unset(_) => Err(source.missing(DataType::Json)),
@@ -185,58 +178,6 @@ impl DataConversionTarget for Value {
     #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
-        options: &DataConversionOptions,
-    ) -> Result<Self, DataConversionError> {
-        match source {
-            DataConverter::Json(value) => Ok(value.into_owned()),
-            DataConverter::StringMap(value) => {
-                Ok(string_map_into_json(value.into_owned()))
-            }
-            source => Self::convert_from(&source, options),
-        }
-    }
-
-    /// Converts a borrowed runtime value to JSON while sharing the conversion
-    /// session's structural budget.
-    ///
-    /// # Errors
-    ///
-    /// Returns the same conversion errors as [`Self::convert_from`], including
-    /// a budget error when JSON preflight exceeds a session limit.
-    fn convert_from_in(
-        source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
-    ) -> Result<Self, DataConversionError> {
-        match source {
-            DataConverter::String(value) => {
-                let value =
-                    normalize(value, session.options(), DataType::Json)?;
-                check_structured_text_limit(
-                    value,
-                    source.data_type(),
-                    DataType::Json,
-                    session.options(),
-                )?;
-                from_slice_with_budget(
-                    value.as_bytes(),
-                    session.json_budget_mut(),
-                )
-                .map_err(|error| {
-                    map_json_decode_error(source, DataType::Json, error)
-                })
-            }
-            _ => Self::convert_from(source, session.options()),
-        }
-    }
-
-    /// Converts an owned runtime value to JSON while sharing the conversion
-    /// session's structural budget.
-    ///
-    /// # Errors
-    ///
-    /// Returns the same conversion errors as [`Self::convert_from_in`].
-    fn convert_owned_in(
-        source: DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
         match source {
@@ -244,28 +185,7 @@ impl DataConversionTarget for Value {
             DataConverter::StringMap(value) => {
                 Ok(string_map_into_json(value.into_owned()))
             }
-            DataConverter::String(value) => {
-                let value =
-                    normalize(&value, session.options(), DataType::Json)?;
-                check_structured_text_limit(
-                    value,
-                    DataType::String,
-                    DataType::Json,
-                    session.options(),
-                )?;
-                from_slice_with_budget(
-                    value.as_bytes(),
-                    session.json_budget_mut(),
-                )
-                .map_err(|error| {
-                    map_json_decode_error_from_type(
-                        DataType::String,
-                        DataType::Json,
-                        error,
-                    )
-                })
-            }
-            source => Self::convert_from(&source, session.options()),
+            source => Self::convert_from(&source, session),
         }
     }
 }
@@ -324,31 +244,6 @@ fn map_json_decode_error_from_type(
     }
 }
 
-/// Deserializes a string map through the duplicate-aware visitor.
-///
-/// # Parameters
-///
-/// * `value` - JSON text containing exactly one object.
-///
-/// # Returns
-///
-/// A map owning every unique string key and string value.
-///
-/// # Errors
-///
-/// Returns [`serde_json::Error`] for syntax errors, trailing data, duplicate
-/// keys, or non-string values.
-#[cfg(feature = "json")]
-#[inline(always)]
-fn deserialize_string_map(
-    value: &str,
-) -> Result<HashMap<String, String>, JsonError> {
-    let mut deserializer = JsonDeserializer::from_str(value);
-    let result = deserializer.deserialize_map(StringMapVisitor)?;
-    deserializer.end()?;
-    Ok(result)
-}
-
 impl DataConversionTarget for HashMap<String, String> {
     /// Converts a borrowed runtime value to a string map.
     ///
@@ -367,10 +262,12 @@ impl DataConversionTarget for HashMap<String, String> {
     /// or structured text-limit errors.
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        #[cfg(feature = "json")]
+        let options = session.options();
         #[cfg(not(feature = "json"))]
-        let _ = options;
+        let _ = session;
         match source {
             DataConverter::StringMap(value) => Ok(value.as_ref().clone()),
             #[cfg(feature = "json")]
@@ -382,15 +279,14 @@ impl DataConversionTarget for HashMap<String, String> {
                     DataType::StringMap,
                     options,
                 )?;
-                match deserialize_string_map(value) {
-                    Ok(value) => Ok(value),
-                    Err(_) => Err(source.invalid(
-                        DataType::StringMap,
-                        InvalidValueReason::Deserialization {
-                            format: DataFormat::Json,
-                        },
-                    )),
-                }
+                from_slice_seed_with_budget(
+                    value.as_bytes(),
+                    StringMapVisitor,
+                    session.json_budget_mut(),
+                )
+                .map_err(|error| {
+                    map_json_decode_error(source, DataType::StringMap, error)
+                })
             }
             DataConverter::Unset(_) => Err(source.missing(DataType::StringMap)),
             _ => Err(source.unsupported(DataType::StringMap)),
@@ -414,85 +310,11 @@ impl DataConversionTarget for HashMap<String, String> {
     #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
-        options: &DataConversionOptions,
-    ) -> Result<Self, DataConversionError> {
-        match source {
-            DataConverter::StringMap(value) => Ok(value.into_owned()),
-            source => Self::convert_from(&source, options),
-        }
-    }
-
-    /// Converts a borrowed runtime value to a string map while sharing the
-    /// conversion session's structural budget.
-    ///
-    /// # Errors
-    ///
-    /// Returns the same conversion errors as [`Self::convert_from`], including
-    /// a budget error when JSON preflight exceeds a session limit.
-    #[cfg(feature = "json")]
-    fn convert_from_in(
-        source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
-    ) -> Result<Self, DataConversionError> {
-        match source {
-            DataConverter::String(value) => {
-                let value =
-                    normalize(value, session.options(), DataType::StringMap)?;
-                check_structured_text_limit(
-                    value,
-                    source.data_type(),
-                    DataType::StringMap,
-                    session.options(),
-                )?;
-                from_slice_seed_with_budget(
-                    value.as_bytes(),
-                    StringMapVisitor,
-                    session.json_budget_mut(),
-                )
-                .map_err(|error| {
-                    map_json_decode_error(source, DataType::StringMap, error)
-                })
-            }
-            _ => Self::convert_from(source, session.options()),
-        }
-    }
-
-    /// Converts an owned runtime value to a string map while sharing the
-    /// conversion session's structural budget.
-    ///
-    /// # Errors
-    ///
-    /// Returns the same conversion errors as [`Self::convert_from_in`].
-    #[cfg(feature = "json")]
-    fn convert_owned_in(
-        source: DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::StringMap(value) => Ok(value.into_owned()),
-            DataConverter::String(value) => {
-                let value =
-                    normalize(&value, session.options(), DataType::StringMap)?;
-                check_structured_text_limit(
-                    value,
-                    DataType::String,
-                    DataType::StringMap,
-                    session.options(),
-                )?;
-                from_slice_seed_with_budget(
-                    value.as_bytes(),
-                    StringMapVisitor,
-                    session.json_budget_mut(),
-                )
-                .map_err(|error| {
-                    map_json_decode_error_from_type(
-                        DataType::String,
-                        DataType::StringMap,
-                        error,
-                    )
-                })
-            }
-            source => Self::convert_from(&source, session.options()),
+            source => Self::convert_from(&source, session),
         }
     }
 }

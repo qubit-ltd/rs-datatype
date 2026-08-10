@@ -162,8 +162,9 @@ impl DataConversionTarget for char {
     /// Returns a missing, unsupported, normalization, or invalid-syntax error.
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        let options = session.options();
         match source {
             DataConverter::Char(value) => Ok(*value),
             DataConverter::String(value) => {
@@ -185,6 +186,74 @@ impl DataConversionTarget for char {
     }
 }
 
+fn convert_string_with_options(
+    source: &DataConverter<'_>,
+    options: &DataConversionOptions,
+) -> Result<String, DataConversionError> {
+    let mut value = String::new();
+    if format_display_source(source, &mut value)
+        .is_ok_and(|written| written)
+    {
+        return Ok(value);
+    }
+    match source {
+        DataConverter::Unset(_) => Err(source.missing(DataType::String)),
+        DataConverter::String(value) => {
+            normalize(value, options, DataType::String).map(str::to_owned)
+        }
+        #[cfg(feature = "chrono")]
+        DataConverter::Date(value) => {
+            validate_canonical_temporal_year(source, value.year())?;
+            Ok(value.format("%Y-%m-%d").to_string())
+        }
+        #[cfg(feature = "chrono")]
+        DataConverter::DateTime(value) => {
+            validate_canonical_temporal_year(source, value.year())?;
+            Ok(value.format("%Y-%m-%dT%H:%M:%S%.f").to_string())
+        }
+        #[cfg(feature = "chrono")]
+        DataConverter::Instant(value) => {
+            validate_canonical_temporal_year(source, value.year())?;
+            Ok(value.to_rfc3339())
+        }
+        DataConverter::Duration(value) => format_duration(*value, options),
+        #[cfg(feature = "json")]
+        DataConverter::StringMap(value) => {
+            match string_map_to_json_text(value) {
+                Ok(value) => Ok(value),
+                Err(_) => Err(source.invalid(
+                    DataType::String,
+                    InvalidValueReason::Serialization {
+                        format: DataFormat::Json,
+                    },
+                )),
+            }
+        }
+        #[cfg(not(feature = "json"))]
+        DataConverter::StringMap(_) => Err(source.unsupported(DataType::String)),
+        _ => Err(source.unsupported(DataType::String)),
+    }
+}
+
+fn convert_owned_string_with_options(
+    source: DataConverter<'_>,
+    options: &DataConversionOptions,
+) -> Result<String, DataConversionError> {
+    match source {
+        DataConverter::String(value) => {
+            let normalized = normalize(value.as_ref(), options, DataType::String)?;
+            if normalized.len() == value.len() {
+                Ok(value.into_owned())
+            } else {
+                Ok(normalized.to_owned())
+            }
+        }
+        #[cfg(feature = "url")]
+        DataConverter::Url(value) => Ok(value.into_owned().into()),
+        source => convert_string_with_options(&source, options),
+    }
+}
+
 impl DataConversionTarget for String {
     /// Formats a borrowed runtime value as canonical text.
     ///
@@ -201,57 +270,6 @@ impl DataConversionTarget for String {
     ///
     /// Returns a missing, unsupported, normalization, range, precision, or
     /// serialization error as applicable to the source.
-    fn convert_from(
-        source: &DataConverter<'_>,
-        options: &DataConversionOptions,
-    ) -> Result<Self, DataConversionError> {
-        let mut value = String::new();
-        if format_display_source(source, &mut value)
-            .is_ok_and(|written| written)
-        {
-            return Ok(value);
-        }
-        match source {
-            DataConverter::Unset(_) => Err(source.missing(DataType::String)),
-            DataConverter::String(value) => {
-                normalize(value, options, DataType::String).map(str::to_owned)
-            }
-            #[cfg(feature = "chrono")]
-            DataConverter::Date(value) => {
-                validate_canonical_temporal_year(source, value.year())?;
-                Ok(value.format("%Y-%m-%d").to_string())
-            }
-            #[cfg(feature = "chrono")]
-            DataConverter::DateTime(value) => {
-                validate_canonical_temporal_year(source, value.year())?;
-                Ok(value.format("%Y-%m-%dT%H:%M:%S%.f").to_string())
-            }
-            #[cfg(feature = "chrono")]
-            DataConverter::Instant(value) => {
-                validate_canonical_temporal_year(source, value.year())?;
-                Ok(value.to_rfc3339())
-            }
-            DataConverter::Duration(value) => format_duration(*value, options),
-            #[cfg(feature = "json")]
-            DataConverter::StringMap(value) => {
-                match string_map_to_json_text(value) {
-                    Ok(value) => Ok(value),
-                    Err(_) => Err(source.invalid(
-                        DataType::String,
-                        InvalidValueReason::Serialization {
-                            format: DataFormat::Json,
-                        },
-                    )),
-                }
-            }
-            #[cfg(not(feature = "json"))]
-            DataConverter::StringMap(_) => {
-                Err(source.unsupported(DataType::String))
-            }
-            _ => Err(source.unsupported(DataType::String)),
-        }
-    }
-
     /// Formats a runtime value as canonical text, consuming it when possible.
     ///
     /// # Parameters
@@ -267,29 +285,8 @@ impl DataConversionTarget for String {
     /// # Errors
     ///
     /// Returns the same conversion errors as [`Self::convert_from`].
-    #[inline]
-    fn convert_owned(
-        source: DataConverter<'_>,
-        options: &DataConversionOptions,
-    ) -> Result<Self, DataConversionError> {
-        match source {
-            DataConverter::String(value) => {
-                let normalized =
-                    normalize(value.as_ref(), options, DataType::String)?;
-                if normalized.len() == value.len() {
-                    Ok(value.into_owned())
-                } else {
-                    Ok(normalized.to_owned())
-                }
-            }
-            #[cfg(feature = "url")]
-            DataConverter::Url(value) => Ok(value.into_owned().into()),
-            source => Self::convert_from(&source, options),
-        }
-    }
-
     /// Converts a borrowed source and charges the resulting String payload.
-    fn convert_from_in(
+    fn convert_from(
         source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
@@ -301,16 +298,16 @@ impl DataConversionTarget for String {
             consume_string_output(source.data_type(), result, session)
         } else if let Some(bytes) = count_display_source(source) {
             check_string_output(source.data_type(), bytes, session)?;
-            let value = Self::convert_from(source, session.options())?;
+            let value = convert_string_with_options(source, session.options())?;
             consume_string_output(source.data_type(), value, session)
         } else {
-            let value = Self::convert_from(source, session.options())?;
+            let value = convert_string_with_options(source, session.options())?;
             charge_string_output(source, value, session)
         }
     }
 
     /// Converts an owned source and charges the resulting String payload.
-    fn convert_owned_in(
+    fn convert_owned(
         source: DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
@@ -327,10 +324,10 @@ impl DataConversionTarget for String {
             consume_string_output(from, result, session)
         } else if let Some(bytes) = count_display_source(&source) {
             check_string_output(from, bytes, session)?;
-            let value = Self::convert_owned(source, session.options())?;
+            let value = convert_owned_string_with_options(source, session.options())?;
             consume_string_output(from, value, session)
         } else {
-            let value = Self::convert_owned(source, session.options())?;
+            let value = convert_owned_string_with_options(source, session.options())?;
             charge_string_output_type(from, value, session)
         }
     }
@@ -402,8 +399,9 @@ macro_rules! impl_text_or_copy_target {
             /// temporal-syntax error.
             fn convert_from(
                 source: &DataConverter<'_>,
-                options: &DataConversionOptions,
+                session: &mut ConversionSession<'_>,
             ) -> Result<Self, DataConversionError> {
+                let options = session.options();
                 match source {
                     DataConverter::$variant(value) => Ok(*value),
                     DataConverter::String(value) => {
@@ -579,8 +577,9 @@ impl DataConversionTarget for DateTime<Utc> {
     /// Returns a missing, unsupported, normalization, or RFC 3339 syntax error.
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        let options = session.options();
         match source {
             DataConverter::Instant(value) => Ok(*value),
             DataConverter::String(value) => {
@@ -620,8 +619,9 @@ impl DataConversionTarget for Url {
     /// error.
     fn convert_from(
         source: &DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
+        let options = session.options();
         match source {
             DataConverter::Url(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
@@ -664,11 +664,11 @@ impl DataConversionTarget for Url {
     #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
-        options: &DataConversionOptions,
+        session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::Url(value) => Ok(value.into_owned()),
-            source => Self::convert_from(&source, options),
+            source => Self::convert_from(&source, session),
         }
     }
 }
