@@ -17,6 +17,16 @@ use qubit_budget::from_slice_seed_with_budget;
 use qubit_budget::from_slice_with_budget;
 #[cfg(feature = "json")]
 use serde::Deserializer;
+#[cfg(feature = "json")]
+use serde_json::Deserializer as JsonDeserializer;
+#[cfg(feature = "json")]
+use serde_json::Error as JsonError;
+#[cfg(feature = "json")]
+use serde_json::Value;
+#[cfg(feature = "json")]
+use serde_json::from_str;
+#[cfg(feature = "json")]
+use serde_json::to_string;
 
 use super::DataConverter;
 #[cfg(feature = "json")]
@@ -74,30 +84,26 @@ pub(super) fn check_structured_text_limit(
 
 /// Converts a borrowed string map to a JSON object with canonical key order.
 #[cfg(feature = "json")]
-pub(super) fn string_map_to_json(
-    value: &HashMap<String, String>,
-) -> serde_json::Value {
-    serde_json::Value::Object(
+pub(super) fn string_map_to_json(value: &HashMap<String, String>) -> Value {
+    Value::Object(
         sorted_string_map_entries(value)
             .into_iter()
-            .map(|(key, value)| {
-                (key.clone(), serde_json::Value::String(value.clone()))
-            })
+            .map(|(key, value)| (key.clone(), Value::String(value.clone())))
             .collect(),
     )
 }
 
 /// Converts an owned string map to a JSON object with canonical key order.
 #[cfg(feature = "json")]
-fn string_map_into_json(value: HashMap<String, String>) -> serde_json::Value {
+fn string_map_into_json(value: HashMap<String, String>) -> Value {
     let mut entries = value.into_iter().collect::<Vec<_>>();
     // A borrowed sort key cannot outlive this closure, so compare directly.
     #[allow(clippy::unnecessary_sort_by)]
     entries.sort_unstable_by(|(left, _), (right, _)| left.cmp(right));
-    serde_json::Value::Object(
+    Value::Object(
         entries
             .into_iter()
-            .map(|(key, value)| (key, serde_json::Value::String(value)))
+            .map(|(key, value)| (key, Value::String(value)))
             .collect(),
     )
 }
@@ -110,12 +116,12 @@ fn string_map_into_json(value: HashMap<String, String>) -> serde_json::Value {
 #[cfg(feature = "json")]
 pub(super) fn string_map_to_json_text(
     value: &HashMap<String, String>,
-) -> Result<String, serde_json::Error> {
-    serde_json::to_string(&CanonicalStringMap { value })
+) -> Result<String, JsonError> {
+    to_string(&CanonicalStringMap { value })
 }
 
 #[cfg(feature = "json")]
-impl DataConversionTarget for serde_json::Value {
+impl DataConversionTarget for Value {
     /// Converts a borrowed runtime value to JSON.
     ///
     /// # Parameters
@@ -145,7 +151,7 @@ impl DataConversionTarget for serde_json::Value {
                     DataType::Json,
                     options,
                 )?;
-                match serde_json::from_str(value) {
+                match from_str(value) {
                     Ok(value) => Ok(value),
                     Err(_) => Err(source.invalid(
                         DataType::Json,
@@ -336,8 +342,8 @@ fn map_json_decode_error_from_type(
 #[inline(always)]
 fn deserialize_string_map(
     value: &str,
-) -> Result<HashMap<String, String>, serde_json::Error> {
-    let mut deserializer = serde_json::Deserializer::from_str(value);
+) -> Result<HashMap<String, String>, JsonError> {
+    let mut deserializer = JsonDeserializer::from_str(value);
     let result = deserializer.deserialize_map(StringMapVisitor)?;
     deserializer.end()?;
     Ok(result)
