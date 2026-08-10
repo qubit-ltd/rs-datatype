@@ -42,4 +42,76 @@ pub enum ConversionLimit {
         /// Configured maximum number of retained items.
         maximum: usize,
     },
+    /// A cumulative input byte budget was exhausted.
+    #[error("conversion input exceeds the {maximum}-byte budget")]
+    InputBytes {
+        /// Configured cumulative input byte maximum.
+        maximum: usize,
+    },
+    /// A cumulative output byte budget was exhausted.
+    #[error("conversion output exceeds the {maximum}-byte budget")]
+    OutputBytes {
+        /// Configured cumulative output byte maximum.
+        maximum: usize,
+    },
+    /// A structured depth limit or node budget was exceeded.
+    #[error("structured depth exceeds the {maximum}-level limit")]
+    StructuredDepth {
+        /// Configured root-inclusive depth maximum.
+        maximum: usize,
+    },
+    /// A cumulative structured node budget was exhausted.
+    #[error("structured value exceeds the {maximum}-node budget")]
+    StructuredNodes {
+        /// Configured cumulative node maximum.
+        maximum: usize,
+    },
+    /// A sequence item point limit was exceeded.
+    #[error("sequence exceeds the {maximum}-item limit")]
+    SequenceItems {
+        /// Configured sequence item maximum.
+        maximum: usize,
+    },
+    /// A map entry point limit was exceeded.
+    #[error("map exceeds the {maximum}-entry limit")]
+    MapEntries {
+        /// Configured map entry maximum.
+        maximum: usize,
+    },
+}
+
+impl ConversionLimit {
+    /// Derives the legacy maximum-only view from complete conversion facts.
+    pub(crate) fn from_source(
+        source: &super::conversion_limit_exceeded::ConversionLimitExceeded,
+    ) -> Self {
+        let maximum = source
+            .maximum()
+            .unwrap_or(source.limit().unwrap_or_default());
+        match source.resource() {
+            crate::converter::ConversionResource::DurationTextBytes => {
+                Self::DurationTextBytes { maximum }
+            }
+            crate::converter::ConversionResource::NumericTextBytes => {
+                Self::NumericTextBytes { maximum }
+            }
+            crate::converter::ConversionResource::StructuredTextBytes => {
+                Self::StructuredTextBytes { maximum }
+            }
+            crate::converter::ConversionResource::BigIntegerDigits => {
+                Self::BigIntegerDigits { maximum }
+            }
+            crate::converter::ConversionResource::InputBytes => Self::InputBytes { maximum },
+            crate::converter::ConversionResource::OutputBytes => Self::OutputBytes { maximum },
+            crate::converter::ConversionResource::StructuredDepth => {
+                Self::StructuredDepth { maximum }
+            }
+            crate::converter::ConversionResource::StructuredNodes => {
+                Self::StructuredNodes { maximum }
+            }
+            crate::converter::ConversionResource::SequenceItems => Self::SequenceItems { maximum },
+            crate::converter::ConversionResource::MapEntries => Self::MapEntries { maximum },
+            crate::converter::ConversionResource::Items => Self::CollectionItems { maximum },
+        }
+    }
 }

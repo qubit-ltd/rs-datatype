@@ -7,6 +7,7 @@
 // =============================================================================
 //! Target-side data conversion extension point.
 
+use super::ConversionSession;
 use super::DataConversionError;
 use super::DataConversionOptions;
 use super::DataConverter;
@@ -66,9 +67,8 @@ pub trait DataConversionTarget: DataTypeOf + Sized {
 
     /// Converts a consumed source into this target type using `options`.
     ///
-    /// The default implementation preserves compatibility for downstream
-    /// targets by delegating to [`Self::convert_from`]. Targets that can reuse
-    /// an owned source allocation may override this method.
+    /// The default implementation delegates to [`Self::convert_from`]. Targets
+    /// that can reuse an owned source allocation may override this method.
     ///
     /// # Parameters
     ///
@@ -89,5 +89,27 @@ pub trait DataConversionTarget: DataTypeOf + Sized {
         options: &DataConversionOptions,
     ) -> Result<Self, DataConversionError> {
         Self::convert_from(&source, options)
+    }
+
+    /// Converts a borrowed source with a reusable session.
+    ///
+    /// The default implementation delegates to the established options-based
+    /// target hook. Built-in conversion facades use this hook to share their
+    /// outer accounting session without changing downstream target code.
+    #[inline(always)]
+    fn convert_from_in(
+        source: &DataConverter<'_>,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<Self, DataConversionError> {
+        Self::convert_from(source, session.options())
+    }
+
+    /// Converts an owned source with a reusable session.
+    #[inline(always)]
+    fn convert_owned_in(
+        source: DataConverter<'_>,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<Self, DataConversionError> {
+        Self::convert_owned(source, session.options())
     }
 }

@@ -22,6 +22,25 @@ fn test_structured_conversion_limits_defaults_and_customization() {
         StructuredConversionLimits::DEFAULT_MAX_TEXT_BYTES,
     );
     assert_eq!(defaults.with_max_text_bytes(16).max_text_bytes(), 16);
+    assert_eq!(
+        defaults.max_depth(),
+        StructuredConversionLimits::DEFAULT_MAX_DEPTH
+    );
+    assert_eq!(
+        defaults.max_sequence_items(),
+        StructuredConversionLimits::DEFAULT_MAX_SEQUENCE_ITEMS
+    );
+    assert_eq!(
+        defaults.max_map_entries(),
+        StructuredConversionLimits::DEFAULT_MAX_MAP_ENTRIES
+    );
+    let customized = defaults
+        .with_max_depth(4)
+        .with_max_sequence_items(5)
+        .with_max_map_entries(6);
+    assert_eq!(customized.max_depth(), 4);
+    assert_eq!(customized.max_sequence_items(), 5);
+    assert_eq!(customized.max_map_entries(), 6);
 }
 
 /// Tests Serde defaults and unknown-field rejection for structured limits.

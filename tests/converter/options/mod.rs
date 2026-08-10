@@ -11,6 +11,7 @@ mod blank_string_policy_tests;
 mod boolean_conversion_options_tests;
 mod boolean_numeric_policy_tests;
 mod collection_conversion_options_tests;
+mod conversion_budget_limits_tests;
 mod data_conversion_options_tests;
 mod duration_conversion_options_tests;
 mod duration_rounding_policy_tests;

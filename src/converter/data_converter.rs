@@ -31,6 +31,7 @@ use num_bigint::BigInt;
 #[cfg(feature = "url")]
 use url::Url;
 
+use super::conversion_session::ConversionSession;
 use super::data_conversion_target::DataConversionTarget;
 use super::error::DataConversionError;
 use super::error::InvalidValueReason;
@@ -294,14 +295,27 @@ impl DataConverter<'_> {
     /// Returns a structured error containing source type, target type, and a
     /// value-free rejection reason.
     #[inline(always)]
-    pub fn to_with<T>(
-        &self,
-        options: &DataConversionOptions,
-    ) -> Result<T, DataConversionError>
+    pub fn to_with<T>(&self, options: &DataConversionOptions) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
-        T::convert_from(self, options)
+        let mut session = options.session();
+        self.to_in(&mut session)
+    }
+
+    /// Converts this source using an existing conversion session.
+    #[inline(always)]
+    pub fn to_in<T>(&self, session: &mut ConversionSession<'_>) -> Result<T, DataConversionError>
+    where
+        T: DataConversionTarget,
+    {
+        session.consume_item().map_err(|limit| {
+            DataConversionError::limit_exceeded(self.data_type(), T::DATA_TYPE, limit)
+        })?;
+        self.charge_input_for_target(T::DATA_TYPE, session)?;
+        let result = T::convert_from_in(self, session);
+        self.charge_output_for_target(T::DATA_TYPE, &result, session)?;
+        result
     }
 
     /// Consumes this source and converts it using the shared default options.
@@ -356,7 +370,106 @@ impl DataConverter<'_> {
     where
         T: DataConversionTarget,
     {
-        T::convert_owned(self, options)
+        let mut session = options.session();
+        self.into_target_in(&mut session)
+    }
+
+    /// Consumes this source and converts it using an existing session.
+    #[inline(always)]
+    pub fn into_target_in<T>(
+        self,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<T, DataConversionError>
+    where
+        T: DataConversionTarget,
+    {
+        let from = self.data_type();
+        session
+            .consume_item()
+            .map_err(|limit| DataConversionError::limit_exceeded(from, T::DATA_TYPE, limit))?;
+        self.charge_input_for_target(T::DATA_TYPE, session)?;
+        T::convert_owned_in(self, session)
+    }
+
+    /// Charges textual input and borrowed structured traversal work before a
+    /// target parser can allocate or recurse.
+    fn charge_input_for_target(
+        &self,
+        target: DataType,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<(), DataConversionError> {
+        match self {
+            Self::String(value) if target != DataType::String => {
+                let normalized = session
+                    .options()
+                    .string()
+                    .normalize(value)
+                    .map_err(|error| error.into_data_conversion_error(target))?;
+                session
+                    .consume_input_bytes(normalized.len())
+                    .map_err(|limit| {
+                        DataConversionError::limit_exceeded(self.data_type(), target, limit)
+                    })?;
+            }
+            #[cfg(feature = "json")]
+            Self::Json(Cow::Borrowed(value))
+                if matches!(target, DataType::Json | DataType::StringMap) =>
+            {
+                account_json_structure(value, 1, session).map_err(|limit| {
+                    DataConversionError::limit_exceeded(self.data_type(), target, limit)
+                })?;
+            }
+            #[cfg(feature = "json")]
+            Self::StringMap(Cow::Borrowed(value))
+                if matches!(target, DataType::Json | DataType::String) =>
+            {
+                session.enter_map(1, value.len()).map_err(|limit| {
+                    DataConversionError::limit_exceeded(self.data_type(), target, limit)
+                })?;
+                for _ in value.keys() {
+                    session.enter_node(2).map_err(|limit| {
+                        DataConversionError::limit_exceeded(self.data_type(), target, limit)
+                    })?;
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    /// Charges output text that the built-in target has just materialized.
+    fn charge_output_for_target<T>(
+        &self,
+        target: DataType,
+        result: &Result<T, DataConversionError>,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<(), DataConversionError> {
+        if result.is_err() {
+            return Ok(());
+        }
+        let bytes = match (self, target) {
+            (Self::String(value), DataType::String) => session
+                .options()
+                .string()
+                .normalize(value)
+                .ok()
+                .map(str::len),
+            #[cfg(feature = "json")]
+            (Self::Json(value), DataType::String) => Some(value.to_string().len()),
+            #[cfg(feature = "json")]
+            (Self::StringMap(value), DataType::String | DataType::Json) => Some(
+                serde_json::to_string(value.as_ref())
+                    .unwrap_or_default()
+                    .len(),
+            ),
+            _ => None,
+        };
+        if let Some(bytes) = bytes {
+            session.consume_output_bytes(bytes).map_err(|limit| {
+                DataConversionError::limit_exceeded(self.data_type(), target, limit)
+            })?;
+        }
+        Ok(())
     }
 
     /// Returns the runtime type of the wrapped source.
@@ -412,11 +525,32 @@ impl DataConverter<'_> {
     ///
     /// An invalid-value error recording this source's runtime type.
     #[inline(always)]
-    fn invalid(
-        &self,
-        to: DataType,
-        reason: InvalidValueReason,
-    ) -> DataConversionError {
+    fn invalid(&self, to: DataType, reason: InvalidValueReason) -> DataConversionError {
         DataConversionError::invalid(self.data_type(), to, reason)
     }
+}
+
+#[cfg(feature = "json")]
+/// Accounts nodes and point structural limits in a borrowed JSON value.
+fn account_json_structure(
+    value: &serde_json::Value,
+    depth: usize,
+    session: &mut ConversionSession<'_>,
+) -> Result<(), crate::converter::ConversionLimitExceeded> {
+    match value {
+        serde_json::Value::Array(values) => {
+            session.enter_sequence(depth, values.len())?;
+            for value in values {
+                account_json_structure(value, depth.saturating_add(1), session)?;
+            }
+        }
+        serde_json::Value::Object(values) => {
+            session.enter_map(depth, values.len())?;
+            for value in values.values() {
+                account_json_structure(value, depth.saturating_add(1), session)?;
+            }
+        }
+        _ => session.enter_node(depth)?,
+    }
+    Ok(())
 }

@@ -10,6 +10,7 @@
 //! Defines the private variant representation of data conversion errors.
 
 use super::super::conversion_limit::ConversionLimit;
+use super::super::conversion_limit_exceeded::ConversionLimitExceeded;
 use super::super::invalid_value_reason::InvalidValueReason;
 use crate::datatype::DataType;
 
@@ -55,7 +56,10 @@ pub(in crate::converter::error) enum DataConversionErrorInner {
         from: DataType,
         /// Requested target data type.
         to: DataType,
-        /// Configured resource limit that was exceeded.
+        /// Complete point-limit or cumulative-budget facts.
+        #[source]
+        source: ConversionLimitExceeded,
+        /// Legacy maximum-only view retained for source compatibility.
         limit: ConversionLimit,
     },
 }
