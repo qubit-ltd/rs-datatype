@@ -157,7 +157,10 @@ fn assert_invalid_reason<T>(
 /// Asserts that a conversion fails because the expected budget resource was
 /// exceeded.
 #[cfg(feature = "json")]
-fn assert_budget_resource<T>(result: Result<T, DataConversionError>, expected: ConversionResource) {
+fn assert_budget_resource<T>(
+    result: Result<T, DataConversionError>,
+    expected: ConversionResource,
+) {
     let error = match result {
         Ok(_) => panic!("conversion should exceed the configured budget"),
         Err(error) => error,
@@ -173,8 +176,9 @@ fn assert_budget_resource<T>(result: Result<T, DataConversionError>, expected: C
 #[test]
 fn test_data_converter_rejects_oversize_structured_text() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default()
-        .with_structured_limits(StructuredConversionLimits::default().with_max_text_bytes(2));
+    let limits = ConversionLimits::default().with_structured_limits(
+        StructuredConversionLimits::default().with_max_text_bytes(2),
+    );
 
     assert!(
         DataConverter::from("[]")
@@ -182,7 +186,8 @@ fn test_data_converter_rejects_oversize_structured_text() {
             .is_ok()
     );
     assert_eq!(
-        DataConverter::from("[0]").to_with::<serde_json::Value>(&policy, &limits),
+        DataConverter::from("[0]")
+            .to_with::<serde_json::Value>(&policy, &limits),
         Err(DataConversionError::limit_exceeded(
             DataType::String,
             DataType::Json,
@@ -200,7 +205,8 @@ fn test_data_converter_rejects_oversize_structured_text() {
             .is_ok()
     );
     assert_eq!(
-        DataConverter::from(r#"{"a":"b"}"#).to_with::<HashMap<String, String>>(&policy, &limits),
+        DataConverter::from(r#"{"a":"b"}"#)
+            .to_with::<HashMap<String, String>>(&policy, &limits),
         Err(DataConversionError::limit_exceeded(
             DataType::String,
             DataType::StringMap,
@@ -219,25 +225,35 @@ fn test_data_converter_rejects_oversize_structured_text() {
 #[test]
 fn test_data_converter_rejects_json_text_exceeding_structure_limits() {
     let policy = ConversionPolicy::default();
-    let depth_limits = ConversionLimits::default()
-        .with_structured_limits(StructuredConversionLimits::default().with_max_depth(2));
+    let depth_limits = ConversionLimits::default().with_structured_limits(
+        StructuredConversionLimits::default().with_max_depth(2),
+    );
     assert_budget_resource(
-        DataConverter::from("[[0]]").to_with::<serde_json::Value>(&policy, &depth_limits),
+        DataConverter::from("[[0]]")
+            .to_with::<serde_json::Value>(&policy, &depth_limits),
         ConversionResource::StructuredDepth,
     );
 
-    let sequence_limits = ConversionLimits::default()
-        .with_structured_limits(StructuredConversionLimits::default().with_max_sequence_items(1));
+    let sequence_limits = ConversionLimits::default().with_structured_limits(
+        StructuredConversionLimits::default().with_max_sequence_items(1),
+    );
     assert_budget_resource(
-        DataConverter::from("[0,1]").to_with::<serde_json::Value>(&policy, &sequence_limits),
+        DataConverter::from("[0,1]")
+            .to_with::<serde_json::Value>(&policy, &sequence_limits),
         ConversionResource::SequenceItems,
     );
 
-    let map_limits = ConversionLimits::default()
-        .with_structured_limits(StructuredConversionLimits::default().with_max_map_entries(1));
+    let map_limits = ConversionLimits::default().with_structured_limits(
+        StructuredConversionLimits::default().with_max_map_entries(1),
+    );
     assert_budget_resource(
-        DataConverter::from(r#"{"first":"1","second":"2"}"#)
-            .to_with::<HashMap<String, String>>(&policy, &map_limits),
+        DataConverter::from(r#"{"first":"1","second":"2"}"#).to_with::<HashMap<
+            String,
+            String,
+        >>(
+            &policy,
+            &map_limits,
+        ),
         ConversionResource::MapEntries,
     );
 }
@@ -247,8 +263,9 @@ fn test_data_converter_rejects_json_text_exceeding_structure_limits() {
 #[test]
 fn test_data_converter_json_text_accumulates_structured_nodes_in_session() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default()
-        .with_operation_limits(ConversionOperationLimits::default().with_max_structured_nodes(2));
+    let limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default().with_max_structured_nodes(2),
+    );
     let mut session = ConversionSession::new(&policy, &limits);
 
     DataConverter::from("[0]")
@@ -266,35 +283,43 @@ fn test_data_converter_json_text_accumulates_structured_nodes_in_session() {
 #[test]
 fn test_data_converter_structured_budget_is_content_invariant() {
     let policy = ConversionPolicy::default();
-    let json_limits = ConversionLimits::default()
-        .with_operation_limits(ConversionOperationLimits::default().with_max_structured_nodes(1));
+    let json_limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default().with_max_structured_nodes(1),
+    );
     let json = serde_json::json!(["value"]);
     assert_budget_resource(
-        DataConverter::from(&json).to_with::<serde_json::Value>(&policy, &json_limits),
+        DataConverter::from(&json)
+            .to_with::<serde_json::Value>(&policy, &json_limits),
         ConversionResource::StructuredNodes,
     );
     assert_budget_resource(
-        DataConverter::from(json).into_target_with::<serde_json::Value>(&policy, &json_limits),
+        DataConverter::from(json)
+            .into_target_with::<serde_json::Value>(&policy, &json_limits),
         ConversionResource::StructuredNodes,
     );
 
-    let map_limits = ConversionLimits::default()
-        .with_operation_limits(ConversionOperationLimits::default().with_max_structured_nodes(1));
+    let map_limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default().with_max_structured_nodes(1),
+    );
     let map = HashMap::from([("key".to_owned(), "value".to_owned())]);
     assert_budget_resource(
-        DataConverter::from(&map).to_with::<HashMap<String, String>>(&policy, &map_limits),
+        DataConverter::from(&map)
+            .to_with::<HashMap<String, String>>(&policy, &map_limits),
         ConversionResource::StructuredNodes,
     );
     assert_budget_resource(
-        DataConverter::from(map).into_target_with::<HashMap<String, String>>(&policy, &map_limits),
+        DataConverter::from(map)
+            .into_target_with::<HashMap<String, String>>(&policy, &map_limits),
         ConversionResource::StructuredNodes,
     );
 
-    let string_limits = ConversionLimits::default()
-        .with_operation_limits(ConversionOperationLimits::default().with_max_structured_nodes(1));
+    let string_limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default().with_max_structured_nodes(1),
+    );
     let json = serde_json::json!(["value"]);
     assert_budget_resource(
-        DataConverter::from(json).into_target_with::<String>(&policy, &string_limits),
+        DataConverter::from(json)
+            .into_target_with::<String>(&policy, &string_limits),
         ConversionResource::StructuredNodes,
     );
 }
@@ -304,15 +329,17 @@ fn test_data_converter_structured_budget_is_content_invariant() {
 #[test]
 fn test_data_converter_rejects_oversize_url_text() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default()
-        .with_structured_limits(StructuredConversionLimits::default().with_max_text_bytes(14));
+    let limits = ConversionLimits::default().with_structured_limits(
+        StructuredConversionLimits::default().with_max_text_bytes(14),
+    );
 
     assert_eq!(
         DataConverter::from("https://a.test").to_with::<Url>(&policy, &limits),
         Ok(Url::parse("https://a.test").expect("test URL should parse")),
     );
     assert_eq!(
-        DataConverter::from("https://a.test/x").to_with::<Url>(&policy, &limits),
+        DataConverter::from("https://a.test/x")
+            .to_with::<Url>(&policy, &limits),
         Err(DataConversionError::limit_exceeded(
             DataType::String,
             DataType::Url,
@@ -400,7 +427,8 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
         },
     );
     assert_invalid_reason(
-        DataConverter::from(r#"{"key":"value"} []"#).to::<HashMap<String, String>>(),
+        DataConverter::from(r#"{"key":"value"} []"#)
+            .to::<HashMap<String, String>>(),
         DataType::StringMap,
         InvalidValueReason::Deserialization {
             format: DataFormat::Json,
@@ -435,7 +463,8 @@ fn test_data_converter_string_map_identity_without_json() {
 /// a borrowed source remains independently owned.
 #[test]
 fn test_data_converter_consuming_string_map_identity_reuses_owned_storage() {
-    let source = HashMap::from([("key".to_owned(), "owned payload".to_owned())]);
+    let source =
+        HashMap::from([("key".to_owned(), "owned payload".to_owned())]);
     let source_pointer = source
         .get("key")
         .expect("test map should contain key")
@@ -451,7 +480,8 @@ fn test_data_converter_consuming_string_map_identity_reuses_owned_storage() {
         source_pointer,
     );
 
-    let borrowed = HashMap::from([("key".to_owned(), "borrowed payload".to_owned())]);
+    let borrowed =
+        HashMap::from([("key".to_owned(), "borrowed payload".to_owned())]);
     let borrowed_pointer = borrowed
         .get("key")
         .expect("test map should contain key")
@@ -506,7 +536,9 @@ fn test_data_converter_consuming_string_map_to_json_orders_keys() {
             let keys = source.keys().map(String::as_str).collect::<Vec<_>>();
             (!keys.is_sorted()).then_some(source)
         })
-        .expect("randomized HashMap iteration should produce a noncanonical order");
+        .expect(
+            "randomized HashMap iteration should produce a noncanonical order",
+        );
 
     let converted = DataConverter::from(source)
         .into_target::<serde_json::Value>()

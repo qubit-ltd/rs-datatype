@@ -114,7 +114,9 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
 fn test_data_converter_bool_numeric_text_limit() {
     let options = ConversionPolicy::strict();
     let limits = qubit_datatype::ConversionLimits::default()
-        .with_numeric_limits(NumericConversionLimits::default().with_max_text_bytes(1));
+        .with_numeric_limits(
+            NumericConversionLimits::default().with_max_text_bytes(1),
+        );
 
     assert_eq!(
         DataConverter::from("true").to_with::<bool>(&options, &limits),
