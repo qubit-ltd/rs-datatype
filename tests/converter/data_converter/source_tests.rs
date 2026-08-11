@@ -92,10 +92,8 @@ fn test_data_converter_from_impls_cover_all_sources() {
 
     #[cfg(feature = "chrono")]
     {
-        let date = NaiveDate::from_ymd_opt(2026, 5, 1)
-            .expect("test date should be valid");
-        let time = NaiveTime::from_hms_opt(12, 30, 45)
-            .expect("test time should be valid");
+        let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
+        let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
         let datetime = NaiveDateTime::new(date, time);
         let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
         assert_data_type(DataConverter::from(date), DataType::Date);
@@ -111,10 +109,7 @@ fn test_data_converter_from_impls_cover_all_sources() {
     #[cfg(feature = "big-integer")]
     {
         let big_int = BigInt::from(15);
-        assert_data_type(
-            DataConverter::from(big_int.clone()),
-            DataType::BigInteger,
-        );
+        assert_data_type(DataConverter::from(big_int.clone()), DataType::BigInteger);
         assert_data_type(DataConverter::from(&big_int), DataType::BigInteger);
     }
     #[cfg(feature = "big-decimal")]
@@ -124,15 +119,11 @@ fn test_data_converter_from_impls_cover_all_sources() {
             DataConverter::from(big_decimal.clone()),
             DataType::BigDecimal,
         );
-        assert_data_type(
-            DataConverter::from(&big_decimal),
-            DataType::BigDecimal,
-        );
+        assert_data_type(DataConverter::from(&big_decimal), DataType::BigDecimal);
     }
     #[cfg(feature = "url")]
     {
-        let url =
-            Url::parse("https://example.com").expect("test URL should parse");
+        let url = Url::parse("https://example.com").expect("test URL should parse");
         assert_data_type(DataConverter::from(url.clone()), DataType::Url);
         assert_data_type(DataConverter::from(&url), DataType::Url);
     }

@@ -94,31 +94,22 @@ fn test_integer_to_f32_rejects_overflow() {
 #[test]
 fn test_numeric_to_float_rounding_is_independent() {
     let options = ConversionPolicy::strict().with_numeric_policy(
-        NumericConversionPolicy::strict()
-            .with_numeric_to_float(FloatRoundingPolicy::NearestEven),
+        NumericConversionPolicy::strict().with_numeric_to_float(FloatRoundingPolicy::NearestEven),
     );
 
     assert_eq!(
-        DataConverter::from(16_777_217_u32).to_with::<f32>(
-            &options,
-            qubit_datatype::ConversionLimits::default_ref()
-        ),
+        DataConverter::from(16_777_217_u32)
+            .to_with::<f32>(&options, qubit_datatype::ConversionLimits::default_ref()),
         Ok(16_777_216.0),
     );
     assert!(
         DataConverter::from("0.1")
-            .to_with::<f32>(
-                &options,
-                qubit_datatype::ConversionLimits::default_ref()
-            )
+            .to_with::<f32>(&options, qubit_datatype::ConversionLimits::default_ref())
             .is_err()
     );
     assert!(
         DataConverter::from("3.9")
-            .to_with::<i32>(
-                &options,
-                qubit_datatype::ConversionLimits::default_ref()
-            )
+            .to_with::<i32>(&options, qubit_datatype::ConversionLimits::default_ref())
             .is_err()
     );
 }
