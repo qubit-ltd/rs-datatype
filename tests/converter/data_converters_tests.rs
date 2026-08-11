@@ -13,13 +13,13 @@ use std::error::Error;
 
 use qubit_datatype::DataType;
 use qubit_datatype::converter::BlankStringPolicy;
-use qubit_datatype::converter::ConversionBudgetLimits;
+use qubit_datatype::converter::ConversionOperationLimits;
+use qubit_datatype::converter::ConversionPolicy;
 use qubit_datatype::converter::ConversionResource;
 use qubit_datatype::converter::DataConversionError;
-use qubit_datatype::converter::DataConversionOptions;
 use qubit_datatype::converter::DataConverters;
 use qubit_datatype::converter::InvalidValueReason;
-use qubit_datatype::converter::StringConversionOptions;
+use qubit_datatype::converter::StringConversionPolicy;
 
 use super::internal::InflatedSizeHintIterator;
 
@@ -149,15 +149,18 @@ fn test_data_converters_from_iterator_converts_all_values() {
 /// Test configurable batch conversion.
 #[test]
 fn test_data_converters_to_vec_with_applies_options() {
-    let options = DataConversionOptions::default().with_string_options(
-        StringConversionOptions::default()
+    let options = ConversionPolicy::default().with_string_policy(
+        StringConversionPolicy::default()
             .with_trim(true)
             .with_blank_string_policy(BlankStringPolicy::Reject),
     );
 
     let ports: Vec<u16> =
         DataConverters::from(vec![" 8080 ".to_string(), " 8081 ".to_string()])
-            .to_vec_with(&options)
+            .to_vec_with(
+                &options,
+                qubit_datatype::ConversionLimits::default_ref(),
+            )
             .expect("trimmed string values should parse into ports");
 
     assert_eq!(ports, vec![8080, 8081]);
@@ -165,10 +168,12 @@ fn test_data_converters_to_vec_with_applies_options() {
 
 #[test]
 fn test_data_converters_to_vec_in_enforces_session_item_budget() {
-    let options = DataConversionOptions::default().with_budget_limits(
-        ConversionBudgetLimits::default().with_max_items(2),
-    );
-    let mut session = options.session();
+    let policy = ConversionPolicy::default();
+    let limits = qubit_datatype::ConversionLimits::default()
+        .with_operation_limits(
+            ConversionOperationLimits::default().with_max_items(2),
+        );
+    let mut session = qubit_datatype::ConversionSession::new(&policy, &limits);
     let error = DataConverters::from_iterator(["1", "2", "3"].into_iter())
         .to_vec_in::<u16>(&mut session)
         .expect_err("the third item must exceed the shared budget");

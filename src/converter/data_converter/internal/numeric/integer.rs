@@ -17,13 +17,14 @@ use super::super::super::DataConverter;
 use super::big_number::decimal_to_bigint;
 use super::syntax::normalize_numeric_text;
 use super::syntax::parse_text_integer;
+use crate::converter::ConversionPolicy;
 use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
 use crate::converter::DurationRoundingPolicy;
 use crate::converter::FractionalToIntegerPolicy;
 use crate::converter::InvalidValueReason;
+use crate::converter::NumericConversionLimits;
 use crate::datatype::DataType;
 
 /// Returns a platform-independent `(negative, magnitude)` representation.
@@ -158,7 +159,8 @@ fn float_to_integer(
 /// when extraction fails.
 pub(in crate::converter::data_converter) fn source_to_integer(
     source: &DataConverter<'_>,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
+    limits: &NumericConversionLimits,
     to: DataType,
 ) -> Result<(bool, u128), DataConversionError> {
     if let Some(value) = scalar_integer_magnitude(source) {
@@ -196,7 +198,7 @@ pub(in crate::converter::data_converter) fn source_to_integer(
             let integer = decimal_to_bigint(
                 value,
                 options.numeric().fractional_to_integer(),
-                options.numeric().limits().max_big_integer_digits(),
+                limits.max_big_integer_digits(),
                 DataType::BigDecimal,
                 to,
             )?;
@@ -213,7 +215,7 @@ pub(in crate::converter::data_converter) fn source_to_integer(
             }
         }
         DataConverter::String(value) => {
-            let value = normalize_numeric_text(value, options, to)?;
+            let value = normalize_numeric_text(value, options, limits, to)?;
             parse_text_integer(
                 value,
                 options.numeric().fractional_to_integer(),
@@ -246,7 +248,7 @@ pub(in crate::converter::data_converter) fn source_to_integer(
 /// remainder.
 pub(in crate::converter::data_converter) fn duration_to_u128(
     duration: Duration,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
     to: DataType,
 ) -> Result<u128, DataConversionError> {
     if options.duration().rounding_policy() == DurationRoundingPolicy::Reject {
@@ -284,10 +286,11 @@ pub(in crate::converter::data_converter) fn duration_to_u128(
 /// propagates source parsing or policy errors unchanged.
 fn to_i128(
     source: &DataConverter<'_>,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
+    limits: &NumericConversionLimits,
     to: DataType,
 ) -> Result<i128, DataConversionError> {
-    let (negative, magnitude) = source_to_integer(source, options, to)?;
+    let (negative, magnitude) = source_to_integer(source, options, limits, to)?;
     if negative && magnitude == 1u128 << 127 {
         return Ok(i128::MIN);
     }
@@ -323,10 +326,11 @@ fn to_i128(
 #[inline]
 fn to_u128(
     source: &DataConverter<'_>,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
+    limits: &NumericConversionLimits,
     to: DataType,
 ) -> Result<u128, DataConversionError> {
-    let (negative, magnitude) = source_to_integer(source, options, to)?;
+    let (negative, magnitude) = source_to_integer(source, options, limits, to)?;
     if negative {
         Err(DataConversionError::invalid(
             source.data_type(),
@@ -438,9 +442,10 @@ macro_rules! impl_signed_target {
                 source: &DataConverter<'_>,
                 session: &mut ConversionSession<'_>,
             ) -> Result<Self, DataConversionError> {
-                let options = session.options();
+                let options = session.policy();
+                let limits = session.limits().numeric();
                 checked_signed(
-                    to_i128(source, options, $data_type)?,
+                    to_i128(source, options, limits, $data_type)?,
                     source,
                     $data_type,
                 )
@@ -474,9 +479,10 @@ macro_rules! impl_unsigned_target {
                 source: &DataConverter<'_>,
                 session: &mut ConversionSession<'_>,
             ) -> Result<Self, DataConversionError> {
-                let options = session.options();
+                let options = session.policy();
+                let limits = session.limits().numeric();
                 checked_unsigned(
-                    to_u128(source, options, $data_type)?,
+                    to_u128(source, options, limits, $data_type)?,
                     source,
                     $data_type,
                 )

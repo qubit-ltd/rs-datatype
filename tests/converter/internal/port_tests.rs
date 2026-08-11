@@ -53,24 +53,3 @@ impl DataConversionTarget for Text {
         session.delegate_owned::<String>(source).map(Self)
     }
 }
-
-#[cfg(feature = "json")]
-#[derive(Debug, PartialEq)]
-pub(in crate::converter) struct Document(
-    pub(in crate::converter) serde_json::Value,
-);
-
-#[cfg(feature = "json")]
-impl DataTypeOf for Document {
-    const DATA_TYPE: DataType = DataType::Json;
-}
-
-#[cfg(feature = "json")]
-impl DataConversionTarget for Document {
-    fn convert_from(
-        source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
-    ) -> Result<Self, DataConversionError> {
-        session.delegate::<serde_json::Value>(source).map(Self)
-    }
-}

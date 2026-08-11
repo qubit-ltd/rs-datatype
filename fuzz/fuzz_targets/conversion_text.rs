@@ -25,8 +25,9 @@ use chrono::NaiveTime;
 use chrono::Utc;
 use libfuzzer_sys::fuzz_target;
 use num_bigint::BigInt;
-use qubit_datatype::ConversionBudgetLimits;
-use qubit_datatype::DataConversionOptions;
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionOperationLimits;
+use qubit_datatype::ConversionPolicy;
 use qubit_datatype::DataConversionTarget;
 use qubit_datatype::DataConverter;
 use qubit_datatype::StructuredConversionLimits;
@@ -45,19 +46,26 @@ fuzz_target!(|data: &[u8]| {
     };
     let converter = DataConverter::from(text);
     let options = [
-        DataConversionOptions::strict(),
-        DataConversionOptions::lossy(),
-        DataConversionOptions::env_friendly(),
-        DataConversionOptions::strict()
-            .with_structured_limits(
-                StructuredConversionLimits::default()
-                    .with_max_depth(2)
-                    .with_max_sequence_items(2)
-                    .with_max_map_entries(2),
-            )
-            .with_budget_limits(
-                ConversionBudgetLimits::default().with_max_structured_nodes(4),
-            ),
+        (ConversionPolicy::strict(), ConversionLimits::default()),
+        (ConversionPolicy::lossy(), ConversionLimits::default()),
+        (
+            ConversionPolicy::env_friendly(),
+            ConversionLimits::default(),
+        ),
+        (
+            ConversionPolicy::strict(),
+            ConversionLimits::default()
+                .with_structured_limits(
+                    StructuredConversionLimits::default()
+                        .with_max_depth(2)
+                        .with_max_sequence_items(2)
+                        .with_max_map_entries(2),
+                )
+                .with_operation_limits(
+                    ConversionOperationLimits::default()
+                        .with_max_structured_nodes(4),
+                ),
+        ),
     ];
 
     exercise_conversion::<bool>(&converter, &options);
@@ -87,11 +95,11 @@ fuzz_target!(|data: &[u8]| {
 /// * `options` - Bounded set of conversion profiles to exercise.
 fn exercise_conversion<T>(
     converter: &DataConverter<'_>,
-    options: &[DataConversionOptions],
+    options: &[(ConversionPolicy, ConversionLimits)],
 ) where
     T: DataConversionTarget,
 {
-    for option in options {
-        let _ = converter.to_with::<T>(option);
+    for (policy, limits) in options {
+        let _ = converter.to_with::<T>(policy, limits);
     }
 }

@@ -5,20 +5,19 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Independently configurable numeric conversion options.
+//! Independently configurable numeric conversion policy.
 
 use serde::Deserialize;
 use serde::Serialize;
 
 use super::FloatRoundingPolicy;
 use super::FractionalToIntegerPolicy;
-use super::NumericConversionLimits;
 
-/// Groups policies and resource limits for numeric conversion.
+/// Groups semantic policies for numeric conversion.
 #[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
-pub struct NumericConversionOptions {
+pub struct NumericConversionPolicy {
     /// Policy governing fractional numeric conversions to integer targets.
     fractional_to_integer: FractionalToIntegerPolicy,
     /// Rounding policy for existing numeric values converted to floating
@@ -26,11 +25,9 @@ pub struct NumericConversionOptions {
     numeric_to_float: FloatRoundingPolicy,
     /// Rounding policy for text parsed into floating-point targets.
     text_to_float: FloatRoundingPolicy,
-    /// Resource limits applied during numeric conversion.
-    limits: NumericConversionLimits,
 }
 
-impl NumericConversionOptions {
+impl NumericConversionPolicy {
     /// Creates the strict numeric conversion profile used by [`Default`].
     ///
     /// # Returns
@@ -42,7 +39,6 @@ impl NumericConversionOptions {
             fractional_to_integer: FractionalToIntegerPolicy::Reject,
             numeric_to_float: FloatRoundingPolicy::Exact,
             text_to_float: FloatRoundingPolicy::Exact,
-            limits: NumericConversionLimits::default(),
         }
     }
 
@@ -57,7 +53,6 @@ impl NumericConversionOptions {
             fractional_to_integer: FractionalToIntegerPolicy::Truncate,
             numeric_to_float: FloatRoundingPolicy::NearestEven,
             text_to_float: FloatRoundingPolicy::NearestEven,
-            limits: NumericConversionLimits::default(),
         }
     }
 
@@ -72,7 +67,6 @@ impl NumericConversionOptions {
             fractional_to_integer: FractionalToIntegerPolicy::Reject,
             numeric_to_float: FloatRoundingPolicy::Exact,
             text_to_float: FloatRoundingPolicy::NearestEven,
-            limits: NumericConversionLimits::default(),
         }
     }
 
@@ -159,46 +153,10 @@ impl NumericConversionOptions {
         self.text_to_float = policy;
         self
     }
-
-    /// Returns the numeric conversion resource limits.
-    ///
-    /// # Returns
-    ///
-    /// A shared reference to numeric byte and digit limits.
-    ///
-    /// ```compile_fail
-    /// #![deny(unused_must_use)]
-    /// use qubit_datatype::NumericConversionOptions;
-    ///
-    /// NumericConversionOptions::default().limits();
-    /// ```
-    #[must_use = "numeric conversion limits should be inspected"]
-    #[inline(always)]
-    pub const fn limits(&self) -> &NumericConversionLimits {
-        &self.limits
-    }
-
-    /// Returns a copy with different numeric conversion resource limits.
-    ///
-    /// # Parameters
-    ///
-    /// * `limits` - New numeric resource limits.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    #[inline(always)]
-    pub const fn with_limits(
-        mut self,
-        limits: NumericConversionLimits,
-    ) -> Self {
-        self.limits = limits;
-        self
-    }
 }
 
-impl Default for NumericConversionOptions {
-    /// Creates strict numeric conversion options.
+impl Default for NumericConversionPolicy {
+    /// Creates strict numeric conversion policy.
     ///
     /// # Returns
     ///

@@ -5,9 +5,9 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # Boolean Conversion Options
+//! # Boolean Conversion Policy
 //!
-//! Defines options that control string-to-boolean conversion.
+//! Defines policy that controls string-to-boolean conversion.
 
 use std::collections::HashSet;
 
@@ -18,7 +18,7 @@ use serde::de::Error as DeError;
 
 use super::super::error::BooleanLiteralConflictError;
 use super::boolean_numeric_policy::BooleanNumericPolicy;
-use super::internal::UncheckedBooleanConversionOptions;
+use super::internal::UncheckedBooleanConversionPolicy;
 
 /// Reports whether case-sensitive true and false literals overlap.
 ///
@@ -79,9 +79,9 @@ fn ascii_case_insensitive_literals_overlap(
 /// # Examples
 ///
 /// ```
-/// use qubit_datatype::{BooleanConversionOptions, BooleanNumericPolicy};
+/// use qubit_datatype::{BooleanConversionPolicy, BooleanNumericPolicy};
 ///
-/// let options = BooleanConversionOptions::strict()
+/// let options = BooleanConversionPolicy::strict()
 ///     .with_true_literal("enabled")
 ///     .expect("literal sets are disjoint")
 ///     .with_numeric_policy(BooleanNumericPolicy::Reject);
@@ -90,7 +90,7 @@ fn ascii_case_insensitive_literals_overlap(
 /// ```
 #[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct BooleanConversionOptions {
+pub struct BooleanConversionPolicy {
     /// String literals accepted as `true`.
     true_literals: Vec<String>,
     /// String literals accepted as `false`.
@@ -101,14 +101,14 @@ pub struct BooleanConversionOptions {
     numeric_policy: BooleanNumericPolicy,
 }
 
-impl BooleanConversionOptions {
+impl BooleanConversionPolicy {
     /// Text literals accepted as `true` by the strict/default profile.
     pub const DEFAULT_TRUE_LITERALS: &'static [&'static str] = &["true"];
 
     /// Text literals accepted as `false` by the strict/default profile.
     pub const DEFAULT_FALSE_LITERALS: &'static [&'static str] = &["false"];
 
-    /// Creates validated boolean conversion options.
+    /// Creates validated boolean conversion policy.
     ///
     /// # Parameters
     ///
@@ -142,7 +142,7 @@ impl BooleanConversionOptions {
         Ok(options)
     }
 
-    /// Creates strict boolean conversion options.
+    /// Creates strict boolean conversion policy.
     ///
     /// # Returns
     ///
@@ -387,8 +387,8 @@ impl BooleanConversionOptions {
     }
 }
 
-impl Default for BooleanConversionOptions {
-    /// Creates default boolean conversion options.
+impl Default for BooleanConversionPolicy {
+    /// Creates default boolean conversion policy.
     ///
     /// # Returns
     ///
@@ -399,8 +399,8 @@ impl Default for BooleanConversionOptions {
     }
 }
 
-impl<'de> Deserialize<'de> for BooleanConversionOptions {
-    /// Deserializes and validates boolean conversion options.
+impl<'de> Deserialize<'de> for BooleanConversionPolicy {
+    /// Deserializes and validates boolean conversion policy.
     ///
     /// # Type Parameters
     ///
@@ -413,7 +413,7 @@ impl<'de> Deserialize<'de> for BooleanConversionOptions {
     ///
     /// # Returns
     ///
-    /// Validated Boolean conversion options.
+    /// Validated Boolean conversion policy.
     ///
     /// # Errors
     ///
@@ -425,7 +425,7 @@ impl<'de> Deserialize<'de> for BooleanConversionOptions {
         D: Deserializer<'de>,
     {
         let definition =
-            UncheckedBooleanConversionOptions::deserialize(deserializer)?;
+            UncheckedBooleanConversionPolicy::deserialize(deserializer)?;
         Self::try_new(
             definition.true_literals,
             definition.false_literals,

@@ -14,8 +14,10 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use qubit_datatype::CollectionConversionOptions;
-use qubit_datatype::DataConversionOptions;
+use qubit_datatype::CollectionConversionLimits;
+use qubit_datatype::CollectionConversionPolicy;
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
 use qubit_datatype::EmptyItemPolicy;
 use qubit_datatype::ScalarStringDataConverters;
 
@@ -45,22 +47,24 @@ fuzz_target!(|data: &[u8]| {
         1 => EmptyItemPolicy::Skip,
         _ => EmptyItemPolicy::Reject,
     };
-    let collection = CollectionConversionOptions::default()
+    let collection = CollectionConversionPolicy::default()
         .with_split_scalar_strings(true)
         .with_delimiters(delimiters)
         .with_trim_items(policy_control & 0b100 != 0)
-        .with_empty_item_policy(empty_item_policy)
-        .with_max_items(max_items);
+        .with_empty_item_policy(empty_item_policy);
+    let limits = ConversionLimits::default().with_collection_limits(
+        CollectionConversionLimits::default().with_max_items(max_items),
+    );
 
-    for item in collection.scalar_items(text) {
+    for item in collection.scalar_items(limits.collection(), text) {
         let _ = item;
     }
 
-    let options = DataConversionOptions::env_friendly()
-        .with_collection_options(collection);
+    let options =
+        ConversionPolicy::env_friendly().with_collection_policy(collection);
     let converter = ScalarStringDataConverters::from(text);
-    let first = converter.to_first_with::<String>(&options);
-    let values = converter.to_vec_with::<String>(&options);
+    let first = converter.to_first_with::<String>(&options, &limits);
+    let values = converter.to_vec_with::<String>(&options, &limits);
     if let Ok(values) = values {
         assert!(
             values.len() <= max_items,

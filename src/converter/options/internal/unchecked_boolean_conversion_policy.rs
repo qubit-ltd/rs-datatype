@@ -5,18 +5,18 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Unvalidated Serde representation for Boolean conversion options.
+//! Unvalidated Serde representation for Boolean conversion policy.
 
 use serde::Deserialize;
 
-use super::super::BooleanConversionOptions;
+use super::super::BooleanConversionPolicy;
 use super::super::BooleanNumericPolicy;
 
 /// Holds deserialized Boolean fields before literal-set validation.
 #[must_use]
 #[derive(Deserialize)]
 #[serde(default, deny_unknown_fields)]
-pub(in crate::converter::options) struct UncheckedBooleanConversionOptions {
+pub(in crate::converter::options) struct UncheckedBooleanConversionPolicy {
     /// String literals accepted as true.
     pub(in crate::converter::options) true_literals: Vec<String>,
     /// String literals accepted as false.
@@ -27,15 +27,15 @@ pub(in crate::converter::options) struct UncheckedBooleanConversionOptions {
     pub(in crate::converter::options) numeric_policy: BooleanNumericPolicy,
 }
 
-impl Default for UncheckedBooleanConversionOptions {
-    /// Creates the wire defaults used by [`BooleanConversionOptions`].
+impl Default for UncheckedBooleanConversionPolicy {
+    /// Creates the wire defaults used by [`BooleanConversionPolicy`].
     ///
     /// # Returns
     ///
     /// An unchecked representation populated from validated defaults.
     #[inline]
     fn default() -> Self {
-        let options = BooleanConversionOptions::default();
+        let options = BooleanConversionPolicy::default();
         Self {
             true_literals: options.true_literals().to_vec(),
             false_literals: options.false_literals().to_vec(),

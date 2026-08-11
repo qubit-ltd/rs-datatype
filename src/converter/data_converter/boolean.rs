@@ -17,11 +17,12 @@ use super::numeric::check_numeric_text_limit;
 use super::numeric::is_integer_syntax;
 use super::string_source::normalize;
 use crate::converter::BooleanNumericPolicy;
+use crate::converter::ConversionPolicy;
 use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
 use crate::converter::InvalidValueReason;
+use crate::converter::NumericConversionLimits;
 use crate::datatype::DataType;
 
 /// Applies the configured integer-to-boolean policy.
@@ -79,7 +80,8 @@ fn integer_to_bool(
 /// rejected numeric values.
 fn string_to_bool(
     value: &str,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
+    limits: &NumericConversionLimits,
 ) -> Result<bool, DataConversionError> {
     let value = normalize(value, options, DataType::Bool)?;
     if let Some(value) = options.boolean().parse(value) {
@@ -92,7 +94,7 @@ fn string_to_bool(
             InvalidValueReason::InvalidBoolean,
         ));
     }
-    check_numeric_text_limit(value, options, DataType::Bool)?;
+    check_numeric_text_limit(value, limits, DataType::Bool)?;
     let digits = value.strip_prefix(['+', '-']).unwrap_or(value);
     let zero = digits.bytes().all(|byte| byte == b'0');
     let one = !value.starts_with('-') && digits.trim_start_matches('0') == "1";
@@ -122,7 +124,7 @@ fn string_to_bool(
 #[inline(always)]
 fn big_integer_to_bool(
     value: &BigInt,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
 ) -> Result<bool, DataConversionError> {
     integer_to_bool(
         value.is_zero(),
@@ -152,10 +154,13 @@ impl DataConversionTarget for bool {
         source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.options();
+        let options = session.policy();
+        let limits = session.limits().numeric();
         match source {
             DataConverter::Bool(value) => Ok(*value),
-            DataConverter::String(value) => string_to_bool(value, options),
+            DataConverter::String(value) => {
+                string_to_bool(value, options, limits)
+            }
             DataConverter::Int8(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,

@@ -5,9 +5,9 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Tests mirroring internal option validation responsibilities.
+//! Focused test target for conversion policy and limit types.
 
-mod conversion_operation_limits_wire_tests;
-mod numeric_conversion_limits_wire_tests;
-mod structured_conversion_limits_wire_tests;
-mod unchecked_boolean_conversion_policy_tests;
+#![cfg(feature = "converter")]
+
+#[path = "converter/options/mod.rs"]
+mod options;

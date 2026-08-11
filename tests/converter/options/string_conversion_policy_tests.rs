@@ -5,18 +5,18 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # StringConversionOptions Unit Tests
+//! # StringConversionPolicy Unit Tests
 //!
 //! Tests for string-source normalization options.
 
 use qubit_datatype::converter::BlankStringPolicy;
-use qubit_datatype::converter::StringConversionOptions;
+use qubit_datatype::converter::StringConversionPolicy;
 use qubit_datatype::converter::StringNormalizationError;
 
 /// Test the environment-variable string profile.
 #[test]
-fn test_string_conversion_options_env_friendly_profile() {
-    let options = StringConversionOptions::env_friendly();
+fn test_string_conversion_policy_env_friendly_profile() {
+    let options = StringConversionPolicy::env_friendly();
     assert!(options.trim());
     assert_eq!(
         options.blank_string_policy(),
@@ -24,33 +24,33 @@ fn test_string_conversion_options_env_friendly_profile() {
     );
 }
 
-/// Test that misspelled string option fields are rejected.
+/// Test that misspelled string policy fields are rejected.
 #[test]
-fn test_string_conversion_options_reject_unknown_fields() {
-    let error = serde_json::from_str::<StringConversionOptions>(
+fn test_string_conversion_policy_reject_unknown_fields() {
+    let error = serde_json::from_str::<StringConversionPolicy>(
         r#"{"trim":true,"unexpected":false}"#,
     )
-    .expect_err("unknown string option fields must be rejected");
+    .expect_err("unknown string policy fields must be rejected");
 
     assert!(error.to_string().contains("unknown field `unexpected`"));
 }
 
-/// Test string option policy branches.
+/// Test string policy policy branches.
 #[test]
-fn test_string_conversion_options_cover_policy_branches() {
-    let preserved = StringConversionOptions::default()
+fn test_string_conversion_policy_cover_policy_branches() {
+    let preserved = StringConversionPolicy::default()
         .with_trim(false)
         .with_blank_string_policy(BlankStringPolicy::Preserve)
         .normalize("   ")
         .expect("blank string should be preserved");
     assert_eq!(preserved, "   ");
 
-    let rejected = StringConversionOptions::default()
+    let rejected = StringConversionPolicy::default()
         .with_blank_string_policy(BlankStringPolicy::Reject)
         .normalize("   ");
     assert_eq!(rejected, Err(StringNormalizationError::BlankRejected));
 
-    let missing = StringConversionOptions::default()
+    let missing = StringConversionPolicy::default()
         .with_trim(true)
         .with_blank_string_policy(BlankStringPolicy::TreatAsMissing)
         .normalize("   ");
@@ -59,9 +59,9 @@ fn test_string_conversion_options_cover_policy_branches() {
 
 /// Test that normalization borrows the original input without allocation.
 #[test]
-fn test_string_conversion_options_normalize_returns_borrowed_slice() {
+fn test_string_conversion_policy_normalize_returns_borrowed_slice() {
     let input = String::from("  value  ");
-    let normalized = StringConversionOptions::default()
+    let normalized = StringConversionPolicy::default()
         .with_trim(true)
         .normalize(&input)
         .expect("non-blank input should normalize");
@@ -72,8 +72,8 @@ fn test_string_conversion_options_normalize_returns_borrowed_slice() {
 
 /// Test the structured blank rejection category.
 #[test]
-fn test_string_conversion_options_rejects_blank_structurally() {
-    let error = StringConversionOptions::default()
+fn test_string_conversion_policy_rejects_blank_structurally() {
+    let error = StringConversionPolicy::default()
         .with_blank_string_policy(BlankStringPolicy::Reject)
         .normalize("   ")
         .expect_err("blank text should be rejected");
@@ -83,8 +83,8 @@ fn test_string_conversion_options_rejects_blank_structurally() {
 
 /// Test the normalization result used for blank-as-missing policy.
 #[test]
-fn test_string_conversion_options_reports_missing_normalization() {
-    let error = StringConversionOptions::default()
+fn test_string_conversion_policy_reports_missing_normalization() {
+    let error = StringConversionPolicy::default()
         .with_trim(true)
         .with_blank_string_policy(BlankStringPolicy::TreatAsMissing)
         .normalize("   ")
@@ -95,9 +95,9 @@ fn test_string_conversion_options_reports_missing_normalization() {
 
 /// Test the optional normalization adapter for value-or-missing flows.
 #[test]
-fn test_string_conversion_options_normalize_optional() {
+fn test_string_conversion_policy_normalize_optional() {
     let input = String::from("  value  ");
-    let normalized = StringConversionOptions::default()
+    let normalized = StringConversionPolicy::default()
         .with_trim(true)
         .normalize_optional(&input)
         .expect("non-blank input should normalize");
@@ -109,12 +109,12 @@ fn test_string_conversion_options_normalize_optional() {
         input[2..].as_ptr(),
     );
 
-    let missing = StringConversionOptions::default()
+    let missing = StringConversionPolicy::default()
         .with_blank_string_policy(BlankStringPolicy::TreatAsMissing)
         .normalize_optional("   ");
     assert_eq!(missing, Ok(None));
 
-    let rejected = StringConversionOptions::default()
+    let rejected = StringConversionPolicy::default()
         .with_blank_string_policy(BlankStringPolicy::Reject)
         .normalize_optional("   ");
     assert_eq!(rejected, Err(StringNormalizationError::BlankRejected));

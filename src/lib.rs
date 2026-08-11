@@ -27,10 +27,10 @@
 //! enables StringMap parsing and formatting. Other type pairs return
 //! `DataConversionErrorKind::Unsupported`.
 //!
-//! `NumericConversionOptions` configures fractional-to-integer conversion,
+//! `NumericConversionPolicy` configures fractional-to-integer conversion,
 //! existing-numeric-to-float rounding, text-to-float rounding, and resource
 //! limits independently. The strict/default profile rejects truncation and
-//! precision loss. `DataConversionOptions::lossy` permits finite
+//! precision loss. `ConversionPolicy::lossy` permits finite
 //! decimal/float truncation toward zero, IEEE nearest-even float rounding, and
 //! Duration half-up rounding. Duration-to-integer and Duration-to-String
 //! require exact divisibility unless `DurationRoundingPolicy::HalfUp` is
@@ -55,16 +55,20 @@
 //! # #[cfg(feature = "converter")]
 //! # {
 //! use qubit_datatype::{
-//!     DataConversionErrorKind, InvalidValueReason, DataConversionOptions,
-//!     DataConverter,
+//!     ConversionLimits, ConversionPolicy, DataConversionErrorKind,
+//!     DataConverter, InvalidValueReason,
 //! };
 //!
 //! let error = DataConverter::from("3.9").to::<i32>().unwrap_err();
 //! assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
 //! assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
 //!
-//! let lossy = DataConversionOptions::lossy();
-//! assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
+//! let lossy = ConversionPolicy::lossy();
+//! let limits = ConversionLimits::default();
+//! assert_eq!(
+//!     DataConverter::from(" 3.9 ").to_with::<i32>(&lossy, &limits),
+//!     Ok(3),
+//! );
 //! # }
 //! ```
 
@@ -102,15 +106,21 @@ pub mod converter;
 #[cfg(feature = "converter")]
 pub use converter::BlankStringPolicy;
 #[cfg(feature = "converter")]
-pub use converter::BooleanConversionOptions;
+pub use converter::BooleanConversionPolicy;
 #[cfg(feature = "converter")]
 pub use converter::BooleanLiteralConflictError;
 #[cfg(feature = "converter")]
 pub use converter::BooleanNumericPolicy;
 #[cfg(feature = "converter")]
-pub use converter::CollectionConversionOptions;
+pub use converter::CollectionConversionLimits;
 #[cfg(feature = "converter")]
-pub use converter::ConversionBudgetLimits;
+pub use converter::CollectionConversionPolicy;
+#[cfg(feature = "converter")]
+pub use converter::ConversionLimits;
+#[cfg(feature = "converter")]
+pub use converter::ConversionOperationLimits;
+#[cfg(feature = "converter")]
+pub use converter::ConversionPolicy;
 #[cfg(feature = "converter")]
 pub use converter::ConversionResource;
 #[cfg(feature = "converter")]
@@ -119,8 +129,6 @@ pub use converter::ConversionSession;
 pub use converter::DataConversionError;
 #[cfg(feature = "converter")]
 pub use converter::DataConversionErrorKind;
-#[cfg(feature = "converter")]
-pub use converter::DataConversionOptions;
 #[cfg(feature = "converter")]
 pub use converter::DataConversionTarget;
 #[cfg(feature = "converter")]
@@ -132,7 +140,9 @@ pub use converter::DataFormat;
 #[cfg(feature = "converter")]
 pub use converter::DataListConversionError;
 #[cfg(feature = "converter")]
-pub use converter::DurationConversionOptions;
+pub use converter::DurationConversionLimits;
+#[cfg(feature = "converter")]
+pub use converter::DurationConversionPolicy;
 #[cfg(feature = "converter")]
 pub use converter::DurationRoundingPolicy;
 #[cfg(feature = "converter")]
@@ -146,7 +156,7 @@ pub use converter::InvalidValueReason;
 #[cfg(feature = "converter")]
 pub use converter::NumericConversionLimits;
 #[cfg(feature = "converter")]
-pub use converter::NumericConversionOptions;
+pub use converter::NumericConversionPolicy;
 #[cfg(feature = "converter")]
 pub use converter::ScalarItem;
 #[cfg(feature = "converter")]
@@ -156,7 +166,7 @@ pub use converter::ScalarItems;
 #[cfg(feature = "converter")]
 pub use converter::ScalarStringDataConverters;
 #[cfg(feature = "converter")]
-pub use converter::StringConversionOptions;
+pub use converter::StringConversionPolicy;
 #[cfg(feature = "converter")]
 pub use converter::StringNormalizationError;
 #[cfg(feature = "converter")]

@@ -5,15 +5,15 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Conversion budget wire coverage is provided by public options tests.
+//! Conversion operation limit wire coverage is provided by public tests.
 
-use qubit_datatype::ConversionBudgetLimits;
+use qubit_datatype::ConversionOperationLimits;
 
 #[test]
-fn test_conversion_budget_wire_is_covered_by_public_options_contract() {
-    let limits = ConversionBudgetLimits::default();
+fn test_conversion_operation_limits_wire_is_covered_by_public_contract() {
+    let limits = ConversionOperationLimits::default();
     assert_eq!(
         limits.max_output_bytes(),
-        ConversionBudgetLimits::DEFAULT_MAX_OUTPUT_BYTES
+        ConversionOperationLimits::DEFAULT_MAX_OUTPUT_BYTES
     );
 }

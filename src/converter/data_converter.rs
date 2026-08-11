@@ -28,18 +28,20 @@ use chrono::NaiveTime;
 use chrono::Utc;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
-use qubit_budget::BudgetError;
 #[cfg(feature = "json")]
 use serde_json::Value;
 #[cfg(feature = "url")]
 use url::Url;
 
-use super::conversion_resource::ConversionResource;
+#[cfg(feature = "json")]
+use self::structured::account_json_structure;
+use self::structured::account_string_map_structure;
 use super::conversion_session::ConversionSession;
 use super::data_conversion_target::DataConversionTarget;
 use super::error::DataConversionError;
 use super::error::InvalidValueReason;
-use super::options::DataConversionOptions;
+use super::options::ConversionLimits;
+use super::options::ConversionPolicy;
 use crate::datatype::DataType;
 use crate::datatype::for_each_data_type_mapping;
 
@@ -70,7 +72,7 @@ macro_rules! data_converter_data_type_match {
 /// `DataConverter` erases the concrete Rust source type while preserving its
 /// [`DataType`]. Construct one with a standard [`From`] conversion, then call
 /// [`Self::to`] for the default profile or [`Self::to_with`] for an explicit
-/// [`DataConversionOptions`] profile. `Cow`-backed variants borrow large values
+/// [`ConversionPolicy`] profile. `Cow`-backed variants borrow large values
 /// when possible, so wrapping a string, big number, URL, map, or JSON value
 /// does not require cloning it.
 ///
@@ -92,15 +94,17 @@ macro_rules! data_converter_data_type_match {
 ///
 /// ```
 /// use qubit_datatype::{
-///     DataConversionOptions,
+///     ConversionLimits,
+///     ConversionPolicy,
 ///     DataConverter,
 /// };
 ///
 /// let source = DataConverter::from("42");
 /// assert_eq!(source.to::<u16>(), Ok(42));
 ///
-/// let lossy = DataConversionOptions::lossy();
-/// let value: u16 = DataConverter::from("3.9").to_with(&lossy).unwrap();
+/// let lossy = ConversionPolicy::lossy();
+/// let limits = ConversionLimits::default();
+/// let value: u16 = DataConverter::from("3.9").to_with(&lossy, &limits).unwrap();
 /// assert_eq!(value, 3);
 /// ```
 ///
@@ -276,10 +280,13 @@ impl DataConverter<'_> {
     where
         T: DataConversionTarget,
     {
-        self.to_with(DataConversionOptions::default_ref())
+        self.to_with(
+            ConversionPolicy::default_ref(),
+            ConversionLimits::default_ref(),
+        )
     }
 
-    /// Converts this source using explicit options.
+    /// Converts this source using an explicit policy and limits.
     ///
     /// # Type Parameters
     ///
@@ -287,8 +294,9 @@ impl DataConverter<'_> {
     ///
     /// # Parameters
     ///
-    /// * `options` - Policies for string normalization, numeric precision,
+    /// * `policy` - Policies for string normalization, numeric precision,
     ///   booleans, collections, and durations.
+    /// * `limits` - Value-level and operation-level resource limits.
     ///
     /// # Returns
     ///
@@ -301,12 +309,13 @@ impl DataConverter<'_> {
     #[inline(always)]
     pub fn to_with<T>(
         &self,
-        options: &DataConversionOptions,
+        policy: &ConversionPolicy,
+        limits: &ConversionLimits,
     ) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
-        let mut session = options.session();
+        let mut session = ConversionSession::new(policy, limits);
         self.to_in(&mut session)
     }
 
@@ -353,10 +362,14 @@ impl DataConverter<'_> {
     where
         T: DataConversionTarget,
     {
-        self.into_target_with(DataConversionOptions::default_ref())
+        self.into_target_with(
+            ConversionPolicy::default_ref(),
+            ConversionLimits::default_ref(),
+        )
     }
 
-    /// Consumes this source and converts it using explicit options.
+    /// Consumes this source and converts it using an explicit policy and
+    /// limits.
     ///
     /// # Type Parameters
     ///
@@ -364,8 +377,9 @@ impl DataConverter<'_> {
     ///
     /// # Parameters
     ///
-    /// * `options` - Policies for string normalization, numeric precision,
+    /// * `policy` - Policies for string normalization, numeric precision,
     ///   booleans, collections, and durations.
+    /// * `limits` - Value-level and operation-level resource limits.
     ///
     /// # Returns
     ///
@@ -378,12 +392,13 @@ impl DataConverter<'_> {
     #[inline(always)]
     pub fn into_target_with<T>(
         self,
-        options: &DataConversionOptions,
+        policy: &ConversionPolicy,
+        limits: &ConversionLimits,
     ) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
-        let mut session = options.session();
+        let mut session = ConversionSession::new(policy, limits);
         self.into_target_in(&mut session)
     }
 
@@ -412,8 +427,8 @@ impl DataConverter<'_> {
         session: &mut ConversionSession<'_>,
     ) -> Result<(), DataConversionError> {
         match self {
-            Self::String(value) if target != DataType::String => {
-                let normalized = if session.options().string().trim() {
+            Self::String(value) => {
+                let normalized = if session.policy().string().trim() {
                     value.trim()
                 } else {
                     value.as_ref()
@@ -530,66 +545,4 @@ impl DataConverter<'_> {
     ) -> DataConversionError {
         DataConversionError::invalid(self.data_type(), to, reason)
     }
-}
-
-/// Accounts one string map and its scalar values against a conversion session.
-///
-/// # Parameters
-///
-/// * `value` - Map whose container and string values are traversed.
-/// * `depth` - Root-inclusive depth of the map container.
-/// * `session` - Shared budget that records the traversal.
-///
-/// # Returns
-///
-/// Returns successfully after every node fits the configured point and
-/// cumulative limits.
-///
-/// # Errors
-///
-/// Returns a budget error when the map depth, entry count, or cumulative node
-/// usage exceeds its configured maximum.
-fn account_string_map_structure(
-    value: &HashMap<String, String>,
-    depth: usize,
-    session: &mut ConversionSession<'_>,
-) -> Result<(), BudgetError<ConversionResource, usize>> {
-    session.enter_map(depth, value.len())?;
-    for _ in value {
-        session.enter_node(depth.saturating_add(1))?;
-    }
-    Ok(())
-}
-
-/// Accounts nodes and point structural limits in a borrowed JSON value.
-#[cfg(feature = "json")]
-fn account_json_structure(
-    value: &Value,
-    depth: usize,
-    session: &mut ConversionSession<'_>,
-) -> Result<(), BudgetError<ConversionResource, usize>> {
-    match value {
-        Value::Array(values) => {
-            session.enter_sequence(depth, values.len())?;
-            for value in values {
-                account_json_structure(
-                    value,
-                    depth.saturating_add(1),
-                    session,
-                )?;
-            }
-        }
-        Value::Object(values) => {
-            session.enter_map(depth, values.len())?;
-            for value in values.values() {
-                account_json_structure(
-                    value,
-                    depth.saturating_add(1),
-                    session,
-                )?;
-            }
-        }
-        _ => session.enter_node(depth)?,
-    }
-    Ok(())
 }

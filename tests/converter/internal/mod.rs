@@ -15,7 +15,5 @@ mod port_tests;
 pub(super) use inflated_size_hint_iterator_tests::InflatedSizeHintIterator;
 #[cfg(feature = "chrono")]
 pub(super) use matrix_outcome_tests::MatrixOutcome;
-#[cfg(feature = "json")]
-pub(super) use port_tests::Document;
 pub(super) use port_tests::Port;
 pub(super) use port_tests::Text;

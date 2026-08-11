@@ -49,14 +49,14 @@ use chrono::Utc;
 use num_bigint::BigInt;
 use proptest::proptest;
 use qubit_budget::BudgetError;
+use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
-use qubit_datatype::DataConversionOptions;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
 use qubit_datatype::InvalidValueReason;
 use qubit_datatype::NumericConversionLimits;
-use qubit_datatype::NumericConversionOptions;
-use qubit_datatype::StringConversionOptions;
+use qubit_datatype::NumericConversionPolicy;
+use qubit_datatype::StringConversionPolicy;
 use qubit_datatype::converter::DataConversionErrorKind;
 #[cfg(all(
     feature = "big-decimal",
@@ -76,9 +76,10 @@ fn create_huge_bigint() -> BigInt {
 /// Creates strict options with the supplied numeric resource limits.
 fn options_with_limits(
     limits: NumericConversionLimits,
-) -> DataConversionOptions {
-    DataConversionOptions::strict().with_numeric_options(
-        NumericConversionOptions::strict().with_limits(limits),
+) -> (ConversionPolicy, qubit_datatype::ConversionLimits) {
+    (
+        ConversionPolicy::strict(),
+        qubit_datatype::ConversionLimits::default().with_numeric_limits(limits),
     )
 }
 
@@ -419,9 +420,9 @@ fn test_data_converter_numeric_conversions_check_integer_bounds() {
 /// Test floating point conversion edge cases for integer and f32 targets.
 #[test]
 fn test_data_converter_float_conversions_check_non_finite_and_overflow() {
-    let lossy = DataConversionOptions::lossy();
+    let lossy = ConversionPolicy::lossy();
     let truncated: i8 = DataConverter::from(-12.9f64)
-        .to_with(&lossy)
+        .to_with(&lossy, qubit_datatype::ConversionLimits::default_ref())
         .expect("finite f64 should truncate when converting to i8");
     assert_eq!(truncated, -12);
 
@@ -487,8 +488,14 @@ fn test_data_converter_big_numbers_preserve_unsigned_only_u128_values() {
 /// Test the focused numeric module applies explicit lossy conversion.
 #[test]
 fn test_data_converter_numeric_lossy_conversion() {
-    let options = DataConversionOptions::lossy();
-    assert_eq!(DataConverter::from("-2.9").to_with::<i32>(&options), Ok(-2));
+    let options = ConversionPolicy::lossy();
+    assert_eq!(
+        DataConverter::from("-2.9").to_with::<i32>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
+        Ok(-2)
+    );
 }
 
 /// Test extreme decimal exponents are classified without expanding powers.
@@ -508,8 +515,14 @@ fn test_data_converter_big_decimal_extreme_exponents_are_bounded() {
         DataConverter::from(&tiny).to::<i32>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)),
     ));
-    let lossy = DataConversionOptions::lossy();
-    assert_eq!(DataConverter::from(&tiny).to_with::<i32>(&lossy), Ok(0));
+    let lossy = ConversionPolicy::lossy();
+    assert_eq!(
+        DataConverter::from(&tiny).to_with::<i32>(
+            &lossy,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
+        Ok(0)
+    );
 }
 
 /// Test exponent expansion cannot exhaust memory when producing a `BigInt`.
@@ -565,11 +578,17 @@ fn test_data_converter_big_decimal_non_finite_classification_is_consistent() {
 /// Test decimal text parsing across syntax, precision, and range boundaries.
 #[test]
 fn test_data_converter_core_numeric_parser_covers_decimal_boundaries() {
-    let lossy = DataConversionOptions::lossy();
+    let lossy = ConversionPolicy::lossy();
 
     assert_eq!(DataConverter::from("+1").to::<i128>(), Ok(1));
     assert_eq!(DataConverter::from("1e2").to::<i128>(), Ok(100));
-    assert_eq!(DataConverter::from("1e-2").to_with::<i128>(&lossy), Ok(0));
+    assert_eq!(
+        DataConverter::from("1e-2").to_with::<i128>(
+            &lossy,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
+        Ok(0)
+    );
     assert_eq!(DataConverter::from("-0.0").to::<i128>(), Ok(0));
     assert_eq!(
         DataConverter::from(i128::MIN.to_string()).to::<i128>(),
@@ -663,13 +682,16 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
         assert_eq!(source.to::<BigInt>(), Ok(expected));
     }
 
-    let lossy = DataConversionOptions::lossy();
+    let lossy = ConversionPolicy::lossy();
     assert!(matches!(
         DataConverter::from(12.5f64).to::<BigInt>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
     )));
     assert_eq!(
-        DataConverter::from(12.5f64).to_with::<BigInt>(&lossy),
+        DataConverter::from(12.5f64).to_with::<BigInt>(
+            &lossy,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Ok(BigInt::from(12))
     );
     assert!(matches!(
@@ -689,7 +711,10 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
     )));
     assert_eq!(
-        DataConverter::from(&imprecise_integer).to_with::<f64>(&lossy),
+        DataConverter::from(&imprecise_integer).to_with::<f64>(
+            &lossy,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Ok(9_007_199_254_740_992.0)
     );
     let imprecise_decimal = BigDecimal::from_str("0.1")
@@ -700,7 +725,10 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
     )));
     assert!(
         DataConverter::from(&imprecise_decimal)
-            .to_with::<f64>(&lossy)
+            .to_with::<f64>(
+                &lossy,
+                qubit_datatype::ConversionLimits::default_ref()
+            )
             .expect("lossy decimal conversion should succeed")
             .is_finite()
     );
@@ -733,9 +761,12 @@ fn test_data_converter_big_integer_target_applies_policy_to_decimal_text() {
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
     )));
 
-    let lossy = DataConversionOptions::lossy();
+    let lossy = ConversionPolicy::lossy();
     assert_eq!(
-        DataConverter::from("-12.5").to_with::<BigInt>(&lossy),
+        DataConverter::from("-12.5").to_with::<BigInt>(
+            &lossy,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Ok(BigInt::from(-12))
     );
 }
@@ -815,9 +846,12 @@ fn test_data_converter_numeric_boundary_branches() {
         assert_eq!(DataConverter::from(&integral_decimal).to::<i32>(), Ok(12));
         let fractional = BigDecimal::from_str("12.9")
             .expect("fractional decimal fixture should parse");
-        let lossy = DataConversionOptions::lossy();
+        let lossy = ConversionPolicy::lossy();
         assert_eq!(
-            DataConverter::from(&fractional).to_with::<i32>(&lossy),
+            DataConverter::from(&fractional).to_with::<i32>(
+                &lossy,
+                qubit_datatype::ConversionLimits::default_ref()
+            ),
             Ok(12)
         );
 
@@ -875,16 +909,17 @@ fn test_data_converter_big_decimal_rejects_rich_non_numeric_sources() {
 #[test]
 fn test_numeric_text_byte_limit_boundaries() {
     let limits = NumericConversionLimits::default().with_max_text_bytes(3);
-    let options = options_with_limits(limits).with_string_options(
-        StringConversionOptions::default().with_trim(true),
-    );
+    let (options, conversion_limits) = options_with_limits(limits);
+    let options = options
+        .with_string_policy(StringConversionPolicy::default().with_trim(true));
 
     assert_eq!(
-        DataConverter::from(" 123 ").to_with::<u32>(&options),
+        DataConverter::from(" 123 ")
+            .to_with::<u32>(&options, &conversion_limits),
         Ok(123),
     );
     let error = DataConverter::from("1234")
-        .to_with::<u32>(&options)
+        .to_with::<u32>(&options, &conversion_limits)
         .expect_err("one byte over the configured limit must fail");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(error.from_type(), Some(DataType::String));
@@ -903,18 +938,19 @@ fn test_numeric_text_byte_limit_boundaries() {
 /// Test text-to-float rounding still enforces its text byte budget.
 #[test]
 fn test_numeric_text_limit_applies_before_float_parsing() {
-    let options = DataConversionOptions::strict().with_numeric_options(
-        NumericConversionOptions::env_friendly().with_limits(
+    let options = ConversionPolicy::strict()
+        .with_numeric_policy(NumericConversionPolicy::env_friendly());
+    let limits = qubit_datatype::ConversionLimits::default()
+        .with_numeric_limits(
             NumericConversionLimits::default().with_max_text_bytes(3),
-        ),
-    );
+        );
 
     assert_eq!(
-        DataConverter::from("0.1").to_with::<f32>(&options),
+        DataConverter::from("0.1").to_with::<f32>(&options, &limits),
         Ok(0.1_f32),
     );
     let error = DataConverter::from("0.10")
-        .to_with::<f32>(&options)
+        .to_with::<f32>(&options, &limits)
         .expect_err("limit checking must precede target float parsing");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(
@@ -931,19 +967,20 @@ fn test_numeric_text_limit_applies_before_float_parsing() {
 #[test]
 #[cfg(feature = "big-integer")]
 fn test_big_integer_digit_limit_text_boundaries() {
-    let at_limit = options_with_limits(
+    let (at_limit, at_limit_limits) = options_with_limits(
         NumericConversionLimits::default().with_max_big_integer_digits(4),
     );
     assert_eq!(
-        DataConverter::from("1e3").to_with::<BigInt>(&at_limit),
+        DataConverter::from("1e3")
+            .to_with::<BigInt>(&at_limit, &at_limit_limits),
         Ok(BigInt::from(1_000)),
     );
 
-    let over_limit = options_with_limits(
+    let (over_limit, over_limit_limits) = options_with_limits(
         NumericConversionLimits::default().with_max_big_integer_digits(3),
     );
     let error = DataConverter::from("1e3")
-        .to_with::<BigInt>(&over_limit)
+        .to_with::<BigInt>(&over_limit, &over_limit_limits)
         .expect_err("four result digits must exceed a three-digit limit");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(
@@ -955,21 +992,26 @@ fn test_big_integer_digit_limit_text_boundaries() {
         }),
     );
 
-    let zero_limit = options_with_limits(
+    let (zero_limit, zero_limit_limits) = options_with_limits(
         NumericConversionLimits::default().with_max_big_integer_digits(0),
     );
     assert_eq!(
-        DataConverter::from("0e999").to_with::<BigInt>(&zero_limit),
+        DataConverter::from("0e999")
+            .to_with::<BigInt>(&zero_limit, &zero_limit_limits),
         Ok(BigInt::from(0)),
     );
     assert_eq!(
-        DataConverter::from("0001").to_with::<BigInt>(&options_with_limits(
-            NumericConversionLimits::default().with_max_big_integer_digits(1),
-        )),
+        DataConverter::from("0001").to_with::<BigInt>(
+            &ConversionPolicy::strict(),
+            &qubit_datatype::ConversionLimits::default().with_numeric_limits(
+                NumericConversionLimits::default()
+                    .with_max_big_integer_digits(1),
+            ),
+        ),
         Ok(BigInt::from(1)),
     );
     assert!(matches!(
-        DataConverter::from("1").to_with::<BigInt>(&zero_limit),
+        DataConverter::from("1").to_with::<BigInt>(&zero_limit, &zero_limit_limits),
         Err(error) if error.kind() == DataConversionErrorKind::LimitExceeded,
     ));
 }
@@ -979,19 +1021,20 @@ fn test_big_integer_digit_limit_text_boundaries() {
 #[cfg(feature = "big-number")]
 fn test_big_integer_digit_limit_big_decimal_expansion() {
     let decimal = BigDecimal::new(BigInt::from(1), -3);
-    let at_limit = options_with_limits(
+    let (at_limit, at_limit_limits) = options_with_limits(
         NumericConversionLimits::default().with_max_big_integer_digits(4),
     );
     assert_eq!(
-        DataConverter::from(&decimal).to_with::<BigInt>(&at_limit),
+        DataConverter::from(&decimal)
+            .to_with::<BigInt>(&at_limit, &at_limit_limits),
         Ok(BigInt::from(1_000)),
     );
 
-    let over_limit = options_with_limits(
+    let (over_limit, over_limit_limits) = options_with_limits(
         NumericConversionLimits::default().with_max_big_integer_digits(3),
     );
     let error = DataConverter::from(&decimal)
-        .to_with::<BigInt>(&over_limit)
+        .to_with::<BigInt>(&over_limit, &over_limit_limits)
         .expect_err("BigDecimal expansion must honor the digit limit");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(
@@ -1022,11 +1065,11 @@ fn test_data_converter_consuming_big_number_identity_preserves_limits() {
         Ok(decimal),
     );
 
-    let options = options_with_limits(
+    let (options, limits) = options_with_limits(
         NumericConversionLimits::default().with_max_big_integer_digits(4),
     );
     let error = DataConverter::from(BigInt::from(12_345_u32))
-        .into_target_with::<BigInt>(&options)
+        .into_target_with::<BigInt>(&options, &limits)
         .expect_err("consuming BigInteger identity must honor the digit limit");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(

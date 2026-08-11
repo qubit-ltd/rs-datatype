@@ -13,12 +13,11 @@ use criterion::BenchmarkId;
 use criterion::Criterion;
 use criterion::criterion_group;
 use criterion::criterion_main;
-use qubit_datatype::DataConversionOptions;
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
 use qubit_datatype::DataConverter;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use qubit_datatype::NumericConversionLimits;
-#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-use qubit_datatype::NumericConversionOptions;
 
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 const BIG_NUMBER_TEXT_SIZES: [(&str, usize); 4] = [
@@ -57,7 +56,8 @@ fn benchmark_exact_integer_text(c: &mut Criterion) {
 
 /// Benchmarks representative lossy integer text conversions.
 fn benchmark_lossy_integer_text(c: &mut Criterion) {
-    let options = DataConversionOptions::lossy();
+    let options = ConversionPolicy::lossy();
+    let limits = ConversionLimits::default();
     let mut group = c.benchmark_group("numeric_text_to_i64_lossy");
     for (name, source) in [
         ("fractional", "12345.6789"),
@@ -65,7 +65,7 @@ fn benchmark_lossy_integer_text(c: &mut Criterion) {
         ("small_fraction", "0.000000001"),
     ] {
         DataConverter::from(source)
-            .to_with::<i64>(&options)
+            .to_with::<i64>(&options, &limits)
             .expect("lossy integer benchmark fixture should convert");
         group.bench_with_input(
             BenchmarkId::from_parameter(name),
@@ -73,8 +73,10 @@ fn benchmark_lossy_integer_text(c: &mut Criterion) {
             |b, source| {
                 b.iter(|| {
                     black_box(
-                        DataConverter::from(black_box(source))
-                            .to_with::<i64>(black_box(&options)),
+                        DataConverter::from(black_box(source)).to_with::<i64>(
+                            black_box(&options),
+                            black_box(&limits),
+                        ),
                     )
                 });
             },
@@ -124,15 +126,14 @@ fn benchmark_big_integer_text(c: &mut Criterion) {
         let mut group = c.benchmark_group("numeric_text_to_big_integer");
         for (name, digits) in BIG_NUMBER_TEXT_SIZES {
             let source = "9".repeat(digits);
-            let options = DataConversionOptions::strict().with_numeric_options(
-                NumericConversionOptions::strict().with_limits(
-                    NumericConversionLimits::default()
-                        .with_max_text_bytes(digits)
-                        .with_max_big_integer_digits(digits),
-                ),
+            let options = ConversionPolicy::strict();
+            let limits = ConversionLimits::default().with_numeric_limits(
+                NumericConversionLimits::default()
+                    .with_max_text_bytes(digits)
+                    .with_max_big_integer_digits(digits),
             );
             DataConverter::from(source.as_str())
-                .to_with::<num_bigint::BigInt>(&options)
+                .to_with::<num_bigint::BigInt>(&options, &limits)
                 .expect("integer benchmark fixture should parse");
             group.bench_with_input(
                 BenchmarkId::from_parameter(name),
@@ -140,9 +141,12 @@ fn benchmark_big_integer_text(c: &mut Criterion) {
                 |b, source| {
                     b.iter(|| {
                         black_box(
-                        DataConverter::from(black_box(source.as_str()))
-                            .to_with::<num_bigint::BigInt>(black_box(&options)),
-                    )
+                            DataConverter::from(black_box(source.as_str()))
+                                .to_with::<num_bigint::BigInt>(
+                                black_box(&options),
+                                black_box(&limits),
+                            ),
+                        )
                     });
                 },
             );
@@ -160,15 +164,14 @@ fn benchmark_big_decimal_text(c: &mut Criterion) {
         let mut group = c.benchmark_group("numeric_text_to_big_decimal");
         for (name, digits) in BIG_NUMBER_TEXT_SIZES {
             let source = "9".repeat(digits);
-            let options = DataConversionOptions::strict().with_numeric_options(
-                NumericConversionOptions::strict().with_limits(
-                    NumericConversionLimits::default()
-                        .with_max_text_bytes(digits)
-                        .with_max_big_integer_digits(digits),
-                ),
+            let options = ConversionPolicy::strict();
+            let limits = ConversionLimits::default().with_numeric_limits(
+                NumericConversionLimits::default()
+                    .with_max_text_bytes(digits)
+                    .with_max_big_integer_digits(digits),
             );
             DataConverter::from(source.as_str())
-                .to_with::<bigdecimal::BigDecimal>(&options)
+                .to_with::<bigdecimal::BigDecimal>(&options, &limits)
                 .expect("decimal benchmark fixture should parse");
             group.bench_with_input(
                 BenchmarkId::from_parameter(name),
@@ -177,9 +180,10 @@ fn benchmark_big_decimal_text(c: &mut Criterion) {
                     b.iter(|| {
                         black_box(
                             DataConverter::from(black_box(source.as_str()))
-                                .to_with::<bigdecimal::BigDecimal>(black_box(
-                                &options,
-                            )),
+                                .to_with::<bigdecimal::BigDecimal>(
+                                black_box(&options),
+                                black_box(&limits),
+                            ),
                         )
                     });
                 },

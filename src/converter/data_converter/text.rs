@@ -244,7 +244,7 @@ impl DataConversionTarget for char {
         source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.options();
+        let options = session.policy();
         match source {
             DataConverter::Char(value) => Ok(*value),
             DataConverter::String(value) => {
@@ -286,7 +286,7 @@ impl DataConversionTarget for String {
         source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.options();
+        let options = session.policy();
         if let DataConverter::String(value) = source {
             let normalized = normalize(value, options, DataType::String)?;
             return session
@@ -377,7 +377,7 @@ impl DataConversionTarget for String {
         let from = source.data_type();
         if let DataConverter::String(value) = source {
             let normalized =
-                normalize(value.as_ref(), session.options(), DataType::String)?;
+                normalize(value.as_ref(), session.policy(), DataType::String)?;
             if normalized.len() == value.len() {
                 session.check_output_bytes(normalized.len()).map_err(
                     |error| {
@@ -457,7 +457,7 @@ macro_rules! impl_text_or_copy_target {
                 source: &DataConverter<'_>,
                 session: &mut ConversionSession<'_>,
             ) -> Result<Self, DataConversionError> {
-                let options = session.options();
+                let options = session.policy();
                 match source {
                     DataConverter::$variant(value) => Ok(*value),
                     DataConverter::String(value) => {
@@ -635,7 +635,7 @@ impl DataConversionTarget for DateTime<Utc> {
         source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.options();
+        let options = session.policy();
         match source {
             DataConverter::Instant(value) => Ok(*value),
             DataConverter::String(value) => {
@@ -677,7 +677,8 @@ impl DataConversionTarget for Url {
         source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.options();
+        let options = session.policy();
+        let limits = session.limits();
         match source {
             DataConverter::Url(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
@@ -686,7 +687,7 @@ impl DataConversionTarget for Url {
                     value,
                     DataType::String,
                     DataType::Url,
-                    options,
+                    limits.structured(),
                 )?;
                 match Url::parse(value) {
                     Ok(value) => Ok(value),

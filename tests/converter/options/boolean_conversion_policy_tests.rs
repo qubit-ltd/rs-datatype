@@ -5,7 +5,7 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # BooleanConversionOptions Unit Tests
+//! # BooleanConversionPolicy Unit Tests
 //!
 //! Tests for string-to-boolean conversion options.
 
@@ -15,19 +15,19 @@ use proptest::prop_assert_eq;
 use proptest::prop_oneof;
 use proptest::proptest;
 use proptest::strategy::Just;
-use qubit_datatype::converter::BooleanConversionOptions;
+use qubit_datatype::converter::BooleanConversionPolicy;
 use qubit_datatype::converter::BooleanNumericPolicy;
 
-/// Test boolean option literals and case-sensitive parsing.
+/// Test boolean policy literals and case-sensitive parsing.
 #[test]
-fn test_boolean_conversion_options_cover_literal_branches() {
-    let env_options = BooleanConversionOptions::env_friendly();
+fn test_boolean_conversion_policy_cover_literal_branches() {
+    let env_options = BooleanConversionPolicy::env_friendly();
     assert_eq!(env_options.parse("YES"), Some(true));
     assert_eq!(env_options.parse("off"), Some(false));
     assert_eq!(env_options.parse(" YES "), None);
     assert_eq!(env_options.parse("maybe"), None);
 
-    let case_sensitive = BooleanConversionOptions::strict()
+    let case_sensitive = BooleanConversionPolicy::strict()
         .with_case_sensitive(true)
         .expect("case-sensitive literals should remain disjoint")
         .with_true_literal("Enabled")
@@ -43,8 +43,8 @@ fn test_boolean_conversion_options_cover_literal_branches() {
 
 /// Test every field in the environment-friendly boolean profile.
 #[test]
-fn test_boolean_conversion_options_env_friendly_profile() {
-    let options = BooleanConversionOptions::env_friendly();
+fn test_boolean_conversion_policy_env_friendly_profile() {
+    let options = BooleanConversionPolicy::env_friendly();
     assert_eq!(
         options
             .true_literals()
@@ -67,14 +67,14 @@ fn test_boolean_conversion_options_env_friendly_profile() {
 
 /// Test every public mutation preserves disjoint literal sets.
 #[test]
-fn test_boolean_conversion_options_builders_preserve_literal_invariant() {
+fn test_boolean_conversion_policy_builders_preserve_literal_invariant() {
     assert!(
-        BooleanConversionOptions::strict()
+        BooleanConversionPolicy::strict()
             .with_false_literal("TRUE")
             .is_err(),
     );
     assert!(
-        BooleanConversionOptions::try_new(
+        BooleanConversionPolicy::try_new(
             vec!["enabled".to_string()],
             vec!["ENABLED".to_string()],
             true,
@@ -88,9 +88,9 @@ fn test_boolean_conversion_options_builders_preserve_literal_invariant() {
 
 /// Test validated construction and Serde rejection of literal conflicts.
 #[test]
-fn test_boolean_conversion_options_reject_literal_conflicts() {
+fn test_boolean_conversion_policy_reject_literal_conflicts() {
     assert!(
-        BooleanConversionOptions::try_new(
+        BooleanConversionPolicy::try_new(
             vec!["enabled".to_string()],
             vec!["ENABLED".to_string()],
             false,
@@ -99,7 +99,7 @@ fn test_boolean_conversion_options_reject_literal_conflicts() {
         .is_err(),
     );
     assert!(
-        serde_json::from_str::<BooleanConversionOptions>(
+        serde_json::from_str::<BooleanConversionPolicy>(
             r#"{"true_literals":["yes"],"false_literals":["YES"]}"#,
         )
         .is_err(),
@@ -109,8 +109,8 @@ fn test_boolean_conversion_options_reject_literal_conflicts() {
 /// Verifies duplicates on one side remain valid while cross-side conflicts
 /// fail.
 #[test]
-fn test_boolean_conversion_options_only_reject_cross_set_conflicts() {
-    let options = BooleanConversionOptions::try_new(
+fn test_boolean_conversion_policy_only_reject_cross_set_conflicts() {
+    let options = BooleanConversionPolicy::try_new(
         vec!["yes".to_owned(), "yes".to_owned()],
         vec!["no".to_owned(), "no".to_owned()],
         false,
@@ -121,7 +121,7 @@ fn test_boolean_conversion_options_only_reject_cross_set_conflicts() {
     assert_eq!(options.parse("YES"), Some(true));
     assert_eq!(options.parse("NO"), Some(false));
     assert!(
-        BooleanConversionOptions::try_new(
+        BooleanConversionPolicy::try_new(
             vec!["Enabled".to_owned()],
             vec!["enabled".to_owned()],
             false,
@@ -130,7 +130,7 @@ fn test_boolean_conversion_options_only_reject_cross_set_conflicts() {
         .is_err(),
     );
     assert!(
-        BooleanConversionOptions::try_new(
+        BooleanConversionPolicy::try_new(
             vec!["Ä".to_owned()],
             vec!["ä".to_owned()],
             false,
@@ -142,14 +142,14 @@ fn test_boolean_conversion_options_only_reject_cross_set_conflicts() {
 
 /// Characterizes validation for large disjoint literal collections.
 #[test]
-fn test_boolean_conversion_options_validate_large_disjoint_sets() {
+fn test_boolean_conversion_policy_validate_large_disjoint_sets() {
     let true_literals =
         (0..4096).map(|index| format!("true-{index}")).collect();
     let false_literals =
         (0..4096).map(|index| format!("false-{index}")).collect();
 
     assert!(
-        BooleanConversionOptions::try_new(
+        BooleanConversionPolicy::try_new(
             true_literals,
             false_literals,
             false,
@@ -161,25 +161,25 @@ fn test_boolean_conversion_options_validate_large_disjoint_sets() {
 
 /// Test default literal identity and options Serde round-trip.
 #[test]
-fn test_boolean_conversion_options_serde_and_defaults() {
-    let defaults = BooleanConversionOptions::default();
-    assert_eq!(BooleanConversionOptions::DEFAULT_TRUE_LITERALS, &["true"],);
-    assert_eq!(BooleanConversionOptions::DEFAULT_FALSE_LITERALS, &["false"],);
+fn test_boolean_conversion_policy_serde_and_defaults() {
+    let defaults = BooleanConversionPolicy::default();
+    assert_eq!(BooleanConversionPolicy::DEFAULT_TRUE_LITERALS, &["true"],);
+    assert_eq!(BooleanConversionPolicy::DEFAULT_FALSE_LITERALS, &["false"],);
     assert_eq!(defaults.true_literals(), &["true".to_string()]);
     assert_eq!(defaults.false_literals(), &["false".to_string()]);
     let wire = serde_json::to_string(&defaults)
-        .expect("boolean options should serialize");
+        .expect("boolean policys should serialize");
     assert_eq!(
-        serde_json::from_str::<BooleanConversionOptions>(&wire)
-            .expect("boolean options should deserialize"),
+        serde_json::from_str::<BooleanConversionPolicy>(&wire)
+            .expect("boolean policys should deserialize"),
         defaults,
     );
 }
 
 /// Test that misspelled Boolean option fields are rejected.
 #[test]
-fn test_boolean_conversion_options_reject_unknown_fields() {
-    let error = serde_json::from_str::<BooleanConversionOptions>(
+fn test_boolean_conversion_policy_reject_unknown_fields() {
+    let error = serde_json::from_str::<BooleanConversionPolicy>(
         r#"{"case_sensitive":true,"unexpected":false}"#,
     )
     .expect_err("unknown Boolean option fields must be rejected");
@@ -191,7 +191,7 @@ proptest! {
     /// Test that every successfully constructed literal configuration remains
     /// valid after a Serde round trip.
     #[test]
-    fn test_boolean_conversion_options_validated_round_trip_property(
+    fn test_boolean_conversion_policy_validated_round_trip_property(
         true_literals in collection::vec("[A-Za-z0-9]{0,8}", 0..8),
         false_literals in collection::vec("[A-Za-z0-9]{0,8}", 0..8),
         case_sensitive in any::<bool>(),
@@ -201,7 +201,7 @@ proptest! {
             Just(BooleanNumericPolicy::Reject),
         ],
     ) {
-        let Ok(options) = BooleanConversionOptions::try_new(
+        let Ok(options) = BooleanConversionPolicy::try_new(
             true_literals,
             false_literals,
             case_sensitive,
@@ -211,7 +211,7 @@ proptest! {
         };
         let wire = serde_json::to_string(&options)
             .expect("validated Boolean options should serialize");
-        let restored: BooleanConversionOptions = serde_json::from_str(&wire)
+        let restored: BooleanConversionPolicy = serde_json::from_str(&wire)
             .expect("validated Boolean options should deserialize");
 
         prop_assert_eq!(&restored, &options);

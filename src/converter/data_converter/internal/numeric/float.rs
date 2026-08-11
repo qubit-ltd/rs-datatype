@@ -20,12 +20,13 @@ use super::float_text::parse_text_f32;
 use super::float_text::parse_text_f64;
 use super::integer::scalar_integer_magnitude;
 use super::syntax::normalize_numeric_text;
+use crate::converter::ConversionPolicy;
 use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
 use crate::converter::FloatRoundingPolicy;
 use crate::converter::InvalidValueReason;
+use crate::converter::NumericConversionLimits;
 use crate::datatype::DataType;
 
 /// Tests whether an unsigned integer fits a floating-point mantissa exactly.
@@ -155,7 +156,8 @@ fn integer_to_f32(
 /// precision errors when an intermediate cannot be produced.
 fn source_to_f64(
     source: &DataConverter<'_>,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
+    limits: &NumericConversionLimits,
     to: DataType,
 ) -> Result<f64, DataConversionError> {
     if let Some(value) = scalar_integer_magnitude(source) {
@@ -184,7 +186,7 @@ fn source_to_f64(
             to,
         ),
         DataConverter::String(value) => {
-            let value = normalize_numeric_text(value, options, to)?;
+            let value = normalize_numeric_text(value, options, limits, to)?;
             parse_text_f64(value, options, to)
         }
         DataConverter::Unset(_) => Err(source.missing(to)),
@@ -213,8 +215,9 @@ impl DataConversionTarget for f64 {
         source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.options();
-        source_to_f64(source, options, DataType::Float64)
+        let options = session.policy();
+        let limits = session.limits().numeric();
+        source_to_f64(source, options, limits, DataType::Float64)
     }
 }
 
@@ -238,7 +241,8 @@ impl DataConversionTarget for f32 {
         source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.options();
+        let options = session.policy();
+        let limits = session.limits().numeric();
         let to = DataType::Float32;
         if let Some(value) = scalar_integer_magnitude(source) {
             return integer_to_f32(
@@ -290,7 +294,7 @@ impl DataConversionTarget for f32 {
                 to,
             ),
             DataConverter::String(value) => {
-                let value = normalize_numeric_text(value, options, to)?;
+                let value = normalize_numeric_text(value, options, limits, to)?;
                 parse_text_f32(value, options, to)
             }
             DataConverter::Unset(_) => Err(source.missing(to)),

@@ -18,6 +18,8 @@ pub enum ConversionResource {
     NumericTextBytes,
     /// UTF-8 bytes in structured text.
     StructuredTextBytes,
+    /// UTF-8 bytes in one scalar collection source before scanning.
+    CollectionSourceBytes,
     /// Significant decimal digits materialized by a big-number conversion.
     BigIntegerDigits,
     /// Number of top-level conversion items.
@@ -30,6 +32,8 @@ pub enum ConversionResource {
     StructuredDepth,
     /// Cumulative structured value nodes.
     StructuredNodes,
+    /// Cumulative structured key, string, and number payload bytes.
+    StructuredPayloadBytes,
     /// Number of items in one structured sequence.
     SequenceItems,
     /// Number of entries in one structured map.

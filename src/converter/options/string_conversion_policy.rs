@@ -5,9 +5,9 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # String Conversion Options
+//! # String Conversion Policy
 //!
-//! Defines options that control string-source normalization.
+//! Defines policy that controls string-source normalization.
 
 use serde::Deserialize;
 use serde::Serialize;
@@ -25,24 +25,24 @@ use super::blank_string_policy::BlankStringPolicy;
 /// # Examples
 ///
 /// ```
-/// use qubit_datatype::StringConversionOptions;
+/// use qubit_datatype::StringConversionPolicy;
 ///
-/// let options = StringConversionOptions::env_friendly();
+/// let options = StringConversionPolicy::env_friendly();
 /// assert_eq!(options.normalize("  value  "), Ok("value"));
 /// assert!(options.normalize("   ").is_err());
 /// ```
 #[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
-pub struct StringConversionOptions {
+pub struct StringConversionPolicy {
     /// Whether strings are trimmed before conversion.
     trim: bool,
     /// How blank strings are interpreted after optional trimming.
     blank_string_policy: BlankStringPolicy,
 }
 
-impl Default for StringConversionOptions {
-    /// Creates default string conversion options.
+impl Default for StringConversionPolicy {
+    /// Creates default string conversion policy.
     ///
     /// # Returns
     ///
@@ -56,7 +56,7 @@ impl Default for StringConversionOptions {
     }
 }
 
-impl StringConversionOptions {
+impl StringConversionPolicy {
     /// Creates options suitable for environment-variable input.
     ///
     /// The profile trims surrounding whitespace and treats a blank value as
