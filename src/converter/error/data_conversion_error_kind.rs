@@ -24,4 +24,6 @@ pub enum DataConversionErrorKind {
     InvalidValue,
     /// A configured conversion resource limit was exceeded.
     LimitExceeded,
+    /// A native measurement could not fit the configured resource quantity.
+    Quantity,
 }

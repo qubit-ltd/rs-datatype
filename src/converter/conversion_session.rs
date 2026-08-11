@@ -14,7 +14,11 @@ use qubit_budget::BudgetedStringWriter;
 use qubit_budget::JsonDecodeSession;
 #[cfg(feature = "json")]
 use qubit_budget::JsonSerdeError;
+#[cfg(feature = "json")]
+use qubit_budget::JsonValueBudget;
+use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceLimit;
+use qubit_budget::ResourceQuantity;
 #[cfg(feature = "json")]
 use serde::Deserialize;
 #[cfg(feature = "json")]
@@ -40,7 +44,10 @@ pub struct ConversionSession<'a> {
 impl<'a> ConversionSession<'a> {
     /// Creates a fresh session from immutable policy and limit configuration.
     #[inline]
-    pub fn new(policy: &'a ConversionPolicy, limits: &'a ConversionLimits) -> Self {
+    pub fn new(
+        policy: &'a ConversionPolicy,
+        limits: &'a ConversionLimits,
+    ) -> Self {
         Self {
             policy,
             limits,
@@ -63,7 +70,10 @@ impl<'a> ConversionSession<'a> {
     /// Delegates a nested conversion without charging a new top-level item or
     /// input payload.
     #[inline(always)]
-    pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
+    pub fn delegate<T>(
+        &mut self,
+        source: &DataConverter<'_>,
+    ) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -72,7 +82,10 @@ impl<'a> ConversionSession<'a> {
 
     /// Delegates an owned nested conversion while preserving this session.
     #[inline(always)]
-    pub fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
+    pub fn delegate_owned<T>(
+        &mut self,
+        source: DataConverter<'_>,
+    ) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -88,7 +101,8 @@ impl<'a> ConversionSession<'a> {
     where
         T: Deserialize<'de>,
     {
-        let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
+        let mut decode =
+            JsonDecodeSession::borrowing(None, self.budget.structured_mut());
         qubit_budget::decode_slice(input, &mut decode)
     }
 
@@ -102,13 +116,29 @@ impl<'a> ConversionSession<'a> {
     where
         S: DeserializeSeed<'de>,
     {
-        let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
+        let mut decode =
+            JsonDecodeSession::borrowing(None, self.budget.structured_mut());
         qubit_budget::decode_slice_seed(seed, input, &mut decode)
+    }
+
+    /// Returns the shared JSON value budget for custom structured targets.
+    ///
+    /// This low-level access is intentionally public so downstream
+    /// [`DataConversionTarget`] implementations can use the same accounting
+    /// session without duplicating budget state.
+    #[cfg(feature = "json")]
+    #[inline(always)]
+    pub fn structured_json_budget_mut(
+        &mut self,
+    ) -> &mut JsonValueBudget<ConversionResource> {
+        self.budget.structured_mut()
     }
 
     /// Consumes one top-level conversion item.
     #[inline]
-    pub fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
+    pub fn consume_item(
+        &mut self,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_item()
     }
 
@@ -119,6 +149,15 @@ impl<'a> ConversionSession<'a> {
         amount: u64,
     ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_input_bytes(amount)
+    }
+
+    /// Consumes input bytes measured by a native Rust string or slice length.
+    #[inline]
+    pub fn consume_input_bytes_usize(
+        &mut self,
+        amount: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        self.budget.consume_input_bytes_usize(amount)
     }
 
     /// Checks one complete scalar collection source before scanning it.
@@ -134,6 +173,25 @@ impl<'a> ConversionSession<'a> {
         .check(actual)
     }
 
+    /// Checks a scalar collection source measured by a native slice length.
+    #[inline]
+    pub fn check_collection_source_bytes_usize(
+        &self,
+        actual: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        let limit = ResourceLimit::new(
+            ConversionResource::CollectionSourceBytes,
+            self.limits.collection().max_source_bytes(),
+        );
+        let actual = u64::try_from_usize(actual).map_err(|source| {
+            MeasuredBudgetError::quantity(
+                ConversionResource::CollectionSourceBytes,
+                source,
+            )
+        })?;
+        limit.check(actual).map_err(MeasuredBudgetError::from)
+    }
+
     /// Checks cumulative built-in String output payload bytes.
     #[inline]
     pub fn check_output_bytes(
@@ -141,6 +199,15 @@ impl<'a> ConversionSession<'a> {
         amount: u64,
     ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.check_output_bytes(amount)
+    }
+
+    /// Checks output bytes measured by a native Rust string length.
+    #[inline]
+    pub fn check_output_bytes_usize(
+        &self,
+        amount: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        self.budget.check_output_bytes_usize(amount)
     }
 
     /// Consumes cumulative output payload bytes after a successful pre-check.
@@ -152,6 +219,15 @@ impl<'a> ConversionSession<'a> {
         self.budget.consume_output_bytes(amount)
     }
 
+    /// Consumes output bytes measured by a native Rust string length.
+    #[inline]
+    pub fn consume_output_bytes_usize(
+        &mut self,
+        amount: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        self.budget.consume_output_bytes_usize(amount)
+    }
+
     /// Renders a String payload in one pass and commits its UTF-8 bytes only
     /// after the renderer succeeds.
     #[inline]
@@ -161,7 +237,9 @@ impl<'a> ConversionSession<'a> {
     ) -> Result<String, BudgetedStringError<ConversionResource, E>>
     where
         E: std::fmt::Debug + std::fmt::Display,
-        F: FnOnce(&mut BudgetedStringWriter<'_, ConversionResource>) -> Result<(), E>,
+        F: FnOnce(
+            &mut BudgetedStringWriter<'_, ConversionResource>,
+        ) -> Result<(), E>,
     {
         self.budget.try_write_string(render)
     }
@@ -173,6 +251,15 @@ impl<'a> ConversionSession<'a> {
         depth: u64,
     ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.structured_mut().enter_node(depth)
+    }
+
+    /// Enters a structured node measured from a native traversal depth.
+    #[inline]
+    pub fn enter_structured_node_usize(
+        &mut self,
+        depth: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        self.budget.structured_mut().enter_node_usize(depth)
     }
 
     /// Enters one structured sequence node after checking its item count.
@@ -196,6 +283,18 @@ impl<'a> ConversionSession<'a> {
         self.budget.structured_mut().enter_object(depth, entries)
     }
 
+    /// Enters a structured map measured from a native map length.
+    #[inline]
+    pub fn enter_structured_map_usize(
+        &mut self,
+        depth: usize,
+        entries: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        self.budget
+            .structured_mut()
+            .enter_object_usize(depth, entries)
+    }
+
     /// Checks and consumes one structured object key payload.
     #[inline]
     pub fn consume_structured_key_bytes(
@@ -205,6 +304,15 @@ impl<'a> ConversionSession<'a> {
         self.budget.structured_mut().consume_key_bytes(amount)
     }
 
+    /// Checks and consumes a structured key measured by a native string length.
+    #[inline]
+    pub fn consume_structured_key_bytes_usize(
+        &mut self,
+        amount: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        self.budget.structured_mut().consume_key_bytes_usize(amount)
+    }
+
     /// Checks and consumes one structured string value payload.
     #[inline]
     pub fn consume_structured_string_bytes(
@@ -212,6 +320,17 @@ impl<'a> ConversionSession<'a> {
         amount: u64,
     ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.structured_mut().consume_string_bytes(amount)
+    }
+
+    /// Checks and consumes structured string bytes measured by native length.
+    #[inline]
+    pub fn consume_structured_string_bytes_usize(
+        &mut self,
+        amount: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        self.budget
+            .structured_mut()
+            .consume_string_bytes_usize(amount)
     }
 
     /// Checks and consumes one structured number representation payload.
