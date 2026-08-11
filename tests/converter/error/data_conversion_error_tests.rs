@@ -11,6 +11,8 @@
 
 use qubit_budget::BudgetError;
 use qubit_budget::Observation;
+use qubit_budget::QuantityConversionError;
+use qubit_budget::QuantityMeasurement;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::DataType;
 use qubit_datatype::converter::DataConversionError;
@@ -22,7 +24,11 @@ use qubit_datatype::converter::InvalidValueReason;
 #[test]
 fn test_data_conversion_error_constructors_and_accessors() {
     let reason = InvalidValueReason::OutOfRange;
-    let error = DataConversionError::invalid(DataType::Int64, DataType::UInt8, reason.clone());
+    let error = DataConversionError::invalid(
+        DataType::Int64,
+        DataType::UInt8,
+        reason.clone(),
+    );
     assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
     assert!(!error.is_missing());
     assert_eq!(error.from_type(), Some(DataType::Int64));
@@ -66,6 +72,29 @@ fn test_data_conversion_error_limit_exceeded_contract() {
         list_error.conversion_error().budget_error(),
         Some(&budget_error)
     );
+}
+
+/// Test that measurement failures remain distinct from budget-limit failures.
+#[test]
+fn test_data_conversion_error_quantity_contract() {
+    let source =
+        QuantityConversionError::new(QuantityMeasurement::Usize(9), "u8");
+    let error = DataConversionError::quantity(
+        DataType::String,
+        DataType::Json,
+        ConversionResource::StructuredPayloadBytes,
+        source,
+    );
+
+    assert_eq!(error.kind(), DataConversionErrorKind::Quantity);
+    assert_eq!(error.from_type(), Some(DataType::String));
+    assert_eq!(error.to_type(), DataType::Json);
+    assert_eq!(
+        error.quantity_resource(),
+        Some(ConversionResource::StructuredPayloadBytes)
+    );
+    assert_eq!(error.quantity_error(), Some(&source));
+    assert_eq!(error.budget_error(), None);
 }
 
 /// Test that structured errors cannot reveal source text.

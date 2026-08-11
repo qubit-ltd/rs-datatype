@@ -60,8 +60,9 @@ fn test_delegate_does_not_double_charge_item_or_input_budgets() {
 #[test]
 fn test_delegate_preserves_output_budget() {
     let policy = ConversionPolicy::strict();
-    let limits = ConversionLimits::default()
-        .with_operation_limits(ConversionOperationLimits::default().with_max_output_bytes(1));
+    let limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default().with_max_output_bytes(1),
+    );
     let mut session = ConversionSession::new(&policy, &limits);
 
     let error = DataConverter::from(42_u16)
@@ -73,8 +74,9 @@ fn test_delegate_preserves_output_budget() {
 #[test]
 fn test_delegate_owned_preserves_output_budget() {
     let policy = ConversionPolicy::strict();
-    let limits = ConversionLimits::default()
-        .with_operation_limits(ConversionOperationLimits::default().with_max_output_bytes(1));
+    let limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default().with_max_output_bytes(1),
+    );
     let mut session = ConversionSession::new(&policy, &limits);
 
     let _ = DataConverter::from(42_u16)

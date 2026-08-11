@@ -54,7 +54,10 @@ pub(super) fn rounded_millis(duration: Duration) -> u128 {
 /// Returns the serializer error if converting or writing the integer value
 /// fails.
 #[inline]
-pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(
+    duration: &Duration,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {

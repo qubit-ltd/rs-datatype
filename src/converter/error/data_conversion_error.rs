@@ -10,6 +10,8 @@
 //! Defines errors returned by reusable data conversions.
 
 use qubit_budget::BudgetError;
+use qubit_budget::MeasuredBudgetError;
+use qubit_budget::QuantityConversionError;
 
 use super::super::conversion_resource::ConversionResource;
 use super::data_conversion_error_kind::DataConversionErrorKind;
@@ -109,7 +111,11 @@ impl DataConversionError {
     ///
     /// An invalid-value conversion error.
     #[inline(always)]
-    pub const fn invalid(from: DataType, to: DataType, reason: InvalidValueReason) -> Self {
+    pub const fn invalid(
+        from: DataType,
+        to: DataType,
+        reason: InvalidValueReason,
+    ) -> Self {
         Self {
             inner: DataConversionErrorInner::InvalidValue { from, to, reason },
         }
@@ -137,6 +143,52 @@ impl DataConversionError {
         }
     }
 
+    /// Creates an error for an unrepresentable native resource measurement.
+    ///
+    /// # Parameters
+    ///
+    /// * `from` - Declared source data type.
+    /// * `to` - Requested target data type.
+    /// * `resource` - Resource whose measurement could not fit the quantity.
+    /// * `source` - Exact native quantity conversion failure.
+    ///
+    /// # Returns
+    ///
+    /// A conversion measurement error distinct from a budget-limit violation.
+    #[inline(always)]
+    pub fn quantity(
+        from: DataType,
+        to: DataType,
+        resource: ConversionResource,
+        source: QuantityConversionError,
+    ) -> Self {
+        Self {
+            inner: DataConversionErrorInner::Quantity {
+                from,
+                to,
+                resource,
+                source,
+            },
+        }
+    }
+
+    /// Maps native measurement accounting into a public conversion error.
+    #[inline(always)]
+    pub fn measured_limit(
+        from: DataType,
+        to: DataType,
+        error: MeasuredBudgetError<ConversionResource, u64>,
+    ) -> Self {
+        match error {
+            MeasuredBudgetError::Budget(error) => {
+                Self::limit_exceeded(from, to, error)
+            }
+            MeasuredBudgetError::Quantity { resource, source } => {
+                Self::quantity(from, to, resource, source)
+            }
+        }
+    }
+
     /// Returns the stable classification of this error.
     ///
     /// # Returns
@@ -145,14 +197,23 @@ impl DataConversionError {
     #[inline(always)]
     pub const fn kind(&self) -> DataConversionErrorKind {
         match &self.inner {
-            DataConversionErrorInner::Missing { .. } => DataConversionErrorKind::Missing,
+            DataConversionErrorInner::Missing { .. } => {
+                DataConversionErrorKind::Missing
+            }
             DataConversionErrorInner::EmptyCollection { .. } => {
                 DataConversionErrorKind::EmptyCollection
             }
-            DataConversionErrorInner::Unsupported { .. } => DataConversionErrorKind::Unsupported,
-            DataConversionErrorInner::InvalidValue { .. } => DataConversionErrorKind::InvalidValue,
+            DataConversionErrorInner::Unsupported { .. } => {
+                DataConversionErrorKind::Unsupported
+            }
+            DataConversionErrorInner::InvalidValue { .. } => {
+                DataConversionErrorKind::InvalidValue
+            }
             DataConversionErrorInner::LimitExceeded { .. } => {
                 DataConversionErrorKind::LimitExceeded
+            }
+            DataConversionErrorInner::Quantity { .. } => {
+                DataConversionErrorKind::Quantity
             }
         }
     }
@@ -188,7 +249,8 @@ impl DataConversionError {
             DataConversionErrorInner::Missing { from, .. }
             | DataConversionErrorInner::Unsupported { from, .. }
             | DataConversionErrorInner::InvalidValue { from, .. }
-            | DataConversionErrorInner::LimitExceeded { from, .. } => Some(*from),
+            | DataConversionErrorInner::LimitExceeded { from, .. }
+            | DataConversionErrorInner::Quantity { from, .. } => Some(*from),
             DataConversionErrorInner::EmptyCollection { .. } => None,
         }
     }
@@ -205,6 +267,7 @@ impl DataConversionError {
             | DataConversionErrorInner::Unsupported { to, .. }
             | DataConversionErrorInner::InvalidValue { to, .. }
             | DataConversionErrorInner::LimitExceeded { to, .. }
+            | DataConversionErrorInner::Quantity { to, .. }
             | DataConversionErrorInner::EmptyCollection { to } => *to,
         }
     }
@@ -218,7 +281,9 @@ impl DataConversionError {
     #[inline(always)]
     pub const fn reason(&self) -> Option<&InvalidValueReason> {
         match &self.inner {
-            DataConversionErrorInner::InvalidValue { reason, .. } => Some(reason),
+            DataConversionErrorInner::InvalidValue { reason, .. } => {
+                Some(reason)
+            }
             _ => None,
         }
     }
@@ -229,9 +294,35 @@ impl DataConversionError {
     ///
     /// `Some` for a resource-limit error, or `None` for every other error kind.
     #[inline(always)]
-    pub const fn budget_error(&self) -> Option<&BudgetError<ConversionResource, u64>> {
+    pub const fn budget_error(
+        &self,
+    ) -> Option<&BudgetError<ConversionResource, u64>> {
         match &self.inner {
-            DataConversionErrorInner::LimitExceeded { source, .. } => Some(source),
+            DataConversionErrorInner::LimitExceeded { source, .. } => {
+                Some(source)
+            }
+            _ => None,
+        }
+    }
+
+    /// Returns the resource whose native measurement could not fit `u64`.
+    #[must_use]
+    #[inline(always)]
+    pub const fn quantity_resource(&self) -> Option<ConversionResource> {
+        match &self.inner {
+            DataConversionErrorInner::Quantity { resource, .. } => {
+                Some(*resource)
+            }
+            _ => None,
+        }
+    }
+
+    /// Returns the native quantity conversion failure when one occurred.
+    #[must_use]
+    #[inline(always)]
+    pub const fn quantity_error(&self) -> Option<&QuantityConversionError> {
+        match &self.inner {
+            DataConversionErrorInner::Quantity { source, .. } => Some(source),
             _ => None,
         }
     }

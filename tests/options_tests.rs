@@ -11,3 +11,9 @@
 
 #[path = "converter/options/mod.rs"]
 mod options;
+
+/// Verifies this focused target includes the conversion option test modules.
+#[test]
+fn test_conversion_option_modules_are_enabled() {
+    const { assert!(cfg!(feature = "converter")) };
+}
