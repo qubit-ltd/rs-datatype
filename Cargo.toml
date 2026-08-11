@@ -38,12 +38,14 @@ big-integer = [
     "dep:num-bigint",
     "dep:num-rational",
     "dep:num-traits",
+    "qubit-budget?/big-integer",
 ]
 big-decimal = [
     "dep:bigdecimal",
     "dep:num-bigint",
     "dep:num-rational",
     "dep:num-traits",
+    "qubit-budget?/big-decimal",
 ]
 big-number = ["big-integer", "big-decimal"]
 url = ["dep:url"]

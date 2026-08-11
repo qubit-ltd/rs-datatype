@@ -27,14 +27,12 @@ pub enum ScalarItemError {
         source_index: usize,
     },
     /// Retaining another item would exceed the configured limit.
-    #[error(
-        "scalar collection exceeds the {maximum}-item limit at source index {source_index}"
-    )]
+    #[error("scalar collection exceeds the {maximum}-item limit at source index {source_index}")]
     ItemLimitExceeded {
         /// Zero-based index before empty-item filtering.
         source_index: usize,
         /// Configured maximum number of retained items.
-        maximum: usize,
+        maximum: u64,
     },
 }
 
@@ -64,10 +62,7 @@ impl ScalarItemError {
     ///
     /// An item-limit error containing the source position and limit.
     #[inline(always)]
-    pub(crate) const fn item_limit_exceeded(
-        source_index: usize,
-        maximum: usize,
-    ) -> Self {
+    pub(crate) const fn item_limit_exceeded(source_index: usize, maximum: u64) -> Self {
         Self::ItemLimitExceeded {
             source_index,
             maximum,
@@ -83,8 +78,9 @@ impl ScalarItemError {
     #[inline(always)]
     pub const fn source_index(&self) -> usize {
         match *self {
-            Self::BlankRejected { source_index }
-            | Self::ItemLimitExceeded { source_index, .. } => source_index,
+            Self::BlankRejected { source_index } | Self::ItemLimitExceeded { source_index, .. } => {
+                source_index
+            }
         }
     }
 
@@ -96,7 +92,7 @@ impl ScalarItemError {
     /// for an empty-item rejection.
     #[must_use]
     #[inline(always)]
-    pub const fn maximum_items(&self) -> Option<usize> {
+    pub const fn maximum_items(&self) -> Option<u64> {
         match *self {
             Self::BlankRejected { .. } => None,
             Self::ItemLimitExceeded { maximum, .. } => Some(maximum),
@@ -114,29 +110,27 @@ impl ScalarItemError {
     /// A rejected-blank or resource-limit conversion error from
     /// [`DataType::String`] to `to`.
     #[inline(always)]
-    pub fn into_data_conversion_error(
-        self,
-        to: DataType,
-    ) -> DataConversionError {
+    pub fn into_data_conversion_error(self, to: DataType) -> DataConversionError {
         match self {
             Self::BlankRejected { .. } => DataConversionError::invalid(
                 DataType::String,
                 to,
                 InvalidValueReason::BlankRejected,
             ),
-            Self::ItemLimitExceeded { maximum, .. } => {
-                DataConversionError::limit_exceeded(
-                    DataType::String,
-                    to,
-                    BudgetError::LimitExceeded {
-                        resource: ConversionResource::Items,
-                        actual: maximum
+            Self::ItemLimitExceeded { maximum, .. } => DataConversionError::limit_exceeded(
+                DataType::String,
+                to,
+                BudgetError::LimitExceeded {
+                    resource: ConversionResource::CollectionItems,
+                    observed: qubit_budget::Observation::Exact(
+                        u64::try_from(maximum)
+                            .unwrap()
                             .checked_add(1)
                             .expect("an excess item must be representable"),
-                        maximum,
-                    },
-                )
-            }
+                    ),
+                    maximum: u64::try_from(maximum).unwrap(),
+                },
+            ),
         }
     }
 
@@ -151,14 +145,8 @@ impl ScalarItemError {
     /// A list conversion error preserving the original source index and
     /// carrying the target-aware rejected-blank or resource-limit error.
     #[inline(always)]
-    pub fn into_list_conversion_error(
-        self,
-        to: DataType,
-    ) -> DataListConversionError {
+    pub fn into_list_conversion_error(self, to: DataType) -> DataListConversionError {
         let source_index = self.source_index();
-        DataListConversionError::new(
-            source_index,
-            self.into_data_conversion_error(to),
-        )
+        DataListConversionError::new(source_index, self.into_data_conversion_error(to))
     }
 }

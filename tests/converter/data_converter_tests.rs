@@ -20,10 +20,7 @@ use super::internal::MatrixOutcome;
 
 /// Assert the exact result category for an i32 conversion matrix row.
 #[cfg(feature = "chrono")]
-fn assert_i32_matrix_outcome(
-    converter: DataConverter<'_>,
-    expected: MatrixOutcome,
-) {
+fn assert_i32_matrix_outcome(converter: DataConverter<'_>, expected: MatrixOutcome) {
     let actual = converter.to::<i32>();
     match expected {
         MatrixOutcome::Supported(expected_value) => {
@@ -56,8 +53,7 @@ fn assert_i32_matrix_outcome(
 #[test]
 #[cfg(feature = "chrono")]
 fn test_data_converter_source_target_matrix_classifies_results() {
-    let date = NaiveDate::from_ymd_opt(2026, 7, 12)
-        .expect("test date should be valid");
+    let date = NaiveDate::from_ymd_opt(2026, 7, 12).expect("test date should be valid");
     let cases = [
         (DataConverter::from("42"), MatrixOutcome::Supported(42)),
         (DataConverter::from(date), MatrixOutcome::Unsupported),
