@@ -22,6 +22,12 @@ pub enum ConversionResource {
     CollectionSourceBytes,
     /// Significant decimal digits materialized by a big-number conversion.
     BigIntegerDigits,
+    /// Magnitude bits of a BigInteger value.
+    BigIntegerMagnitudeBits,
+    /// Significant coefficient digits of a BigDecimal value.
+    BigDecimalCoefficientDigits,
+    /// Absolute scale magnitude of a BigDecimal value.
+    BigDecimalScaleMagnitude,
     /// Number of top-level conversion items.
     Items,
     /// Cumulative normalized input bytes.
@@ -36,6 +42,8 @@ pub enum ConversionResource {
     StructuredPayloadBytes,
     /// Number of items in one structured sequence.
     SequenceItems,
+    /// Number of retained items in one scalar collection conversion.
+    CollectionItems,
     /// Number of entries in one structured map.
     MapEntries,
 }

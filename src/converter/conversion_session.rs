@@ -10,7 +10,15 @@
 use qubit_budget::BudgetError;
 use qubit_budget::BudgetedStringError;
 use qubit_budget::BudgetedStringWriter;
+#[cfg(feature = "json")]
+use qubit_budget::JsonDecodeSession;
+#[cfg(feature = "json")]
+use qubit_budget::JsonSerdeError;
 use qubit_budget::ResourceLimit;
+#[cfg(feature = "json")]
+use serde::Deserialize;
+#[cfg(feature = "json")]
+use serde::de::DeserializeSeed;
 
 use super::conversion_budget::ConversionBudget;
 use super::conversion_resource::ConversionResource;
@@ -32,10 +40,7 @@ pub struct ConversionSession<'a> {
 impl<'a> ConversionSession<'a> {
     /// Creates a fresh session from immutable policy and limit configuration.
     #[inline]
-    pub fn new(
-        policy: &'a ConversionPolicy,
-        limits: &'a ConversionLimits,
-    ) -> Self {
+    pub fn new(policy: &'a ConversionPolicy, limits: &'a ConversionLimits) -> Self {
         Self {
             policy,
             limits,
@@ -58,10 +63,7 @@ impl<'a> ConversionSession<'a> {
     /// Delegates a nested conversion without charging a new top-level item or
     /// input payload.
     #[inline(always)]
-    pub fn delegate<T>(
-        &mut self,
-        source: &DataConverter<'_>,
-    ) -> Result<T, DataConversionError>
+    pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -70,39 +72,61 @@ impl<'a> ConversionSession<'a> {
 
     /// Delegates an owned nested conversion while preserving this session.
     #[inline(always)]
-    pub fn delegate_owned<T>(
-        &mut self,
-        source: DataConverter<'_>,
-    ) -> Result<T, DataConversionError>
+    pub fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
         T::convert_owned(source, self)
     }
 
+    /// Decodes JSON while charging the shared structured budget directly.
+    #[cfg(feature = "json")]
+    pub fn decode_json<'de, T>(
+        &mut self,
+        input: &'de [u8],
+    ) -> Result<T, JsonSerdeError<ConversionResource>>
+    where
+        T: Deserialize<'de>,
+    {
+        let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
+        qubit_budget::decode_slice(input, &mut decode)
+    }
+
+    /// Decodes JSON through a seed while charging the shared budget directly.
+    #[cfg(feature = "json")]
+    pub fn decode_json_seed<'de, S>(
+        &mut self,
+        seed: S,
+        input: &'de [u8],
+    ) -> Result<S::Value, JsonSerdeError<ConversionResource>>
+    where
+        S: DeserializeSeed<'de>,
+    {
+        let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
+        qubit_budget::decode_slice_seed(seed, input, &mut decode)
+    }
+
     /// Consumes one top-level conversion item.
     #[inline]
-    pub(crate) fn consume_item(
-        &mut self,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+    pub fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_item()
     }
 
     /// Consumes cumulative normalized input bytes.
     #[inline]
-    pub(crate) fn consume_input_bytes(
+    pub fn consume_input_bytes(
         &mut self,
-        amount: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        amount: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_input_bytes(amount)
     }
 
     /// Checks one complete scalar collection source before scanning it.
     #[inline]
-    pub(crate) fn check_collection_source_bytes(
+    pub fn check_collection_source_bytes(
         &self,
-        actual: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        actual: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         ResourceLimit::new(
             ConversionResource::CollectionSourceBytes,
             self.limits.collection().max_source_bytes(),
@@ -112,99 +136,174 @@ impl<'a> ConversionSession<'a> {
 
     /// Checks cumulative built-in String output payload bytes.
     #[inline]
-    pub(crate) fn check_output_bytes(
+    pub fn check_output_bytes(
         &self,
-        amount: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        amount: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.check_output_bytes(amount)
     }
 
     /// Consumes cumulative output payload bytes after a successful pre-check.
     #[inline]
-    pub(crate) fn consume_output_bytes(
+    pub fn consume_output_bytes(
         &mut self,
-        amount: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        amount: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_output_bytes(amount)
     }
 
     /// Renders a String payload in one pass and commits its UTF-8 bytes only
     /// after the renderer succeeds.
     #[inline]
-    pub(crate) fn try_write_string<E, F>(
+    pub fn try_write_string<E, F>(
         &mut self,
         render: F,
     ) -> Result<String, BudgetedStringError<ConversionResource, E>>
     where
         E: std::fmt::Debug + std::fmt::Display,
-        F: FnOnce(
-            &mut BudgetedStringWriter<'_, ConversionResource>,
-        ) -> Result<(), E>,
+        F: FnOnce(&mut BudgetedStringWriter<'_, ConversionResource>) -> Result<(), E>,
     {
         self.budget.try_write_string(render)
     }
 
     /// Enters one structured scalar or container node.
     #[inline]
-    pub(crate) fn enter_node(
+    pub fn enter_structured_node(
         &mut self,
-        depth: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        depth: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.structured_mut().enter_node(depth)
     }
 
     /// Enters one structured sequence node after checking its item count.
     #[cfg(feature = "json")]
     #[inline]
-    pub(crate) fn enter_sequence(
+    pub fn enter_structured_sequence(
         &mut self,
-        depth: usize,
-        items: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        depth: u64,
+        items: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.structured_mut().enter_array(depth, items)
     }
 
     /// Enters one structured map node after checking its entry count.
     #[inline]
-    pub(crate) fn enter_map(
+    pub fn enter_structured_map(
         &mut self,
-        depth: usize,
-        entries: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        depth: u64,
+        entries: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.structured_mut().enter_object(depth, entries)
     }
 
     /// Checks and consumes one structured object key payload.
     #[inline]
-    pub(crate) fn consume_structured_key_bytes(
+    pub fn consume_structured_key_bytes(
         &mut self,
-        amount: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        amount: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.structured_mut().consume_key_bytes(amount)
     }
 
     /// Checks and consumes one structured string value payload.
     #[inline]
-    pub(crate) fn consume_structured_string_bytes(
+    pub fn consume_structured_string_bytes(
         &mut self,
-        amount: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        amount: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.structured_mut().consume_string_bytes(amount)
     }
 
     /// Checks and consumes one structured number representation payload.
     #[cfg(feature = "json")]
     #[inline]
-    pub(crate) fn consume_structured_number_bytes(
+    pub fn consume_structured_number_bytes(
         &mut self,
-        amount: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        amount: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.structured_mut().consume_number_bytes(amount)
     }
 
     /// Returns remaining top-level item capacity.
     #[inline(always)]
-    pub(crate) const fn remaining_items(&self) -> usize {
+    pub const fn items_remaining(&self) -> u64 {
         self.budget.remaining_items()
+    }
+
+    /// Returns the configured cumulative item limit.
+    #[inline(always)]
+    pub const fn items_limit(&self) -> u64 {
+        self.limits.operation().max_items()
+    }
+
+    /// Returns the configured cumulative input-byte limit.
+    #[inline(always)]
+    pub const fn input_bytes_limit(&self) -> u64 {
+        self.limits.operation().max_input_bytes()
+    }
+
+    /// Returns the configured cumulative output-byte limit.
+    #[inline(always)]
+    pub const fn output_bytes_limit(&self) -> u64 {
+        self.limits.operation().max_output_bytes()
+    }
+
+    /// Returns the configured cumulative structured-node limit.
+    #[inline(always)]
+    pub const fn structured_nodes_limit(&self) -> u64 {
+        self.limits.operation().max_structured_nodes()
+    }
+
+    /// Returns the configured cumulative structured-payload limit.
+    #[inline(always)]
+    pub const fn structured_payload_bytes_limit(&self) -> u64 {
+        self.limits.operation().max_structured_payload_bytes()
+    }
+
+    #[inline(always)]
+    pub(crate) fn remaining_items(&self) -> u64 {
+        self.items_remaining()
+    }
+
+    /// Returns cumulative input bytes already consumed.
+    #[inline(always)]
+    pub fn items_used(&self) -> u64 {
+        self.budget.items_used()
+    }
+
+    /// Returns cumulative input bytes already consumed.
+    #[inline(always)]
+    pub fn input_bytes_used(&self) -> u64 {
+        self.budget.input_bytes_used()
+    }
+
+    /// Returns remaining cumulative input-byte capacity.
+    #[inline(always)]
+    pub fn input_bytes_remaining(&self) -> u64 {
+        self.budget.input_bytes_remaining()
+    }
+
+    /// Returns cumulative output bytes already consumed.
+    #[inline(always)]
+    pub fn output_bytes_used(&self) -> u64 {
+        self.budget.output_bytes_used()
+    }
+
+    /// Returns remaining cumulative output-byte capacity.
+    #[inline(always)]
+    pub fn output_bytes_remaining(&self) -> u64 {
+        self.budget.output_bytes_remaining()
+    }
+
+    /// Returns cumulative structured nodes already consumed.
+    #[inline(always)]
+    pub fn structured_nodes_used(&self) -> u64 {
+        self.budget.structured_nodes_used()
+    }
+
+    /// Returns cumulative structured payload bytes already consumed.
+    #[inline(always)]
+    pub fn structured_payload_bytes_used(&self) -> u64 {
+        self.budget.structured_payload_bytes_used()
     }
 }

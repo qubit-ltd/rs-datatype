@@ -45,8 +45,7 @@ fn test_numeric_conversion_policy_exact_wire_has_no_limits() {
         .with_fractional_to_integer(FractionalToIntegerPolicy::Truncate)
         .with_numeric_to_float(FloatRoundingPolicy::NearestEven)
         .with_text_to_float(FloatRoundingPolicy::NearestEven);
-    let wire = serde_json::to_string(&policy)
-        .expect("numeric policy should serialize");
+    let wire = serde_json::to_string(&policy).expect("numeric policy should serialize");
     assert_eq!(
         wire,
         r#"{"fractional_to_integer":"truncate","numeric_to_float":"nearest_even","text_to_float":"nearest_even"}"#
@@ -60,9 +59,7 @@ fn test_numeric_conversion_policy_exact_wire_has_no_limits() {
 
 #[test]
 fn test_numeric_conversion_policy_rejects_limit_fields() {
-    let error = serde_json::from_str::<NumericConversionPolicy>(
-        r#"{"max_text_bytes":32}"#,
-    )
-    .expect_err("numeric limits must not deserialize as policy");
+    let error = serde_json::from_str::<NumericConversionPolicy>(r#"{"max_text_bytes":32}"#)
+        .expect_err("numeric limits must not deserialize as policy");
     assert!(error.to_string().contains("unknown field `max_text_bytes`"));
 }

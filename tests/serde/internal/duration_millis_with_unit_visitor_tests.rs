@@ -28,8 +28,7 @@ fn test_duration_millis_with_unit_visitor_accepts_borrowed_text() {
 /// Verifies the visitor accepts owned fixed-millisecond text.
 #[test]
 fn test_duration_millis_with_unit_visitor_accepts_owned_text() {
-    let deserializer =
-        StringDeserializer::<ValueError>::new("42ms".to_string());
+    let deserializer = StringDeserializer::<ValueError>::new("42ms".to_string());
     let duration = duration_millis_with_unit::deserialize(deserializer)
         .expect("owned duration text should deserialize");
 

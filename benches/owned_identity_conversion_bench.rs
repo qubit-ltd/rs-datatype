@@ -29,8 +29,7 @@ use serde_json::Value as JsonValue;
 #[cfg(feature = "url")]
 use url::Url;
 
-const TEXT_SIZES: [(&str, usize); 3] =
-    [("64B", 64), ("4KiB", 4 * 1024), ("256KiB", 256 * 1024)];
+const TEXT_SIZES: [(&str, usize); 3] = [("64B", 64), ("4KiB", 4 * 1024), ("256KiB", 256 * 1024)];
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 const BIG_NUMBER_DIGITS: [(&str, usize); 3] = [
     ("32_digits", 32),
@@ -92,18 +91,14 @@ fn benchmark_identity_case<T>(
     DataConverter<'static>: From<T>,
     for<'a> DataConverter<'a>: From<&'a T>,
 {
-    convert_borrowed(&value)
-        .expect("borrowed identity benchmark fixture should convert");
-    convert_owned(value.clone())
-        .expect("owned identity benchmark fixture should convert");
+    convert_borrowed(&value).expect("borrowed identity benchmark fixture should convert");
+    convert_owned(value.clone()).expect("owned identity benchmark fixture should convert");
 
     group.throughput(Throughput::Bytes(payload_bytes as u64));
     group.bench_with_input(
         BenchmarkId::new("borrowed_to_target", case_name),
         &value,
-        |b, value| {
-            b.iter(|| black_box(convert_borrowed::<T>(black_box(value))))
-        },
+        |b, value| b.iter(|| black_box(convert_borrowed::<T>(black_box(value)))),
     );
     group.bench_function(BenchmarkId::new("owned_to_target", case_name), |b| {
         b.iter_batched(
@@ -151,12 +146,7 @@ fn benchmark_string_identity(c: &mut Criterion) {
 fn benchmark_string_map_identity(c: &mut Criterion) {
     let mut group = c.benchmark_group("identity_string_map");
     for (name, bytes) in TEXT_SIZES {
-        benchmark_identity_case(
-            &mut group,
-            name,
-            bytes,
-            string_map_payload(bytes),
-        );
+        benchmark_identity_case(&mut group, name, bytes, string_map_payload(bytes));
     }
     group.finish();
 }
@@ -178,39 +168,19 @@ fn benchmark_string_batch_identity(c: &mut Criterion) {
             BenchmarkId::new("borrowed_to_target", item_count),
             values.as_slice(),
             |b, values| {
-                b.iter(|| {
-                    black_box(
-                        DataConverters::from(black_box(values))
-                            .to_vec::<String>(),
-                    )
-                });
+                b.iter(|| black_box(DataConverters::from(black_box(values)).to_vec::<String>()));
             },
         );
-        group.bench_function(
-            BenchmarkId::new("owned_to_target", item_count),
-            |b| {
-                b.iter_batched(
-                    || values.clone(),
-                    |values| {
-                        black_box(
-                            DataConverters::from(black_box(values))
-                                .to_vec::<String>(),
-                        )
-                    },
-                    BatchSize::LargeInput,
-                );
-            },
-        );
-        group.bench_function(
-            BenchmarkId::new("direct_move", item_count),
-            |b| {
-                b.iter_batched(
-                    || values.clone(),
-                    black_box,
-                    BatchSize::LargeInput,
-                );
-            },
-        );
+        group.bench_function(BenchmarkId::new("owned_to_target", item_count), |b| {
+            b.iter_batched(
+                || values.clone(),
+                |values| black_box(DataConverters::from(black_box(values)).to_vec::<String>()),
+                BatchSize::LargeInput,
+            );
+        });
+        group.bench_function(BenchmarkId::new("direct_move", item_count), |b| {
+            b.iter_batched(|| values.clone(), black_box, BatchSize::LargeInput);
+        });
     }
     group.finish();
 }
@@ -236,9 +206,9 @@ fn benchmark_string_map_to_json(c: &mut Criterion) {
     let mut group = c.benchmark_group("string_map_to_json");
     for (name, bytes) in TEXT_SIZES {
         let value = string_map_payload(bytes);
-        let borrowed: JsonValue = DataConverter::from(&value).to().expect(
-            "borrowed StringMap-to-JSON benchmark fixture should convert",
-        );
+        let borrowed: JsonValue = DataConverter::from(&value)
+            .to()
+            .expect("borrowed StringMap-to-JSON benchmark fixture should convert");
         let owned: JsonValue = DataConverter::from(value.clone())
             .into_target()
             .expect("owned StringMap-to-JSON benchmark fixture should convert");
@@ -249,22 +219,13 @@ fn benchmark_string_map_to_json(c: &mut Criterion) {
             BenchmarkId::new("borrowed_to_json", name),
             &value,
             |b, value| {
-                b.iter(|| {
-                    black_box(
-                        DataConverter::from(black_box(value)).to::<JsonValue>(),
-                    )
-                })
+                b.iter(|| black_box(DataConverter::from(black_box(value)).to::<JsonValue>()))
             },
         );
         group.bench_function(BenchmarkId::new("owned_to_json", name), |b| {
             b.iter_batched(
                 || value.clone(),
-                |value| {
-                    black_box(
-                        DataConverter::from(black_box(value))
-                            .into_target::<JsonValue>(),
-                    )
-                },
+                |value| black_box(DataConverter::from(black_box(value)).into_target::<JsonValue>()),
                 BatchSize::LargeInput,
             );
         });
@@ -278,9 +239,9 @@ fn benchmark_string_map_to_string(c: &mut Criterion) {
     let mut group = c.benchmark_group("string_map_to_string");
     for (name, bytes) in TEXT_SIZES {
         let value = string_map_payload(bytes);
-        let borrowed: String = DataConverter::from(&value).to().expect(
-            "borrowed StringMap-to-text benchmark fixture should convert",
-        );
+        let borrowed: String = DataConverter::from(&value)
+            .to()
+            .expect("borrowed StringMap-to-text benchmark fixture should convert");
         let owned: String = DataConverter::from(value.clone())
             .into_target()
             .expect("owned StringMap-to-text benchmark fixture should convert");
@@ -290,23 +251,12 @@ fn benchmark_string_map_to_string(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("borrowed_to_string", name),
             &value,
-            |b, value| {
-                b.iter(|| {
-                    black_box(
-                        DataConverter::from(black_box(value)).to::<String>(),
-                    )
-                })
-            },
+            |b, value| b.iter(|| black_box(DataConverter::from(black_box(value)).to::<String>())),
         );
         group.bench_function(BenchmarkId::new("owned_to_string", name), |b| {
             b.iter_batched(
                 || value.clone(),
-                |value| {
-                    black_box(
-                        DataConverter::from(black_box(value))
-                            .into_target::<String>(),
-                    )
-                },
+                |value| black_box(DataConverter::from(black_box(value)).into_target::<String>()),
                 BatchSize::LargeInput,
             );
         });
@@ -345,23 +295,12 @@ fn benchmark_url_to_string(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("borrowed_to_string", name),
             &value,
-            |b, value| {
-                b.iter(|| {
-                    black_box(
-                        DataConverter::from(black_box(value)).to::<String>(),
-                    )
-                })
-            },
+            |b, value| b.iter(|| black_box(DataConverter::from(black_box(value)).to::<String>())),
         );
         group.bench_function(BenchmarkId::new("owned_to_string", name), |b| {
             b.iter_batched(
                 || value.clone(),
-                |value| {
-                    black_box(
-                        DataConverter::from(black_box(value))
-                            .into_target::<String>(),
-                    )
-                },
+                |value| black_box(DataConverter::from(black_box(value)).into_target::<String>()),
                 BatchSize::LargeInput,
             );
         });
