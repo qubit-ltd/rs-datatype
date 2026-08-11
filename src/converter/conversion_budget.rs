@@ -11,9 +11,7 @@ use qubit_budget::BudgetError;
 use qubit_budget::BudgetedStringError;
 use qubit_budget::BudgetedStringWriter;
 use qubit_budget::JsonValueBudget;
-use qubit_budget::JsonValueLimits;
 use qubit_budget::ResourceBudget;
-use qubit_budget::StructureLimits;
 
 use super::ConversionLimits;
 use super::ConversionResource;
@@ -22,16 +20,16 @@ use super::ConversionResource;
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct ConversionBudget {
     /// Cumulative converted-item budget.
-    items: ResourceBudget<ConversionResource, usize>,
+    items: ResourceBudget<ConversionResource, u64>,
 
     /// Cumulative normalized input-byte budget.
-    input_bytes: ResourceBudget<ConversionResource, usize>,
+    input_bytes: ResourceBudget<ConversionResource, u64>,
 
     /// Cumulative output payload-byte budget.
-    output_bytes: ResourceBudget<ConversionResource, usize>,
+    output_bytes: ResourceBudget<ConversionResource, u64>,
 
     /// Shared structured value accounting.
-    structured: JsonValueBudget<ConversionResource, usize>,
+    structured: JsonValueBudget<ConversionResource, u64>,
 }
 
 impl ConversionBudget {
@@ -40,33 +38,24 @@ impl ConversionBudget {
     pub(crate) fn new(limits: &ConversionLimits) -> Self {
         let structured = limits.structured();
         let operation = limits.operation();
-        let structure_limits = StructureLimits::empty()
-            .with_depth_limit(*structured.max_depth_limit())
-            .with_nodes_limit(*operation.structured_nodes_limit())
-            .with_sequence_items_limit(*structured.max_sequence_items_limit())
-            .with_map_entries_limit(*structured.max_map_entries_limit());
-        let value_limits = JsonValueLimits::default()
+        let structure_limits = structured
+            .value()
+            .structure_limits()
+            .with_nodes_limit(*operation.structured_nodes_limit());
+        let value_limits = (*structured.value())
             .with_structure_limits(structure_limits)
-            .with_payload_bytes_limit(
-                *operation.structured_payload_bytes_limit(),
-            );
+            .with_payload_bytes_limit(*operation.structured_payload_bytes_limit());
         Self {
             items: ResourceBudget::from_limit(*operation.items_limit()),
-            input_bytes: ResourceBudget::from_limit(
-                *operation.input_bytes_limit(),
-            ),
-            output_bytes: ResourceBudget::from_limit(
-                *operation.output_bytes_limit(),
-            ),
+            input_bytes: ResourceBudget::from_limit(*operation.input_bytes_limit()),
+            output_bytes: ResourceBudget::from_limit(*operation.output_bytes_limit()),
             structured: JsonValueBudget::new(value_limits),
         }
     }
 
     /// Consumes one converted item.
     #[inline]
-    pub(crate) fn consume_item(
-        &mut self,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+    pub(crate) fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.items.try_consume(1)
     }
 
@@ -74,8 +63,8 @@ impl ConversionBudget {
     #[inline]
     pub(crate) fn consume_input_bytes(
         &mut self,
-        amount: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        amount: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.input_bytes.try_consume(amount)
     }
 
@@ -83,8 +72,8 @@ impl ConversionBudget {
     #[inline]
     pub(crate) fn check_output_bytes(
         &self,
-        amount: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        amount: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.output_bytes.check_available(amount)
     }
 
@@ -92,8 +81,8 @@ impl ConversionBudget {
     #[inline]
     pub(crate) fn consume_output_bytes(
         &mut self,
-        amount: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        amount: u64,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.output_bytes.try_consume(amount)
     }
 
@@ -105,24 +94,51 @@ impl ConversionBudget {
     ) -> Result<String, BudgetedStringError<ConversionResource, E>>
     where
         E: std::fmt::Debug + std::fmt::Display,
-        F: FnOnce(
-            &mut BudgetedStringWriter<'_, ConversionResource>,
-        ) -> Result<(), E>,
+        F: FnOnce(&mut BudgetedStringWriter<'_, ConversionResource>) -> Result<(), E>,
     {
         self.output_bytes.try_write_string(render)
     }
 
     /// Returns the remaining item capacity for internal allocation planning.
     #[inline(always)]
-    pub(crate) const fn remaining_items(&self) -> usize {
+    pub(crate) const fn remaining_items(&self) -> u64 {
         self.items.remaining()
+    }
+
+    pub(crate) fn items_used(&self) -> u64 {
+        self.items.used()
+    }
+
+    pub(crate) fn input_bytes_remaining(&self) -> u64 {
+        self.input_bytes.remaining()
+    }
+
+    pub(crate) fn output_bytes_remaining(&self) -> u64 {
+        self.output_bytes.remaining()
+    }
+
+    pub(crate) fn input_bytes_used(&self) -> u64 {
+        self.input_bytes.used()
+    }
+
+    pub(crate) fn output_bytes_used(&self) -> u64 {
+        self.output_bytes.used()
+    }
+
+    pub(crate) fn structured_nodes_used(&self) -> u64 {
+        self.structured.structure_budget().used_nodes()
+    }
+
+    pub(crate) fn structured_payload_bytes_used(&self) -> u64 {
+        match self.structured.payload_budget() {
+            Some(payload) => payload.used(),
+            None => 0,
+        }
     }
 
     /// Returns shared structured accounting.
     #[inline(always)]
-    pub(crate) const fn structured_mut(
-        &mut self,
-    ) -> &mut JsonValueBudget<ConversionResource, usize> {
+    pub(crate) const fn structured_mut(&mut self) -> &mut JsonValueBudget<ConversionResource, u64> {
         &mut self.structured
     }
 }

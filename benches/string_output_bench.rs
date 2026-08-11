@@ -30,7 +30,7 @@ fn benchmark_scalar_string_output(c: &mut Criterion) {
         let policy = ConversionPolicy::strict();
         let limits = ConversionLimits::default().with_operation_limits(
             ConversionOperationLimits::default()
-                .with_max_output_bytes(source.len()),
+                .with_max_output_bytes(u64::try_from(source.len()).unwrap()),
         );
         group.bench_with_input(
             BenchmarkId::new("borrowed_identity", size),
@@ -71,24 +71,19 @@ fn benchmark_string_map_output(c: &mut Criterion) {
         ("c".to_owned(), "3".to_owned()),
     ]);
     let policy = ConversionPolicy::strict();
-    let limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default().with_max_output_bytes(32),
-    );
+    let limits = ConversionLimits::default()
+        .with_operation_limits(ConversionOperationLimits::default().with_max_output_bytes(32));
     group.bench_function("borrowed", |bench| {
         bench.iter(|| {
             let mut session = ConversionSession::new(&policy, &limits);
-            black_box(
-                DataConverter::from(black_box(&map))
-                    .to_in::<String>(&mut session),
-            )
+            black_box(DataConverter::from(black_box(&map)).to_in::<String>(&mut session))
         });
     });
     group.bench_function("owned", |bench| {
         bench.iter(|| {
             let mut session = ConversionSession::new(&policy, &limits);
             black_box(
-                DataConverter::from(black_box(map.clone()))
-                    .into_target_in::<String>(&mut session),
+                DataConverter::from(black_box(map.clone())).into_target_in::<String>(&mut session),
             )
         });
     });
