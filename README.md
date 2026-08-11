@@ -111,18 +111,24 @@ domain rule.
 ## 5. Single-value conversion
 
 `DataConverter` borrows or owns a runtime source. `to` uses strict defaults;
-`to_with` accepts a `DataConversionOptions` profile.
+`to_with` accepts an immutable `ConversionPolicy` and `ConversionLimits`.
 `into_target` and `into_target_with` consume an owned source when it is no
 longer needed, allowing compatible targets to reuse owned storage.
 
 ```rust
-use qubit_datatype::{DataConversionOptions, DataConverter};
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
+use qubit_datatype::DataConverter;
 
 assert_eq!(DataConverter::from("42").to::<u16>(), Ok(42));
 assert!(DataConverter::from("3.9").to::<i32>().is_err());
 
-let lossy = DataConversionOptions::lossy();
-assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
+let policy = ConversionPolicy::lossy();
+let limits = ConversionLimits::default();
+assert_eq!(
+    DataConverter::from(" 3.9 ").to_with::<i32>(&policy, &limits),
+    Ok(3),
+);
 ```
 
 The strict profile independently rejects fractional-to-integer truncation,
@@ -154,23 +160,22 @@ empty collection where a first value was requested, `InvalidValue` identifies
 malformed or policy-rejected values, and `LimitExceeded` identifies configured
 resource caps. Errors retain type context but never retain the source value.
 
-## 7. Options and input profiles
+## 7. Policies, limits, and sessions
 
-`DataConversionOptions` groups independent policies:
+`ConversionPolicy` groups semantic choices that do not consume resources:
 
 - `numeric`: fractional-to-integer, numeric-to-float, and text-to-float
-  policies, plus resource limits.
+  policies.
 - `string`: trimming and blank-string handling.
 - `boolean`: accepted literals, case sensitivity, and numeric policy.
-- `collection`: scalar splitting, delimiters, trimming, empty items, and the
-  maximum number of retained items.
+- `collection`: scalar splitting, delimiters, trimming, and empty-item policy.
 - `duration`: numeric input unit, suffixless input policy, unit parse mode,
-  output unit, suffix formatting, rounding, and source-text byte limit.
-- `structured`: normalized input byte limits for URL, JSON, and StringMap
-  parsing, plus depth and per-container entry limits; the default text limit is
-  1 MiB.
-- `budget`: cumulative item, input-byte, output-byte, and structured-node
-  budgets for one conversion session.
+  output unit, suffix formatting, and rounding.
+
+`ConversionLimits` separately groups numeric, collection, duration, structured,
+and operation resource limits. `ConversionOperationLimits` configures
+cumulative items, normalized input bytes, String output bytes, structured
+nodes, and structured payload bytes for one session.
 
 `strict()` is the default. `env_friendly()` trims strings, accepts common
 Boolean literals, enables comma-separated scalar collections, and relaxes only
@@ -180,26 +185,34 @@ defaults for omitted fields and rejects unknown fields, so misspelled
 configuration keys fail early.
 
 ```rust
-use qubit_datatype::{DataConversionOptions, DataConverter};
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
+use qubit_datatype::DataConverter;
 
-let options = DataConversionOptions::env_friendly();
-assert_eq!(DataConverter::from(" yes ").to_with::<bool>(&options), Ok(true));
+let policy = ConversionPolicy::env_friendly();
+let limits = ConversionLimits::default();
+assert_eq!(
+    DataConverter::from(" yes ").to_with::<bool>(&policy, &limits),
+    Ok(true),
+);
 ```
 
-Numeric resource caps are part of the options and remain enabled in every
-profile. They apply after string normalization and before expensive parsing or
-`BigInt` materialization:
+Numeric resource caps are part of `ConversionLimits` and remain enabled with
+every policy. They apply after string normalization and before expensive
+parsing or `BigInt` materialization:
 
 ```rust
-use qubit_datatype::{
-    DataConversionOptions, NumericConversionLimits, NumericConversionOptions,
-};
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
+use qubit_datatype::NumericConversionLimits;
+use qubit_datatype::NumericConversionPolicy;
 
-let limits = NumericConversionLimits::default()
-    .with_max_text_bytes(4096)
-    .with_max_big_integer_digits(10_000);
-let options = DataConversionOptions::strict().with_numeric_options(
-    NumericConversionOptions::strict().with_limits(limits),
+let policy = ConversionPolicy::strict()
+    .with_numeric_policy(NumericConversionPolicy::strict());
+let limits = ConversionLimits::default().with_numeric_limits(
+    NumericConversionLimits::default()
+        .with_max_text_bytes(4096)
+        .with_max_big_integer_digits(10_000),
 );
 ```
 
@@ -207,18 +220,44 @@ Structured text limits are checked after string normalization and before URL,
 JSON, or StringMap parsing:
 
 ```rust
-use qubit_datatype::{
-    DataConversionOptions, StructuredConversionLimits,
-};
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::StructuredConversionLimits;
 
-let options = DataConversionOptions::strict().with_structured_limits(
+let limits = ConversionLimits::default().with_structured_limits(
     StructuredConversionLimits::default().with_max_text_bytes(64 * 1024),
 );
 ```
 
-Each convenience conversion creates a fresh finite session. Reuse one session
-with `DataConversionOptions::session()` and the `to_in`, `into_target_in`, or
-`to_vec_in` methods when limits must accumulate across nested or batch work.
+Each `to_with`, `into_target_with`, or batch `*_with` call creates an independent
+session. Internally, `ConversionOperationLimits` creates a private
+`ConversionBudget`, and `ConversionSession` carries that mutable accounting
+through nested work. Reuse one explicitly constructed session with `to_in`,
+`into_target_in`, or `to_vec_in` only when limits must accumulate across calls:
+
+```rust
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionOperationLimits;
+use qubit_datatype::ConversionPolicy;
+use qubit_datatype::ConversionSession;
+use qubit_datatype::DataConverter;
+
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
+let policy = ConversionPolicy::strict();
+let operation = ConversionOperationLimits::default().with_max_items(2);
+let limits = ConversionLimits::default().with_operation_limits(operation);
+let mut session = ConversionSession::new(&policy, &limits);
+
+assert_eq!(DataConverter::from("1").to_in::<u16>(&mut session)?, 1);
+assert_eq!(DataConverter::from("2").to_in::<u16>(&mut session)?, 2);
+assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
+# Ok(())
+# }
+```
+
+The rejected third request does not consume another item, but the two earlier
+successful conversions remain charged. Convenience calls do not share that
+state because each constructs a fresh session.
+
 Limit errors expose resource and observed or remaining-budget facts through
 `DataConversionError::budget_error()`, which returns the original
 `qubit_budget::BudgetError` without a datatype-specific wrapper. Output-byte
@@ -237,7 +276,7 @@ rejected. The default Duration policy rejects suffixless text and
 uses Strict parsing: `[0-9]+(ns|us|µs|μs|ms|s|min|h|d)`. Strict accepts the
 ASCII `us`, micro-sign `µs`, and Greek-mu `μs` microsecond spellings. Lenient
 parsing additionally accepts the non-canonical minute alias `m`:
-`[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)`. `DurationConversionOptions::env_friendly()`
+`[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)`. `DurationConversionPolicy::env_friendly()`
 uses Lenient parsing and interprets suffixless integers as milliseconds.
 Input and output units are configured independently. Exact Duration output
 requires divisibility by the output unit; half-up rounding must be selected
@@ -289,21 +328,25 @@ Scalar-string collection conversion retains at most 65,536 items by default.
 The limit is checked after trimming and empty-item filtering, so skipped items
 do not consume the budget. A zero limit permits only an empty retained result;
 the first additional retained item returns `LimitExceeded` with its original
-source index. Use `CollectionConversionOptions::with_max_items` to select a
+source index. Use `CollectionConversionLimits::with_max_items` to select a
 different bound. This per-string splitting limit is separate from the session
 budget, which also applies to ordinary iterator batches.
 
 ```rust
-use qubit_datatype::{DataConversionOptions, DataConverters, ScalarStringDataConverters};
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
+use qubit_datatype::DataConverters;
+use qubit_datatype::ScalarStringDataConverters;
 
 let ports: Vec<u16> = DataConverters::from(vec!["8080", "8081"])
     .to_vec()
     .unwrap();
 assert_eq!(ports, [8080, 8081]);
 
-let options = DataConversionOptions::env_friendly();
+let policy = ConversionPolicy::env_friendly();
+let limits = ConversionLimits::default();
 let values: Vec<u16> = ScalarStringDataConverters::new("1, 2, 3")
-    .to_vec_with(&options)
+    .to_vec_with(&policy, &limits)
     .unwrap();
 assert_eq!(values, [1, 2, 3]);
 ```
