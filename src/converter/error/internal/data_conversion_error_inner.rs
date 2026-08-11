@@ -10,6 +10,7 @@
 //! Defines the private variant representation of data conversion errors.
 
 use qubit_budget::BudgetError;
+use qubit_budget::QuantityConversionError;
 
 use super::super::invalid_value_reason::InvalidValueReason;
 use crate::converter::ConversionResource;
@@ -60,5 +61,20 @@ pub(in crate::converter::error) enum DataConversionErrorInner {
         /// Complete point-limit or cumulative-budget facts.
         #[source]
         source: BudgetError<ConversionResource, u64>,
+    },
+    /// A native measurement cannot be represented by the configured quantity.
+    #[error(
+        "Conversion measurement cannot be represented from {from} to {to}: {source}"
+    )]
+    Quantity {
+        /// Declared source data type.
+        from: DataType,
+        /// Requested target data type.
+        to: DataType,
+        /// Resource whose measurement could not be represented.
+        resource: ConversionResource,
+        /// Exact native quantity conversion failure.
+        #[source]
+        source: QuantityConversionError,
     },
 }

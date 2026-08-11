@@ -58,9 +58,13 @@ fn test_scalar_string_data_converters_to_vec_with_splits_items() {
                 .with_empty_item_policy(EmptyItemPolicy::Skip),
         );
 
-    let ports: Vec<u16> = ScalarStringDataConverters::from(" 8080, 8081;; 8082 ")
-        .to_vec_with(&options, qubit_datatype::ConversionLimits::default_ref())
-        .expect("scalar string should split and parse into ports");
+    let ports: Vec<u16> =
+        ScalarStringDataConverters::from(" 8080, 8081;; 8082 ")
+            .to_vec_with(
+                &options,
+                qubit_datatype::ConversionLimits::default_ref(),
+            )
+            .expect("scalar string should split and parse into ports");
 
     assert_eq!(ports, vec![8080, 8081, 8082]);
 }
@@ -71,7 +75,10 @@ fn test_scalar_string_data_converters_to_first_with_splits_items() {
     let options = ConversionPolicy::env_friendly();
 
     let first: u16 = ScalarStringDataConverters::from(" 8080, 8081 ")
-        .to_first_with(&options, qubit_datatype::ConversionLimits::default_ref())
+        .to_first_with(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref(),
+        )
         .expect("first split scalar item should parse");
 
     assert_eq!(first, 8080);
@@ -87,7 +94,10 @@ fn test_scalar_string_data_converters_to_vec_with_reports_missing_scalar() {
     );
 
     let error = ScalarStringDataConverters::from("   ")
-        .to_vec_with::<u16>(&options, qubit_datatype::ConversionLimits::default_ref())
+        .to_vec_with::<u16>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref(),
+        )
         .expect_err("blank scalar string should be treated as missing");
 
     assert_eq!(error.source_index(), 0);
@@ -107,8 +117,10 @@ fn test_scalar_string_data_converters_to_first_with_reports_missing_scalar() {
     );
 
     assert_eq!(
-        ScalarStringDataConverters::from("   ")
-            .to_first_with::<u16>(&options, qubit_datatype::ConversionLimits::default_ref()),
+        ScalarStringDataConverters::from("   ").to_first_with::<u16>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Err(DataConversionError::missing(
             DataType::String,
             DataType::UInt16
@@ -126,7 +138,10 @@ fn test_scalar_string_data_converters_to_vec_with_rejects_empty_item() {
     );
 
     let error = ScalarStringDataConverters::from("1,,2")
-        .to_vec_with::<u16>(&options, qubit_datatype::ConversionLimits::default_ref())
+        .to_vec_with::<u16>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref(),
+        )
         .expect_err("empty scalar item should be rejected");
 
     assert_eq!(error.source_index(), 1);
@@ -148,8 +163,9 @@ fn test_scalar_string_data_converters_to_vec_with_enforces_item_limit() {
             .with_split_scalar_strings(true)
             .with_empty_item_policy(EmptyItemPolicy::Skip),
     );
-    let limits = ConversionLimits::default()
-        .with_collection_limits(CollectionConversionLimits::default().with_max_items(2));
+    let limits = ConversionLimits::default().with_collection_limits(
+        CollectionConversionLimits::default().with_max_items(2),
+    );
     let error = ScalarStringDataConverters::from("1,,2,3")
         .to_vec_with::<u16>(&options, &limits)
         .expect_err("third retained item must exceed the limit");
@@ -177,18 +193,21 @@ fn test_scalar_string_data_converters_to_first_with_item_limit() {
     let one = ConversionPolicy::default().with_collection_policy(
         CollectionConversionPolicy::default().with_split_scalar_strings(true),
     );
-    let one_limit = ConversionLimits::default()
-        .with_collection_limits(CollectionConversionLimits::default().with_max_items(1));
+    let one_limit = ConversionLimits::default().with_collection_limits(
+        CollectionConversionLimits::default().with_max_items(1),
+    );
     assert_eq!(
-        ScalarStringDataConverters::from("1,2,3").to_first_with::<u16>(&one, &one_limit),
+        ScalarStringDataConverters::from("1,2,3")
+            .to_first_with::<u16>(&one, &one_limit),
         Ok(1),
     );
 
     let zero = ConversionPolicy::default().with_collection_policy(
         CollectionConversionPolicy::default().with_split_scalar_strings(true),
     );
-    let zero_limit = ConversionLimits::default()
-        .with_collection_limits(CollectionConversionLimits::default().with_max_items(0));
+    let zero_limit = ConversionLimits::default().with_collection_limits(
+        CollectionConversionLimits::default().with_max_items(0),
+    );
     let error = ScalarStringDataConverters::from("1,2,3")
         .to_first_with::<u16>(&zero, &zero_limit)
         .expect_err("zero limit must reject the first retained item");
@@ -213,8 +232,10 @@ fn test_scalar_string_data_converters_to_first_with_rejects_empty_item() {
     );
 
     assert_eq!(
-        ScalarStringDataConverters::from(",1,2")
-            .to_first_with::<u16>(&options, qubit_datatype::ConversionLimits::default_ref()),
+        ScalarStringDataConverters::from(",1,2").to_first_with::<u16>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Err(DataConversionError::invalid(
             DataType::String,
             DataType::UInt16,
@@ -233,8 +254,10 @@ fn test_scalar_string_data_converters_to_first_with_reports_empty_after_skip() {
     );
 
     assert_eq!(
-        ScalarStringDataConverters::from(",,")
-            .to_first_with::<u16>(&options, qubit_datatype::ConversionLimits::default_ref()),
+        ScalarStringDataConverters::from(",,").to_first_with::<u16>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Err(DataConversionError::empty_collection(DataType::UInt16)),
     );
 }
@@ -249,7 +272,10 @@ fn test_scalar_string_data_converters_preserves_original_source_index() {
     );
 
     let error = ScalarStringDataConverters::from("1,,bad")
-        .to_vec_with::<u16>(&options, qubit_datatype::ConversionLimits::default_ref())
+        .to_vec_with::<u16>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref(),
+        )
         .expect_err("invalid third source item should fail");
 
     assert_eq!(error.source_index(), 2);
@@ -265,7 +291,10 @@ fn test_scalar_string_data_converters_to_first_short_circuits_tail() {
     );
 
     let first = ScalarStringDataConverters::from("1,,")
-        .to_first_with::<u16>(&options, qubit_datatype::ConversionLimits::default_ref())
+        .to_first_with::<u16>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref(),
+        )
         .expect("valid first item should short-circuit the rejected tail");
 
     assert_eq!(first, 1);
@@ -281,7 +310,10 @@ fn test_scalar_string_data_converters_rejects_blank_scalar() {
     );
 
     let error = ScalarStringDataConverters::from("   ")
-        .to_vec_with::<u16>(&options, qubit_datatype::ConversionLimits::default_ref())
+        .to_vec_with::<u16>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref(),
+        )
         .expect_err("blank scalar should be rejected");
     assert_eq!(error.source_index(), 0);
     assert!(matches!(
@@ -296,28 +328,36 @@ fn test_scalar_string_data_converters_env_blank_list_is_empty() {
     let options = ConversionPolicy::env_friendly();
 
     assert_eq!(
-        ScalarStringDataConverters::from("   ")
-            .to_vec_with::<u16>(&options, qubit_datatype::ConversionLimits::default_ref()),
+        ScalarStringDataConverters::from("   ").to_vec_with::<u16>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Ok(Vec::new()),
     );
     assert_eq!(
-        ScalarStringDataConverters::from(" , \t,")
-            .to_vec_with::<u16>(&options, qubit_datatype::ConversionLimits::default_ref()),
+        ScalarStringDataConverters::from(" , \t,").to_vec_with::<u16>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Ok(Vec::new()),
     );
     assert_eq!(
-        ScalarStringDataConverters::from("   ")
-            .to_first_with::<u16>(&options, qubit_datatype::ConversionLimits::default_ref()),
+        ScalarStringDataConverters::from("   ").to_first_with::<u16>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Err(DataConversionError::empty_collection(DataType::UInt16)),
     );
 }
 
 /// Test the complete scalar source is checked before delimiter scanning.
 #[test]
-fn test_scalar_string_data_converters_checks_delimiter_only_source_before_scan() {
+fn test_scalar_string_data_converters_checks_delimiter_only_source_before_scan()
+{
     let policy = ConversionPolicy::env_friendly();
-    let limits = ConversionLimits::default()
-        .with_collection_limits(CollectionConversionLimits::default().with_max_source_bytes(3));
+    let limits = ConversionLimits::default().with_collection_limits(
+        CollectionConversionLimits::default().with_max_source_bytes(3),
+    );
 
     let error = ScalarStringDataConverters::from(",,,,")
         .to_vec_with::<String>(&policy, &limits)
@@ -337,8 +377,9 @@ fn test_scalar_string_data_converters_checks_delimiter_only_source_before_scan()
 #[test]
 fn test_scalar_string_data_converters_to_first_checks_complete_source() {
     let policy = ConversionPolicy::env_friendly();
-    let limits = ConversionLimits::default()
-        .with_collection_limits(CollectionConversionLimits::default().with_max_source_bytes(3));
+    let limits = ConversionLimits::default().with_collection_limits(
+        CollectionConversionLimits::default().with_max_source_bytes(3),
+    );
 
     let error = ScalarStringDataConverters::from("1,long-tail")
         .to_first_with::<u16>(&policy, &limits)
