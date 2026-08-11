@@ -13,8 +13,9 @@ use criterion::BenchmarkId;
 use criterion::Criterion;
 use criterion::criterion_group;
 use criterion::criterion_main;
-use qubit_datatype::CollectionConversionOptions;
-use qubit_datatype::DataConversionOptions;
+use qubit_datatype::CollectionConversionPolicy;
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
 use qubit_datatype::DataConverters;
 use qubit_datatype::ScalarStringDataConverters;
 
@@ -38,7 +39,8 @@ fn comma_separated_input(item_count: usize) -> String {
 
 /// Benchmarks conversion of the first item from scalar collection text.
 fn benchmark_scalar_first(c: &mut Criterion) {
-    let options = DataConversionOptions::env_friendly();
+    let options = ConversionPolicy::env_friendly();
+    let limits = ConversionLimits::default();
     let mut group = c.benchmark_group("scalar_collection_to_first_u64");
 
     for item_count in ITEM_COUNTS {
@@ -50,7 +52,10 @@ fn benchmark_scalar_first(c: &mut Criterion) {
                 b.iter(|| {
                     black_box(
                         ScalarStringDataConverters::from(black_box(input))
-                            .to_first_with::<u64>(black_box(&options)),
+                            .to_first_with::<u64>(
+                                black_box(&options),
+                                black_box(&limits),
+                            ),
                     )
                 });
             },
@@ -61,7 +66,8 @@ fn benchmark_scalar_first(c: &mut Criterion) {
 
 /// Benchmarks complete conversion of scalar collection text.
 fn benchmark_scalar_complete(c: &mut Criterion) {
-    let options = DataConversionOptions::env_friendly();
+    let options = ConversionPolicy::env_friendly();
+    let limits = ConversionLimits::default();
     let mut group = c.benchmark_group("scalar_collection_to_vec_u64");
 
     for item_count in ITEM_COUNTS {
@@ -73,7 +79,10 @@ fn benchmark_scalar_complete(c: &mut Criterion) {
                 b.iter(|| {
                     black_box(
                         ScalarStringDataConverters::from(black_box(input))
-                            .to_vec_with::<u64>(black_box(&options)),
+                            .to_vec_with::<u64>(
+                                black_box(&options),
+                                black_box(&limits),
+                            ),
                     )
                 });
             },
@@ -84,7 +93,8 @@ fn benchmark_scalar_complete(c: &mut Criterion) {
 
 /// Benchmarks conversion of already-materialized string slices.
 fn benchmark_materialized_slice(c: &mut Criterion) {
-    let options = DataConversionOptions::env_friendly();
+    let options = ConversionPolicy::env_friendly();
+    let limits = ConversionLimits::default();
     let mut group = c.benchmark_group("materialized_slice_to_vec_u64");
 
     for item_count in ITEM_COUNTS {
@@ -97,7 +107,10 @@ fn benchmark_materialized_slice(c: &mut Criterion) {
                 b.iter(|| {
                     black_box(
                         DataConverters::from(black_box(values))
-                            .to_vec_with::<u64>(black_box(&options)),
+                            .to_vec_with::<u64>(
+                                black_box(&options),
+                                black_box(&limits),
+                            ),
                     )
                 });
             },
@@ -111,15 +124,19 @@ fn benchmark_large_delimiter_set(c: &mut Criterion) {
     let input = format!("{},tail", "a".repeat(16 * 1024));
     let delimiters =
         std::iter::once(',').chain((0x100..0x13f).filter_map(char::from_u32));
-    let options = CollectionConversionOptions::default()
+    let options = CollectionConversionPolicy::default()
         .with_split_scalar_strings(true)
         .with_delimiters(delimiters);
+    let limits = ConversionLimits::default();
 
     c.bench_function("scalar_collection_large_delimiter_set", |b| {
         b.iter(|| {
             black_box(
                 black_box(&options)
-                    .scalar_items(black_box(input.as_str()))
+                    .scalar_items(
+                        black_box(limits.collection()),
+                        black_box(input.as_str()),
+                    )
                     .count(),
             )
         });

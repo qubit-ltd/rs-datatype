@@ -20,10 +20,11 @@ use qubit_budget::BudgetError;
 use super::super::super::string_source::normalize;
 #[cfg(feature = "big-decimal")]
 use super::parsed_number::ParsedNumber;
+use crate::converter::ConversionPolicy;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionOptions;
 use crate::converter::FractionalToIntegerPolicy;
 use crate::converter::InvalidValueReason;
+use crate::converter::NumericConversionLimits;
 use crate::datatype::DataType;
 
 /// Normalizes numeric text and enforces its configured byte limit.
@@ -48,11 +49,12 @@ use crate::datatype::DataType;
 #[inline(always)]
 pub(super) fn normalize_numeric_text<'a>(
     value: &'a str,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
+    limits: &NumericConversionLimits,
     to: DataType,
 ) -> Result<&'a str, DataConversionError> {
     let value = normalize(value, options, to)?;
-    check_numeric_text_limit(value, options, to)?;
+    check_numeric_text_limit(value, limits, to)?;
     Ok(value)
 }
 
@@ -75,12 +77,10 @@ pub(super) fn normalize_numeric_text<'a>(
 #[inline]
 pub(in crate::converter::data_converter) fn check_numeric_text_limit(
     value: &str,
-    options: &DataConversionOptions,
+    limits: &NumericConversionLimits,
     to: DataType,
 ) -> Result<(), DataConversionError> {
-    options
-        .numeric()
-        .limits()
+    limits
         .max_text_bytes_limit()
         .check(value.len())
         .map_err(|error| {

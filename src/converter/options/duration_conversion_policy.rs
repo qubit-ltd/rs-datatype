@@ -5,15 +5,14 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # Duration Conversion Options
+//! # Duration Conversion Policy
 //!
-//! Defines options that control duration conversion.
+//! Defines policy that controls duration conversion.
 
 use serde::Deserialize;
 use serde::Serialize;
 
 use super::DurationRoundingPolicy;
-use crate::duration::DurationTextOptions;
 use crate::duration::DurationUnit;
 use crate::duration::DurationUnitParseMode;
 use crate::duration::SuffixlessDurationPolicy;
@@ -31,41 +30,41 @@ use crate::duration::SuffixlessDurationPolicy;
 /// use std::time::Duration;
 ///
 /// use qubit_datatype::{
-///     DataConversionOptions,
+///     ConversionLimits,
+///     ConversionPolicy,
 ///     DataConverter,
-///     DurationConversionOptions,
+///     DurationConversionPolicy,
 ///     DurationUnit,
 ///     SuffixlessDurationPolicy,
 /// };
 ///
-/// let duration = DurationConversionOptions::default()
+/// let duration = DurationConversionPolicy::default()
 ///     .with_numeric_input_unit(DurationUnit::Seconds)
 ///     .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject)
 ///     .with_output_unit(DurationUnit::Milliseconds);
-/// let options = DataConversionOptions::strict().with_duration_options(duration);
+/// let policy = ConversionPolicy::strict().with_duration_policy(duration);
+/// let limits = ConversionLimits::default();
 ///
 /// assert_eq!(
-///     DataConverter::from(2_u64).to_with::<Duration>(&options),
+///     DataConverter::from(2_u64).to_with::<Duration>(&policy, &limits),
 ///     Ok(Duration::from_secs(2)),
 /// );
 /// assert_eq!(
-///     DataConverter::from(Duration::from_secs(2)).to_with::<String>(&options),
+///     DataConverter::from(Duration::from_secs(2)).to_with::<String>(&policy, &limits),
 ///     Ok("2000ms".to_owned()),
 /// );
-/// assert!(DataConverter::from("2").to_with::<Duration>(&options).is_err());
+/// assert!(DataConverter::from("2").to_with::<Duration>(&policy, &limits).is_err());
 /// ```
 #[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
-pub struct DurationConversionOptions {
+pub struct DurationConversionPolicy {
     /// Unit assigned to integer sources converted to [`std::time::Duration`].
     numeric_input_unit: DurationUnit,
     /// Policy for Duration strings that omit an explicit unit suffix.
     suffixless_string_policy: SuffixlessDurationPolicy,
     /// Strictness applied to explicit Duration unit symbols.
     unit_parse_mode: DurationUnitParseMode,
-    /// Maximum accepted Duration source text length in bytes.
-    max_text_bytes: usize,
     /// Unit used when converting a Duration to an integer or string.
     output_unit: DurationUnit,
     /// Whether formatted duration strings include the unit suffix.
@@ -74,7 +73,7 @@ pub struct DurationConversionOptions {
     rounding_policy: DurationRoundingPolicy,
 }
 
-impl DurationConversionOptions {
+impl DurationConversionPolicy {
     /// Creates duration options for environment-variable input.
     ///
     /// The profile interprets suffixless integers as milliseconds and accepts
@@ -83,7 +82,7 @@ impl DurationConversionOptions {
     ///
     /// # Returns
     ///
-    /// Environment-friendly duration conversion options.
+    /// Environment-friendly duration conversion policy.
     #[inline(always)]
     pub fn env_friendly() -> Self {
         Self::default()
@@ -174,39 +173,6 @@ impl DurationConversionOptions {
         self
     }
 
-    /// Returns the maximum accepted Duration source text length in bytes.
-    ///
-    /// # Returns
-    ///
-    /// The normalized source text byte limit.
-    ///
-    /// ```compile_fail
-    /// #![deny(unused_must_use)]
-    /// use qubit_datatype::DurationConversionOptions;
-    ///
-    /// DurationConversionOptions::default().max_text_bytes();
-    /// ```
-    #[must_use]
-    #[inline(always)]
-    pub const fn max_text_bytes(&self) -> usize {
-        self.max_text_bytes
-    }
-
-    /// Returns a copy with a different Duration source text byte limit.
-    ///
-    /// # Parameters
-    ///
-    /// * `maximum` - Maximum accepted source text length in bytes.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    #[inline(always)]
-    pub const fn with_max_text_bytes(mut self, maximum: usize) -> Self {
-        self.max_text_bytes = maximum;
-        self
-    }
-
     /// Returns the unit used for Duration output.
     ///
     /// # Returns
@@ -241,9 +207,9 @@ impl DurationConversionOptions {
     ///
     /// ```compile_fail
     /// #![deny(unused_must_use)]
-    /// use qubit_datatype::DurationConversionOptions;
+    /// use qubit_datatype::DurationConversionPolicy;
     ///
-    /// DurationConversionOptions::default().append_unit_suffix();
+    /// DurationConversionPolicy::default().append_unit_suffix();
     /// ```
     #[must_use]
     #[inline(always)]
@@ -296,8 +262,8 @@ impl DurationConversionOptions {
     }
 }
 
-impl Default for DurationConversionOptions {
-    /// Creates default duration conversion options.
+impl Default for DurationConversionPolicy {
+    /// Creates default duration conversion policy.
     ///
     /// # Returns
     ///
@@ -308,7 +274,6 @@ impl Default for DurationConversionOptions {
             numeric_input_unit: DurationUnit::default(),
             suffixless_string_policy: SuffixlessDurationPolicy::Reject,
             unit_parse_mode: DurationUnitParseMode::Strict,
-            max_text_bytes: DurationTextOptions::DEFAULT_MAX_TEXT_BYTES,
             output_unit: DurationUnit::default(),
             append_unit_suffix: true,
             rounding_policy: DurationRoundingPolicy::default(),

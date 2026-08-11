@@ -17,17 +17,17 @@ use num_bigint::BigInt;
 #[cfg(feature = "big-integer")]
 use qubit_budget::BudgetError;
 #[cfg(feature = "big-integer")]
+use qubit_datatype::ConversionLimits;
+#[cfg(feature = "big-integer")]
+use qubit_datatype::ConversionPolicy;
+#[cfg(feature = "big-integer")]
 use qubit_datatype::ConversionResource;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::DataConversionErrorKind;
-#[cfg(feature = "big-integer")]
-use qubit_datatype::DataConversionOptions;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use qubit_datatype::DataConverter;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::NumericConversionLimits;
-#[cfg(feature = "big-integer")]
-use qubit_datatype::NumericConversionOptions;
 
 /// Creates strict options with the supplied BigInteger digit limit.
 ///
@@ -40,14 +40,9 @@ use qubit_datatype::NumericConversionOptions;
 ///
 /// Strict conversion options carrying the requested digit limit.
 #[cfg(feature = "big-integer")]
-fn options_with_big_integer_digit_limit(
-    maximum: usize,
-) -> DataConversionOptions {
-    DataConversionOptions::strict().with_numeric_options(
-        NumericConversionOptions::strict().with_limits(
-            NumericConversionLimits::default()
-                .with_max_big_integer_digits(maximum),
-        ),
+fn limits_with_big_integer_digit_limit(maximum: usize) -> ConversionLimits {
+    ConversionLimits::default().with_numeric_limits(
+        NumericConversionLimits::default().with_max_big_integer_digits(maximum),
     )
 }
 
@@ -76,9 +71,10 @@ fn test_text_to_big_decimal_preserves_value() {
 #[cfg(feature = "big-integer")]
 #[test]
 fn test_primitive_to_bigint_enforces_result_digit_limit() {
-    let options = options_with_big_integer_digit_limit(3);
+    let policy = ConversionPolicy::strict();
+    let limits = limits_with_big_integer_digit_limit(3);
     let error = DataConverter::from(1_234_u16)
-        .to_with::<BigInt>(&options)
+        .to_with::<BigInt>(&policy, &limits)
         .expect_err("a four-digit result must exceed a three-digit limit");
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
@@ -97,9 +93,10 @@ fn test_primitive_to_bigint_enforces_result_digit_limit() {
 #[test]
 fn test_bigint_to_bigint_enforces_result_digit_limit() {
     let source = BigInt::from(1_234_u16);
-    let options = options_with_big_integer_digit_limit(3);
+    let policy = ConversionPolicy::strict();
+    let limits = limits_with_big_integer_digit_limit(3);
     let error = DataConverter::from(&source)
-        .to_with::<BigInt>(&options)
+        .to_with::<BigInt>(&policy, &limits)
         .expect_err("a four-digit result must exceed a three-digit limit");
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
@@ -118,13 +115,10 @@ fn test_bigint_to_bigint_enforces_result_digit_limit() {
 #[test]
 fn test_positive_scale_decimal_to_bigint_enforces_result_digit_limit() {
     let source = BigDecimal::new(BigInt::from(12_345_u32), 1);
-    let options = DataConversionOptions::lossy().with_numeric_options(
-        NumericConversionOptions::lossy().with_limits(
-            NumericConversionLimits::default().with_max_big_integer_digits(3),
-        ),
-    );
+    let policy = ConversionPolicy::lossy();
+    let limits = limits_with_big_integer_digit_limit(3);
     let error = DataConverter::from(&source)
-        .to_with::<BigInt>(&options)
+        .to_with::<BigInt>(&policy, &limits)
         .expect_err("a four-digit quotient must exceed a three-digit limit");
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
@@ -142,9 +136,10 @@ fn test_positive_scale_decimal_to_bigint_enforces_result_digit_limit() {
 #[cfg(feature = "big-integer")]
 #[test]
 fn test_text_to_bigint_rejects_unrepresentable_exponent() {
-    let options = options_with_big_integer_digit_limit(usize::MAX);
+    let policy = ConversionPolicy::strict();
+    let limits = limits_with_big_integer_digit_limit(usize::MAX);
     let error = DataConverter::from("1e4294967296")
-        .to_with::<BigInt>(&options)
+        .to_with::<BigInt>(&policy, &limits)
         .expect_err("an exponent above u32::MAX must be rejected");
 
     assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);

@@ -19,10 +19,11 @@ use super::DataConverter;
 use super::numeric::duration_to_u128;
 use super::numeric::source_to_integer;
 use super::string_source::normalize;
+use crate::converter::ConversionPolicy;
 use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
+use crate::converter::DurationConversionLimits;
 use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
 use crate::duration::DurationParseError;
@@ -49,7 +50,7 @@ use crate::duration::parse_duration_text;
 fn integer_to_duration(
     value: (bool, u128),
     from: DataType,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
 ) -> Result<Duration, DataConversionError> {
     let (negative, value) = value;
     if negative {
@@ -84,13 +85,14 @@ fn integer_to_duration(
 /// Duration text options equivalent to the converter configuration.
 #[inline(always)]
 fn duration_text_options(
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
+    limits: &DurationConversionLimits,
 ) -> DurationTextOptions {
     DurationTextOptions::new(
         options.duration().suffixless_string_policy(),
         options.duration().unit_parse_mode(),
     )
-    .with_max_text_bytes(options.duration().max_text_bytes())
+    .with_max_text_bytes(limits.max_text_bytes())
 }
 
 /// Selects the expected duration grammar for an invalid source value.
@@ -106,7 +108,7 @@ fn duration_text_options(
 /// strict and lenient unit vocabularies.
 fn expected_duration_syntax(
     value: &str,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
 ) -> &'static str {
     let suffix_required = !value.is_empty()
         && value.bytes().all(|byte| byte.is_ascii_digit())
@@ -143,7 +145,7 @@ fn expected_duration_syntax(
 fn map_duration_parse_error(
     error: DurationParseError,
     value: &str,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
 ) -> DataConversionError {
     let to = DataType::Duration;
     match error {
@@ -206,10 +208,11 @@ fn map_duration_parse_error(
 #[inline(always)]
 fn parse_duration(
     value: &str,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
+    limits: &DurationConversionLimits,
 ) -> Result<Duration, DataConversionError> {
     let value = normalize(value, options, DataType::Duration)?;
-    parse_duration_text(value, &duration_text_options(options))
+    parse_duration_text(value, &duration_text_options(options, limits))
         .map_err(|error| map_duration_parse_error(error, value, options))
 }
 
@@ -233,10 +236,13 @@ impl DataConversionTarget for Duration {
         source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.options();
+        let options = session.policy();
+        let limits = session.limits();
         match source {
             DataConverter::Duration(value) => Ok(*value),
-            DataConverter::String(value) => parse_duration(value, options),
+            DataConverter::String(value) => {
+                parse_duration(value, options, limits.duration())
+            }
             DataConverter::Unset(_) => Err(source.missing(DataType::Duration)),
             DataConverter::Int8(_)
             | DataConverter::Int16(_)
@@ -248,7 +254,12 @@ impl DataConversionTarget for Duration {
             | DataConverter::UInt32(_)
             | DataConverter::UInt64(_)
             | DataConverter::UInt128(_) => integer_to_duration(
-                source_to_integer(source, options, DataType::Duration)?,
+                source_to_integer(
+                    source,
+                    options,
+                    limits.numeric(),
+                    DataType::Duration,
+                )?,
                 source.data_type(),
                 options,
             ),
@@ -295,7 +306,7 @@ impl DataConversionTarget for Duration {
 #[inline]
 pub(super) fn duration_text_parts(
     value: Duration,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
 ) -> Result<(u128, Option<&'static str>), DataConversionError> {
     let units = duration_to_u128(value, options, DataType::String)?;
     let suffix = options

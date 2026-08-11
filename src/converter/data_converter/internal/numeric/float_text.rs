@@ -8,8 +8,8 @@
 //! Exact decimal-text parsing for primitive floating-point targets.
 
 use super::syntax::invalid_numeric_syntax;
+use crate::converter::ConversionPolicy;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionOptions;
 use crate::converter::FloatRoundingPolicy;
 use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
@@ -244,7 +244,7 @@ fn explicit_infinity_is_negative(value: &str) -> Option<bool> {
 /// exactness check fails.
 pub(super) fn parse_text_f64(
     value: &str,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
     to: DataType,
 ) -> Result<f64, DataConversionError> {
     let explicit_nan = value.eq_ignore_ascii_case("nan");
@@ -301,7 +301,7 @@ pub(super) fn parse_text_f64(
 /// exactness check fails.
 pub(super) fn parse_text_f32(
     value: &str,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
     to: DataType,
 ) -> Result<f32, DataConversionError> {
     let explicit_nan = value.eq_ignore_ascii_case("nan");

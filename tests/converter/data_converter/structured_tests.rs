@@ -67,14 +67,18 @@ use chrono::Utc;
 use num_bigint::BigInt;
 #[cfg(any(feature = "json", feature = "url"))]
 use qubit_budget::BudgetError;
+#[cfg(any(feature = "json", feature = "url"))]
+use qubit_datatype::ConversionLimits;
 #[cfg(feature = "json")]
-use qubit_datatype::ConversionBudgetLimits;
+use qubit_datatype::ConversionOperationLimits;
+#[cfg(any(feature = "json", feature = "url"))]
+use qubit_datatype::ConversionPolicy;
 #[cfg(any(feature = "json", feature = "url"))]
 use qubit_datatype::ConversionResource;
+#[cfg(feature = "json")]
+use qubit_datatype::ConversionSession;
 #[cfg(any(feature = "json", feature = "url"))]
 use qubit_datatype::DataConversionError;
-#[cfg(any(feature = "json", feature = "url"))]
-use qubit_datatype::DataConversionOptions;
 use qubit_datatype::DataConverter;
 #[cfg(all(
     feature = "big-number",
@@ -169,17 +173,19 @@ fn assert_budget_resource<T>(
 #[cfg(feature = "json")]
 #[test]
 fn test_data_converter_rejects_oversize_structured_text() {
-    let options = DataConversionOptions::default().with_structured_limits(
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::default().with_structured_limits(
         StructuredConversionLimits::default().with_max_text_bytes(2),
     );
 
     assert!(
         DataConverter::from("[]")
-            .to_with::<serde_json::Value>(&options)
+            .to_with::<serde_json::Value>(&policy, &limits)
             .is_ok()
     );
     assert_eq!(
-        DataConverter::from("[0]").to_with::<serde_json::Value>(&options),
+        DataConverter::from("[0]")
+            .to_with::<serde_json::Value>(&policy, &limits),
         Err(DataConversionError::limit_exceeded(
             DataType::String,
             DataType::Json,
@@ -193,12 +199,12 @@ fn test_data_converter_rejects_oversize_structured_text() {
 
     assert!(
         DataConverter::from("{}")
-            .to_with::<HashMap<String, String>>(&options)
+            .to_with::<HashMap<String, String>>(&policy, &limits)
             .is_ok()
     );
     assert_eq!(
         DataConverter::from(r#"{"a":"b"}"#)
-            .to_with::<HashMap<String, String>>(&options),
+            .to_with::<HashMap<String, String>>(&policy, &limits),
         Err(DataConversionError::limit_exceeded(
             DataType::String,
             DataType::StringMap,
@@ -216,27 +222,26 @@ fn test_data_converter_rejects_oversize_structured_text() {
 #[cfg(feature = "json")]
 #[test]
 fn test_data_converter_rejects_json_text_exceeding_structure_limits() {
-    let depth_options = DataConversionOptions::default()
-        .with_structured_limits(
-            StructuredConversionLimits::default().with_max_depth(2),
-        );
+    let policy = ConversionPolicy::default();
+    let depth_limits = ConversionLimits::default().with_structured_limits(
+        StructuredConversionLimits::default().with_max_depth(2),
+    );
     assert_budget_resource(
         DataConverter::from("[[0]]")
-            .to_with::<serde_json::Value>(&depth_options),
+            .to_with::<serde_json::Value>(&policy, &depth_limits),
         ConversionResource::StructuredDepth,
     );
 
-    let sequence_options = DataConversionOptions::default()
-        .with_structured_limits(
-            StructuredConversionLimits::default().with_max_sequence_items(1),
-        );
+    let sequence_limits = ConversionLimits::default().with_structured_limits(
+        StructuredConversionLimits::default().with_max_sequence_items(1),
+    );
     assert_budget_resource(
         DataConverter::from("[0,1]")
-            .to_with::<serde_json::Value>(&sequence_options),
+            .to_with::<serde_json::Value>(&policy, &sequence_limits),
         ConversionResource::SequenceItems,
     );
 
-    let map_options = DataConversionOptions::default().with_structured_limits(
+    let map_limits = ConversionLimits::default().with_structured_limits(
         StructuredConversionLimits::default().with_max_map_entries(1),
     );
     assert_budget_resource(
@@ -244,7 +249,8 @@ fn test_data_converter_rejects_json_text_exceeding_structure_limits() {
             String,
             String,
         >>(
-            &map_options
+            &policy,
+            &map_limits,
         ),
         ConversionResource::MapEntries,
     );
@@ -254,10 +260,11 @@ fn test_data_converter_rejects_json_text_exceeding_structure_limits() {
 #[cfg(feature = "json")]
 #[test]
 fn test_data_converter_json_text_accumulates_structured_nodes_in_session() {
-    let options = DataConversionOptions::default().with_budget_limits(
-        ConversionBudgetLimits::default().with_max_structured_nodes(2),
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default().with_max_structured_nodes(2),
     );
-    let mut session = options.session();
+    let mut session = ConversionSession::new(&policy, &limits);
 
     DataConverter::from("[0]")
         .to_in::<serde_json::Value>(&mut session)
@@ -273,41 +280,44 @@ fn test_data_converter_json_text_accumulates_structured_nodes_in_session() {
 #[cfg(feature = "json")]
 #[test]
 fn test_data_converter_structured_budget_is_content_invariant() {
-    let json_options = DataConversionOptions::default().with_budget_limits(
-        ConversionBudgetLimits::default().with_max_structured_nodes(1),
+    let policy = ConversionPolicy::default();
+    let json_limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default().with_max_structured_nodes(1),
     );
     let json = serde_json::json!(["value"]);
     assert_budget_resource(
-        DataConverter::from(&json).to_with::<serde_json::Value>(&json_options),
+        DataConverter::from(&json)
+            .to_with::<serde_json::Value>(&policy, &json_limits),
         ConversionResource::StructuredNodes,
     );
     assert_budget_resource(
         DataConverter::from(json)
-            .into_target_with::<serde_json::Value>(&json_options),
+            .into_target_with::<serde_json::Value>(&policy, &json_limits),
         ConversionResource::StructuredNodes,
     );
 
-    let map_options = DataConversionOptions::default().with_budget_limits(
-        ConversionBudgetLimits::default().with_max_structured_nodes(1),
+    let map_limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default().with_max_structured_nodes(1),
     );
     let map = HashMap::from([("key".to_owned(), "value".to_owned())]);
     assert_budget_resource(
         DataConverter::from(&map)
-            .to_with::<HashMap<String, String>>(&map_options),
+            .to_with::<HashMap<String, String>>(&policy, &map_limits),
         ConversionResource::StructuredNodes,
     );
     assert_budget_resource(
         DataConverter::from(map)
-            .into_target_with::<HashMap<String, String>>(&map_options),
+            .into_target_with::<HashMap<String, String>>(&policy, &map_limits),
         ConversionResource::StructuredNodes,
     );
 
-    let string_options = DataConversionOptions::default().with_budget_limits(
-        ConversionBudgetLimits::default().with_max_structured_nodes(1),
+    let string_limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default().with_max_structured_nodes(1),
     );
     let json = serde_json::json!(["value"]);
     assert_budget_resource(
-        DataConverter::from(json).into_target_with::<String>(&string_options),
+        DataConverter::from(json)
+            .into_target_with::<String>(&policy, &string_limits),
         ConversionResource::StructuredNodes,
     );
 }
@@ -316,16 +326,18 @@ fn test_data_converter_structured_budget_is_content_invariant() {
 #[cfg(feature = "url")]
 #[test]
 fn test_data_converter_rejects_oversize_url_text() {
-    let options = DataConversionOptions::default().with_structured_limits(
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::default().with_structured_limits(
         StructuredConversionLimits::default().with_max_text_bytes(14),
     );
 
     assert_eq!(
-        DataConverter::from("https://a.test").to_with::<Url>(&options),
+        DataConverter::from("https://a.test").to_with::<Url>(&policy, &limits),
         Ok(Url::parse("https://a.test").expect("test URL should parse")),
     );
     assert_eq!(
-        DataConverter::from("https://a.test/x").to_with::<Url>(&options),
+        DataConverter::from("https://a.test/x")
+            .to_with::<Url>(&policy, &limits),
         Err(DataConversionError::limit_exceeded(
             DataType::String,
             DataType::Url,

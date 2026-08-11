@@ -5,35 +5,39 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # Collection Conversion Options
+//! # Collection Conversion Policy
 //!
-//! Defines options that control scalar-string-to-collection conversion.
+//! Defines policy that controls scalar-string-to-collection conversion.
 
 use serde::Deserialize;
 use serde::Serialize;
 
 use super::super::scalar_items::ScalarItems;
+use super::collection_conversion_limits::CollectionConversionLimits;
 use super::empty_item_policy::EmptyItemPolicy;
 
 /// Controls how one scalar string is exposed as collection items.
 ///
-/// These options are consumed by [`crate::ScalarStringDataConverters`], not by
+/// This policy is consumed by [`crate::ScalarStringDataConverters`], not by
 /// [`crate::DataConverters`] over an already-materialized collection. Splitting
 /// is lazy, preserves each raw item's original index, and applies trimming
 /// before [`EmptyItemPolicy`]. Items removed by [`EmptyItemPolicy::Skip`] do
-/// not count toward the retained-item limit.
+/// not affect other conversion policy.
 ///
 /// # Examples
 ///
 /// ```
-/// use qubit_datatype::{CollectionConversionOptions, EmptyItemPolicy};
+/// use qubit_datatype::{
+///     CollectionConversionLimits, CollectionConversionPolicy, EmptyItemPolicy,
+/// };
 ///
-/// let options = CollectionConversionOptions::default()
+/// let options = CollectionConversionPolicy::default()
 ///     .with_split_scalar_strings(true)
 ///     .with_trim_items(true)
 ///     .with_empty_item_policy(EmptyItemPolicy::Skip);
+/// let limits = CollectionConversionLimits::default();
 /// let items: Vec<_> = options
-///     .scalar_items("1, ,3")
+///     .scalar_items(&limits, "1, ,3")
 ///     .map(|item| item.expect("empty items are skipped").value)
 ///     .collect();
 /// assert_eq!(items, ["1", "3"]);
@@ -41,7 +45,7 @@ use super::empty_item_policy::EmptyItemPolicy;
 #[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
-pub struct CollectionConversionOptions {
+pub struct CollectionConversionPolicy {
     /// Whether a scalar string can be split into collection items.
     split_scalar_strings: bool,
     /// Delimiters used to split scalar strings.
@@ -50,12 +54,10 @@ pub struct CollectionConversionOptions {
     trim_items: bool,
     /// How empty split items are interpreted.
     empty_item_policy: EmptyItemPolicy,
-    /// Maximum number of retained scalar items.
-    max_items: usize,
 }
 
-impl Default for CollectionConversionOptions {
-    /// Creates default collection conversion options.
+impl Default for CollectionConversionPolicy {
+    /// Creates default collection conversion policy.
     ///
     /// # Returns
     ///
@@ -67,15 +69,11 @@ impl Default for CollectionConversionOptions {
             delimiters: vec![','],
             trim_items: false,
             empty_item_policy: EmptyItemPolicy::Keep,
-            max_items: Self::DEFAULT_MAX_ITEMS,
         }
     }
 }
 
-impl CollectionConversionOptions {
-    /// Default maximum number of retained scalar collection items.
-    pub const DEFAULT_MAX_ITEMS: usize = 65_536;
-
+impl CollectionConversionPolicy {
     /// Creates options suitable for environment-variable lists.
     ///
     /// The profile splits comma-separated scalar strings, trims each item,
@@ -92,7 +90,6 @@ impl CollectionConversionOptions {
             delimiters: vec![','],
             trim_items: true,
             empty_item_policy: EmptyItemPolicy::Skip,
-            max_items: Self::DEFAULT_MAX_ITEMS,
         }
     }
 
@@ -133,9 +130,9 @@ impl CollectionConversionOptions {
     ///
     /// ```compile_fail
     /// #![deny(unused_must_use)]
-    /// use qubit_datatype::CollectionConversionOptions;
+    /// use qubit_datatype::CollectionConversionPolicy;
     ///
-    /// CollectionConversionOptions::default().delimiters();
+    /// CollectionConversionPolicy::default().delimiters();
     /// ```
     #[must_use]
     #[inline(always)]
@@ -214,51 +211,22 @@ impl CollectionConversionOptions {
         self
     }
 
-    /// Returns the maximum number of retained scalar collection items.
-    ///
-    /// # Returns
-    ///
-    /// The retained-item limit after empty-item filtering.
-    #[must_use]
-    #[inline(always)]
-    pub const fn max_items(&self) -> usize {
-        self.max_items
-    }
-
-    /// Returns a copy with a different retained-item limit.
+    /// Splits and normalizes a scalar string under explicit value limits.
     ///
     /// # Parameters
     ///
-    /// * `maximum` - Maximum retained items after trimming and empty-item
-    ///   filtering. Zero permits only an empty result.
+    /// * `limits` - Retained-item limits for this scalar collection.
+    /// * `value` - Normalized scalar source text.
     ///
     /// # Returns
     ///
-    /// Updated options.
+    /// A lazy iterator borrowing the policy and source text.
     #[inline(always)]
-    pub const fn with_max_items(mut self, maximum: usize) -> Self {
-        self.max_items = maximum;
-        self
-    }
-
-    /// Splits and normalizes a scalar string into collection items.
-    ///
-    /// # Type Parameters
-    ///
-    /// * `'a` - Lifetime shared by `value`, these options, and the returned
-    ///   iterator.
-    ///
-    /// # Parameters
-    ///
-    /// * `value` - Normalized scalar string.
-    ///
-    /// # Returns
-    ///
-    /// Returns a lazy iterator that borrows `value` and these options. Each
-    /// yielded item retains its index in the unsuppressed split sequence.
-    /// Rejected empty items are reported only when iteration reaches them.
-    #[inline(always)]
-    pub fn scalar_items<'a>(&'a self, value: &'a str) -> ScalarItems<'a> {
-        ScalarItems::new(self, value)
+    pub fn scalar_items<'a>(
+        &'a self,
+        limits: &CollectionConversionLimits,
+        value: &'a str,
+    ) -> ScalarItems<'a> {
+        ScalarItems::new(self, limits.max_items(), value)
     }
 }

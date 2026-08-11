@@ -7,8 +7,8 @@
 // =============================================================================
 //! Shared normalization for textual converter sources.
 
+use crate::converter::ConversionPolicy;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionOptions;
 use crate::datatype::DataType;
 
 /// Normalizes a textual source and attaches target context to policy errors.
@@ -34,7 +34,7 @@ use crate::datatype::DataType;
 #[inline(always)]
 pub(super) fn normalize<'a>(
     value: &'a str,
-    options: &DataConversionOptions,
+    options: &ConversionPolicy,
     to: DataType,
 ) -> Result<&'a str, DataConversionError> {
     options

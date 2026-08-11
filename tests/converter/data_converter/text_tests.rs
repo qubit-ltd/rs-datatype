@@ -42,12 +42,12 @@ use chrono::Utc;
     feature = "json"
 ))]
 use num_bigint::BigInt;
+use qubit_datatype::ConversionPolicy;
 use qubit_datatype::DataConversionError;
-use qubit_datatype::DataConversionOptions;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
 use qubit_datatype::InvalidValueReason;
-use qubit_datatype::StringConversionOptions;
+use qubit_datatype::StringConversionPolicy;
 use qubit_datatype::converter::DataConversionErrorKind;
 #[cfg(feature = "url")]
 use url::Url;
@@ -567,11 +567,13 @@ fn test_data_converter_consuming_string_identity_reuses_owned_storage() {
         .expect("borrowed String identity conversion should succeed");
     assert_ne!(converted.as_ptr(), borrowed_pointer);
 
-    let options = DataConversionOptions::default().with_string_options(
-        StringConversionOptions::default().with_trim(true),
-    );
+    let options = ConversionPolicy::default()
+        .with_string_policy(StringConversionPolicy::default().with_trim(true));
     let trimmed = DataConverter::from(String::from("  payload  "))
-        .into_target_with::<String>(&options)
+        .into_target_with::<String>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref(),
+        )
         .expect("consuming String conversion should still trim text");
     assert_eq!(trimmed, "payload");
 

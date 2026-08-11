@@ -7,19 +7,23 @@
 // =============================================================================
 //! Tests for lazy scalar collection item iteration.
 
-use qubit_datatype::converter::CollectionConversionOptions;
+use qubit_datatype::converter::CollectionConversionLimits;
+use qubit_datatype::converter::CollectionConversionPolicy;
 use qubit_datatype::converter::EmptyItemPolicy;
 use qubit_datatype::converter::ScalarItems;
 
 /// Test lazy splitting, trimming, skipping, and original source indices.
 #[test]
 fn test_scalar_items_lazily_retains_original_indices() {
-    let options = CollectionConversionOptions::default()
+    let options = CollectionConversionPolicy::default()
         .with_split_scalar_strings(true)
         .with_delimiters([',', '、'])
         .with_trim_items(true)
         .with_empty_item_policy(EmptyItemPolicy::Skip);
-    let mut items: ScalarItems<'_> = options.scalar_items(" alpha,  、beta ");
+    let mut items: ScalarItems<'_> = options.scalar_items(
+        &CollectionConversionLimits::default(),
+        " alpha,  、beta ",
+    );
 
     let first = items
         .next()
@@ -38,11 +42,12 @@ fn test_scalar_items_lazily_retains_original_indices() {
 /// Test rejection is discovered lazily and iteration can continue afterward.
 #[test]
 fn test_scalar_items_reports_rejection_when_reached() {
-    let options = CollectionConversionOptions::default()
+    let options = CollectionConversionPolicy::default()
         .with_split_scalar_strings(true)
         .with_trim_items(true)
         .with_empty_item_policy(EmptyItemPolicy::Reject);
-    let mut items = options.scalar_items("first, ,third");
+    let mut items = options
+        .scalar_items(&CollectionConversionLimits::default(), "first, ,third");
 
     assert_eq!(
         items
@@ -74,12 +79,12 @@ fn test_scalar_items_reports_rejection_when_reached() {
 /// Test retained-item limits after empty-item filtering.
 #[test]
 fn test_scalar_items_enforces_retained_item_limit() {
-    let options = CollectionConversionOptions::default()
+    let options = CollectionConversionPolicy::default()
         .with_split_scalar_strings(true)
         .with_trim_items(true)
-        .with_empty_item_policy(EmptyItemPolicy::Skip)
-        .with_max_items(2);
-    let mut items = options.scalar_items("a,  ,b,c,d");
+        .with_empty_item_policy(EmptyItemPolicy::Skip);
+    let limits = CollectionConversionLimits::default().with_max_items(2);
+    let mut items = options.scalar_items(&limits, "a,  ,b,c,d");
 
     assert_eq!(items.next().expect("first item").expect("valid").value, "a");
     assert_eq!(
@@ -98,11 +103,11 @@ fn test_scalar_items_enforces_retained_item_limit() {
 /// Test rejected empty items take precedence and do not consume quota.
 #[test]
 fn test_scalar_items_rejection_precedes_item_limit() {
-    let options = CollectionConversionOptions::default()
+    let options = CollectionConversionPolicy::default()
         .with_split_scalar_strings(true)
-        .with_empty_item_policy(EmptyItemPolicy::Reject)
-        .with_max_items(1);
-    let mut items = options.scalar_items("a,,b");
+        .with_empty_item_policy(EmptyItemPolicy::Reject);
+    let limits = CollectionConversionLimits::default().with_max_items(1);
+    let mut items = options.scalar_items(&limits, "a,,b");
 
     assert_eq!(items.next().expect("first item").expect("valid").value, "a");
     let blank = items
@@ -123,22 +128,21 @@ fn test_scalar_items_rejection_precedes_item_limit() {
 /// Test zero permits only an empty retained result.
 #[test]
 fn test_scalar_items_zero_limit_allows_only_empty_result() {
-    let retained = CollectionConversionOptions::default()
-        .with_split_scalar_strings(true)
-        .with_max_items(0);
+    let retained =
+        CollectionConversionPolicy::default().with_split_scalar_strings(true);
+    let zero = CollectionConversionLimits::default().with_max_items(0);
     let error = retained
-        .scalar_items("a")
+        .scalar_items(&zero, "a")
         .next()
         .expect("limit error")
         .expect_err("zero limit must reject the first retained item");
     assert_eq!(error.source_index(), 0);
     assert_eq!(error.maximum_items(), Some(0));
 
-    let skipped = CollectionConversionOptions::default()
+    let skipped = CollectionConversionPolicy::default()
         .with_split_scalar_strings(true)
-        .with_empty_item_policy(EmptyItemPolicy::Skip)
-        .with_max_items(0);
-    assert!(skipped.scalar_items(",,").next().is_none());
+        .with_empty_item_policy(EmptyItemPolicy::Skip);
+    assert!(skipped.scalar_items(&zero, ",,").next().is_none());
 }
 
 /// Test a large delimiter set preserves Unicode splitting semantics.
@@ -146,11 +150,14 @@ fn test_scalar_items_zero_limit_allows_only_empty_result() {
 fn test_scalar_items_supports_large_delimiter_sets() {
     let delimiters =
         std::iter::once(',').chain((0x100..0x140).filter_map(char::from_u32));
-    let options = CollectionConversionOptions::default()
+    let options = CollectionConversionPolicy::default()
         .with_split_scalar_strings(true)
         .with_delimiters(delimiters);
     let values = options
-        .scalar_items("alpha,bravoĀcharlie")
+        .scalar_items(
+            &CollectionConversionLimits::default(),
+            "alpha,bravoĀcharlie",
+        )
         .map(|item| item.expect("all split items should be valid").value)
         .collect::<Vec<_>>();
 

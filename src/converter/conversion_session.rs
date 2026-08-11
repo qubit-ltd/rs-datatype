@@ -10,59 +10,49 @@
 use qubit_budget::BudgetError;
 use qubit_budget::BudgetedStringError;
 use qubit_budget::BudgetedStringWriter;
-use qubit_budget::JsonBudget;
-use qubit_budget::JsonLimits;
-use qubit_budget::ResourceBudget;
-use qubit_budget::StructureLimits;
+use qubit_budget::ResourceLimit;
 
+use super::conversion_budget::ConversionBudget;
 use super::conversion_resource::ConversionResource;
 use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::DataConversionError;
-use super::options::DataConversionOptions;
+use super::options::ConversionLimits;
+use super::options::ConversionPolicy;
 
 /// Mutable conversion accounting shared by nested and batch conversions.
 #[must_use]
 #[derive(Debug, PartialEq, Eq)]
 pub struct ConversionSession<'a> {
-    options: &'a DataConversionOptions,
-    items: ResourceBudget<ConversionResource, usize>,
-    input_bytes: ResourceBudget<ConversionResource, usize>,
-    output_bytes: ResourceBudget<ConversionResource, usize>,
-    json: JsonBudget<ConversionResource, usize>,
+    policy: &'a ConversionPolicy,
+    limits: &'a ConversionLimits,
+    budget: ConversionBudget,
 }
 
 impl<'a> ConversionSession<'a> {
-    /// Creates a fresh session with all budgets copied from `options`.
+    /// Creates a fresh session from immutable policy and limit configuration.
     #[inline]
-    pub fn new(options: &'a DataConversionOptions) -> Self {
-        let structured = options.structured();
-        let structure_limits = StructureLimits::empty()
-            .with_depth_limit(*structured.max_depth_limit())
-            .with_nodes_limit(*options.budget().max_structured_nodes_limit())
-            .with_sequence_items_limit(*structured.max_sequence_items_limit())
-            .with_map_entries_limit(*structured.max_map_entries_limit());
+    pub fn new(
+        policy: &'a ConversionPolicy,
+        limits: &'a ConversionLimits,
+    ) -> Self {
         Self {
-            options,
-            items: ResourceBudget::from_limit(
-                *options.budget().max_items_limit(),
-            ),
-            input_bytes: ResourceBudget::from_limit(
-                *options.budget().max_input_bytes_limit(),
-            ),
-            output_bytes: ResourceBudget::from_limit(
-                *options.budget().max_output_bytes_limit(),
-            ),
-            json: JsonLimits::empty()
-                .with_structure_limits(structure_limits)
-                .budget(),
+            policy,
+            limits,
+            budget: ConversionBudget::new(limits),
         }
     }
 
-    /// Returns the immutable conversion options associated with this session.
+    /// Returns the immutable conversion policy associated with this session.
     #[inline(always)]
-    pub const fn options(&self) -> &'a DataConversionOptions {
-        self.options
+    pub const fn policy(&self) -> &'a ConversionPolicy {
+        self.policy
+    }
+
+    /// Returns the immutable conversion limits associated with this session.
+    #[inline(always)]
+    pub const fn limits(&self) -> &'a ConversionLimits {
+        self.limits
     }
 
     /// Delegates a nested conversion without charging a new top-level item or
@@ -92,19 +82,32 @@ impl<'a> ConversionSession<'a> {
 
     /// Consumes one top-level conversion item.
     #[inline]
-    pub fn consume_item(
+    pub(crate) fn consume_item(
         &mut self,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.items.try_consume(1)
+        self.budget.consume_item()
     }
 
     /// Consumes cumulative normalized input bytes.
     #[inline]
-    pub fn consume_input_bytes(
+    pub(crate) fn consume_input_bytes(
         &mut self,
         amount: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.input_bytes.try_consume(amount)
+        self.budget.consume_input_bytes(amount)
+    }
+
+    /// Checks one complete scalar collection source before scanning it.
+    #[inline]
+    pub(crate) fn check_collection_source_bytes(
+        &self,
+        actual: usize,
+    ) -> Result<(), BudgetError<ConversionResource, usize>> {
+        ResourceLimit::new(
+            ConversionResource::CollectionSourceBytes,
+            self.limits.collection().max_source_bytes(),
+        )
+        .check(actual)
     }
 
     /// Checks cumulative built-in String output payload bytes.
@@ -113,7 +116,7 @@ impl<'a> ConversionSession<'a> {
         &self,
         amount: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.output_bytes.check_available(amount)
+        self.budget.check_output_bytes(amount)
     }
 
     /// Consumes cumulative output payload bytes after a successful pre-check.
@@ -122,7 +125,7 @@ impl<'a> ConversionSession<'a> {
         &mut self,
         amount: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.output_bytes.try_consume(amount)
+        self.budget.consume_output_bytes(amount)
     }
 
     /// Renders a String payload in one pass and commits its UTF-8 bytes only
@@ -138,141 +141,70 @@ impl<'a> ConversionSession<'a> {
             &mut BudgetedStringWriter<'_, ConversionResource>,
         ) -> Result<(), E>,
     {
-        self.output_bytes.try_write_string(render)
-    }
-
-    /// Checks one numeric text measurement.
-    #[inline]
-    pub fn check_numeric_text_bytes(
-        &self,
-        actual: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.options()
-            .numeric()
-            .limits()
-            .max_text_bytes_limit()
-            .check(actual)
-    }
-
-    /// Checks one BigInteger digit measurement.
-    #[inline]
-    pub fn check_big_integer_digits(
-        &self,
-        actual: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.options()
-            .numeric()
-            .limits()
-            .max_big_integer_digits_limit()
-            .check(actual)
-    }
-
-    /// Checks one structured text measurement.
-    #[inline]
-    pub fn check_structured_text_bytes(
-        &self,
-        actual: usize,
-    ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.options()
-            .structured()
-            .max_text_bytes_limit()
-            .check(actual)
+        self.budget.try_write_string(render)
     }
 
     /// Enters one structured scalar or container node.
     #[inline]
-    pub fn enter_node(
+    pub(crate) fn enter_node(
         &mut self,
         depth: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.json.enter_node(depth)
+        self.budget.structured_mut().enter_node(depth)
     }
 
     /// Enters one structured sequence node after checking its item count.
+    #[cfg(feature = "json")]
     #[inline]
-    pub fn enter_sequence(
+    pub(crate) fn enter_sequence(
         &mut self,
         depth: usize,
         items: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.json.enter_array(depth, items)
+        self.budget.structured_mut().enter_array(depth, items)
     }
 
     /// Enters one structured map node after checking its entry count.
     #[inline]
-    pub fn enter_map(
+    pub(crate) fn enter_map(
         &mut self,
         depth: usize,
         entries: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.json.enter_object(depth, entries)
+        self.budget.structured_mut().enter_object(depth, entries)
     }
 
-    /// Checks a structured depth without changing session state.
+    /// Checks and consumes one structured object key payload.
     #[inline]
-    pub fn check_depth(
-        &self,
-        depth: usize,
+    pub(crate) fn consume_structured_key_bytes(
+        &mut self,
+        amount: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.json.check_depth(depth)
+        self.budget.structured_mut().consume_key_bytes(amount)
     }
 
-    /// Checks one sequence item count without changing session state.
+    /// Checks and consumes one structured string value payload.
     #[inline]
-    pub fn check_sequence_items(
-        &self,
-        items: usize,
+    pub(crate) fn consume_structured_string_bytes(
+        &mut self,
+        amount: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.json.check_sequence_items(items)
+        self.budget.structured_mut().consume_string_bytes(amount)
     }
 
-    /// Checks one map entry count without changing session state.
+    /// Checks and consumes one structured number representation payload.
+    #[cfg(feature = "json")]
     #[inline]
-    pub fn check_map_entries(
-        &self,
-        entries: usize,
+    pub(crate) fn consume_structured_number_bytes(
+        &mut self,
+        amount: usize,
     ) -> Result<(), BudgetError<ConversionResource, usize>> {
-        self.json.check_map_entries(entries)
-    }
-
-    /// Returns cumulative item usage.
-    #[inline(always)]
-    pub fn used_items(&self) -> usize {
-        self.items.used()
-    }
-
-    /// Returns cumulative input byte usage.
-    #[inline(always)]
-    pub fn used_input_bytes(&self) -> usize {
-        self.input_bytes.used()
-    }
-
-    /// Returns cumulative output byte usage.
-    #[inline(always)]
-    pub fn used_output_bytes(&self) -> usize {
-        self.output_bytes.used()
+        self.budget.structured_mut().consume_number_bytes(amount)
     }
 
     /// Returns remaining top-level item capacity.
     #[inline(always)]
-    pub const fn remaining_items(&self) -> usize {
-        self.items.remaining()
-    }
-
-    /// Returns the shared JSON budget for budget-aware structured decoding.
-    ///
-    /// This crate-private hook must be used only by converters that have
-    /// already selected a supported JSON target and normalized any textual
-    /// input.
-    ///
-    /// # Returns
-    ///
-    /// Returns the mutable JSON budget shared by this conversion session.
-    #[cfg(feature = "json")]
-    #[inline(always)]
-    pub(crate) fn json_budget_mut(
-        &mut self,
-    ) -> &mut JsonBudget<ConversionResource, usize> {
-        &mut self.json
+    pub(crate) const fn remaining_items(&self) -> usize {
+        self.budget.remaining_items()
     }
 }

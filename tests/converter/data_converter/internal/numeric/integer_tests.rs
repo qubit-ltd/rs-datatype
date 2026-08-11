@@ -9,11 +9,11 @@
 
 use proptest::prop_assert_eq;
 use proptest::proptest;
-use qubit_datatype::DataConversionOptions;
+use qubit_datatype::ConversionPolicy;
 use qubit_datatype::DataConverter;
 use qubit_datatype::FloatRoundingPolicy;
 use qubit_datatype::InvalidValueReason;
-use qubit_datatype::NumericConversionOptions;
+use qubit_datatype::NumericConversionPolicy;
 
 /// Verifies exact and lossy integer-to-f32 conversion at the mantissa boundary.
 #[test]
@@ -21,7 +21,10 @@ fn test_integer_to_f32_checks_target_mantissa() {
     let source = DataConverter::from(16_777_217_u32);
     assert!(source.to::<f32>().is_err());
     assert_eq!(
-        source.to_with::<f32>(&DataConversionOptions::lossy()),
+        source.to_with::<f32>(
+            &ConversionPolicy::lossy(),
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Ok(16_777_216.0),
     );
 }
@@ -40,7 +43,10 @@ fn test_negative_integer_to_f32_checks_target_mantissa() {
             )
     ));
     assert_eq!(
-        source.to_with::<f32>(&DataConversionOptions::lossy()),
+        source.to_with::<f32>(
+            &ConversionPolicy::lossy(),
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Ok(-16_777_216.0),
     );
 }
@@ -59,7 +65,10 @@ fn test_negative_integer_to_f64_checks_target_mantissa() {
             )
     ));
     assert_eq!(
-        source.to_with::<f64>(&DataConversionOptions::lossy()),
+        source.to_with::<f64>(
+            &ConversionPolicy::lossy(),
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Ok(-9_007_199_254_740_992.0),
     );
 }
@@ -69,7 +78,10 @@ fn test_negative_integer_to_f64_checks_target_mantissa() {
 #[test]
 fn test_integer_to_f32_rejects_overflow() {
     let error = DataConverter::from(u128::MAX)
-        .to_with::<f32>(&DataConversionOptions::lossy())
+        .to_with::<f32>(
+            &ConversionPolicy::lossy(),
+            qubit_datatype::ConversionLimits::default_ref(),
+        )
         .expect_err("u128::MAX must overflow f32");
 
     assert!(matches!(
@@ -81,17 +93,34 @@ fn test_integer_to_f32_rejects_overflow() {
 /// Verifies numeric-to-float rounding can be enabled independently.
 #[test]
 fn test_numeric_to_float_rounding_is_independent() {
-    let options = DataConversionOptions::strict().with_numeric_options(
-        NumericConversionOptions::strict()
+    let options = ConversionPolicy::strict().with_numeric_policy(
+        NumericConversionPolicy::strict()
             .with_numeric_to_float(FloatRoundingPolicy::NearestEven),
     );
 
     assert_eq!(
-        DataConverter::from(16_777_217_u32).to_with::<f32>(&options),
+        DataConverter::from(16_777_217_u32).to_with::<f32>(
+            &options,
+            qubit_datatype::ConversionLimits::default_ref()
+        ),
         Ok(16_777_216.0),
     );
-    assert!(DataConverter::from("0.1").to_with::<f32>(&options).is_err());
-    assert!(DataConverter::from("3.9").to_with::<i32>(&options).is_err());
+    assert!(
+        DataConverter::from("0.1")
+            .to_with::<f32>(
+                &options,
+                qubit_datatype::ConversionLimits::default_ref()
+            )
+            .is_err()
+    );
+    assert!(
+        DataConverter::from("3.9")
+            .to_with::<i32>(
+                &options,
+                qubit_datatype::ConversionLimits::default_ref()
+            )
+            .is_err()
+    );
 }
 
 /// Verifies float sources preserve exact representable integer values.

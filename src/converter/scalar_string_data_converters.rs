@@ -14,11 +14,13 @@ use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::DataConversionError;
 use super::error::DataListConversionError;
-use super::options::DataConversionOptions;
+use super::options::ConversionLimits;
+use super::options::ConversionPolicy;
+use crate::datatype::DataType;
 
 /// Converts a scalar string as a configurable collection source.
 ///
-/// This type applies [`DataConversionOptions::collection`] when converting a
+/// This type applies [`ConversionPolicy::collection`] when converting a
 /// scalar string to a vector or first value. It keeps scalar strings such as
 /// `"1,2,3"` distinct from already-materialized string collections such as
 /// `["1", "2", "3"]`.
@@ -68,7 +70,10 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         T: DataConversionTarget,
     {
-        self.to_vec_with(DataConversionOptions::default_ref())
+        self.to_vec_with(
+            ConversionPolicy::default_ref(),
+            ConversionLimits::default_ref(),
+        )
     }
 
     /// Converts the scalar string to a vector using options.
@@ -92,13 +97,14 @@ impl<'a> ScalarStringDataConverters<'a> {
     /// normalized, split, or converted to the requested element type.
     pub fn to_vec_with<'b, T>(
         self,
-        options: &'b DataConversionOptions,
+        policy: &'b ConversionPolicy,
+        limits: &'b ConversionLimits,
     ) -> Result<Vec<T>, DataListConversionError>
     where
         'a: 'b,
         T: DataConversionTarget,
     {
-        let mut session = options.session();
+        let mut session = ConversionSession::new(policy, limits);
         self.to_vec_in(&mut session)
     }
 
@@ -110,23 +116,38 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         T: DataConversionTarget,
     {
-        let options = session.options();
-        let items = options.collection().scalar_items(self.source);
+        self.check_and_charge_source(session)
+            .map_err(|source| DataListConversionError::new(0, source))?;
+        let policy = session.policy();
+        let limits = session.limits();
+        let items = policy
+            .collection()
+            .scalar_items(limits.collection(), self.source);
         let mut converted = Vec::new();
         for item in items {
             let item = item.map_err(|error| {
                 error.into_list_conversion_error(T::DATA_TYPE)
             })?;
-            let value =
-                match DataConverter::from(item.value).to_in::<T>(session) {
-                    Ok(value) => value,
-                    Err(source) => {
-                        return Err(DataListConversionError::new(
-                            item.source_index,
-                            source,
-                        ));
-                    }
-                };
+            let source = DataConverter::from(item.value);
+            if let Err(error) = session.consume_item() {
+                return Err(DataListConversionError::new(
+                    item.source_index,
+                    DataConversionError::limit_exceeded(
+                        source.data_type(),
+                        T::DATA_TYPE,
+                        error,
+                    ),
+                ));
+            }
+            let value = match session.delegate::<T>(&source) {
+                Ok(value) => value,
+                Err(source) => {
+                    return Err(DataListConversionError::new(
+                        item.source_index,
+                        source,
+                    ));
+                }
+            };
             converted.push(value);
         }
         Ok(converted)
@@ -153,10 +174,14 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         T: DataConversionTarget,
     {
-        self.to_first_with(DataConversionOptions::default_ref())
+        self.to_first_with(
+            ConversionPolicy::default_ref(),
+            ConversionLimits::default_ref(),
+        )
     }
 
-    /// Converts the first scalar string item using options.
+    /// Converts the first scalar string item using an explicit policy and
+    /// limits.
     ///
     /// # Type Parameters
     ///
@@ -164,7 +189,8 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// # Parameters
     ///
-    /// * `options` - Conversion options used for parsing.
+    /// * `policy` - Semantic conversion policy used for parsing.
+    /// * `limits` - Value-level and operation-level resource limits.
     ///
     /// # Returns
     ///
@@ -179,13 +205,14 @@ impl<'a> ScalarStringDataConverters<'a> {
     #[inline]
     pub fn to_first_with<'b, T>(
         self,
-        options: &'b DataConversionOptions,
+        policy: &'b ConversionPolicy,
+        limits: &'b ConversionLimits,
     ) -> Result<T, DataConversionError>
     where
         'a: 'b,
         T: DataConversionTarget,
     {
-        let mut session = options.session();
+        let mut session = ConversionSession::new(policy, limits);
         self.to_first_in(&mut session)
     }
 
@@ -198,14 +225,43 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         T: DataConversionTarget,
     {
-        let options = session.options();
-        let first = options
+        self.check_and_charge_source(session)?;
+        let policy = session.policy();
+        let limits = session.limits();
+        let first = policy
             .collection()
-            .scalar_items(self.source)
+            .scalar_items(limits.collection(), self.source)
             .next()
             .ok_or(DataConversionError::empty_collection(T::DATA_TYPE))?
             .map_err(|error| error.into_data_conversion_error(T::DATA_TYPE))?;
-        DataConverter::from(first.value).to_in::<T>(session)
+        let source = DataConverter::from(first.value);
+        session.consume_item().map_err(|error| {
+            DataConversionError::limit_exceeded(
+                source.data_type(),
+                T::DATA_TYPE,
+                error,
+            )
+        })?;
+        session.delegate::<T>(&source)
+    }
+
+    /// Checks the complete scalar source and charges it once before scanning.
+    #[inline]
+    fn check_and_charge_source(
+        &self,
+        session: &mut ConversionSession<'_>,
+    ) -> Result<(), DataConversionError> {
+        let target = DataType::String;
+        session
+            .check_collection_source_bytes(self.source.len())
+            .map_err(|error| {
+                DataConversionError::limit_exceeded(target, target, error)
+            })?;
+        session
+            .consume_input_bytes(self.source.len())
+            .map_err(|error| {
+                DataConversionError::limit_exceeded(target, target, error)
+            })
     }
 }
 

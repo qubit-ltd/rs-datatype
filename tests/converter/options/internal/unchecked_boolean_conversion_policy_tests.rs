@@ -5,9 +5,9 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Boolean option deserialization validation tests.
+//! Boolean policy deserialization validation tests.
 
-use qubit_datatype::BooleanConversionOptions;
+use qubit_datatype::BooleanConversionPolicy;
 
 /// Verifies unchecked serialized literal sets are validated on construction.
 #[test]
@@ -18,5 +18,5 @@ fn test_deserialization_rejects_overlapping_boolean_literals() {
         "case_sensitive":false,
         "numeric_policy":"zero_or_one"
     }"#;
-    assert!(serde_json::from_str::<BooleanConversionOptions>(json).is_err());
+    assert!(serde_json::from_str::<BooleanConversionPolicy>(json).is_err());
 }

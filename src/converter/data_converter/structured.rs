@@ -9,12 +9,17 @@
 
 use std::collections::HashMap;
 
+use qubit_budget::BudgetError;
+#[cfg(feature = "json")]
+use qubit_budget::JsonDecodeLimits;
+#[cfg(feature = "json")]
+use qubit_budget::JsonDecodeSession;
 #[cfg(feature = "json")]
 use qubit_budget::JsonSerdeError;
 #[cfg(feature = "json")]
-use qubit_budget::from_slice_seed_with_budget;
+use qubit_budget::decode_slice;
 #[cfg(feature = "json")]
-use qubit_budget::from_slice_with_budget;
+use qubit_budget::decode_slice_seed;
 #[cfg(feature = "json")]
 use serde_json::Value;
 
@@ -25,18 +30,81 @@ use super::internal::StringMapVisitor;
 use super::internal::sorted_string_map_entries;
 #[cfg(feature = "json")]
 use super::string_source::normalize;
-#[cfg(feature = "json")]
 use crate::converter::ConversionResource;
 use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
-#[cfg(any(feature = "json", feature = "url"))]
-use crate::converter::DataConversionOptions;
 use crate::converter::DataConversionTarget;
 #[cfg(feature = "json")]
 use crate::converter::DataFormat;
 #[cfg(feature = "json")]
 use crate::converter::InvalidValueReason;
+#[cfg(any(feature = "json", feature = "url"))]
+use crate::converter::StructuredConversionLimits;
 use crate::datatype::DataType;
+
+/// Accounts one string map and its payload against a conversion session.
+pub(super) fn account_string_map_structure(
+    value: &HashMap<String, String>,
+    depth: usize,
+    session: &mut ConversionSession<'_>,
+) -> Result<(), BudgetError<ConversionResource, usize>> {
+    session.enter_map(depth, value.len())?;
+    let value_depth = depth.saturating_add(1);
+    for (key, value) in value {
+        session.consume_structured_key_bytes(key.len())?;
+        session.enter_node(value_depth)?;
+        session.consume_structured_string_bytes(value.len())?;
+    }
+    Ok(())
+}
+
+/// Accounts a materialized JSON value with an explicit traversal stack.
+#[cfg(feature = "json")]
+pub(super) fn account_json_structure(
+    value: &Value,
+    depth: usize,
+    session: &mut ConversionSession<'_>,
+) -> Result<(), BudgetError<ConversionResource, usize>> {
+    let mut stack = vec![(value, depth)];
+    while let Some((value, depth)) = stack.pop() {
+        match value {
+            Value::Array(values) => {
+                session.enter_sequence(depth, values.len())?;
+                let child_depth = depth.saturating_add(1);
+                stack.extend(
+                    values.iter().rev().map(|value| (value, child_depth)),
+                );
+            }
+            Value::Object(values) => {
+                session.enter_map(depth, values.len())?;
+                let child_depth = depth.saturating_add(1);
+                for (key, value) in values.iter().rev() {
+                    session.consume_structured_key_bytes(key.len())?;
+                    stack.push((value, child_depth));
+                }
+            }
+            Value::String(value) => {
+                session.enter_node(depth)?;
+                session.consume_structured_string_bytes(value.len())?;
+            }
+            Value::Number(value) => {
+                session.enter_node(depth)?;
+                session
+                    .consume_structured_number_bytes(value.to_string().len())?;
+            }
+            Value::Bool(_) | Value::Null => session.enter_node(depth)?,
+        }
+    }
+    Ok(())
+}
+
+/// Creates an unconfigured JSON decode session for syntax and typed decoding.
+#[cfg(feature = "json")]
+#[inline]
+fn unconfigured_decode_session() -> JsonDecodeSession<ConversionResource, usize>
+{
+    JsonDecodeSession::new(JsonDecodeLimits::default())
+}
 
 /// Enforces the configured normalized structured-text byte limit.
 ///
@@ -61,10 +129,9 @@ pub(super) fn check_structured_text_limit(
     value: &str,
     from: DataType,
     to: DataType,
-    options: &DataConversionOptions,
+    limits: &StructuredConversionLimits,
 ) -> Result<(), DataConversionError> {
-    options
-        .structured()
+    limits
         .max_text_bytes_limit()
         .check(value.len())
         .map_err(|error| DataConversionError::limit_exceeded(from, to, error))
@@ -117,24 +184,34 @@ impl DataConversionTarget for Value {
         source: &DataConverter<'_>,
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.options();
+        let policy = session.policy();
+        let limits = session.limits();
         match source {
             DataConverter::Json(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
-                let value = normalize(value, options, DataType::Json)?;
+                let value = normalize(value, policy, DataType::Json)?;
                 check_structured_text_limit(
                     value,
                     source.data_type(),
                     DataType::Json,
-                    options,
+                    limits.structured(),
                 )?;
-                from_slice_with_budget(
-                    value.as_bytes(),
-                    session.json_budget_mut(),
-                )
-                .map_err(|error| {
-                    map_json_decode_error(source, DataType::Json, error)
-                })
+                let mut decode_session = unconfigured_decode_session();
+                let decoded: Value =
+                    decode_slice(value.as_bytes(), &mut decode_session)
+                        .map_err(|error| {
+                            map_json_decode_error(source, DataType::Json, error)
+                        })?;
+                account_json_structure(&decoded, 1, session).map_err(
+                    |error| {
+                        DataConversionError::limit_exceeded(
+                            source.data_type(),
+                            DataType::Json,
+                            error,
+                        )
+                    },
+                )?;
+                Ok(decoded)
             }
             DataConverter::StringMap(value) => Ok(string_map_to_json(value)),
             DataConverter::Unset(_) => Err(source.missing(DataType::Json)),
@@ -247,28 +324,41 @@ impl DataConversionTarget for HashMap<String, String> {
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
         #[cfg(feature = "json")]
-        let options = session.options();
+        let policy = session.policy();
+        #[cfg(feature = "json")]
+        let limits = session.limits();
         #[cfg(not(feature = "json"))]
         let _ = session;
         match source {
             DataConverter::StringMap(value) => Ok(value.as_ref().clone()),
             #[cfg(feature = "json")]
             DataConverter::String(value) => {
-                let value = normalize(value, options, DataType::StringMap)?;
+                let value = normalize(value, policy, DataType::StringMap)?;
                 check_structured_text_limit(
                     value,
                     source.data_type(),
                     DataType::StringMap,
-                    options,
+                    limits.structured(),
                 )?;
-                from_slice_seed_with_budget(
-                    value.as_bytes(),
+                let mut decode_session = unconfigured_decode_session();
+                let decoded = decode_slice_seed(
                     StringMapVisitor,
-                    session.json_budget_mut(),
+                    value.as_bytes(),
+                    &mut decode_session,
                 )
                 .map_err(|error| {
                     map_json_decode_error(source, DataType::StringMap, error)
-                })
+                })?;
+                account_string_map_structure(&decoded, 1, session).map_err(
+                    |error| {
+                        DataConversionError::limit_exceeded(
+                            source.data_type(),
+                            DataType::StringMap,
+                            error,
+                        )
+                    },
+                )?;
+                Ok(decoded)
             }
             DataConverter::Unset(_) => Err(source.missing(DataType::StringMap)),
             _ => Err(source.unsupported(DataType::StringMap)),

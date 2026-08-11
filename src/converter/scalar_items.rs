@@ -11,7 +11,7 @@ use qubit_budget::ResourceBudget;
 
 use super::ConversionResource;
 use super::error::ScalarItemError;
-use super::options::CollectionConversionOptions;
+use super::options::CollectionConversionPolicy;
 use super::options::EmptyItemPolicy;
 use super::scalar_item::ScalarItem;
 
@@ -93,7 +93,8 @@ impl<'a> ScalarItems<'a> {
     ///
     /// # Parameters
     ///
-    /// * `options` - Collection splitting and empty-item policies.
+    /// * `policy` - Collection splitting and empty-item policies.
+    /// * `max_items` - Maximum retained items.
     /// * `value` - Scalar or delimited source text to iterate.
     ///
     /// # Returns
@@ -101,10 +102,11 @@ impl<'a> ScalarItems<'a> {
     /// An iterator borrowing both inputs and deferring all processing until
     /// iteration.
     pub(super) fn new(
-        options: &'a CollectionConversionOptions,
+        policy: &'a CollectionConversionPolicy,
+        max_items: usize,
         value: &'a str,
     ) -> Self {
-        let delimiters = options.delimiters();
+        let delimiters = policy.delimiters();
         let (ascii_delimiters, non_ascii_delimiters) = if delimiters.len() > 8 {
             let mut ascii = [false; 128];
             let mut non_ascii = Vec::new();
@@ -126,13 +128,13 @@ impl<'a> ScalarItems<'a> {
             delimiters,
             ascii_delimiters,
             non_ascii_delimiters,
-            split_scalar_strings: options.split_scalar_strings(),
-            trim_items: options.trim_items(),
-            empty_item_policy: options.empty_item_policy(),
-            max_items: options.max_items(),
+            split_scalar_strings: policy.split_scalar_strings(),
+            trim_items: policy.trim_items(),
+            empty_item_policy: policy.empty_item_policy(),
+            max_items,
             item_budget: ResourceBudget::new(
                 ConversionResource::Items,
-                options.max_items(),
+                max_items,
             ),
             next_start: Some(0),
             next_source_index: 0,

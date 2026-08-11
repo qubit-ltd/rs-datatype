@@ -16,7 +16,8 @@ use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::DataConversionError;
 use super::error::DataListConversionError;
-use super::options::DataConversionOptions;
+use super::options::ConversionLimits;
+use super::options::ConversionPolicy;
 
 /// A lightweight adapter for converting batches of source values.
 ///
@@ -121,7 +122,10 @@ where
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,
     {
-        self.to_vec_with(DataConversionOptions::default_ref())
+        self.to_vec_with(
+            ConversionPolicy::default_ref(),
+            ConversionLimits::default_ref(),
+        )
     }
 
     /// Converts every source item to the requested target type using options.
@@ -146,13 +150,14 @@ where
     /// conversion.
     pub fn to_vec_with<'a, T>(
         self,
-        options: &DataConversionOptions,
+        policy: &ConversionPolicy,
+        limits: &ConversionLimits,
     ) -> Result<Vec<T>, DataListConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,
     {
-        let mut session = options.session();
+        let mut session = ConversionSession::new(policy, limits);
         self.to_vec_in(&mut session)
     }
 
@@ -217,7 +222,10 @@ where
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,
     {
-        self.to_first_with(DataConversionOptions::default_ref())
+        self.to_first_with(
+            ConversionPolicy::default_ref(),
+            ConversionLimits::default_ref(),
+        )
     }
 
     /// Converts the first source item to the requested target type using
@@ -244,13 +252,14 @@ where
     #[inline]
     pub fn to_first_with<'a, T>(
         self,
-        options: &DataConversionOptions,
+        policy: &ConversionPolicy,
+        limits: &ConversionLimits,
     ) -> Result<T, DataConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,
     {
-        let mut session = options.session();
+        let mut session = ConversionSession::new(policy, limits);
         self.to_first_in(&mut session)
     }
 

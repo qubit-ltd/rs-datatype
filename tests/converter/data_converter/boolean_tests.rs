@@ -11,14 +11,13 @@
 use num_bigint::BigInt;
 use proptest::proptest;
 use qubit_budget::BudgetError;
+use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::DataConversionError;
-use qubit_datatype::DataConversionOptions;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
 use qubit_datatype::InvalidValueReason;
 use qubit_datatype::NumericConversionLimits;
-use qubit_datatype::NumericConversionOptions;
 use qubit_datatype::converter::DataConversionErrorKind;
 
 /// Test bool target conversions for all supported source variants.
@@ -112,18 +111,18 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
 /// configured Boolean literals.
 #[test]
 fn test_data_converter_bool_numeric_text_limit() {
-    let options = DataConversionOptions::strict().with_numeric_options(
-        NumericConversionOptions::strict().with_limits(
+    let options = ConversionPolicy::strict();
+    let limits = qubit_datatype::ConversionLimits::default()
+        .with_numeric_limits(
             NumericConversionLimits::default().with_max_text_bytes(1),
-        ),
-    );
+        );
 
     assert_eq!(
-        DataConverter::from("true").to_with::<bool>(&options),
+        DataConverter::from("true").to_with::<bool>(&options, &limits),
         Ok(true),
     );
     let error = DataConverter::from("10")
-        .to_with::<bool>(&options)
+        .to_with::<bool>(&options, &limits)
         .expect_err("numeric Boolean text should honor the byte limit");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(
