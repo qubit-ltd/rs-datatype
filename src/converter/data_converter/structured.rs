@@ -11,15 +11,7 @@ use std::collections::HashMap;
 
 use qubit_budget::BudgetError;
 #[cfg(feature = "json")]
-use qubit_budget::JsonDecodeLimits;
-#[cfg(feature = "json")]
-use qubit_budget::JsonDecodeSession;
-#[cfg(feature = "json")]
 use qubit_budget::JsonSerdeError;
-#[cfg(feature = "json")]
-use qubit_budget::decode_slice;
-#[cfg(feature = "json")]
-use qubit_budget::decode_slice_seed;
 #[cfg(feature = "json")]
 use serde_json::Value;
 
@@ -45,15 +37,15 @@ use crate::datatype::DataType;
 /// Accounts one string map and its payload against a conversion session.
 pub(super) fn account_string_map_structure(
     value: &HashMap<String, String>,
-    depth: usize,
+    depth: u64,
     session: &mut ConversionSession<'_>,
-) -> Result<(), BudgetError<ConversionResource, usize>> {
-    session.enter_map(depth, value.len())?;
+) -> Result<(), BudgetError<ConversionResource, u64>> {
+    session.enter_structured_map(depth, u64::try_from(value.len()).unwrap())?;
     let value_depth = depth.saturating_add(1);
     for (key, value) in value {
-        session.consume_structured_key_bytes(key.len())?;
-        session.enter_node(value_depth)?;
-        session.consume_structured_string_bytes(value.len())?;
+        session.consume_structured_key_bytes(u64::try_from(key.len()).unwrap())?;
+        session.enter_structured_node(value_depth)?;
+        session.consume_structured_string_bytes(u64::try_from(value.len()).unwrap())?;
     }
     Ok(())
 }
@@ -62,48 +54,39 @@ pub(super) fn account_string_map_structure(
 #[cfg(feature = "json")]
 pub(super) fn account_json_structure(
     value: &Value,
-    depth: usize,
+    depth: u64,
     session: &mut ConversionSession<'_>,
-) -> Result<(), BudgetError<ConversionResource, usize>> {
+) -> Result<(), BudgetError<ConversionResource, u64>> {
     let mut stack = vec![(value, depth)];
     while let Some((value, depth)) = stack.pop() {
         match value {
             Value::Array(values) => {
-                session.enter_sequence(depth, values.len())?;
+                session.enter_structured_sequence(depth, u64::try_from(values.len()).unwrap())?;
                 let child_depth = depth.saturating_add(1);
-                stack.extend(
-                    values.iter().rev().map(|value| (value, child_depth)),
-                );
+                stack.extend(values.iter().rev().map(|value| (value, child_depth)));
             }
             Value::Object(values) => {
-                session.enter_map(depth, values.len())?;
+                session.enter_structured_map(depth, u64::try_from(values.len()).unwrap())?;
                 let child_depth = depth.saturating_add(1);
                 for (key, value) in values.iter().rev() {
-                    session.consume_structured_key_bytes(key.len())?;
+                    session.consume_structured_key_bytes(u64::try_from(key.len()).unwrap())?;
                     stack.push((value, child_depth));
                 }
             }
             Value::String(value) => {
-                session.enter_node(depth)?;
-                session.consume_structured_string_bytes(value.len())?;
+                session.enter_structured_node(depth)?;
+                session.consume_structured_string_bytes(u64::try_from(value.len()).unwrap())?;
             }
             Value::Number(value) => {
-                session.enter_node(depth)?;
-                session
-                    .consume_structured_number_bytes(value.to_string().len())?;
+                session.enter_structured_node(depth)?;
+                session.consume_structured_number_bytes(
+                    u64::try_from(value.to_string().len()).unwrap(),
+                )?;
             }
-            Value::Bool(_) | Value::Null => session.enter_node(depth)?,
+            Value::Bool(_) | Value::Null => session.enter_structured_node(depth)?,
         }
     }
     Ok(())
-}
-
-/// Creates an unconfigured JSON decode session for syntax and typed decoding.
-#[cfg(feature = "json")]
-#[inline]
-fn unconfigured_decode_session() -> JsonDecodeSession<ConversionResource, usize>
-{
-    JsonDecodeSession::new(JsonDecodeLimits::default())
 }
 
 /// Enforces the configured normalized structured-text byte limit.
@@ -132,8 +115,8 @@ pub(super) fn check_structured_text_limit(
     limits: &StructuredConversionLimits,
 ) -> Result<(), DataConversionError> {
     limits
-        .max_text_bytes_limit()
-        .check(value.len())
+        .text()
+        .check(value)
         .map_err(|error| DataConversionError::limit_exceeded(from, to, error))
 }
 
@@ -196,21 +179,9 @@ impl DataConversionTarget for Value {
                     DataType::Json,
                     limits.structured(),
                 )?;
-                let mut decode_session = unconfigured_decode_session();
-                let decoded: Value =
-                    decode_slice(value.as_bytes(), &mut decode_session)
-                        .map_err(|error| {
-                            map_json_decode_error(source, DataType::Json, error)
-                        })?;
-                account_json_structure(&decoded, 1, session).map_err(
-                    |error| {
-                        DataConversionError::limit_exceeded(
-                            source.data_type(),
-                            DataType::Json,
-                            error,
-                        )
-                    },
-                )?;
+                let decoded: Value = session
+                    .decode_json(value.as_bytes())
+                    .map_err(|error| map_json_decode_error(source, DataType::Json, error))?;
                 Ok(decoded)
             }
             DataConverter::StringMap(value) => Ok(string_map_to_json(value)),
@@ -241,9 +212,7 @@ impl DataConversionTarget for Value {
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::Json(value) => Ok(value.into_owned()),
-            DataConverter::StringMap(value) => {
-                Ok(string_map_into_json(value.into_owned()))
-            }
+            DataConverter::StringMap(value) => Ok(string_map_into_json(value.into_owned())),
             source => Self::convert_from(&source, session),
         }
     }
@@ -288,18 +257,14 @@ fn map_json_decode_error_from_type(
     error: JsonSerdeError<ConversionResource>,
 ) -> DataConversionError {
     match error {
-        JsonSerdeError::Budget(error) => {
-            DataConversionError::limit_exceeded(source, target, error)
-        }
-        JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => {
-            DataConversionError::invalid(
-                source,
-                target,
-                InvalidValueReason::Deserialization {
-                    format: DataFormat::Json,
-                },
-            )
-        }
+        JsonSerdeError::Budget(error) => DataConversionError::limit_exceeded(source, target, error),
+        JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => DataConversionError::invalid(
+            source,
+            target,
+            InvalidValueReason::Deserialization {
+                format: DataFormat::Json,
+            },
+        ),
     }
 }
 
@@ -340,24 +305,9 @@ impl DataConversionTarget for HashMap<String, String> {
                     DataType::StringMap,
                     limits.structured(),
                 )?;
-                let mut decode_session = unconfigured_decode_session();
-                let decoded = decode_slice_seed(
-                    StringMapVisitor,
-                    value.as_bytes(),
-                    &mut decode_session,
-                )
-                .map_err(|error| {
-                    map_json_decode_error(source, DataType::StringMap, error)
-                })?;
-                account_string_map_structure(&decoded, 1, session).map_err(
-                    |error| {
-                        DataConversionError::limit_exceeded(
-                            source.data_type(),
-                            DataType::StringMap,
-                            error,
-                        )
-                    },
-                )?;
+                let decoded = session
+                    .decode_json_seed(StringMapVisitor, value.as_bytes())
+                    .map_err(|error| map_json_decode_error(source, DataType::StringMap, error))?;
                 Ok(decoded)
             }
             DataConverter::Unset(_) => Err(source.missing(DataType::StringMap)),

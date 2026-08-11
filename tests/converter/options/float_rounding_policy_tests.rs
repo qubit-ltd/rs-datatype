@@ -14,8 +14,7 @@ use qubit_datatype::converter::FloatRoundingPolicy;
 fn test_float_rounding_policy_serde_and_default() {
     assert_eq!(FloatRoundingPolicy::default(), FloatRoundingPolicy::Exact,);
     assert_eq!(
-        serde_json::to_string(&FloatRoundingPolicy::Exact)
-            .expect("exact policy should serialize"),
+        serde_json::to_string(&FloatRoundingPolicy::Exact).expect("exact policy should serialize"),
         r#""exact""#,
     );
     assert_eq!(
