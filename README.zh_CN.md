@@ -97,17 +97,23 @@ assert_eq!(
 ## 5. 单值转换
 
 `DataConverter` 借用或持有一个运行时来源值。`to` 使用严格默认配置，`to_with`
-接收显式的 `DataConversionOptions`。当不再需要持有的来源值时，`into_target`
+接收不可变的 `ConversionPolicy` 与 `ConversionLimits`。当不再需要持有的来源值时，`into_target`
 和 `into_target_with` 会消费它，使兼容目标可以复用其已分配的存储。
 
 ```rust
-use qubit_datatype::{DataConversionOptions, DataConverter};
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
+use qubit_datatype::DataConverter;
 
 assert_eq!(DataConverter::from("42").to::<u16>(), Ok(42));
 assert!(DataConverter::from("3.9").to::<i32>().is_err());
 
-let lossy = DataConversionOptions::lossy();
-assert_eq!(DataConverter::from(" 3.9 ").to_with::<i32>(&lossy), Ok(3));
+let policy = ConversionPolicy::lossy();
+let limits = ConversionLimits::default();
+assert_eq!(
+    DataConverter::from(" 3.9 ").to_with::<i32>(&policy, &limits),
+    Ok(3),
+);
 ```
 
 严格 profile 分别拒绝小数转整数截断、已有数值转浮点舍入、文本转浮点舍入以及
@@ -136,18 +142,19 @@ unset，`EmptyCollection` 表示请求首值时集合为空，`InvalidValue` 表
 不合法，`LimitExceeded` 表示触及配置的资源上限。错误只保留类型上下文，不保留
 原始值。
 
-## 7. 配置与输入 profile
+## 7. 策略、限制与会话
 
-`DataConversionOptions` 包含相互独立的策略：
+`ConversionPolicy` 只包含不消耗资源的语义选择：
 
-- `numeric`：小数转整数、已有数值转浮点、文本转浮点三组策略，以及资源上限。
+- `numeric`：小数转整数、已有数值转浮点、文本转浮点三组策略。
 - `string`：trim 和空白字符串处理。
 - `boolean`：文字集合、大小写和数值布尔策略。
-- `collection`：标量拆分、分隔符、trim、空项策略和最终保留项数上限。
-- `duration`：数值输入单位、无后缀输入策略、单位解析模式、输出单位、后缀格式、舍入和源文本字节上限。
-- `structured`：URL、JSON 和 StringMap 解析使用的规范化输入字节、深度和
-  单容器条目上限，文本默认值为 1 MiB。
-- `budget`：一次转换会话共享的累计条目、输入字节、输出字节和结构节点预算。
+- `collection`：标量拆分、分隔符、trim 和空项策略。
+- `duration`：数值输入单位、无后缀输入策略、单位解析模式、输出单位、后缀格式和舍入。
+
+`ConversionLimits` 独立组合 numeric、collection、duration、structured 与 operation
+资源限制。`ConversionOperationLimits` 定义一次会话累计的条目、规范化输入字节、
+`String` 输出字节、结构节点和结构 payload 字节。
 
 `strict()` 是默认值。`env_friendly()` 会 trim 字符串、接受常见布尔文字，并开启
 逗号分隔的标量集合；它只把文本转浮点放宽为 nearest-even，不会开启小数转整数
@@ -155,43 +162,75 @@ unset，`EmptyCollection` 表示请求首值时集合为空，`InvalidValue` 表
 配置键拼写错误会立即失败。
 
 ```rust
-use qubit_datatype::{DataConversionOptions, DataConverter};
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
+use qubit_datatype::DataConverter;
 
-let options = DataConversionOptions::env_friendly();
-assert_eq!(DataConverter::from(" yes ").to_with::<bool>(&options), Ok(true));
+let policy = ConversionPolicy::env_friendly();
+let limits = ConversionLimits::default();
+assert_eq!(
+    DataConverter::from(" yes ").to_with::<bool>(&policy, &limits),
+    Ok(true),
+);
 ```
 
-数值资源上限属于 options，并在所有 profile 中保持启用。它们在字符串规范化之后、
+数值资源上限属于 `ConversionLimits`，与任何 policy 组合时都会生效。它们在字符串规范化之后、
 昂贵解析或 `BigInt` 物化之前生效：
 
 ```rust
-use qubit_datatype::{
-    DataConversionOptions, NumericConversionLimits, NumericConversionOptions,
-};
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
+use qubit_datatype::NumericConversionLimits;
+use qubit_datatype::NumericConversionPolicy;
 
-let limits = NumericConversionLimits::default()
-    .with_max_text_bytes(4096)
-    .with_max_big_integer_digits(10_000);
-let options = DataConversionOptions::strict().with_numeric_options(
-    NumericConversionOptions::strict().with_limits(limits),
+let policy = ConversionPolicy::strict()
+    .with_numeric_policy(NumericConversionPolicy::strict());
+let limits = ConversionLimits::default().with_numeric_limits(
+    NumericConversionLimits::default()
+        .with_max_text_bytes(4096)
+        .with_max_big_integer_digits(10_000),
 );
 ```
 
 结构化文本限制在字符串规范化之后、URL、JSON 或 StringMap 解析之前检查：
 
 ```rust
-use qubit_datatype::{
-    DataConversionOptions, StructuredConversionLimits,
-};
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::StructuredConversionLimits;
 
-let options = DataConversionOptions::strict().with_structured_limits(
+let limits = ConversionLimits::default().with_structured_limits(
     StructuredConversionLimits::default().with_max_text_bytes(64 * 1024),
 );
 ```
 
-每个便捷转换入口都会创建新的有限会话。需要跨批次或嵌套转换累计时，使用
-`DataConversionOptions::session()`，并调用 `to_in`、`into_target_in` 或
-`to_vec_in`。限制错误可通过 `DataConversionError::budget_error()` 读取原始
+每次 `to_with`、`into_target_with` 或批量 `*_with` 调用都会创建相互独立的会话。
+内部由 `ConversionOperationLimits` 构造私有 `ConversionBudget`，再由
+`ConversionSession` 把可变记账状态传给嵌套转换。只有需要跨调用累计时，才显式
+构造会话并使用 `to_in`、`into_target_in` 或 `to_vec_in`：
+
+```rust
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionOperationLimits;
+use qubit_datatype::ConversionPolicy;
+use qubit_datatype::ConversionSession;
+use qubit_datatype::DataConverter;
+
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
+let policy = ConversionPolicy::strict();
+let operation = ConversionOperationLimits::default().with_max_items(2);
+let limits = ConversionLimits::default().with_operation_limits(operation);
+let mut session = ConversionSession::new(&policy, &limits);
+
+assert_eq!(DataConverter::from("1").to_in::<u16>(&mut session)?, 1);
+assert_eq!(DataConverter::from("2").to_in::<u16>(&mut session)?, 2);
+assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
+# Ok(())
+# }
+```
+
+第三次请求被拒绝时不会再消耗条目，但前两次成功转换的消耗不会回滚。便捷入口每次
+都会新建 session，因此彼此不共享状态。限制错误可通过
+`DataConversionError::budget_error()` 读取原始
 `qubit_budget::BudgetError` 及完整预算事实，不再经过 datatype 专用包装。
 输出字节预算按会话累计内置 `String` 目标成功产生的 UTF-8 payload，借用和拥有
 来源采用相同计费规则；非 `String` 目标不消耗该预算。
@@ -204,7 +243,7 @@ let options = DataConversionOptions::strict().with_structured_limits(
 文本，并使用 Strict 解析：`[0-9]+(ns|us|µs|μs|ms|s|min|h|d)`。Strict 同时接受
 ASCII `us`、微符号 `µs` 与希腊 mu `μs` 三种微秒拼写。Lenient 额外接受非规范的
 分钟别名 `m`：`[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)`。
-`DurationConversionOptions::env_friendly()` 使用 Lenient，并把无后缀整数解释为毫秒。
+`DurationConversionPolicy::env_friendly()` 使用 Lenient，并把无后缀整数解释为毫秒。
 输入和输出单位分别配置；精确输出要求按输出单位整除，half-up 舍入必须显式开启。
 输出微秒时固定使用 `µs`，输出分钟时固定使用 `min`。
 
@@ -248,20 +287,24 @@ Chrono 执行范围校验前会拒绝内部空白、带符号年份、替代分�
 标量字符串集合转换默认最多保留 65,536 项。上限在 trim 和空项过滤后检查，
 因此被跳过的项不占配额。上限为零时只允许空结果；第一个额外保留项返回
 `LimitExceeded`，并保留其原始源索引。可通过
-`CollectionConversionOptions::with_max_items` 调整上限。
+`CollectionConversionLimits::with_max_items` 调整上限。
 该选项只限制一次标量字符串拆分；会话预算还会限制普通迭代器批量转换。
 
 ```rust
-use qubit_datatype::{DataConversionOptions, DataConverters, ScalarStringDataConverters};
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
+use qubit_datatype::DataConverters;
+use qubit_datatype::ScalarStringDataConverters;
 
 let ports: Vec<u16> = DataConverters::from(vec!["8080", "8081"])
     .to_vec()
     .unwrap();
 assert_eq!(ports, [8080, 8081]);
 
-let options = DataConversionOptions::env_friendly();
+let policy = ConversionPolicy::env_friendly();
+let limits = ConversionLimits::default();
 let values: Vec<u16> = ScalarStringDataConverters::new("1, 2, 3")
-    .to_vec_with(&options)
+    .to_vec_with(&policy, &limits)
     .unwrap();
 assert_eq!(values, [1, 2, 3]);
 ```
