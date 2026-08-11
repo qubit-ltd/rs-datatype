@@ -11,7 +11,9 @@ use qubit_budget::BudgetError;
 use qubit_budget::BudgetedStringError;
 use qubit_budget::BudgetedStringWriter;
 use qubit_budget::JsonValueBudget;
+use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceBudget;
+use qubit_budget::ResourceQuantity;
 
 use super::ConversionLimits;
 use super::ConversionResource;
@@ -44,18 +46,26 @@ impl ConversionBudget {
             .with_nodes_limit(*operation.structured_nodes_limit());
         let value_limits = (*structured.value())
             .with_structure_limits(structure_limits)
-            .with_payload_bytes_limit(*operation.structured_payload_bytes_limit());
+            .with_payload_bytes_limit(
+                *operation.structured_payload_bytes_limit(),
+            );
         Self {
             items: ResourceBudget::from_limit(*operation.items_limit()),
-            input_bytes: ResourceBudget::from_limit(*operation.input_bytes_limit()),
-            output_bytes: ResourceBudget::from_limit(*operation.output_bytes_limit()),
+            input_bytes: ResourceBudget::from_limit(
+                *operation.input_bytes_limit(),
+            ),
+            output_bytes: ResourceBudget::from_limit(
+                *operation.output_bytes_limit(),
+            ),
             structured: JsonValueBudget::new(value_limits),
         }
     }
 
     /// Consumes one converted item.
     #[inline]
-    pub(crate) fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
+    pub(crate) fn consume_item(
+        &mut self,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.items.try_consume(1)
     }
 
@@ -68,6 +78,19 @@ impl ConversionBudget {
         self.input_bytes.try_consume(amount)
     }
 
+    /// Consumes input bytes measured by Rust's native string length type.
+    #[inline]
+    pub(crate) fn consume_input_bytes_usize(
+        &mut self,
+        amount: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        let amount = u64::try_from_usize(amount).map_err(|source| {
+            MeasuredBudgetError::quantity(*self.input_bytes.resource(), source)
+        })?;
+        self.consume_input_bytes(amount)
+            .map_err(MeasuredBudgetError::from)
+    }
+
     /// Checks output capacity without changing accounting.
     #[inline]
     pub(crate) fn check_output_bytes(
@@ -75,6 +98,19 @@ impl ConversionBudget {
         amount: u64,
     ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.output_bytes.check_available(amount)
+    }
+
+    /// Checks output bytes measured by Rust's native string length type.
+    #[inline]
+    pub(crate) fn check_output_bytes_usize(
+        &self,
+        amount: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        let amount = u64::try_from_usize(amount).map_err(|source| {
+            MeasuredBudgetError::quantity(*self.output_bytes.resource(), source)
+        })?;
+        self.check_output_bytes(amount)
+            .map_err(MeasuredBudgetError::from)
     }
 
     /// Consumes output payload bytes.
@@ -86,6 +122,19 @@ impl ConversionBudget {
         self.output_bytes.try_consume(amount)
     }
 
+    /// Consumes output bytes measured by Rust's native string length type.
+    #[inline]
+    pub(crate) fn consume_output_bytes_usize(
+        &mut self,
+        amount: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        let amount = u64::try_from_usize(amount).map_err(|source| {
+            MeasuredBudgetError::quantity(*self.output_bytes.resource(), source)
+        })?;
+        self.consume_output_bytes(amount)
+            .map_err(MeasuredBudgetError::from)
+    }
+
     /// Renders and commits one String payload transactionally.
     #[inline]
     pub(crate) fn try_write_string<E, F>(
@@ -94,7 +143,9 @@ impl ConversionBudget {
     ) -> Result<String, BudgetedStringError<ConversionResource, E>>
     where
         E: std::fmt::Debug + std::fmt::Display,
-        F: FnOnce(&mut BudgetedStringWriter<'_, ConversionResource>) -> Result<(), E>,
+        F: FnOnce(
+            &mut BudgetedStringWriter<'_, ConversionResource>,
+        ) -> Result<(), E>,
     {
         self.output_bytes.try_write_string(render)
     }
@@ -138,7 +189,9 @@ impl ConversionBudget {
 
     /// Returns shared structured accounting.
     #[inline(always)]
-    pub(crate) const fn structured_mut(&mut self) -> &mut JsonValueBudget<ConversionResource, u64> {
+    pub(crate) const fn structured_mut(
+        &mut self,
+    ) -> &mut JsonValueBudget<ConversionResource, u64> {
         &mut self.structured
     }
 }

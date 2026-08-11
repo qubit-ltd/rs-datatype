@@ -34,7 +34,8 @@ fn test_string_source_normalization_maps_policy_errors() {
     );
 
     let reject_options = ConversionPolicy::default().with_string_policy(
-        StringConversionPolicy::default().with_blank_string_policy(BlankStringPolicy::Reject),
+        StringConversionPolicy::default()
+            .with_blank_string_policy(BlankStringPolicy::Reject),
     );
     assert_eq!(
         DataConverter::from(" ").to_with::<bool>(
