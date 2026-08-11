@@ -17,6 +17,8 @@ use num_bigint::BigInt;
 #[cfg(feature = "big-integer")]
 use qubit_budget::BudgetError;
 #[cfg(feature = "big-integer")]
+use qubit_budget::Observation;
+#[cfg(feature = "big-integer")]
 use qubit_datatype::ConversionLimits;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::ConversionPolicy;
@@ -42,7 +44,8 @@ use qubit_datatype::NumericConversionLimits;
 #[cfg(feature = "big-integer")]
 fn limits_with_big_integer_digit_limit(maximum: usize) -> ConversionLimits {
     ConversionLimits::default().with_numeric_limits(
-        NumericConversionLimits::default().with_max_big_integer_digits(maximum),
+        NumericConversionLimits::default()
+            .with_max_big_integer_digits(u64::try_from(maximum).unwrap()),
     )
 }
 
@@ -82,7 +85,7 @@ fn test_primitive_to_bigint_enforces_result_digit_limit() {
         error.budget_error(),
         Some(&BudgetError::LimitExceeded {
             resource: ConversionResource::BigIntegerDigits,
-            actual: 4,
+            observed: Observation::Exact(4),
             maximum: 3,
         }),
     );
@@ -104,7 +107,7 @@ fn test_bigint_to_bigint_enforces_result_digit_limit() {
         error.budget_error(),
         Some(&BudgetError::LimitExceeded {
             resource: ConversionResource::BigIntegerDigits,
-            actual: 4,
+            observed: Observation::Exact(4),
             maximum: 3,
         }),
     );
@@ -126,7 +129,7 @@ fn test_positive_scale_decimal_to_bigint_enforces_result_digit_limit() {
         error.budget_error(),
         Some(&BudgetError::LimitExceeded {
             resource: ConversionResource::BigIntegerDigits,
-            actual: 4,
+            observed: Observation::Exact(4),
             maximum: 3,
         }),
     );

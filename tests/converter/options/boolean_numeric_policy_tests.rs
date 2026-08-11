@@ -27,8 +27,7 @@ fn test_boolean_numeric_policy_serde_and_default() {
             wire,
         );
         assert_eq!(
-            serde_json::from_str::<BooleanNumericPolicy>(wire)
-                .expect("policy should deserialize"),
+            serde_json::from_str::<BooleanNumericPolicy>(wire).expect("policy should deserialize"),
             policy,
         );
     }

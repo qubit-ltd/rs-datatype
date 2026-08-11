@@ -15,10 +15,10 @@ use super::super::StructuredConversionLimits;
 #[derive(Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub(crate) struct StructuredConversionLimitsWire {
-    pub(crate) max_text_bytes: usize,
-    pub(crate) max_depth: usize,
-    pub(crate) max_sequence_items: usize,
-    pub(crate) max_map_entries: usize,
+    pub(crate) max_text_bytes: u64,
+    pub(crate) max_depth: u64,
+    pub(crate) max_sequence_items: u64,
+    pub(crate) max_map_entries: u64,
 }
 
 impl Default for StructuredConversionLimitsWire {
