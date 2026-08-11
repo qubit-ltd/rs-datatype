@@ -69,7 +69,9 @@ impl StructuredConversionLimits {
 
     /// Returns the structured text resource limit.
     #[inline(always)]
-    pub fn max_text_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
+    pub fn max_text_bytes_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, u64> {
         self.text
             .utf8_bytes_limit()
             .expect("structured text limit is configured")
@@ -86,10 +88,11 @@ impl StructuredConversionLimits {
     /// Updated limits.
     #[inline(always)]
     pub fn with_max_text_bytes(mut self, maximum: u64) -> Self {
-        self.text = StringLimits::empty().with_utf8_bytes_limit(ResourceLimit::new(
-            ConversionResource::StructuredTextBytes,
-            maximum,
-        ));
+        self.text =
+            StringLimits::empty().with_utf8_bytes_limit(ResourceLimit::new(
+                ConversionResource::StructuredTextBytes,
+                maximum,
+            ));
         self.value = self.value.with_string_bytes_limit(ResourceLimit::new(
             ConversionResource::StructuredTextBytes,
             maximum,
@@ -111,19 +114,25 @@ impl StructuredConversionLimits {
 
     /// Returns the depth resource limit.
     #[inline(always)]
-    pub const fn max_depth_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
+    pub const fn max_depth_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, u64> {
         &self.max_depth
     }
 
     /// Returns a copy with a different depth maximum.
     #[inline(always)]
     pub fn with_max_depth(mut self, maximum: u64) -> Self {
-        self.max_depth = ResourceLimit::new(ConversionResource::StructuredDepth, maximum);
-        self.value =
+        self.max_depth =
+            ResourceLimit::new(ConversionResource::StructuredDepth, maximum);
+        self.value = self.value.with_structure_limits(
             self.value
-                .with_structure_limits(self.value.structure_limits().with_depth_limit(
-                    ResourceLimit::new(ConversionResource::StructuredDepth, maximum),
-                ));
+                .structure_limits()
+                .with_depth_limit(ResourceLimit::new(
+                    ConversionResource::StructuredDepth,
+                    maximum,
+                )),
+        );
         self
     }
 
@@ -135,21 +144,21 @@ impl StructuredConversionLimits {
 
     /// Returns the sequence item resource limit.
     #[inline(always)]
-    pub const fn max_sequence_items_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
+    pub const fn max_sequence_items_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, u64> {
         &self.max_sequence_items
     }
 
     /// Returns a copy with a different sequence item maximum.
     #[inline(always)]
     pub fn with_max_sequence_items(mut self, maximum: u64) -> Self {
-        self.max_sequence_items = ResourceLimit::new(ConversionResource::SequenceItems, maximum);
+        self.max_sequence_items =
+            ResourceLimit::new(ConversionResource::SequenceItems, maximum);
         self.value = self.value.with_structure_limits(
-            self.value
-                .structure_limits()
-                .with_sequence_items_limit(ResourceLimit::new(
-                    ConversionResource::SequenceItems,
-                    maximum,
-                )),
+            self.value.structure_limits().with_sequence_items_limit(
+                ResourceLimit::new(ConversionResource::SequenceItems, maximum),
+            ),
         );
         self
     }
@@ -162,19 +171,22 @@ impl StructuredConversionLimits {
 
     /// Returns the map entry resource limit.
     #[inline(always)]
-    pub const fn max_map_entries_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
+    pub const fn max_map_entries_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, u64> {
         &self.max_map_entries
     }
 
     /// Returns a copy with a different map entry maximum.
     #[inline(always)]
     pub fn with_max_map_entries(mut self, maximum: u64) -> Self {
-        self.max_map_entries = ResourceLimit::new(ConversionResource::MapEntries, maximum);
-        self.value =
-            self.value
-                .with_structure_limits(self.value.structure_limits().with_map_entries_limit(
-                    ResourceLimit::new(ConversionResource::MapEntries, maximum),
-                ));
+        self.max_map_entries =
+            ResourceLimit::new(ConversionResource::MapEntries, maximum);
+        self.value = self.value.with_structure_limits(
+            self.value.structure_limits().with_map_entries_limit(
+                ResourceLimit::new(ConversionResource::MapEntries, maximum),
+            ),
+        );
         self
     }
 }
@@ -188,10 +200,12 @@ impl Default for StructuredConversionLimits {
     #[inline(always)]
     fn default() -> Self {
         Self {
-            text: StringLimits::empty().with_utf8_bytes_limit(ResourceLimit::new(
-                ConversionResource::StructuredTextBytes,
-                Self::DEFAULT_MAX_TEXT_BYTES,
-            )),
+            text: StringLimits::empty().with_utf8_bytes_limit(
+                ResourceLimit::new(
+                    ConversionResource::StructuredTextBytes,
+                    Self::DEFAULT_MAX_TEXT_BYTES,
+                ),
+            ),
             value: JsonValueLimits::<ConversionResource, u64>::default()
                 .with_structure_limits(
                     StructureLimits::empty()
