@@ -59,6 +59,6 @@ pub(in crate::converter::error) enum DataConversionErrorInner {
         to: DataType,
         /// Complete point-limit or cumulative-budget facts.
         #[source]
-        source: BudgetError<ConversionResource, usize>,
+        source: BudgetError<ConversionResource, u64>,
     },
 }

@@ -16,18 +16,18 @@ use serde::Serialize;
 #[serde(default, deny_unknown_fields)]
 pub struct CollectionConversionLimits {
     /// Maximum UTF-8 bytes accepted from one scalar collection source.
-    max_source_bytes: usize,
+    max_source_bytes: u64,
 
     /// Maximum items retained by one scalar collection conversion.
-    max_items: usize,
+    max_items: u64,
 }
 
 impl CollectionConversionLimits {
     /// Default maximum scalar collection source length in bytes.
-    pub const DEFAULT_MAX_SOURCE_BYTES: usize = 1_048_576;
+    pub const DEFAULT_MAX_SOURCE_BYTES: u64 = 1_048_576;
 
     /// Default maximum number of retained scalar collection items.
-    pub const DEFAULT_MAX_ITEMS: usize = 65_536;
+    pub const DEFAULT_MAX_ITEMS: u64 = 65_536;
 
     /// Returns the source text byte maximum.
     ///
@@ -35,7 +35,7 @@ impl CollectionConversionLimits {
     ///
     /// Maximum accepted UTF-8 byte length for one scalar collection source.
     #[inline(always)]
-    pub const fn max_source_bytes(&self) -> usize {
+    pub const fn max_source_bytes(&self) -> u64 {
         self.max_source_bytes
     }
 
@@ -49,7 +49,7 @@ impl CollectionConversionLimits {
     ///
     /// Updated limits.
     #[inline(always)]
-    pub const fn with_max_source_bytes(mut self, maximum: usize) -> Self {
+    pub const fn with_max_source_bytes(mut self, maximum: u64) -> Self {
         self.max_source_bytes = maximum;
         self
     }
@@ -60,7 +60,7 @@ impl CollectionConversionLimits {
     ///
     /// Maximum items retained after empty-item policy handling.
     #[inline(always)]
-    pub const fn max_items(&self) -> usize {
+    pub const fn max_items(&self) -> u64 {
         self.max_items
     }
 
@@ -74,7 +74,7 @@ impl CollectionConversionLimits {
     ///
     /// Updated limits.
     #[inline(always)]
-    pub const fn with_max_items(mut self, maximum: usize) -> Self {
+    pub const fn with_max_items(mut self, maximum: u64) -> Self {
         self.max_items = maximum;
         self
     }
