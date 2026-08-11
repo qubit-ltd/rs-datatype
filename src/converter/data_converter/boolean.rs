@@ -52,13 +52,9 @@ fn integer_to_bool(
         BooleanNumericPolicy::ZeroOrOne if zero => Ok(false),
         BooleanNumericPolicy::ZeroOrOne if one => Ok(true),
         BooleanNumericPolicy::NonZero => Ok(!zero),
-        BooleanNumericPolicy::ZeroOrOne | BooleanNumericPolicy::Reject => {
-            Err(DataConversionError::invalid(
-                from,
-                DataType::Bool,
-                InvalidValueReason::InvalidBoolean,
-            ))
-        }
+        BooleanNumericPolicy::ZeroOrOne | BooleanNumericPolicy::Reject => Err(
+            DataConversionError::invalid(from, DataType::Bool, InvalidValueReason::InvalidBoolean),
+        ),
     }
 }
 
@@ -158,9 +154,7 @@ impl DataConversionTarget for bool {
         let limits = session.limits().numeric();
         match source {
             DataConverter::Bool(value) => Ok(*value),
-            DataConverter::String(value) => {
-                string_to_bool(value, options, limits)
-            }
+            DataConverter::String(value) => string_to_bool(value, options, limits),
             DataConverter::Int8(value) => integer_to_bool(
                 *value == 0,
                 *value == 1,
@@ -222,9 +216,7 @@ impl DataConversionTarget for bool {
                 DataType::UInt128,
             ),
             #[cfg(feature = "big-integer")]
-            DataConverter::BigInteger(value) => {
-                big_integer_to_bool(value.as_ref(), options)
-            }
+            DataConverter::BigInteger(value) => big_integer_to_bool(value.as_ref(), options),
             DataConverter::Unset(_) => Err(source.missing(DataType::Bool)),
             _ => Err(source.unsupported(DataType::Bool)),
         }

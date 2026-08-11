@@ -10,6 +10,7 @@
 //! Tests for reusable data conversion errors.
 
 use qubit_budget::BudgetError;
+use qubit_budget::Observation;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::DataType;
 use qubit_datatype::converter::DataConversionError;
@@ -21,11 +22,7 @@ use qubit_datatype::converter::InvalidValueReason;
 #[test]
 fn test_data_conversion_error_constructors_and_accessors() {
     let reason = InvalidValueReason::OutOfRange;
-    let error = DataConversionError::invalid(
-        DataType::Int64,
-        DataType::UInt8,
-        reason.clone(),
-    );
+    let error = DataConversionError::invalid(DataType::Int64, DataType::UInt8, reason.clone());
     assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
     assert!(!error.is_missing());
     assert_eq!(error.from_type(), Some(DataType::Int64));
@@ -46,7 +43,7 @@ fn test_data_conversion_error_constructors_and_accessors() {
 fn test_data_conversion_error_limit_exceeded_contract() {
     let budget_error = BudgetError::LimitExceeded {
         resource: ConversionResource::BigIntegerDigits,
-        actual: 13,
+        observed: Observation::Exact(13),
         maximum: 12,
     };
     let error = DataConversionError::limit_exceeded(

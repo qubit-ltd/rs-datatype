@@ -34,11 +34,7 @@ fn compare_numbers(
 use std::str::FromStr;
 
 /// Asserts an exact ordering and its reverse-direction symmetry.
-fn assert_exact(
-    left: NumberRef<'_>,
-    right: NumberRef<'_>,
-    expected: Option<Ordering>,
-) {
+fn assert_exact(left: NumberRef<'_>, right: NumberRef<'_>, expected: Option<Ordering>) {
     assert_eq!(
         compare_numbers(left, right, NumericComparisonPolicy::Exact),
         expected
@@ -525,8 +521,7 @@ fn test_number_ref_comparison_big_number_paths() {
         Some(Ordering::Greater),
     );
 
-    let decimal =
-        BigDecimal::from_str("0.1").expect("decimal fixture should parse");
+    let decimal = BigDecimal::from_str("0.1").expect("decimal fixture should parse");
     assert_eq!(
         compare_numbers(
             NumberRef::from(&decimal),
@@ -588,10 +583,8 @@ fn test_number_ref_comparison_big_number_paths() {
         Some(Ordering::Equal),
     );
 
-    let extreme_scale =
-        BigDecimal::new(BigInt::from(0), i64::from(u32::MAX) + 1);
-    let extreme_negative_scale =
-        BigDecimal::new(BigInt::from(0), -(i64::from(u32::MAX) + 1));
+    let extreme_scale = BigDecimal::new(BigInt::from(0), i64::from(u32::MAX) + 1);
+    let extreme_negative_scale = BigDecimal::new(BigInt::from(0), -(i64::from(u32::MAX) + 1));
     assert_exact(
         NumberRef::from(&extreme_negative_scale),
         NumberRef::from(&extreme_scale),
@@ -630,11 +623,7 @@ fn test_number_ref_comparison_big_number_paths() {
         );
     }
     for value in [NumberRef::from(&integer), NumberRef::from(&decimal)] {
-        assert_exact(
-            NumberRef::from(&extreme_scale),
-            value,
-            Some(Ordering::Less),
-        );
+        assert_exact(NumberRef::from(&extreme_scale), value, Some(Ordering::Less));
     }
 
     let too_large_for_f64 = BigInt::from(1_u8) << 20_000;

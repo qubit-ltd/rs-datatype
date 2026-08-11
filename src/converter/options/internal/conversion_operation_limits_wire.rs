@@ -15,11 +15,11 @@ use super::super::ConversionOperationLimits;
 #[derive(Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub(crate) struct ConversionOperationLimitsWire {
-    pub(crate) items: usize,
-    pub(crate) input_bytes: usize,
-    pub(crate) output_bytes: usize,
-    pub(crate) structured_nodes: usize,
-    pub(crate) structured_payload_bytes: usize,
+    pub(crate) items: u64,
+    pub(crate) input_bytes: u64,
+    pub(crate) output_bytes: u64,
+    pub(crate) structured_nodes: u64,
+    pub(crate) structured_payload_bytes: u64,
 }
 
 impl Default for ConversionOperationLimitsWire {

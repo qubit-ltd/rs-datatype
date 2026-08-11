@@ -171,9 +171,9 @@ where
         T: DataConversionTarget,
     {
         let sources = self.sources;
-        let capacity = self
-            .trusted_capacity
-            .map_or(0, |capacity| capacity.min(session.remaining_items()));
+        let capacity = self.trusted_capacity.map_or(0, |capacity| {
+            capacity.min(usize::try_from(session.remaining_items()).unwrap_or(usize::MAX))
+        });
         let mut converted = Vec::with_capacity(capacity);
         for (index, source) in sources.enumerate() {
             let value = match source.into().into_target_in::<T>(session) {

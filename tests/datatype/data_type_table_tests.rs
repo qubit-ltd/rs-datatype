@@ -59,10 +59,8 @@ fn test_data_type_mapping_chrono_consumers_agree() {
     use chrono::NaiveTime;
     use chrono::Utc;
 
-    let date = NaiveDate::from_ymd_opt(2026, 7, 20)
-        .expect("test date should be valid");
-    let time =
-        NaiveTime::from_hms_opt(12, 0, 0).expect("test time should be valid");
+    let date = NaiveDate::from_ymd_opt(2026, 7, 20).expect("test date should be valid");
+    let time = NaiveTime::from_hms_opt(12, 0, 0).expect("test time should be valid");
     let date_time = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(date_time, Utc);
 
@@ -90,8 +88,7 @@ fn test_data_type_mapping_big_decimal_consumers_agree() {
 #[test]
 #[cfg(feature = "url")]
 fn test_data_type_mapping_url_consumers_agree() {
-    let url =
-        url::Url::parse("https://example.com").expect("test URL should parse");
+    let url = url::Url::parse("https://example.com").expect("test URL should parse");
     assert_mapping(url, DataType::Url);
 }
 

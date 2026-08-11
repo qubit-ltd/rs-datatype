@@ -27,10 +27,9 @@ fn test_string_conversion_policy_env_friendly_profile() {
 /// Test that misspelled string policy fields are rejected.
 #[test]
 fn test_string_conversion_policy_reject_unknown_fields() {
-    let error = serde_json::from_str::<StringConversionPolicy>(
-        r#"{"trim":true,"unexpected":false}"#,
-    )
-    .expect_err("unknown string policy fields must be rejected");
+    let error =
+        serde_json::from_str::<StringConversionPolicy>(r#"{"trim":true,"unexpected":false}"#)
+            .expect_err("unknown string policy fields must be rejected");
 
     assert!(error.to_string().contains("unknown field `unexpected`"));
 }
