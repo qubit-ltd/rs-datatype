@@ -17,6 +17,7 @@ use num_bigint::BigInt;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use qubit_budget::BudgetError;
 use qubit_budget::MeasuredBudgetError;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use qubit_budget::Observation;
 
 use super::super::super::string_source::normalize;
@@ -86,8 +87,8 @@ pub(in crate::converter::data_converter) fn check_numeric_text_limit(
         MeasuredBudgetError::Budget(error) => {
             DataConversionError::limit_exceeded(DataType::String, to, error)
         }
-        MeasuredBudgetError::Quantity { .. } => {
-            DataConversionError::invalid(DataType::String, to, InvalidValueReason::OutOfRange)
+        MeasuredBudgetError::Quantity { resource, source } => {
+            DataConversionError::quantity(DataType::String, to, resource, source)
         }
     })
 }

@@ -50,41 +50,13 @@ pub(super) fn account_string_map_structure(
     Ok(())
 }
 
-/// Accounts a materialized JSON value with an explicit traversal stack.
+/// Accounts a materialized JSON value through rs-budget's canonical traversal.
 #[cfg(feature = "json")]
 pub(super) fn account_json_structure(
     value: &Value,
-    depth: usize,
     session: &mut ConversionSession<'_>,
-) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-    let mut stack = vec![(value, depth)];
-    while let Some((value, depth)) = stack.pop() {
-        match value {
-            Value::Array(values) => {
-                session.enter_structured_sequence_usize(depth, values.len())?;
-                let child_depth = depth.saturating_add(1);
-                stack.extend(values.iter().rev().map(|value| (value, child_depth)));
-            }
-            Value::Object(values) => {
-                session.enter_structured_map_usize(depth, values.len())?;
-                let child_depth = depth.saturating_add(1);
-                for (key, value) in values.iter().rev() {
-                    session.consume_structured_key_bytes_usize(key.len())?;
-                    stack.push((value, child_depth));
-                }
-            }
-            Value::String(value) => {
-                session.enter_structured_node_usize(depth)?;
-                session.consume_structured_string_bytes_usize(value.len())?;
-            }
-            Value::Number(value) => {
-                session.enter_structured_node_usize(depth)?;
-                session.consume_structured_number_bytes_usize(value.to_string().len())?;
-            }
-            Value::Bool(_) | Value::Null => session.enter_structured_node_usize(depth)?,
-        }
-    }
-    Ok(())
+) -> Result<(), JsonSerdeError<ConversionResource, u64>> {
+    session.account_json_value(value)
 }
 
 /// Enforces the configured normalized structured-text byte limit.
@@ -114,8 +86,8 @@ pub(super) fn check_structured_text_limit(
 ) -> Result<(), DataConversionError> {
     limits.text().check(value).map_err(|error| match error {
         MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(from, to, error),
-        MeasuredBudgetError::Quantity { .. } => {
-            DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange)
+        MeasuredBudgetError::Quantity { resource, source } => {
+            DataConversionError::quantity(from, to, resource, source)
         }
     })
 }
@@ -248,26 +220,29 @@ fn map_json_decode_error(
 ///
 /// # Returns
 ///
-/// Returns a limit-exceeded error for budget failures and a deserialization
-/// error for JSON or I/O failures.
+/// Returns a budget-limit or quantity error for accounting failures and a
+/// deserialization error for JSON or I/O failures.
 #[cfg(feature = "json")]
-fn map_json_decode_error_from_type(
+pub(super) fn map_json_decode_error_from_type(
     source: DataType,
     target: DataType,
     error: JsonSerdeError<ConversionResource, u64>,
 ) -> DataConversionError {
     match error {
         JsonSerdeError::Budget(error) => DataConversionError::limit_exceeded(source, target, error),
-        JsonSerdeError::Quantity { .. } => {
-            DataConversionError::invalid(source, target, InvalidValueReason::OutOfRange)
+        JsonSerdeError::Quantity {
+            resource,
+            source: error,
+        } => DataConversionError::quantity(source, target, resource, error),
+        JsonSerdeError::Syntax(_) | JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => {
+            DataConversionError::invalid(
+                source,
+                target,
+                InvalidValueReason::Deserialization {
+                    format: DataFormat::Json,
+                },
+            )
         }
-        JsonSerdeError::Syntax(_) | JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => DataConversionError::invalid(
-            source,
-            target,
-            InvalidValueReason::Deserialization {
-                format: DataFormat::Json,
-            },
-        ),
         _ => DataConversionError::invalid(
             source,
             target,

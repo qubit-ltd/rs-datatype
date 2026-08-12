@@ -124,8 +124,8 @@ pub(super) fn enforce_big_decimal_limits(
             MeasuredBudgetError::Budget(error) => {
                 DataConversionError::limit_exceeded(from, to, error)
             }
-            MeasuredBudgetError::Quantity { .. } => {
-                DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange)
+            MeasuredBudgetError::Quantity { resource, source } => {
+                DataConversionError::quantity(from, to, resource, source)
             }
         })
 }
@@ -318,11 +318,9 @@ pub(super) fn source_to_bigint(
                 MeasuredBudgetError::Budget(error) => {
                     DataConversionError::limit_exceeded(DataType::BigInteger, to, error)
                 }
-                MeasuredBudgetError::Quantity { .. } => DataConversionError::invalid(
-                    DataType::BigInteger,
-                    to,
-                    InvalidValueReason::OutOfRange,
-                ),
+                MeasuredBudgetError::Quantity { resource, source } => {
+                    DataConversionError::quantity(DataType::BigInteger, to, resource, source)
+                }
             })?;
         #[cfg(not(feature = "big-integer"))]
         enforce_big_integer_digit_limit(value.as_ref(), maximum_digits, DataType::BigInteger, to)?;

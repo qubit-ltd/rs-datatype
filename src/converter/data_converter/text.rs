@@ -163,8 +163,8 @@ fn map_fmt_output_error_from_type(
         BudgetedStringError::Budget(error) => {
             DataConversionError::limit_exceeded(from, DataType::String, error)
         }
-        BudgetedStringError::Quantity { .. } => {
-            DataConversionError::invalid(from, DataType::String, InvalidValueReason::OutOfRange)
+        BudgetedStringError::Quantity { resource, source } => {
+            DataConversionError::quantity(from, DataType::String, resource, source)
         }
         BudgetedStringError::Render(_)
         | BudgetedStringError::InvalidUtf8(_)
@@ -183,16 +183,18 @@ fn map_json_encode_error(
         JsonSerdeError::Budget(error) => {
             DataConversionError::limit_exceeded(from, DataType::String, error)
         }
-        JsonSerdeError::Quantity { .. } => {
-            DataConversionError::invalid(from, DataType::String, InvalidValueReason::OutOfRange)
+        JsonSerdeError::Quantity { resource, source } => {
+            DataConversionError::quantity(from, DataType::String, resource, source)
         }
-        JsonSerdeError::Syntax(_) | JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => DataConversionError::invalid(
-            from,
-            DataType::String,
-            InvalidValueReason::Serialization {
-                format: DataFormat::Json,
-            },
-        ),
+        JsonSerdeError::Syntax(_) | JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => {
+            DataConversionError::invalid(
+                from,
+                DataType::String,
+                InvalidValueReason::Serialization {
+                    format: DataFormat::Json,
+                },
+            )
+        }
         _ => DataConversionError::invalid(
             from,
             DataType::String,
