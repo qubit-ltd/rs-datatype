@@ -228,7 +228,8 @@ assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
 # }
 ```
 
-第三次请求被拒绝时不会再消耗条目，但前两次成功转换的消耗不会回滚。便捷入口每次
+第三次请求的预算检查在准入前失败，因此不会再消耗条目；已经准入但随后转换失败的
+请求仍保留条目和输入消耗，只有事务式的 String 输出会在完整结果成功后提交。便捷入口每次
 都会新建 session，因此彼此不共享状态。限制错误可通过
 `DataConversionError::budget_error()` 读取原始
 `qubit_budget::BudgetError` 及完整预算事实，不再经过 datatype 专用包装。
@@ -316,6 +317,10 @@ assert_eq!(values, [1, 2, 3]);
 下游 crate 可以为自己的 newtype 实现 `DataConversionTarget`，并通过调用方的
 `ConversionSession` 委托给内置目标。委托会共享当前的条目、输入、输出和结构预算，
 不会把嵌套转换重复计为新的顶层条目。
+
+外层 `to_in`/`into_target_in` 调用已经为一个条目及其输入完成准入。自定义目标应使用
+`session.delegate` 或 `session.delegate_owned` 进行嵌套转换；只有自定义目标拥有独立且
+有明确文档的工作单元时，才应直接调用预算消耗方法。
 
 ```rust
 use qubit_datatype::{ConversionSession, DataConversionError,

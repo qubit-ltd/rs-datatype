@@ -254,9 +254,11 @@ assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
 # }
 ```
 
-The rejected third request does not consume another item, but the two earlier
-successful conversions remain charged. Convenience calls do not share that
-state because each constructs a fresh session.
+The rejected third request does not consume another item because its budget
+check fails before admission. A conversion that is admitted and later fails
+still retains its item and input charges; only transactional String output is
+committed after the complete result succeeds. Convenience calls do not share
+that state because each constructs a fresh session.
 
 Limit errors expose resource and observed or remaining-budget facts through
 `DataConversionError::budget_error()`, which returns the original
@@ -360,6 +362,12 @@ Downstream crates can implement `DataConversionTarget` for their own newtypes
 and delegate through the caller's `ConversionSession`. Delegation shares the
 active item, input, output, and structured budgets without charging the nested
 conversion as a second top-level item.
+
+The outer `to_in`/`into_target_in` call has already charged one item and its
+source input. Custom targets should use `session.delegate` or
+`session.delegate_owned` for nested conversions; direct budget-consumption
+methods are intended only for custom work units with their own documented
+accounting.
 
 ```rust
 use qubit_datatype::{ConversionSession, DataConversionError,

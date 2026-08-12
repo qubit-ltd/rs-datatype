@@ -36,8 +36,6 @@ use url::Url;
 #[cfg(feature = "json")]
 use self::structured::account_json_structure;
 use self::structured::account_string_map_structure;
-#[cfg(feature = "json")]
-use self::structured::map_json_decode_error_from_type;
 use super::conversion_session::ConversionSession;
 use super::data_conversion_target::DataConversionTarget;
 use super::error::DataConversionError;
@@ -323,19 +321,12 @@ impl DataConverter<'_> {
 
     /// Converts this source using an existing conversion session.
     #[inline(always)]
-    pub fn to_in<T>(
-        &self,
-        session: &mut ConversionSession<'_>,
-    ) -> Result<T, DataConversionError>
+    pub fn to_in<T>(&self, session: &mut ConversionSession<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
         session.consume_item().map_err(|limit| {
-            DataConversionError::limit_exceeded(
-                self.data_type(),
-                T::DATA_TYPE,
-                limit,
-            )
+            DataConversionError::limit_exceeded(self.data_type(), T::DATA_TYPE, limit)
         })?;
         self.charge_input_for_target(T::DATA_TYPE, session)?;
 
@@ -414,9 +405,9 @@ impl DataConverter<'_> {
         T: DataConversionTarget,
     {
         let from = self.data_type();
-        session.consume_item().map_err(|limit| {
-            DataConversionError::limit_exceeded(from, T::DATA_TYPE, limit)
-        })?;
+        session
+            .consume_item()
+            .map_err(|limit| DataConversionError::limit_exceeded(from, T::DATA_TYPE, limit))?;
         self.charge_input_for_target(T::DATA_TYPE, session)?;
         T::convert_owned(self, session)
     }
@@ -436,51 +427,27 @@ impl DataConverter<'_> {
                     value.as_ref()
                 };
                 session
-                    .consume_input_bytes_usize(normalized.len())
-                    .map_err(|error| {
-                        DataConversionError::measured_limit(
-                            self.data_type(),
-                            target,
-                            error,
-                        )
+                    .consume_input_bytes(u64::try_from(normalized.len()).unwrap())
+                    .map_err(|limit| {
+                        DataConversionError::limit_exceeded(self.data_type(), target, limit)
                     })?;
             }
             #[cfg(feature = "json")]
-            Self::Json(value)
-                if matches!(target, DataType::Json | DataType::String) =>
-            {
-                account_json_structure(value, 1, session).map_err(|error| {
-                    map_json_decode_error_from_type(
-                        self.data_type(),
-                        target,
-                        error,
-                    )
+            Self::Json(value) if target == DataType::Json => {
+                account_json_structure(value, 1, session).map_err(|limit| {
+                    DataConversionError::limit_exceeded(self.data_type(), target, limit)
                 })?;
             }
             Self::StringMap(value) if target == DataType::StringMap => {
-                account_string_map_structure(value, 1, session).map_err(
-                    |error| {
-                        DataConversionError::measured_limit(
-                            self.data_type(),
-                            target,
-                            error,
-                        )
-                    },
-                )?;
+                account_string_map_structure(value, 1, session).map_err(|limit| {
+                    DataConversionError::limit_exceeded(self.data_type(), target, limit)
+                })?;
             }
             #[cfg(feature = "json")]
-            Self::StringMap(value)
-                if matches!(target, DataType::Json | DataType::String) =>
-            {
-                account_string_map_structure(value, 1, session).map_err(
-                    |error| {
-                        DataConversionError::measured_limit(
-                            self.data_type(),
-                            target,
-                            error,
-                        )
-                    },
-                )?;
+            Self::StringMap(value) if matches!(target, DataType::Json | DataType::StringMap) => {
+                account_string_map_structure(value, 1, session).map_err(|limit| {
+                    DataConversionError::limit_exceeded(self.data_type(), target, limit)
+                })?;
             }
             _ => {}
         }
@@ -540,11 +507,7 @@ impl DataConverter<'_> {
     ///
     /// An invalid-value error recording this source's runtime type.
     #[inline(always)]
-    fn invalid(
-        &self,
-        to: DataType,
-        reason: InvalidValueReason,
-    ) -> DataConversionError {
+    fn invalid(&self, to: DataType, reason: InvalidValueReason) -> DataConversionError {
         DataConversionError::invalid(self.data_type(), to, reason)
     }
 }
