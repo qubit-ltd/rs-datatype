@@ -30,12 +30,6 @@ pub struct StructuredConversionLimits {
     text: StringLimits<ConversionResource>,
     /// Shared JSON value limits for structured traversal.
     value: JsonValueLimits<ConversionResource, u64>,
-    /// Maximum root-inclusive structured value depth.
-    max_depth: ResourceLimit<ConversionResource, u64>,
-    /// Maximum number of items in one sequence.
-    max_sequence_items: ResourceLimit<ConversionResource, u64>,
-    /// Maximum number of entries in one map.
-    max_map_entries: ResourceLimit<ConversionResource, u64>,
 }
 
 impl StructuredConversionLimits {
@@ -105,20 +99,25 @@ impl StructuredConversionLimits {
 
     /// Returns the configured depth maximum.
     #[inline(always)]
-    pub const fn max_depth(&self) -> u64 {
-        self.max_depth.maximum()
+    pub fn max_depth(&self) -> u64 {
+        self.value
+            .max_depth()
+            .expect("structured depth limit is configured")
     }
 
     /// Returns the depth resource limit.
     #[inline(always)]
-    pub const fn max_depth_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
-        &self.max_depth
+    pub fn max_depth_limit(&self) -> ResourceLimit<ConversionResource, u64> {
+        self.value
+            .structure_limits()
+            .depth_limit()
+            .cloned()
+            .expect("structured depth limit is configured")
     }
 
     /// Returns a copy with a different depth maximum.
     #[inline(always)]
     pub fn with_max_depth(mut self, maximum: u64) -> Self {
-        self.max_depth = ResourceLimit::new(ConversionResource::StructuredDepth, maximum);
         self.value =
             self.value
                 .with_structure_limits(self.value.structure_limits().with_depth_limit(
@@ -129,20 +128,25 @@ impl StructuredConversionLimits {
 
     /// Returns the configured sequence item maximum.
     #[inline(always)]
-    pub const fn max_sequence_items(&self) -> u64 {
-        self.max_sequence_items.maximum()
+    pub fn max_sequence_items(&self) -> u64 {
+        self.value
+            .max_sequence_items()
+            .expect("structured sequence-item limit is configured")
     }
 
     /// Returns the sequence item resource limit.
     #[inline(always)]
-    pub const fn max_sequence_items_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
-        &self.max_sequence_items
+    pub fn max_sequence_items_limit(&self) -> ResourceLimit<ConversionResource, u64> {
+        self.value
+            .structure_limits()
+            .sequence_items_limit()
+            .cloned()
+            .expect("structured sequence-item limit is configured")
     }
 
     /// Returns a copy with a different sequence item maximum.
     #[inline(always)]
     pub fn with_max_sequence_items(mut self, maximum: u64) -> Self {
-        self.max_sequence_items = ResourceLimit::new(ConversionResource::SequenceItems, maximum);
         self.value = self.value.with_structure_limits(
             self.value
                 .structure_limits()
@@ -156,20 +160,25 @@ impl StructuredConversionLimits {
 
     /// Returns the configured map entry maximum.
     #[inline(always)]
-    pub const fn max_map_entries(&self) -> u64 {
-        self.max_map_entries.maximum()
+    pub fn max_map_entries(&self) -> u64 {
+        self.value
+            .max_map_entries()
+            .expect("structured map-entry limit is configured")
     }
 
     /// Returns the map entry resource limit.
     #[inline(always)]
-    pub const fn max_map_entries_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
-        &self.max_map_entries
+    pub fn max_map_entries_limit(&self) -> ResourceLimit<ConversionResource, u64> {
+        self.value
+            .structure_limits()
+            .map_entries_limit()
+            .cloned()
+            .expect("structured map-entry limit is configured")
     }
 
     /// Returns a copy with a different map entry maximum.
     #[inline(always)]
     pub fn with_max_map_entries(mut self, maximum: u64) -> Self {
-        self.max_map_entries = ResourceLimit::new(ConversionResource::MapEntries, maximum);
         self.value =
             self.value
                 .with_structure_limits(self.value.structure_limits().with_map_entries_limit(
@@ -212,18 +221,6 @@ impl Default for StructuredConversionLimits {
                     ConversionResource::StructuredTextBytes,
                     Self::DEFAULT_MAX_TEXT_BYTES,
                 )),
-            max_depth: ResourceLimit::new(
-                ConversionResource::StructuredDepth,
-                Self::DEFAULT_MAX_DEPTH,
-            ),
-            max_sequence_items: ResourceLimit::new(
-                ConversionResource::SequenceItems,
-                Self::DEFAULT_MAX_SEQUENCE_ITEMS,
-            ),
-            max_map_entries: ResourceLimit::new(
-                ConversionResource::MapEntries,
-                Self::DEFAULT_MAX_MAP_ENTRIES,
-            ),
         }
     }
 }

@@ -12,6 +12,8 @@ use std::collections::HashMap;
 use qubit_budget::BudgetError;
 #[cfg(feature = "json")]
 use qubit_budget::JsonSerdeError;
+#[cfg(any(feature = "json", feature = "url"))]
+use qubit_budget::MeasuredBudgetError;
 #[cfg(feature = "json")]
 use serde_json::Value;
 
@@ -114,10 +116,12 @@ pub(super) fn check_structured_text_limit(
     to: DataType,
     limits: &StructuredConversionLimits,
 ) -> Result<(), DataConversionError> {
-    limits
-        .text()
-        .check(value)
-        .map_err(|error| DataConversionError::limit_exceeded(from, to, error))
+    limits.text().check(value).map_err(|error| match error {
+        MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(from, to, error),
+        MeasuredBudgetError::Quantity { .. } => {
+            DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange)
+        }
+    })
 }
 
 /// Converts a borrowed string map to a JSON object with canonical key order.
@@ -258,6 +262,9 @@ fn map_json_decode_error_from_type(
 ) -> DataConversionError {
     match error {
         JsonSerdeError::Budget(error) => DataConversionError::limit_exceeded(source, target, error),
+        JsonSerdeError::Quantity { .. } => {
+            DataConversionError::invalid(source, target, InvalidValueReason::OutOfRange)
+        }
         JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => DataConversionError::invalid(
             source,
             target,

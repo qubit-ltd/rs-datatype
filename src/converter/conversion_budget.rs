@@ -141,4 +141,16 @@ impl ConversionBudget {
     pub(crate) const fn structured_mut(&mut self) -> &mut JsonValueBudget<ConversionResource, u64> {
         &mut self.structured
     }
+
+    /// Returns the shared output and structured budgets for online encoding.
+    #[cfg(feature = "json")]
+    #[inline(always)]
+    pub(crate) fn split_json_mut(
+        &mut self,
+    ) -> (
+        &mut ResourceBudget<ConversionResource, u64>,
+        &mut JsonValueBudget<ConversionResource, u64>,
+    ) {
+        (&mut self.output_bytes, &mut self.structured)
+    }
 }

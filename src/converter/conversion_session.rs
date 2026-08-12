@@ -13,10 +13,14 @@ use qubit_budget::BudgetedStringWriter;
 #[cfg(feature = "json")]
 use qubit_budget::JsonDecodeSession;
 #[cfg(feature = "json")]
+use qubit_budget::JsonEncodeSession;
+#[cfg(feature = "json")]
 use qubit_budget::JsonSerdeError;
 use qubit_budget::ResourceLimit;
 #[cfg(feature = "json")]
 use serde::Deserialize;
+#[cfg(feature = "json")]
+use serde::Serialize;
 #[cfg(feature = "json")]
 use serde::de::DeserializeSeed;
 
@@ -62,6 +66,13 @@ impl<'a> ConversionSession<'a> {
 
     /// Delegates a nested conversion without charging a new top-level item or
     /// input payload.
+    ///
+    /// Custom [`DataConversionTarget`] implementations must use this method
+    /// (or [`Self::delegate_owned`]) for nested work. The outer
+    /// [`DataConverter::to_in`](crate::DataConverter::to_in) call has already
+    /// admitted one item and its source input; direct calls to the consume
+    /// methods are reserved for custom targets that own a distinct budgeted
+    /// unit of work.
     #[inline(always)]
     pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
     where
@@ -80,6 +91,9 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Decodes JSON while charging the shared structured budget directly.
+    ///
+    /// The caller is responsible for charging any outer source/input bytes;
+    /// this method accounts only the JSON value structure and payload.
     #[cfg(feature = "json")]
     pub fn decode_json<'de, T>(
         &mut self,
@@ -104,6 +118,20 @@ impl<'a> ConversionSession<'a> {
     {
         let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
         qubit_budget::decode_slice_seed(seed, input, &mut decode)
+    }
+
+    /// Encodes JSON through the shared structured and output budgets.
+    #[cfg(feature = "json")]
+    pub fn encode_json<T>(
+        &mut self,
+        value: &T,
+    ) -> Result<Vec<u8>, JsonSerdeError<ConversionResource>>
+    where
+        T: Serialize + ?Sized,
+    {
+        let (output, structured) = self.budget.split_json_mut();
+        let mut encode = JsonEncodeSession::borrowing(Some(output), structured);
+        qubit_budget::encode_to_vec(value, &mut encode)
     }
 
     /// Consumes one top-level conversion item.

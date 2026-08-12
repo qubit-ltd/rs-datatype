@@ -16,6 +16,7 @@ use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use qubit_budget::BudgetError;
+use qubit_budget::MeasuredBudgetError;
 
 use super::super::super::string_source::normalize;
 #[cfg(feature = "big-decimal")]
@@ -80,10 +81,14 @@ pub(in crate::converter::data_converter) fn check_numeric_text_limit(
     limits: &NumericConversionLimits,
     to: DataType,
 ) -> Result<(), DataConversionError> {
-    limits
-        .text()
-        .check(value)
-        .map_err(|error| DataConversionError::limit_exceeded(DataType::String, to, error))
+    limits.text().check(value).map_err(|error| match error {
+        MeasuredBudgetError::Budget(error) => {
+            DataConversionError::limit_exceeded(DataType::String, to, error)
+        }
+        MeasuredBudgetError::Quantity { .. } => {
+            DataConversionError::invalid(DataType::String, to, InvalidValueReason::OutOfRange)
+        }
+    })
 }
 
 /// Parses a normalized number without selecting a target primitive first.

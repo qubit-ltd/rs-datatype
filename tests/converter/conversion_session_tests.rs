@@ -59,3 +59,29 @@ fn test_trimmed_text_is_charged_once() {
         .to_with::<u16>(&policy, &limits)
         .expect("trimmed text should consume its normalized length once");
 }
+
+#[test]
+fn test_failed_conversion_keeps_attempted_item_and_input_accounting() {
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default()
+            .with_max_items(2)
+            .with_max_input_bytes(5),
+    );
+    let mut session = ConversionSession::new(&policy, &limits);
+
+    let _ = DataConverter::from("bad")
+        .to_in::<u16>(&mut session)
+        .expect_err("invalid syntax should fail after admission");
+    DataConverter::from("1")
+        .to_in::<u16>(&mut session)
+        .expect("the second attempted item should still fit");
+    let error = DataConverter::from("2")
+        .to_in::<u16>(&mut session)
+        .expect_err("the failed attempt must retain its item budget usage");
+
+    assert_eq!(
+        error.budget_error().map(|facts| *facts.resource()),
+        Some(ConversionResource::Items),
+    );
+}

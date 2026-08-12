@@ -23,6 +23,8 @@ use chrono::NaiveTime;
 #[cfg(feature = "chrono")]
 use chrono::Utc;
 use qubit_budget::BudgetedStringError;
+#[cfg(feature = "json")]
+use qubit_budget::JsonSerdeError;
 #[cfg(feature = "url")]
 use url::Url;
 
@@ -161,6 +163,9 @@ fn map_fmt_output_error_from_type(
         BudgetedStringError::Budget(error) => {
             DataConversionError::limit_exceeded(from, DataType::String, error)
         }
+        BudgetedStringError::Quantity { .. } => {
+            DataConversionError::invalid(from, DataType::String, InvalidValueReason::OutOfRange)
+        }
         BudgetedStringError::Render(_)
         | BudgetedStringError::InvalidUtf8(_)
         | BudgetedStringError::LengthOverflow => {
@@ -170,35 +175,38 @@ fn map_fmt_output_error_from_type(
 }
 
 #[cfg(feature = "json")]
-fn map_json_output_error(
-    source: &DataConverter<'_>,
-    error: BudgetedStringError<ConversionResource, serde_json::Error>,
+fn map_json_encode_error(
+    from: DataType,
+    error: JsonSerdeError<ConversionResource>,
 ) -> DataConversionError {
-    map_json_output_error_from_type(source.data_type(), error)
+    match error {
+        JsonSerdeError::Budget(error) => {
+            DataConversionError::limit_exceeded(from, DataType::String, error)
+        }
+        JsonSerdeError::Quantity { .. } => {
+            DataConversionError::invalid(from, DataType::String, InvalidValueReason::OutOfRange)
+        }
+        JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => DataConversionError::invalid(
+            from,
+            DataType::String,
+            InvalidValueReason::Serialization {
+                format: DataFormat::Json,
+            },
+        ),
+    }
 }
 
 #[cfg(feature = "json")]
-fn map_json_output_error_from_type(
-    from: DataType,
-    error: BudgetedStringError<ConversionResource, serde_json::Error>,
-) -> DataConversionError {
-    match error {
-        BudgetedStringError::Budget(error) => {
-            DataConversionError::limit_exceeded(from, DataType::String, error)
-        }
-        BudgetedStringError::Render(_) | BudgetedStringError::InvalidUtf8(_) => {
-            DataConversionError::invalid(
-                from,
-                DataType::String,
-                InvalidValueReason::Serialization {
-                    format: DataFormat::Json,
-                },
-            )
-        }
-        BudgetedStringError::LengthOverflow => {
-            DataConversionError::invalid(from, DataType::String, InvalidValueReason::OutOfRange)
-        }
-    }
+fn json_bytes_to_string(from: DataType, bytes: Vec<u8>) -> Result<String, DataConversionError> {
+    String::from_utf8(bytes).map_err(|_| {
+        DataConversionError::invalid(
+            from,
+            DataType::String,
+            InvalidValueReason::Serialization {
+                format: DataFormat::Json,
+            },
+        )
+    })
 }
 
 impl DataConversionTarget for char {
@@ -263,6 +271,13 @@ impl DataConversionTarget for String {
         session: &mut ConversionSession<'_>,
     ) -> Result<Self, DataConversionError> {
         let options = session.policy();
+        #[cfg(feature = "json")]
+        if let DataConverter::Json(value) = source {
+            return session
+                .encode_json(value.as_ref())
+                .map_err(|error| map_json_encode_error(source.data_type(), error))
+                .and_then(|bytes| json_bytes_to_string(source.data_type(), bytes));
+        }
         if let DataConverter::String(value) = source {
             let normalized = normalize(value, options, DataType::String)?;
             return session
@@ -326,10 +341,9 @@ impl DataConversionTarget for String {
             }
             #[cfg(feature = "json")]
             DataConverter::StringMap(value) => session
-                .try_write_string(|writer| {
-                    serde_json::to_writer(writer.as_io(), &CanonicalStringMap { value })
-                })
-                .map_err(|error| map_json_output_error(source, error)),
+                .encode_json(&CanonicalStringMap { value })
+                .map_err(|error| map_json_encode_error(source.data_type(), error))
+                .and_then(|bytes| json_bytes_to_string(source.data_type(), bytes)),
             #[cfg(not(feature = "json"))]
             DataConverter::StringMap(_) => Err(source.unsupported(DataType::String)),
             _ => Err(source.unsupported(DataType::String)),

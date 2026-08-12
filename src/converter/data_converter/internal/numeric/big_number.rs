@@ -14,6 +14,7 @@ use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 use num_traits::FromPrimitive;
 use qubit_budget::BudgetError;
+use qubit_budget::MeasuredBudgetError;
 
 use super::super::super::DataConverter;
 use super::integer::duration_to_u128;
@@ -118,7 +119,14 @@ pub(super) fn enforce_big_decimal_limits(
     limits
         .big_decimal()
         .check(value)
-        .map_err(|error| DataConversionError::limit_exceeded(from, to, error))
+        .map_err(|error| match error {
+            MeasuredBudgetError::Budget(error) => {
+                DataConversionError::limit_exceeded(from, to, error)
+            }
+            MeasuredBudgetError::Quantity { .. } => {
+                DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange)
+            }
+        })
 }
 
 /// Converts a decimal to an integer with exactness checks.
@@ -305,8 +313,15 @@ pub(super) fn source_to_bigint(
         limits
             .big_integer()
             .check(value.as_ref())
-            .map_err(|error| {
-                DataConversionError::limit_exceeded(DataType::BigInteger, to, error)
+            .map_err(|error| match error {
+                MeasuredBudgetError::Budget(error) => {
+                    DataConversionError::limit_exceeded(DataType::BigInteger, to, error)
+                }
+                MeasuredBudgetError::Quantity { .. } => DataConversionError::invalid(
+                    DataType::BigInteger,
+                    to,
+                    InvalidValueReason::OutOfRange,
+                ),
             })?;
         #[cfg(not(feature = "big-integer"))]
         enforce_big_integer_digit_limit(value.as_ref(), maximum_digits, DataType::BigInteger, to)?;
