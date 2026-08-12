@@ -427,26 +427,26 @@ impl DataConverter<'_> {
                     value.as_ref()
                 };
                 session
-                    .consume_input_bytes(u64::try_from(normalized.len()).unwrap())
+                    .consume_input_bytes_usize(normalized.len())
                     .map_err(|limit| {
-                        DataConversionError::limit_exceeded(self.data_type(), target, limit)
+                        DataConversionError::measured_limit(self.data_type(), target, limit)
                     })?;
             }
             #[cfg(feature = "json")]
             Self::Json(value) if target == DataType::Json => {
                 account_json_structure(value, 1, session).map_err(|limit| {
-                    DataConversionError::limit_exceeded(self.data_type(), target, limit)
+                    DataConversionError::measured_limit(self.data_type(), target, limit)
                 })?;
             }
             Self::StringMap(value) if target == DataType::StringMap => {
                 account_string_map_structure(value, 1, session).map_err(|limit| {
-                    DataConversionError::limit_exceeded(self.data_type(), target, limit)
+                    DataConversionError::measured_limit(self.data_type(), target, limit)
                 })?;
             }
             #[cfg(feature = "json")]
             Self::StringMap(value) if matches!(target, DataType::Json | DataType::StringMap) => {
                 account_string_map_structure(value, 1, session).map_err(|limit| {
-                    DataConversionError::limit_exceeded(self.data_type(), target, limit)
+                    DataConversionError::measured_limit(self.data_type(), target, limit)
                 })?;
             }
             _ => {}

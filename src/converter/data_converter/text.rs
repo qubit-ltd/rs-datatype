@@ -360,15 +360,15 @@ impl DataConversionTarget for String {
             let normalized = normalize(value.as_ref(), session.policy(), DataType::String)?;
             if normalized.len() == value.len() {
                 session
-                    .check_output_bytes(u64::try_from(normalized.len()).unwrap())
+                    .check_output_bytes_usize(normalized.len())
                     .map_err(|error| {
-                        DataConversionError::limit_exceeded(from, DataType::String, error)
+                        DataConversionError::measured_limit(from, DataType::String, error)
                     })?;
                 let result = value.into_owned();
                 session
-                    .consume_output_bytes(u64::try_from(result.len()).unwrap())
+                    .consume_output_bytes_usize(result.len())
                     .map_err(|error| {
-                        DataConversionError::limit_exceeded(from, DataType::String, error)
+                        DataConversionError::measured_limit(from, DataType::String, error)
                     })?;
                 return Ok(result);
             }
@@ -383,14 +383,14 @@ impl DataConversionTarget for String {
         if let DataConverter::Url(value) = source {
             let result: String = value.into_owned().into();
             session
-                .check_output_bytes(u64::try_from(result.len()).unwrap())
+                .check_output_bytes_usize(result.len())
                 .map_err(|error| {
-                    DataConversionError::limit_exceeded(from, DataType::String, error)
+                    DataConversionError::measured_limit(from, DataType::String, error)
                 })?;
             session
-                .consume_output_bytes(u64::try_from(result.len()).unwrap())
+                .consume_output_bytes_usize(result.len())
                 .map_err(|error| {
-                    DataConversionError::limit_exceeded(from, DataType::String, error)
+                    DataConversionError::measured_limit(from, DataType::String, error)
                 })?;
             return Ok(result);
         }

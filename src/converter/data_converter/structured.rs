@@ -9,10 +9,8 @@
 
 use std::collections::HashMap;
 
-use qubit_budget::BudgetError;
 #[cfg(feature = "json")]
 use qubit_budget::JsonSerdeError;
-#[cfg(any(feature = "json", feature = "url"))]
 use qubit_budget::MeasuredBudgetError;
 #[cfg(feature = "json")]
 use serde_json::Value;
@@ -39,15 +37,15 @@ use crate::datatype::DataType;
 /// Accounts one string map and its payload against a conversion session.
 pub(super) fn account_string_map_structure(
     value: &HashMap<String, String>,
-    depth: u64,
+    depth: usize,
     session: &mut ConversionSession<'_>,
-) -> Result<(), BudgetError<ConversionResource, u64>> {
-    session.enter_structured_map(depth, u64::try_from(value.len()).unwrap())?;
+) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+    session.enter_structured_map_usize(depth, value.len())?;
     let value_depth = depth.saturating_add(1);
     for (key, value) in value {
-        session.consume_structured_key_bytes(u64::try_from(key.len()).unwrap())?;
-        session.enter_structured_node(value_depth)?;
-        session.consume_structured_string_bytes(u64::try_from(value.len()).unwrap())?;
+        session.consume_structured_key_bytes_usize(key.len())?;
+        session.enter_structured_node_usize(value_depth)?;
+        session.consume_structured_string_bytes_usize(value.len())?;
     }
     Ok(())
 }
@@ -56,36 +54,34 @@ pub(super) fn account_string_map_structure(
 #[cfg(feature = "json")]
 pub(super) fn account_json_structure(
     value: &Value,
-    depth: u64,
+    depth: usize,
     session: &mut ConversionSession<'_>,
-) -> Result<(), BudgetError<ConversionResource, u64>> {
+) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
     let mut stack = vec![(value, depth)];
     while let Some((value, depth)) = stack.pop() {
         match value {
             Value::Array(values) => {
-                session.enter_structured_sequence(depth, u64::try_from(values.len()).unwrap())?;
+                session.enter_structured_sequence_usize(depth, values.len())?;
                 let child_depth = depth.saturating_add(1);
                 stack.extend(values.iter().rev().map(|value| (value, child_depth)));
             }
             Value::Object(values) => {
-                session.enter_structured_map(depth, u64::try_from(values.len()).unwrap())?;
+                session.enter_structured_map_usize(depth, values.len())?;
                 let child_depth = depth.saturating_add(1);
                 for (key, value) in values.iter().rev() {
-                    session.consume_structured_key_bytes(u64::try_from(key.len()).unwrap())?;
+                    session.consume_structured_key_bytes_usize(key.len())?;
                     stack.push((value, child_depth));
                 }
             }
             Value::String(value) => {
-                session.enter_structured_node(depth)?;
-                session.consume_structured_string_bytes(u64::try_from(value.len()).unwrap())?;
+                session.enter_structured_node_usize(depth)?;
+                session.consume_structured_string_bytes_usize(value.len())?;
             }
             Value::Number(value) => {
-                session.enter_structured_node(depth)?;
-                session.consume_structured_number_bytes(
-                    u64::try_from(value.to_string().len()).unwrap(),
-                )?;
+                session.enter_structured_node_usize(depth)?;
+                session.consume_structured_number_bytes_usize(value.to_string().len())?;
             }
-            Value::Bool(_) | Value::Null => session.enter_structured_node(depth)?,
+            Value::Bool(_) | Value::Null => session.enter_structured_node_usize(depth)?,
         }
     }
     Ok(())

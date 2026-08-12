@@ -11,6 +11,7 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 use serde::Serializer;
+use serde::ser::SerializeMap;
 
 /// Borrows a string map and serializes its entries in lexicographic key order.
 pub(in crate::converter::data_converter) struct CanonicalStringMap<'a> {
@@ -59,7 +60,10 @@ impl Serialize for CanonicalStringMap<'_> {
     where
         S: Serializer,
     {
-        let entries = sorted_string_map_entries(self.value);
-        serializer.collect_map(entries)
+        let mut map = serializer.serialize_map(Some(self.value.len()))?;
+        for (key, value) in sorted_string_map_entries(self.value) {
+            map.serialize_entry(key, value)?;
+        }
+        map.end()
     }
 }

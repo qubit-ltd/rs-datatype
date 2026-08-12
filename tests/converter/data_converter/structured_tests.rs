@@ -258,6 +258,31 @@ fn test_data_converter_rejects_json_text_exceeding_structure_limits() {
     );
 }
 
+/// Verifies StringMap-to-String rejects a known map size before JSON traversal.
+#[cfg(feature = "json")]
+#[test]
+fn test_data_converter_string_map_limit_precedes_serialization() {
+    let source = HashMap::from([
+        ("first".to_owned(), "1".to_owned()),
+        ("second".to_owned(), "2".to_owned()),
+    ]);
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::default().with_structured_limits(
+        StructuredConversionLimits::default().with_max_map_entries(1),
+    );
+    let mut session = ConversionSession::new(&policy, &limits);
+
+    let error = DataConverter::from(&source)
+        .to_in::<String>(&mut session)
+        .expect_err("the map entry limit must reject the complete source size");
+
+    assert_eq!(
+        error.budget_error().map(|error| *error.resource()),
+        Some(ConversionResource::MapEntries),
+    );
+    assert_eq!(session.structured_nodes_used(), 0);
+}
+
 /// Tests that JSON text decoding consumes the shared structural node budget.
 #[cfg(feature = "json")]
 #[test]
