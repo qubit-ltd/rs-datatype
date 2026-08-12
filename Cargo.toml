@@ -50,7 +50,7 @@ big-decimal = [
 big-number = ["big-integer", "big-decimal"]
 url = ["dep:url"]
 json = ["dep:serde_json", "dep:qubit-json"]
-converter = ["duration", "dep:qubit-budget", "qubit-budget/json"]
+converter = ["duration", "dep:qubit-budget"]
 all = ["converter", "chrono", "big-number", "url", "json"]
 
 [dependencies]
