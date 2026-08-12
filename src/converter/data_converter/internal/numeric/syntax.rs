@@ -17,6 +17,7 @@ use num_bigint::BigInt;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use qubit_budget::BudgetError;
 use qubit_budget::MeasuredBudgetError;
+use qubit_budget::Observation;
 
 use super::super::super::string_source::normalize;
 #[cfg(feature = "big-decimal")]
@@ -556,7 +557,7 @@ pub(super) fn parse_text_bigint(
             to,
             BudgetError::LimitExceeded {
                 resource: crate::converter::ConversionResource::BigIntegerDigits,
-                observed: qubit_budget::Observation::Exact(u64::try_from(result_digits).unwrap()),
+                observed: Observation::Exact(u64::try_from(result_digits).unwrap()),
                 maximum: maximum_digits,
             },
         ));

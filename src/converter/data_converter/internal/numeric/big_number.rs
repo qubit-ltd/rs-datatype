@@ -15,6 +15,7 @@ use num_bigint::BigInt;
 use num_traits::FromPrimitive;
 use qubit_budget::BudgetError;
 use qubit_budget::MeasuredBudgetError;
+use qubit_budget::Observation;
 
 use super::super::super::DataConverter;
 use super::integer::duration_to_u128;
@@ -99,7 +100,7 @@ fn enforce_big_integer_digit_limit(
         to,
         BudgetError::LimitExceeded {
             resource: crate::converter::ConversionResource::BigIntegerDigits,
-            observed: qubit_budget::Observation::Exact(
+            observed: Observation::Exact(
                 u64::try_from(value.to_str_radix(10).trim_start_matches('-').len()).unwrap(),
             ),
             maximum: maximum_digits,
@@ -172,7 +173,7 @@ pub(super) fn decimal_to_bigint(
                 to,
                 BudgetError::LimitExceeded {
                     resource: crate::converter::ConversionResource::BigIntegerDigits,
-                    observed: qubit_budget::Observation::Exact(result_digits),
+                    observed: Observation::Exact(result_digits),
                     maximum: maximum_digits,
                 },
             ));
@@ -222,7 +223,7 @@ pub(super) fn decimal_to_bigint(
             to,
             BudgetError::LimitExceeded {
                 resource: crate::converter::ConversionResource::BigIntegerDigits,
-                observed: qubit_budget::Observation::Exact(u64::try_from(result_digits).unwrap()),
+                observed: Observation::Exact(u64::try_from(result_digits).unwrap()),
                 maximum: maximum_digits,
             },
         ));

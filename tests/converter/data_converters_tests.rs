@@ -13,9 +13,11 @@ use std::error::Error;
 
 use qubit_datatype::DataType;
 use qubit_datatype::converter::BlankStringPolicy;
+use qubit_datatype::converter::ConversionLimits;
 use qubit_datatype::converter::ConversionOperationLimits;
 use qubit_datatype::converter::ConversionPolicy;
 use qubit_datatype::converter::ConversionResource;
+use qubit_datatype::converter::ConversionSession;
 use qubit_datatype::converter::DataConversionError;
 use qubit_datatype::converter::DataConverters;
 use qubit_datatype::converter::InvalidValueReason;
@@ -26,10 +28,9 @@ use super::internal::InflatedSizeHintIterator;
 /// Verifies batch conversion does not allocate from an untrusted size hint.
 #[test]
 fn test_data_converters_ignore_inflated_size_hint() {
-    let converted =
-        DataConverters::from_iterator(InflatedSizeHintIterator::new("42"))
-            .to_vec::<u16>()
-            .expect("actual iterator elements should determine allocation");
+    let converted = DataConverters::from_iterator(InflatedSizeHintIterator::new("42"))
+        .to_vec::<u16>()
+        .expect("actual iterator elements should determine allocation");
 
     assert_eq!(converted, vec![42]);
 }
@@ -138,10 +139,9 @@ fn test_data_converters_from_owned_vec_of_borrowed_values() {
 fn test_data_converters_from_iterator_converts_all_values() {
     let values = ["1", "2", "3"];
 
-    let converted: Vec<u16> =
-        DataConverters::from_iterator(values.iter().copied())
-            .to_vec()
-            .expect("string iterator should convert to u16 vector");
+    let converted: Vec<u16> = DataConverters::from_iterator(values.iter().copied())
+        .to_vec()
+        .expect("string iterator should convert to u16 vector");
 
     assert_eq!(converted, vec![1, 2, 3]);
 }
@@ -155,13 +155,9 @@ fn test_data_converters_to_vec_with_applies_options() {
             .with_blank_string_policy(BlankStringPolicy::Reject),
     );
 
-    let ports: Vec<u16> =
-        DataConverters::from(vec![" 8080 ".to_string(), " 8081 ".to_string()])
-            .to_vec_with(
-                &options,
-                qubit_datatype::ConversionLimits::default_ref(),
-            )
-            .expect("trimmed string values should parse into ports");
+    let ports: Vec<u16> = DataConverters::from(vec![" 8080 ".to_string(), " 8081 ".to_string()])
+        .to_vec_with(&options, ConversionLimits::default_ref())
+        .expect("trimmed string values should parse into ports");
 
     assert_eq!(ports, vec![8080, 8081]);
 }
@@ -169,11 +165,9 @@ fn test_data_converters_to_vec_with_applies_options() {
 #[test]
 fn test_data_converters_to_vec_in_enforces_session_item_budget() {
     let policy = ConversionPolicy::default();
-    let limits = qubit_datatype::ConversionLimits::default()
-        .with_operation_limits(
-            ConversionOperationLimits::default().with_max_items(2),
-        );
-    let mut session = qubit_datatype::ConversionSession::new(&policy, &limits);
+    let limits = ConversionLimits::default()
+        .with_operation_limits(ConversionOperationLimits::default().with_max_items(2));
+    let mut session = ConversionSession::new(&policy, &limits);
     let error = DataConverters::from_iterator(["1", "2", "3"].into_iter())
         .to_vec_in::<u16>(&mut session)
         .expect_err("the third item must exceed the shared budget");
