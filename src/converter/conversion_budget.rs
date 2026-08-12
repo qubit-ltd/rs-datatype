@@ -10,10 +10,10 @@
 use qubit_budget::BudgetError;
 use qubit_budget::BudgetedStringError;
 use qubit_budget::BudgetedStringWriter;
-use qubit_budget::JsonValueBudget;
 use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceBudget;
 use qubit_budget::ResourceQuantity;
+use qubit_json::JsonValueBudget;
 
 use super::ConversionLimits;
 use super::ConversionResource;

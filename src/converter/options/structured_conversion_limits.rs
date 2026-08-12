@@ -7,10 +7,10 @@
 // =============================================================================
 //! Resource limits for structured text conversions.
 
-use qubit_budget::JsonValueLimits;
 use qubit_budget::ResourceLimit;
 use qubit_budget::StringLimits;
 use qubit_budget::StructureLimits;
+use qubit_json::JsonValueLimits;
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;

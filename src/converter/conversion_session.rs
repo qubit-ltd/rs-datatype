@@ -10,13 +10,13 @@
 use qubit_budget::BudgetError;
 use qubit_budget::BudgetedStringError;
 use qubit_budget::BudgetedStringWriter;
-#[cfg(feature = "json")]
-use qubit_budget::JsonDecodeSession;
-#[cfg(feature = "json")]
-use qubit_budget::JsonEncodeSession;
 use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceLimit;
 use qubit_budget::ResourceQuantity;
+#[cfg(feature = "json")]
+use qubit_json::JsonDecodeSession;
+#[cfg(feature = "json")]
+use qubit_json::JsonEncodeSession;
 #[cfg(feature = "json")]
 use qubit_json::JsonSerdeError;
 #[cfg(feature = "json")]
