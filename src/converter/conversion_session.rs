@@ -16,11 +16,15 @@ use qubit_budget::JsonDecodeSession;
 use qubit_budget::JsonEncodeSession;
 #[cfg(feature = "json")]
 use qubit_budget::JsonSerdeError;
-#[cfg(feature = "json")]
-use qubit_budget::JsonValueBudget;
 use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceLimit;
 use qubit_budget::ResourceQuantity;
+#[cfg(feature = "json")]
+use qubit_budget::decode_slice;
+#[cfg(feature = "json")]
+use qubit_budget::decode_slice_seed;
+#[cfg(feature = "json")]
+use qubit_budget::encode_to_vec;
 #[cfg(feature = "json")]
 use serde::Deserialize;
 #[cfg(feature = "json")]
@@ -107,7 +111,7 @@ impl<'a> ConversionSession<'a> {
         T: Deserialize<'de>,
     {
         let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
-        qubit_budget::decode_slice(input, &mut decode)
+        decode_slice(input, &mut decode)
     }
 
     /// Decodes JSON through a seed while charging the shared budget directly.
@@ -121,18 +125,7 @@ impl<'a> ConversionSession<'a> {
         S: DeserializeSeed<'de>,
     {
         let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
-        qubit_budget::decode_slice_seed(seed, input, &mut decode)
-    }
-
-    /// Returns the shared JSON value budget for custom structured targets.
-    ///
-    /// This low-level access is intentionally public so downstream
-    /// [`DataConversionTarget`] implementations can use the same accounting
-    /// session without duplicating budget state.
-    #[cfg(feature = "json")]
-    #[inline(always)]
-    pub fn structured_json_budget_mut(&mut self) -> &mut JsonValueBudget<ConversionResource> {
-        self.budget.structured_mut()
+        decode_slice_seed(seed, input, &mut decode)
     }
 
     /// Encodes JSON through the shared structured and output budgets.
@@ -146,7 +139,7 @@ impl<'a> ConversionSession<'a> {
     {
         let (output, structured) = self.budget.split_json_mut();
         let mut encode = JsonEncodeSession::borrowing(Some(output), structured);
-        qubit_budget::encode_to_vec(value, &mut encode)
+        encode_to_vec(value, &mut encode)
     }
 
     /// Consumes one top-level conversion item.
@@ -270,6 +263,17 @@ impl<'a> ConversionSession<'a> {
         self.budget.structured_mut().enter_node_usize(depth)
     }
 
+    /// Enters one structured sequence node after checking a native item count.
+    #[cfg(feature = "json")]
+    #[inline]
+    pub fn enter_structured_sequence_usize(
+        &mut self,
+        depth: usize,
+        items: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        self.budget.structured_mut().enter_array_usize(depth, items)
+    }
+
     /// Enters one structured sequence node after checking its item count.
     #[cfg(feature = "json")]
     #[inline]
@@ -351,6 +355,18 @@ impl<'a> ConversionSession<'a> {
         self.budget.structured_mut().consume_number_bytes(amount)
     }
 
+    /// Checks and consumes a structured number measured by native text length.
+    #[cfg(feature = "json")]
+    #[inline]
+    pub fn consume_structured_number_bytes_usize(
+        &mut self,
+        amount: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        self.budget
+            .structured_mut()
+            .consume_number_bytes_usize(amount)
+    }
+
     /// Returns remaining top-level item capacity.
     #[inline(always)]
     pub const fn items_remaining(&self) -> u64 {
@@ -392,7 +408,7 @@ impl<'a> ConversionSession<'a> {
         self.items_remaining()
     }
 
-    /// Returns cumulative input bytes already consumed.
+    /// Returns cumulative converted items already consumed.
     #[inline(always)]
     pub fn items_used(&self) -> u64 {
         self.budget.items_used()
