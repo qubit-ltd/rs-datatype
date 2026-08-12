@@ -52,10 +52,7 @@ fn benchmark_scalar_first(c: &mut Criterion) {
                 b.iter(|| {
                     black_box(
                         ScalarStringDataConverters::from(black_box(input))
-                            .to_first_with::<u64>(
-                                black_box(&options),
-                                black_box(&limits),
-                            ),
+                            .to_first_with::<u64>(black_box(&options), black_box(&limits)),
                     )
                 });
             },
@@ -79,10 +76,7 @@ fn benchmark_scalar_complete(c: &mut Criterion) {
                 b.iter(|| {
                     black_box(
                         ScalarStringDataConverters::from(black_box(input))
-                            .to_vec_with::<u64>(
-                                black_box(&options),
-                                black_box(&limits),
-                            ),
+                            .to_vec_with::<u64>(black_box(&options), black_box(&limits)),
                     )
                 });
             },
@@ -107,10 +101,7 @@ fn benchmark_materialized_slice(c: &mut Criterion) {
                 b.iter(|| {
                     black_box(
                         DataConverters::from(black_box(values))
-                            .to_vec_with::<u64>(
-                                black_box(&options),
-                                black_box(&limits),
-                            ),
+                            .to_vec_with::<u64>(black_box(&options), black_box(&limits)),
                     )
                 });
             },
@@ -122,8 +113,7 @@ fn benchmark_materialized_slice(c: &mut Criterion) {
 /// Benchmarks scanning text with a large configured delimiter set.
 fn benchmark_large_delimiter_set(c: &mut Criterion) {
     let input = format!("{},tail", "a".repeat(16 * 1024));
-    let delimiters =
-        std::iter::once(',').chain((0x100..0x13f).filter_map(char::from_u32));
+    let delimiters = std::iter::once(',').chain((0x100..0x13f).filter_map(char::from_u32));
     let options = CollectionConversionPolicy::default()
         .with_split_scalar_strings(true)
         .with_delimiters(delimiters);
@@ -133,10 +123,7 @@ fn benchmark_large_delimiter_set(c: &mut Criterion) {
         b.iter(|| {
             black_box(
                 black_box(&options)
-                    .scalar_items(
-                        black_box(limits.collection()),
-                        black_box(input.as_str()),
-                    )
+                    .scalar_items(black_box(limits.collection()), black_box(input.as_str()))
                     .count(),
             )
         });

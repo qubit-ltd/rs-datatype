@@ -32,8 +32,7 @@ fn test_collection_conversion_policy_exact_wire_has_no_limits() {
         .with_delimiters([',', ';'])
         .with_trim_items(true)
         .with_empty_item_policy(EmptyItemPolicy::Skip);
-    let wire = serde_json::to_string(&policy)
-        .expect("collection policy should serialize");
+    let wire = serde_json::to_string(&policy).expect("collection policy should serialize");
     assert_eq!(
         wire,
         r#"{"split_scalar_strings":true,"delimiters":[",",";"],"trim_items":true,"empty_item_policy":"skip"}"#
@@ -47,9 +46,7 @@ fn test_collection_conversion_policy_exact_wire_has_no_limits() {
 
 #[test]
 fn test_collection_conversion_policy_rejects_limit_fields() {
-    let error = serde_json::from_str::<CollectionConversionPolicy>(
-        r#"{"max_items":3}"#,
-    )
-    .expect_err("collection limits must not deserialize as policy");
+    let error = serde_json::from_str::<CollectionConversionPolicy>(r#"{"max_items":3}"#)
+        .expect_err("collection limits must not deserialize as policy");
     assert!(error.to_string().contains("unknown field `max_items`"));
 }

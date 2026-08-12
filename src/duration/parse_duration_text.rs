@@ -85,9 +85,7 @@ fn resolve_unit(
 ) -> Result<DurationUnit, DurationParseError> {
     if suffix.is_empty() {
         return match options.suffixless_policy() {
-            SuffixlessDurationPolicy::Reject => {
-                Err(DurationParseError::InvalidSyntax)
-            }
+            SuffixlessDurationPolicy::Reject => Err(DurationParseError::InvalidSyntax),
             SuffixlessDurationPolicy::Assume(unit) => Ok(unit),
         };
     }

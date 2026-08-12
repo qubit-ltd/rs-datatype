@@ -114,10 +114,7 @@ impl CollectionConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_split_scalar_strings(
-        mut self,
-        split_scalar_strings: bool,
-    ) -> Self {
+    pub fn with_split_scalar_strings(mut self, split_scalar_strings: bool) -> Self {
         self.split_scalar_strings = split_scalar_strings;
         self
     }
@@ -152,10 +149,7 @@ impl CollectionConversionPolicy {
     ///
     /// Updated options.
     #[inline]
-    pub fn with_delimiters(
-        mut self,
-        delimiters: impl IntoIterator<Item = char>,
-    ) -> Self {
+    pub fn with_delimiters(mut self, delimiters: impl IntoIterator<Item = char>) -> Self {
         self.delimiters = delimiters.into_iter().collect();
         self
     }
