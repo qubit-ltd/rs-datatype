@@ -137,7 +137,10 @@ impl DurationConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_suffixless_string_policy(mut self, policy: SuffixlessDurationPolicy) -> Self {
+    pub fn with_suffixless_string_policy(
+        mut self,
+        policy: SuffixlessDurationPolicy,
+    ) -> Self {
         self.suffixless_string_policy = policy;
         self
     }
@@ -162,7 +165,10 @@ impl DurationConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_unit_parse_mode(mut self, unit_parse_mode: DurationUnitParseMode) -> Self {
+    pub const fn with_unit_parse_mode(
+        mut self,
+        unit_parse_mode: DurationUnitParseMode,
+    ) -> Self {
         self.unit_parse_mode = unit_parse_mode;
         self
     }
@@ -247,7 +253,10 @@ impl DurationConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_rounding_policy(mut self, rounding_policy: DurationRoundingPolicy) -> Self {
+    pub const fn with_rounding_policy(
+        mut self,
+        rounding_policy: DurationRoundingPolicy,
+    ) -> Self {
         self.rounding_policy = rounding_policy;
         self
     }

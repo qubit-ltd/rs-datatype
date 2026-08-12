@@ -133,7 +133,8 @@ fn test_number_ref_compare() {
         Some(Ordering::Less),
     );
     assert_eq!(
-        NumberRef::from(f64::NAN).compare(right, NumericComparisonPolicy::Exact),
+        NumberRef::from(f64::NAN)
+            .compare(right, NumericComparisonPolicy::Exact),
         None,
     );
 }

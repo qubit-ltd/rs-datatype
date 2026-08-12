@@ -52,7 +52,10 @@ use crate::datatype::DataType;
 /// digits; zero never exceeds the budget.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 #[must_use]
-fn exceeds_big_integer_digit_limit(value: &BigInt, maximum_digits: u64) -> bool {
+fn exceeds_big_integer_digit_limit(
+    value: &BigInt,
+    maximum_digits: u64,
+) -> bool {
     let bits = u128::from(value.bits());
     if bits == 0 {
         return false;
@@ -64,7 +67,8 @@ fn exceeds_big_integer_digit_limit(value: &BigInt, maximum_digits: u64) -> bool 
     if bits > maximum_digits.saturating_mul(4) {
         return true;
     }
-    value.to_str_radix(10).trim_start_matches('-').len() as u128 > maximum_digits
+    value.to_str_radix(10).trim_start_matches('-').len() as u128
+        > maximum_digits
 }
 
 /// Enforces the configured BigInteger result digit limit.
@@ -92,7 +96,9 @@ fn enforce_big_integer_digit_limit(
     from: DataType,
     to: DataType,
 ) -> Result<(), DataConversionError> {
-    if to != DataType::BigInteger || !exceeds_big_integer_digit_limit(value, maximum_digits) {
+    if to != DataType::BigInteger
+        || !exceeds_big_integer_digit_limit(value, maximum_digits)
+    {
         return Ok(());
     }
     Err(DataConversionError::limit_exceeded(
@@ -101,7 +107,10 @@ fn enforce_big_integer_digit_limit(
         BudgetError::LimitExceeded {
             resource: crate::converter::ConversionResource::BigIntegerDigits,
             observed: Observation::Exact(
-                u64::try_from(value.to_str_radix(10).trim_start_matches('-').len()).unwrap(),
+                u64::try_from(
+                    value.to_str_radix(10).trim_start_matches('-').len(),
+                )
+                .unwrap(),
             ),
             maximum: maximum_digits,
         },
@@ -165,14 +174,18 @@ pub(super) fn decimal_to_bigint(
     }
     if scale <= 0 {
         let exponent = scale.unsigned_abs();
-        let coefficient_digits = coefficient.to_str_radix(10).trim_start_matches('-').len() as u64;
+        let coefficient_digits =
+            coefficient.to_str_radix(10).trim_start_matches('-').len() as u64;
         let result_digits = coefficient_digits.saturating_add(exponent);
-        if to == DataType::BigInteger && u128::from(result_digits) > maximum_digits as u128 {
+        if to == DataType::BigInteger
+            && u128::from(result_digits) > maximum_digits as u128
+        {
             return Err(DataConversionError::limit_exceeded(
                 from,
                 to,
                 BudgetError::LimitExceeded {
-                    resource: crate::converter::ConversionResource::BigIntegerDigits,
+                    resource:
+                        crate::converter::ConversionResource::BigIntegerDigits,
                     observed: Observation::Exact(result_digits),
                     maximum: maximum_digits,
                 },
@@ -217,13 +230,18 @@ pub(super) fn decimal_to_bigint(
         ));
     }
     let result_digits = coefficient_digits - scale;
-    if to == DataType::BigInteger && u64::try_from(result_digits).unwrap() > maximum_digits {
+    if to == DataType::BigInteger
+        && u64::try_from(result_digits).unwrap() > maximum_digits
+    {
         return Err(DataConversionError::limit_exceeded(
             from,
             to,
             BudgetError::LimitExceeded {
-                resource: crate::converter::ConversionResource::BigIntegerDigits,
-                observed: Observation::Exact(u64::try_from(result_digits).unwrap()),
+                resource:
+                    crate::converter::ConversionResource::BigIntegerDigits,
+                observed: Observation::Exact(
+                    u64::try_from(result_digits).unwrap(),
+                ),
                 maximum: maximum_digits,
             },
         ));
@@ -311,23 +329,38 @@ pub(super) fn source_to_bigint(
         && let DataConverter::BigInteger(value) = source
     {
         #[cfg(feature = "big-integer")]
-        limits
-            .big_integer()
-            .check(value.as_ref())
-            .map_err(|error| match error {
+        limits.big_integer().check(value.as_ref()).map_err(
+            |error| match error {
                 MeasuredBudgetError::Budget(error) => {
-                    DataConversionError::limit_exceeded(DataType::BigInteger, to, error)
+                    DataConversionError::limit_exceeded(
+                        DataType::BigInteger,
+                        to,
+                        error,
+                    )
                 }
                 MeasuredBudgetError::Quantity { resource, source } => {
-                    DataConversionError::quantity(DataType::BigInteger, to, resource, source)
+                    DataConversionError::quantity(
+                        DataType::BigInteger,
+                        to,
+                        resource,
+                        source,
+                    )
                 }
-            })?;
+            },
+        )?;
         #[cfg(not(feature = "big-integer"))]
-        enforce_big_integer_digit_limit(value.as_ref(), maximum_digits, DataType::BigInteger, to)?;
+        enforce_big_integer_digit_limit(
+            value.as_ref(),
+            maximum_digits,
+            DataType::BigInteger,
+            to,
+        )?;
         return Ok(value.as_ref().clone());
     }
 
-    let result = if let Some((negative, magnitude)) = scalar_integer_magnitude(source) {
+    let result = if let Some((negative, magnitude)) =
+        scalar_integer_magnitude(source)
+    {
         let value = BigInt::from(magnitude);
         Ok(if negative { -value } else { value })
     } else {
@@ -363,12 +396,19 @@ pub(super) fn source_to_bigint(
                     to,
                 )
             }
-            DataConverter::Duration(value) => duration_to_bigint(*value, options, to),
+            DataConverter::Duration(value) => {
+                duration_to_bigint(*value, options, to)
+            }
             DataConverter::Unset(_) => Err(source.missing(to)),
             _ => Err(source.unsupported(to)),
         }
     }?;
-    enforce_big_integer_digit_limit(&result, maximum_digits, source.data_type(), to)?;
+    enforce_big_integer_digit_limit(
+        &result,
+        maximum_digits,
+        source.data_type(),
+        to,
+    )?;
     Ok(result)
 }
 
@@ -409,7 +449,9 @@ pub(super) fn duration_to_bigint(
 /// An invalid-value error targeting [`DataType::BigDecimal`].
 #[cfg(feature = "big-decimal")]
 #[inline(always)]
-fn non_finite_big_decimal_error(source: &DataConverter<'_>) -> DataConversionError {
+fn non_finite_big_decimal_error(
+    source: &DataConverter<'_>,
+) -> DataConversionError {
     source.invalid(DataType::BigDecimal, InvalidValueReason::NonFinite)
 }
 
@@ -436,15 +478,23 @@ fn parse_big_decimal(
     options: &ConversionPolicy,
     limits: &NumericConversionLimits,
 ) -> Result<BigDecimal, DataConversionError> {
-    let value = normalize_numeric_text(value, options, limits, DataType::BigDecimal)?;
+    let value =
+        normalize_numeric_text(value, options, limits, DataType::BigDecimal)?;
     let decimal = match parse_number(value, DataType::BigDecimal)? {
         ParsedNumber::Integer(value) => BigDecimal::from(value),
         ParsedNumber::Decimal(value) => value,
-        ParsedNumber::NaN | ParsedNumber::PositiveInfinity | ParsedNumber::NegativeInfinity => {
+        ParsedNumber::NaN
+        | ParsedNumber::PositiveInfinity
+        | ParsedNumber::NegativeInfinity => {
             return Err(non_finite_big_decimal_error(source));
         }
     };
-    enforce_big_decimal_limits(&decimal, limits, source.data_type(), DataType::BigDecimal)?;
+    enforce_big_decimal_limits(
+        &decimal,
+        limits,
+        source.data_type(),
+        DataType::BigDecimal,
+    )?;
     Ok(decimal)
 }
 
@@ -567,8 +617,12 @@ impl DataConversionTarget for BigDecimal {
                 )?;
                 Ok(decimal)
             }
-            DataConverter::String(value) => parse_big_decimal(source, value, options, limits),
-            DataConverter::Unset(_) => Err(source.missing(DataType::BigDecimal)),
+            DataConverter::String(value) => {
+                parse_big_decimal(source, value, options, limits)
+            }
+            DataConverter::Unset(_) => {
+                Err(source.missing(DataType::BigDecimal))
+            }
             DataConverter::Duration(_) | DataConverter::StringMap(_) => {
                 Err(source.unsupported(DataType::BigDecimal))
             }
@@ -576,11 +630,17 @@ impl DataConversionTarget for BigDecimal {
             DataConverter::Date(_)
             | DataConverter::Time(_)
             | DataConverter::DateTime(_)
-            | DataConverter::Instant(_) => Err(source.unsupported(DataType::BigDecimal)),
+            | DataConverter::Instant(_) => {
+                Err(source.unsupported(DataType::BigDecimal))
+            }
             #[cfg(feature = "url")]
-            DataConverter::Url(_) => Err(source.unsupported(DataType::BigDecimal)),
+            DataConverter::Url(_) => {
+                Err(source.unsupported(DataType::BigDecimal))
+            }
             #[cfg(feature = "json")]
-            DataConverter::Json(_) => Err(source.unsupported(DataType::BigDecimal)),
+            DataConverter::Json(_) => {
+                Err(source.unsupported(DataType::BigDecimal))
+            }
             _ => {
                 let decimal = BigDecimal::from(source_to_bigint(
                     source,

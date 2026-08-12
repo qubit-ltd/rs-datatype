@@ -14,19 +14,19 @@ use qubit_budget::BudgetedStringWriter;
 use qubit_budget::JsonDecodeSession;
 #[cfg(feature = "json")]
 use qubit_budget::JsonEncodeSession;
-#[cfg(feature = "json")]
-use qubit_budget::JsonSerdeError;
 use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceLimit;
 use qubit_budget::ResourceQuantity;
 #[cfg(feature = "json")]
-use qubit_budget::account_value;
+use qubit_json::JsonSerdeError;
 #[cfg(feature = "json")]
-use qubit_budget::decode_slice;
+use qubit_json::account_value;
 #[cfg(feature = "json")]
-use qubit_budget::decode_slice_seed;
+use qubit_json::decode_slice;
 #[cfg(feature = "json")]
-use qubit_budget::encode_to_vec;
+use qubit_json::decode_slice_seed;
+#[cfg(feature = "json")]
+use qubit_json::encode_to_vec;
 #[cfg(feature = "json")]
 use serde::Deserialize;
 #[cfg(feature = "json")]
@@ -56,7 +56,10 @@ pub struct ConversionSession<'a> {
 impl<'a> ConversionSession<'a> {
     /// Creates a fresh session from immutable policy and limit configuration.
     #[inline]
-    pub fn new(policy: &'a ConversionPolicy, limits: &'a ConversionLimits) -> Self {
+    pub fn new(
+        policy: &'a ConversionPolicy,
+        limits: &'a ConversionLimits,
+    ) -> Self {
         Self {
             policy,
             limits,
@@ -86,7 +89,10 @@ impl<'a> ConversionSession<'a> {
     /// methods are reserved for custom targets that own a distinct budgeted
     /// unit of work.
     #[inline(always)]
-    pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
+    pub fn delegate<T>(
+        &mut self,
+        source: &DataConverter<'_>,
+    ) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -95,7 +101,10 @@ impl<'a> ConversionSession<'a> {
 
     /// Delegates an owned nested conversion while preserving this session.
     #[inline(always)]
-    pub fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
+    pub fn delegate_owned<T>(
+        &mut self,
+        source: DataConverter<'_>,
+    ) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -114,7 +123,8 @@ impl<'a> ConversionSession<'a> {
     where
         T: Deserialize<'de>,
     {
-        let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
+        let mut decode =
+            JsonDecodeSession::borrowing(None, self.budget.structured_mut());
         decode_slice(input, &mut decode)
     }
 
@@ -128,7 +138,8 @@ impl<'a> ConversionSession<'a> {
     where
         S: DeserializeSeed<'de>,
     {
-        let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
+        let mut decode =
+            JsonDecodeSession::borrowing(None, self.budget.structured_mut());
         decode_slice_seed(seed, input, &mut decode)
     }
 
@@ -158,7 +169,9 @@ impl<'a> ConversionSession<'a> {
 
     /// Consumes one top-level conversion item.
     #[inline]
-    pub fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
+    pub fn consume_item(
+        &mut self,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_item()
     }
 
@@ -204,7 +217,10 @@ impl<'a> ConversionSession<'a> {
             self.limits.collection().max_source_bytes(),
         );
         let actual = u64::try_from_usize(actual).map_err(|source| {
-            MeasuredBudgetError::quantity(ConversionResource::CollectionSourceBytes, source)
+            MeasuredBudgetError::quantity(
+                ConversionResource::CollectionSourceBytes,
+                source,
+            )
         })?;
         limit.check(actual).map_err(MeasuredBudgetError::from)
     }
@@ -254,7 +270,9 @@ impl<'a> ConversionSession<'a> {
     ) -> Result<String, BudgetedStringError<ConversionResource, E>>
     where
         E: std::fmt::Debug + std::fmt::Display,
-        F: FnOnce(&mut BudgetedStringWriter<'_, ConversionResource>) -> Result<(), E>,
+        F: FnOnce(
+            &mut BudgetedStringWriter<'_, ConversionResource>,
+        ) -> Result<(), E>,
     {
         self.budget.try_write_string(render)
     }

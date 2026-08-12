@@ -163,7 +163,8 @@ impl ConversionPolicy {
     #[must_use = "the default conversion policy should be inspected"]
     #[inline(always)]
     pub fn default_ref() -> &'static Self {
-        static DEFAULT: LazyLock<ConversionPolicy> = LazyLock::new(ConversionPolicy::default);
+        static DEFAULT: LazyLock<ConversionPolicy> =
+            LazyLock::new(ConversionPolicy::default);
         &DEFAULT
     }
 
@@ -188,7 +189,10 @@ impl ConversionPolicy {
     ///
     /// Returns the updated options value.
     #[inline(always)]
-    pub fn with_numeric_policy(mut self, numeric: NumericConversionPolicy) -> Self {
+    pub fn with_numeric_policy(
+        mut self,
+        numeric: NumericConversionPolicy,
+    ) -> Self {
         self.numeric = numeric;
         self
     }
@@ -214,7 +218,10 @@ impl ConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_string_policy(mut self, string: StringConversionPolicy) -> Self {
+    pub fn with_string_policy(
+        mut self,
+        string: StringConversionPolicy,
+    ) -> Self {
         self.string = string;
         self
     }
@@ -229,7 +236,10 @@ impl ConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_blank_string_policy(mut self, policy: BlankStringPolicy) -> Self {
+    pub fn with_blank_string_policy(
+        mut self,
+        policy: BlankStringPolicy,
+    ) -> Self {
         self.string = self.string.with_blank_string_policy(policy);
         self
     }
@@ -255,7 +265,10 @@ impl ConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_boolean_policy(mut self, boolean: BooleanConversionPolicy) -> Self {
+    pub fn with_boolean_policy(
+        mut self,
+        boolean: BooleanConversionPolicy,
+    ) -> Self {
         self.boolean = boolean;
         self
     }
@@ -281,7 +294,10 @@ impl ConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_collection_policy(mut self, collection: CollectionConversionPolicy) -> Self {
+    pub fn with_collection_policy(
+        mut self,
+        collection: CollectionConversionPolicy,
+    ) -> Self {
         self.collection = collection;
         self
     }
@@ -322,7 +338,10 @@ impl ConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_duration_policy(mut self, duration: DurationConversionPolicy) -> Self {
+    pub fn with_duration_policy(
+        mut self,
+        duration: DurationConversionPolicy,
+    ) -> Self {
         self.duration = duration;
         self
     }
