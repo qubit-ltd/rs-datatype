@@ -177,7 +177,7 @@ fn map_fmt_output_error_from_type(
 #[cfg(feature = "json")]
 fn map_json_encode_error(
     from: DataType,
-    error: JsonSerdeError<ConversionResource>,
+    error: JsonSerdeError<ConversionResource, u64>,
 ) -> DataConversionError {
     match error {
         JsonSerdeError::Budget(error) => {
@@ -186,7 +186,14 @@ fn map_json_encode_error(
         JsonSerdeError::Quantity { .. } => {
             DataConversionError::invalid(from, DataType::String, InvalidValueReason::OutOfRange)
         }
-        JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => DataConversionError::invalid(
+        JsonSerdeError::Syntax(_) | JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => DataConversionError::invalid(
+            from,
+            DataType::String,
+            InvalidValueReason::Serialization {
+                format: DataFormat::Json,
+            },
+        ),
+        _ => DataConversionError::invalid(
             from,
             DataType::String,
             InvalidValueReason::Serialization {
