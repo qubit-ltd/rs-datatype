@@ -233,7 +233,7 @@ impl DataConversionTarget for Value {
 fn map_json_decode_error(
     source: &DataConverter<'_>,
     target: DataType,
-    error: JsonSerdeError<ConversionResource>,
+    error: JsonSerdeError<ConversionResource, u64>,
 ) -> DataConversionError {
     map_json_decode_error_from_type(source.data_type(), target, error)
 }
@@ -254,14 +254,21 @@ fn map_json_decode_error(
 fn map_json_decode_error_from_type(
     source: DataType,
     target: DataType,
-    error: JsonSerdeError<ConversionResource>,
+    error: JsonSerdeError<ConversionResource, u64>,
 ) -> DataConversionError {
     match error {
         JsonSerdeError::Budget(error) => DataConversionError::limit_exceeded(source, target, error),
         JsonSerdeError::Quantity { .. } => {
             DataConversionError::invalid(source, target, InvalidValueReason::OutOfRange)
         }
-        JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => DataConversionError::invalid(
+        JsonSerdeError::Syntax(_) | JsonSerdeError::Json(_) | JsonSerdeError::Io(_) => DataConversionError::invalid(
+            source,
+            target,
+            InvalidValueReason::Deserialization {
+                format: DataFormat::Json,
+            },
+        ),
+        _ => DataConversionError::invalid(
             source,
             target,
             InvalidValueReason::Deserialization {

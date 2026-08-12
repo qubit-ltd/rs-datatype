@@ -106,7 +106,7 @@ impl<'a> ConversionSession<'a> {
     pub fn decode_json<'de, T>(
         &mut self,
         input: &'de [u8],
-    ) -> Result<T, JsonSerdeError<ConversionResource>>
+    ) -> Result<T, JsonSerdeError<ConversionResource, u64>>
     where
         T: Deserialize<'de>,
     {
@@ -120,7 +120,7 @@ impl<'a> ConversionSession<'a> {
         &mut self,
         seed: S,
         input: &'de [u8],
-    ) -> Result<S::Value, JsonSerdeError<ConversionResource>>
+    ) -> Result<S::Value, JsonSerdeError<ConversionResource, u64>>
     where
         S: DeserializeSeed<'de>,
     {
@@ -133,7 +133,7 @@ impl<'a> ConversionSession<'a> {
     pub fn encode_json<T>(
         &mut self,
         value: &T,
-    ) -> Result<Vec<u8>, JsonSerdeError<ConversionResource>>
+    ) -> Result<Vec<u8>, JsonSerdeError<ConversionResource, u64>>
     where
         T: Serialize + ?Sized,
     {
