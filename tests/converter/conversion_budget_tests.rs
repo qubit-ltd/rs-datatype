@@ -2,6 +2,8 @@
 //    Copyright (c) 2026 Haixing Hu.
 //
 //    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Conversion-budget integration tests.
 
@@ -14,9 +16,8 @@ use qubit_datatype::ConversionSession;
 #[test]
 fn test_output_budget_precheck_preserves_remaining_capacity() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default().with_max_output_bytes(2),
-    );
+    let limits = ConversionLimits::default()
+        .with_operation_limits(ConversionOperationLimits::default().with_max_output_bytes(2));
     let mut session = ConversionSession::new(&policy, &limits);
 
     session

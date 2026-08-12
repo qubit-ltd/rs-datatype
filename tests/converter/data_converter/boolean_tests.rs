@@ -12,6 +12,7 @@ use num_bigint::BigInt;
 use proptest::proptest;
 use qubit_budget::BudgetError;
 use qubit_budget::Observation;
+use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::DataConversionError;
@@ -113,10 +114,8 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
 #[test]
 fn test_data_converter_bool_numeric_text_limit() {
     let options = ConversionPolicy::strict();
-    let limits = qubit_datatype::ConversionLimits::default()
-        .with_numeric_limits(
-            NumericConversionLimits::default().with_max_text_bytes(1),
-        );
+    let limits = ConversionLimits::default()
+        .with_numeric_limits(NumericConversionLimits::default().with_max_text_bytes(1));
 
     assert_eq!(
         DataConverter::from("true").to_with::<bool>(&options, &limits),

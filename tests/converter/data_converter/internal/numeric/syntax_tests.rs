@@ -9,6 +9,7 @@
 
 use qubit_budget::BudgetError;
 use qubit_budget::Observation;
+use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::DataConversionError;
@@ -31,10 +32,8 @@ fn test_numeric_text_rejects_duplicate_signs() {
 #[test]
 fn test_numeric_text_limit_preserves_conversion_limit_fact() {
     let options = ConversionPolicy::default();
-    let limits = qubit_datatype::ConversionLimits::default()
-        .with_numeric_limits(
-            NumericConversionLimits::default().with_max_text_bytes(3),
-        );
+    let limits = ConversionLimits::default()
+        .with_numeric_limits(NumericConversionLimits::default().with_max_text_bytes(3));
 
     assert_eq!(
         DataConverter::from("123").to_with::<u32>(&options, &limits),

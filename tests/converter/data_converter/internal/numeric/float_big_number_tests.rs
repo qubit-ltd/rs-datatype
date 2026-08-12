@@ -14,6 +14,8 @@ use std::str::FromStr;
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use qubit_datatype::ConversionLimits;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::ConversionPolicy;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
@@ -26,10 +28,8 @@ fn test_bigint_to_f32_applies_target_width_precision() {
     let value = BigInt::from(16_777_217_u32);
     assert!(DataConverter::from(&value).to::<f32>().is_err());
     assert_eq!(
-        DataConverter::from(&value).to_with::<f32>(
-            &ConversionPolicy::lossy(),
-            qubit_datatype::ConversionLimits::default_ref()
-        ),
+        DataConverter::from(&value)
+            .to_with::<f32>(&ConversionPolicy::lossy(), ConversionLimits::default_ref()),
         Ok(16_777_216.0),
     );
 }
