@@ -36,6 +36,8 @@ use url::Url;
 #[cfg(feature = "json")]
 use self::structured::account_json_structure;
 use self::structured::account_string_map_structure;
+#[cfg(feature = "json")]
+use self::structured::map_json_decode_error_from_type;
 use super::conversion_session::ConversionSession;
 use super::data_conversion_target::DataConversionTarget;
 use super::error::DataConversionError;
@@ -434,8 +436,8 @@ impl DataConverter<'_> {
             }
             #[cfg(feature = "json")]
             Self::Json(value) if target == DataType::Json => {
-                account_json_structure(value, 1, session).map_err(|limit| {
-                    DataConversionError::measured_limit(self.data_type(), target, limit)
+                account_json_structure(value, session).map_err(|error| {
+                    map_json_decode_error_from_type(self.data_type(), target, error)
                 })?;
             }
             Self::StringMap(value) if target == DataType::StringMap => {

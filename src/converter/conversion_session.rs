@@ -20,6 +20,8 @@ use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceLimit;
 use qubit_budget::ResourceQuantity;
 #[cfg(feature = "json")]
+use qubit_budget::account_value;
+#[cfg(feature = "json")]
 use qubit_budget::decode_slice;
 #[cfg(feature = "json")]
 use qubit_budget::decode_slice_seed;
@@ -31,6 +33,8 @@ use serde::Deserialize;
 use serde::Serialize;
 #[cfg(feature = "json")]
 use serde::de::DeserializeSeed;
+#[cfg(feature = "json")]
+use serde_json::Value;
 
 use super::conversion_budget::ConversionBudget;
 use super::conversion_resource::ConversionResource;
@@ -126,6 +130,16 @@ impl<'a> ConversionSession<'a> {
     {
         let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
         decode_slice_seed(seed, input, &mut decode)
+    }
+
+    /// Accounts an already materialized JSON value through rs-budget's
+    /// canonical iterative traversal.
+    #[cfg(feature = "json")]
+    pub(crate) fn account_json_value(
+        &mut self,
+        value: &Value,
+    ) -> Result<(), JsonSerdeError<ConversionResource, u64>> {
+        account_value(value, self.budget.structured_mut())
     }
 
     /// Encodes JSON through the shared structured and output budgets.
