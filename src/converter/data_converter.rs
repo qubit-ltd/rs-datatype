@@ -433,7 +433,7 @@ impl DataConverter<'_> {
                     })?;
             }
             #[cfg(feature = "json")]
-            Self::Json(value) if matches!(target, DataType::Json | DataType::String) => {
+            Self::Json(value) if target == DataType::Json => {
                 account_json_structure(value, 1, session).map_err(|limit| {
                     DataConversionError::limit_exceeded(self.data_type(), target, limit)
                 })?;
@@ -444,7 +444,7 @@ impl DataConverter<'_> {
                 })?;
             }
             #[cfg(feature = "json")]
-            Self::StringMap(value) if matches!(target, DataType::Json | DataType::String) => {
+            Self::StringMap(value) if matches!(target, DataType::Json | DataType::StringMap) => {
                 account_string_map_structure(value, 1, session).map_err(|limit| {
                     DataConversionError::limit_exceeded(self.data_type(), target, limit)
                 })?;
