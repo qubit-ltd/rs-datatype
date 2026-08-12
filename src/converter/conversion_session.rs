@@ -13,6 +13,8 @@ use qubit_budget::BudgetedStringWriter;
 #[cfg(feature = "json")]
 use qubit_budget::JsonDecodeSession;
 #[cfg(feature = "json")]
+use qubit_budget::JsonEncodeSession;
+#[cfg(feature = "json")]
 use qubit_budget::JsonSerdeError;
 #[cfg(feature = "json")]
 use qubit_budget::JsonValueBudget;
@@ -21,6 +23,8 @@ use qubit_budget::ResourceLimit;
 use qubit_budget::ResourceQuantity;
 #[cfg(feature = "json")]
 use serde::Deserialize;
+#[cfg(feature = "json")]
+use serde::Serialize;
 #[cfg(feature = "json")]
 use serde::de::DeserializeSeed;
 
@@ -44,10 +48,7 @@ pub struct ConversionSession<'a> {
 impl<'a> ConversionSession<'a> {
     /// Creates a fresh session from immutable policy and limit configuration.
     #[inline]
-    pub fn new(
-        policy: &'a ConversionPolicy,
-        limits: &'a ConversionLimits,
-    ) -> Self {
+    pub fn new(policy: &'a ConversionPolicy, limits: &'a ConversionLimits) -> Self {
         Self {
             policy,
             limits,
@@ -69,11 +70,15 @@ impl<'a> ConversionSession<'a> {
 
     /// Delegates a nested conversion without charging a new top-level item or
     /// input payload.
+    ///
+    /// Custom [`DataConversionTarget`] implementations must use this method
+    /// (or [`Self::delegate_owned`]) for nested work. The outer
+    /// [`DataConverter::to_in`](crate::DataConverter::to_in) call has already
+    /// admitted one item and its source input; direct calls to the consume
+    /// methods are reserved for custom targets that own a distinct budgeted
+    /// unit of work.
     #[inline(always)]
-    pub fn delegate<T>(
-        &mut self,
-        source: &DataConverter<'_>,
-    ) -> Result<T, DataConversionError>
+    pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -82,10 +87,7 @@ impl<'a> ConversionSession<'a> {
 
     /// Delegates an owned nested conversion while preserving this session.
     #[inline(always)]
-    pub fn delegate_owned<T>(
-        &mut self,
-        source: DataConverter<'_>,
-    ) -> Result<T, DataConversionError>
+    pub fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -93,6 +95,9 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Decodes JSON while charging the shared structured budget directly.
+    ///
+    /// The caller is responsible for charging any outer source/input bytes;
+    /// this method accounts only the JSON value structure and payload.
     #[cfg(feature = "json")]
     pub fn decode_json<'de, T>(
         &mut self,
@@ -101,8 +106,7 @@ impl<'a> ConversionSession<'a> {
     where
         T: Deserialize<'de>,
     {
-        let mut decode =
-            JsonDecodeSession::borrowing(None, self.budget.structured_mut());
+        let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
         qubit_budget::decode_slice(input, &mut decode)
     }
 
@@ -116,8 +120,7 @@ impl<'a> ConversionSession<'a> {
     where
         S: DeserializeSeed<'de>,
     {
-        let mut decode =
-            JsonDecodeSession::borrowing(None, self.budget.structured_mut());
+        let mut decode = JsonDecodeSession::borrowing(None, self.budget.structured_mut());
         qubit_budget::decode_slice_seed(seed, input, &mut decode)
     }
 
@@ -128,17 +131,27 @@ impl<'a> ConversionSession<'a> {
     /// session without duplicating budget state.
     #[cfg(feature = "json")]
     #[inline(always)]
-    pub fn structured_json_budget_mut(
-        &mut self,
-    ) -> &mut JsonValueBudget<ConversionResource> {
+    pub fn structured_json_budget_mut(&mut self) -> &mut JsonValueBudget<ConversionResource> {
         self.budget.structured_mut()
+    }
+
+    /// Encodes JSON through the shared structured and output budgets.
+    #[cfg(feature = "json")]
+    pub fn encode_json<T>(
+        &mut self,
+        value: &T,
+    ) -> Result<Vec<u8>, JsonSerdeError<ConversionResource>>
+    where
+        T: Serialize + ?Sized,
+    {
+        let (output, structured) = self.budget.split_json_mut();
+        let mut encode = JsonEncodeSession::borrowing(Some(output), structured);
+        qubit_budget::encode_to_vec(value, &mut encode)
     }
 
     /// Consumes one top-level conversion item.
     #[inline]
-    pub fn consume_item(
-        &mut self,
-    ) -> Result<(), BudgetError<ConversionResource, u64>> {
+    pub fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_item()
     }
 
@@ -184,10 +197,7 @@ impl<'a> ConversionSession<'a> {
             self.limits.collection().max_source_bytes(),
         );
         let actual = u64::try_from_usize(actual).map_err(|source| {
-            MeasuredBudgetError::quantity(
-                ConversionResource::CollectionSourceBytes,
-                source,
-            )
+            MeasuredBudgetError::quantity(ConversionResource::CollectionSourceBytes, source)
         })?;
         limit.check(actual).map_err(MeasuredBudgetError::from)
     }
@@ -237,9 +247,7 @@ impl<'a> ConversionSession<'a> {
     ) -> Result<String, BudgetedStringError<ConversionResource, E>>
     where
         E: std::fmt::Debug + std::fmt::Display,
-        F: FnOnce(
-            &mut BudgetedStringWriter<'_, ConversionResource>,
-        ) -> Result<(), E>,
+        F: FnOnce(&mut BudgetedStringWriter<'_, ConversionResource>) -> Result<(), E>,
     {
         self.budget.try_write_string(render)
     }
@@ -283,7 +291,7 @@ impl<'a> ConversionSession<'a> {
         self.budget.structured_mut().enter_object(depth, entries)
     }
 
-    /// Enters a structured map measured from a native map length.
+    /// Enters a structured map measured from native depth and entry counts.
     #[inline]
     pub fn enter_structured_map_usize(
         &mut self,
@@ -322,7 +330,7 @@ impl<'a> ConversionSession<'a> {
         self.budget.structured_mut().consume_string_bytes(amount)
     }
 
-    /// Checks and consumes structured string bytes measured by native length.
+    /// Checks and consumes a structured string measured by a native length.
     #[inline]
     pub fn consume_structured_string_bytes_usize(
         &mut self,
