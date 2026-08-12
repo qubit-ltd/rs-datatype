@@ -604,8 +604,6 @@ version = "0.4.0"
 dependencies = [
  "bigdecimal",
  "num-bigint",
- "serde",
- "serde_json",
  "thiserror",
 ]
 
@@ -622,10 +620,21 @@ dependencies = [
  "postcard",
  "proptest",
  "qubit-budget",
+ "qubit-json",
  "serde",
  "serde_json",
  "thiserror",
  "url",
+]
+
+[[package]]
+name = "qubit-json"
+version = "0.7.0"
+dependencies = [
+ "qubit-budget",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]
