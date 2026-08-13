@@ -125,27 +125,18 @@ impl<'a> ScalarStringDataConverters<'a> {
             .scalar_items(limits.collection(), self.source);
         let mut converted = Vec::new();
         for item in items {
-            let item = item.map_err(|error| {
-                error.into_list_conversion_error(T::DATA_TYPE)
-            })?;
+            let item = item.map_err(|error| error.into_list_conversion_error(T::DATA_TYPE))?;
             let source = DataConverter::from(item.value);
             if let Err(error) = session.consume_item() {
                 return Err(DataListConversionError::new(
                     item.source_index,
-                    DataConversionError::limit_exceeded(
-                        source.data_type(),
-                        T::DATA_TYPE,
-                        error,
-                    ),
+                    DataConversionError::limit_exceeded(source.data_type(), T::DATA_TYPE, error),
                 ));
             }
             let value = match session.delegate::<T>(&source) {
                 Ok(value) => value,
                 Err(source) => {
-                    return Err(DataListConversionError::new(
-                        item.source_index,
-                        source,
-                    ));
+                    return Err(DataListConversionError::new(item.source_index, source));
                 }
             };
             converted.push(value);
@@ -236,11 +227,7 @@ impl<'a> ScalarStringDataConverters<'a> {
             .map_err(|error| error.into_data_conversion_error(T::DATA_TYPE))?;
         let source = DataConverter::from(first.value);
         session.consume_item().map_err(|error| {
-            DataConversionError::limit_exceeded(
-                source.data_type(),
-                T::DATA_TYPE,
-                error,
-            )
+            DataConversionError::limit_exceeded(source.data_type(), T::DATA_TYPE, error)
         })?;
         session.delegate::<T>(&source)
     }
@@ -254,14 +241,10 @@ impl<'a> ScalarStringDataConverters<'a> {
         let target = DataType::String;
         session
             .check_collection_source_bytes_usize(self.source.len())
-            .map_err(|error| {
-                DataConversionError::measured_limit(target, target, error)
-            })?;
+            .map_err(|error| DataConversionError::measured_limit(target, target, error))?;
         session
             .consume_input_bytes_usize(self.source.len())
-            .map_err(|error| {
-                DataConversionError::measured_limit(target, target, error)
-            })
+            .map_err(|error| DataConversionError::measured_limit(target, target, error))
     }
 }
 

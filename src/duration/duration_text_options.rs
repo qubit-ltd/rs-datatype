@@ -100,10 +100,7 @@ impl DurationTextOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_unit_parse_mode(
-        mut self,
-        unit_parse_mode: DurationUnitParseMode,
-    ) -> Self {
+    pub const fn with_unit_parse_mode(mut self, unit_parse_mode: DurationUnitParseMode) -> Self {
         self.unit_parse_mode = unit_parse_mode;
         self
     }
