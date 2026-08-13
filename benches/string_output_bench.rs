@@ -10,6 +10,7 @@
 use std::collections::HashMap;
 use std::hint::black_box;
 
+use criterion::BatchSize;
 use criterion::BenchmarkId;
 use criterion::Criterion;
 use criterion::criterion_group;
@@ -49,13 +50,17 @@ fn benchmark_scalar_string_output(c: &mut Criterion) {
             BenchmarkId::new("owned_identity", size),
             &source,
             |bench, source| {
-                bench.iter(|| {
-                    let mut session = ConversionSession::new(&policy, &limits);
-                    black_box(
-                        DataConverter::from(black_box(source.clone()))
-                            .into_target_in::<String>(&mut session),
-                    )
-                });
+                bench.iter_batched(
+                    || source.clone(),
+                    |source| {
+                        let mut session = ConversionSession::new(&policy, &limits);
+                        black_box(
+                            DataConverter::from(black_box(source))
+                                .into_target_in::<String>(&mut session),
+                        )
+                    },
+                    BatchSize::LargeInput,
+                );
             },
         );
     }
@@ -80,12 +85,16 @@ fn benchmark_string_map_output(c: &mut Criterion) {
         });
     });
     group.bench_function("owned", |bench| {
-        bench.iter(|| {
-            let mut session = ConversionSession::new(&policy, &limits);
-            black_box(
-                DataConverter::from(black_box(map.clone())).into_target_in::<String>(&mut session),
-            )
-        });
+        bench.iter_batched(
+            || map.clone(),
+            |map| {
+                let mut session = ConversionSession::new(&policy, &limits);
+                black_box(
+                    DataConverter::from(black_box(map)).into_target_in::<String>(&mut session),
+                )
+            },
+            BatchSize::SmallInput,
+        );
     });
     group.finish();
 }
