@@ -44,11 +44,11 @@ use serde::de::DeserializeSeed;
 #[cfg(feature = "json")]
 use serde_json::Value;
 
-use super::conversion_budget::ConversionBudget;
 use super::conversion_resource::ConversionResource;
 use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::DataConversionError;
+use super::internal::ConversionBudget;
 use super::options::ConversionLimits;
 use super::options::ConversionPolicy;
 
@@ -93,6 +93,10 @@ impl<'a> ConversionSession<'a> {
     /// admitted one item and its source input; direct calls to the consume
     /// methods are reserved for custom targets that own a distinct budgeted
     /// unit of work.
+    ///
+    /// The nested target must not call [`Self::consume_item`] or charge the
+    /// source input again unless it intentionally represents another
+    /// top-level unit of work.
     #[inline(always)]
     pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
     where
@@ -102,6 +106,9 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Delegates an owned nested conversion while preserving this session.
+    ///
+    /// This has the same accounting contract as [`Self::delegate`], while
+    /// transferring ownership of the nested source to the target.
     #[inline(always)]
     pub fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
     where
@@ -114,6 +121,12 @@ impl<'a> ConversionSession<'a> {
     ///
     /// The caller is responsible for charging any outer source/input bytes;
     /// this method accounts only the JSON value structure and payload.
+    ///
+    /// # Errors
+    ///
+    /// Returns the decoder error when the input is invalid or any structured
+    /// node/payload budget is exhausted. Failed budget admissions do not
+    /// increase the corresponding counters.
     #[cfg(feature = "json")]
     pub fn decode_json<'de, T>(
         &mut self,
@@ -127,6 +140,9 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Decodes JSON through a seed while charging the shared budget directly.
+    ///
+    /// The caller is responsible for charging outer input bytes. This method
+    /// accounts only the JSON structure and payload consumed by the decoder.
     #[cfg(feature = "json")]
     pub fn decode_json_seed<'de, S>(
         &mut self,
@@ -152,6 +168,12 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Encodes JSON through the shared structured and output budgets.
+    ///
+    /// # Errors
+    ///
+    /// Returns the encoder error when serialization fails or the structured or
+    /// output budget cannot admit the next value. Output bytes are committed
+    /// only for a successfully encoded payload.
     #[cfg(feature = "json")]
     pub fn encode_json<T>(
         &mut self,
@@ -166,12 +188,21 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Consumes one top-level conversion item.
+    ///
+    /// # Errors
+    ///
+    /// Returns a budget error when the cumulative item limit is exhausted.
     #[inline]
     pub fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_item()
     }
 
     /// Consumes cumulative normalized input bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns a budget error when the cumulative input-byte limit is
+    /// exhausted. The counter is unchanged when admission fails.
     #[inline]
     pub fn consume_input_bytes(
         &mut self,
@@ -181,6 +212,14 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Consumes input bytes measured by a native Rust string or slice length.
+    ///
+    /// This is a convenience adapter for `usize` lengths. Use the `u64`
+    /// variant when the measured quantity is already represented as `u64`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a quantity error if the `usize` value cannot be represented as
+    /// `u64`, or a budget error when the cumulative limit is exhausted.
     #[inline]
     pub fn consume_input_bytes_usize(
         &mut self,
@@ -219,6 +258,9 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Checks cumulative built-in String output payload bytes.
+    ///
+    /// This is a non-mutating pre-check; call a consume method only after the
+    /// payload has been materialized successfully.
     #[inline]
     pub fn check_output_bytes(
         &self,
@@ -237,6 +279,11 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Consumes cumulative output payload bytes after a successful pre-check.
+    ///
+    /// # Errors
+    ///
+    /// Returns a budget error when the cumulative output-byte limit is
+    /// exhausted. The counter is unchanged when admission fails.
     #[inline]
     pub fn consume_output_bytes(
         &mut self,
@@ -246,6 +293,9 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Consumes output bytes measured by a native Rust string length.
+    ///
+    /// Use the `u64` variant when the measured quantity is already represented
+    /// as `u64`; this adapter also reports native-length conversion overflow.
     #[inline]
     pub fn consume_output_bytes_usize(
         &mut self,
@@ -392,36 +442,42 @@ impl<'a> ConversionSession<'a> {
 
     /// Returns remaining top-level item capacity.
     #[inline(always)]
+    #[must_use]
     pub const fn items_remaining(&self) -> u64 {
         self.budget.remaining_items()
     }
 
     /// Returns the configured cumulative item limit.
     #[inline(always)]
+    #[must_use]
     pub const fn items_limit(&self) -> u64 {
         self.limits.operation().max_items()
     }
 
     /// Returns the configured cumulative input-byte limit.
     #[inline(always)]
+    #[must_use]
     pub const fn input_bytes_limit(&self) -> u64 {
         self.limits.operation().max_input_bytes()
     }
 
     /// Returns the configured cumulative output-byte limit.
     #[inline(always)]
+    #[must_use]
     pub const fn output_bytes_limit(&self) -> u64 {
         self.limits.operation().max_output_bytes()
     }
 
     /// Returns the configured cumulative structured-node limit.
     #[inline(always)]
+    #[must_use]
     pub const fn structured_nodes_limit(&self) -> u64 {
         self.limits.operation().max_structured_nodes()
     }
 
     /// Returns the configured cumulative structured-payload limit.
     #[inline(always)]
+    #[must_use]
     pub const fn structured_payload_bytes_limit(&self) -> u64 {
         self.limits.operation().max_structured_payload_bytes()
     }
@@ -433,48 +489,56 @@ impl<'a> ConversionSession<'a> {
 
     /// Returns cumulative converted items already consumed.
     #[inline(always)]
+    #[must_use]
     pub fn items_used(&self) -> u64 {
         self.budget.items_used()
     }
 
     /// Returns cumulative input bytes already consumed.
     #[inline(always)]
+    #[must_use]
     pub fn input_bytes_used(&self) -> u64 {
         self.budget.input_bytes_used()
     }
 
     /// Returns remaining cumulative input-byte capacity.
     #[inline(always)]
+    #[must_use]
     pub fn input_bytes_remaining(&self) -> u64 {
         self.budget.input_bytes_remaining()
     }
 
     /// Returns cumulative output bytes already consumed.
     #[inline(always)]
+    #[must_use]
     pub fn output_bytes_used(&self) -> u64 {
         self.budget.output_bytes_used()
     }
 
     /// Returns remaining cumulative output-byte capacity.
     #[inline(always)]
+    #[must_use]
     pub fn output_bytes_remaining(&self) -> u64 {
         self.budget.output_bytes_remaining()
     }
 
     /// Returns cumulative structured nodes already consumed.
     #[inline(always)]
+    #[must_use]
     pub fn structured_nodes_used(&self) -> u64 {
         self.budget.structured_nodes_used()
     }
 
     /// Returns cumulative structured payload bytes already consumed.
     #[inline(always)]
+    #[must_use]
     pub fn structured_payload_bytes_used(&self) -> u64 {
         self.budget.structured_payload_bytes_used()
     }
 }
 
-/// Performs full JSON budget admission without adding conversion-domain behavior.
+/// Performs full JSON budget admission without adding conversion-domain
+/// behavior.
 #[cfg(feature = "json")]
 struct JsonAccountingVisitor;
 

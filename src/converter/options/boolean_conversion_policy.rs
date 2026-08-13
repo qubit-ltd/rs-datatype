@@ -312,6 +312,7 @@ impl BooleanConversionPolicy {
     ///
     /// Returns `Some(bool)` when the literal is recognized, or `None`
     /// otherwise.
+    #[must_use]
     pub fn parse(&self, value: &str) -> Option<bool> {
         if self.case_sensitive {
             if self.true_literals.iter().any(|literal| literal == value) {

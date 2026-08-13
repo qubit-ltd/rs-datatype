@@ -175,6 +175,7 @@ impl NumericConversionLimits {
 
     /// Returns the configured BigDecimal coefficient digit maximum.
     #[inline(always)]
+    #[must_use]
     pub fn max_big_decimal_coefficient_digits(&self) -> u64 {
         #[cfg(feature = "big-decimal")]
         {
@@ -213,6 +214,7 @@ impl NumericConversionLimits {
 
     /// Returns the configured absolute BigDecimal scale maximum.
     #[inline(always)]
+    #[must_use]
     pub fn max_big_decimal_scale_magnitude(&self) -> u64 {
         #[cfg(feature = "big-decimal")]
         {

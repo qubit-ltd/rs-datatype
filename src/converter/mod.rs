@@ -9,13 +9,13 @@
 //!
 //! Provides data conversion utilities based on [`crate::datatype::DataType`].
 
-mod conversion_budget;
 mod conversion_resource;
 mod conversion_session;
 mod data_conversion_target;
 mod data_converter;
 mod data_converters;
 mod error;
+mod internal;
 mod options;
 mod scalar_item;
 mod scalar_items;

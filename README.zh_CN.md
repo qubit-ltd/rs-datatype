@@ -27,14 +27,14 @@
 
 ```toml
 [dependencies]
-qubit-datatype = "0.10"
+qubit-datatype = "0.11"
 ```
 
 按需启用转换器和富类型：
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.10", default-features = false, features = ["converter", "chrono"] }
+qubit-datatype = { version = "0.11", default-features = false, features = ["converter", "chrono"] }
 ```
 
 | Feature | 能力 |

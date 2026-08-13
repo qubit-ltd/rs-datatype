@@ -15,8 +15,8 @@ use qubit_budget::ResourceBudget;
 use qubit_budget::ResourceQuantity;
 use qubit_budget::json::JsonValueBudget;
 
-use super::ConversionLimits;
-use super::ConversionResource;
+use super::super::conversion_resource::ConversionResource;
+use super::super::options::ConversionLimits;
 
 /// Mutable budgets owned by one [`super::ConversionSession`].
 #[derive(Debug, PartialEq, Eq)]

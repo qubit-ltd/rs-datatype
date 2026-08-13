@@ -31,6 +31,7 @@ impl DurationConversionLimits {
     ///
     /// Maximum accepted UTF-8 byte length for one duration source.
     #[inline(always)]
+    #[must_use]
     pub const fn max_text_bytes(&self) -> usize {
         self.max_text_bytes
     }

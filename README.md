@@ -35,14 +35,14 @@ The minimum build has no optional dependencies:
 
 ```toml
 [dependencies]
-qubit-datatype = "0.10"
+qubit-datatype = "0.11"
 ```
 
 Enable conversion and only the rich families you need:
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.10", default-features = false, features = ["converter", "chrono"] }
+qubit-datatype = { version = "0.11", default-features = false, features = ["converter", "chrono"] }
 ```
 
 | Feature | Capability |
