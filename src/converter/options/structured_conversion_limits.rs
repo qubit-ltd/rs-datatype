@@ -99,6 +99,7 @@ impl StructuredConversionLimits {
 
     /// Returns the configured depth maximum.
     #[inline(always)]
+    #[must_use]
     pub fn max_depth(&self) -> u64 {
         self.value
             .max_depth()
@@ -128,6 +129,7 @@ impl StructuredConversionLimits {
 
     /// Returns the configured sequence item maximum.
     #[inline(always)]
+    #[must_use]
     pub fn max_sequence_items(&self) -> u64 {
         self.value
             .max_sequence_items()
@@ -160,6 +162,7 @@ impl StructuredConversionLimits {
 
     /// Returns the configured map entry maximum.
     #[inline(always)]
+    #[must_use]
     pub fn max_map_entries(&self) -> u64 {
         self.value
             .max_map_entries()

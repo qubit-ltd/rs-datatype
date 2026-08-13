@@ -35,6 +35,7 @@ impl CollectionConversionLimits {
     ///
     /// Maximum accepted UTF-8 byte length for one scalar collection source.
     #[inline(always)]
+    #[must_use]
     pub const fn max_source_bytes(&self) -> u64 {
         self.max_source_bytes
     }
@@ -60,6 +61,7 @@ impl CollectionConversionLimits {
     ///
     /// Maximum items retained after empty-item policy handling.
     #[inline(always)]
+    #[must_use]
     pub const fn max_items(&self) -> u64 {
         self.max_items
     }

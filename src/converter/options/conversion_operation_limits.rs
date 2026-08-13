@@ -50,6 +50,7 @@ impl ConversionOperationLimits {
 
     /// Returns the configured item maximum.
     #[inline(always)]
+    #[must_use]
     pub const fn max_items(&self) -> u64 {
         self.items.maximum()
     }
@@ -69,6 +70,7 @@ impl ConversionOperationLimits {
 
     /// Returns the configured cumulative input byte maximum.
     #[inline(always)]
+    #[must_use]
     pub const fn max_input_bytes(&self) -> u64 {
         self.input_bytes.maximum()
     }
@@ -88,6 +90,7 @@ impl ConversionOperationLimits {
 
     /// Returns the configured cumulative output byte maximum.
     #[inline(always)]
+    #[must_use]
     pub const fn max_output_bytes(&self) -> u64 {
         self.output_bytes.maximum()
     }
@@ -107,6 +110,7 @@ impl ConversionOperationLimits {
 
     /// Returns the configured cumulative structured node maximum.
     #[inline(always)]
+    #[must_use]
     pub const fn max_structured_nodes(&self) -> u64 {
         self.structured_nodes.maximum()
     }
@@ -126,6 +130,7 @@ impl ConversionOperationLimits {
 
     /// Returns the configured cumulative structured payload byte maximum.
     #[inline(always)]
+    #[must_use]
     pub const fn max_structured_payload_bytes(&self) -> u64 {
         self.structured_payload_bytes.maximum()
     }
