@@ -28,8 +28,7 @@ fn test_duration_with_unit_visitor_accepts_borrowed_text() {
 /// Verifies the visitor accepts owned exact duration text.
 #[test]
 fn test_duration_with_unit_visitor_accepts_owned_text() {
-    let deserializer =
-        StringDeserializer::<ValueError>::new("42ns".to_string());
+    let deserializer = StringDeserializer::<ValueError>::new("42ns".to_string());
     let duration = duration_with_unit::deserialize(deserializer)
         .expect("owned duration text should deserialize");
 
@@ -39,8 +38,7 @@ fn test_duration_with_unit_visitor_accepts_owned_text() {
 /// Verifies the visitor maps unsupported units into the deserializer error.
 #[test]
 fn test_duration_with_unit_visitor_rejects_unsupported_unit() {
-    let deserializer =
-        StringDeserializer::<ValueError>::new("42fortnights".to_string());
+    let deserializer = StringDeserializer::<ValueError>::new("42fortnights".to_string());
     let error = duration_with_unit::deserialize(deserializer)
         .expect_err("an unsupported unit should be rejected");
 

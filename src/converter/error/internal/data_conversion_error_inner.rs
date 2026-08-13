@@ -63,9 +63,7 @@ pub(in crate::converter::error) enum DataConversionErrorInner {
         source: BudgetError<ConversionResource, u64>,
     },
     /// A native measurement cannot be represented by the configured quantity.
-    #[error(
-        "Conversion measurement cannot be represented from {from} to {to}: {source}"
-    )]
+    #[error("Conversion measurement cannot be represented from {from} to {to}: {source}")]
     Quantity {
         /// Declared source data type.
         from: DataType,
