@@ -135,7 +135,7 @@ impl<'a> ConversionSession<'a> {
     where
         T: Deserialize<'de>,
     {
-        let mut decode = JsonDecodeSession::borrowing(None, None, self.budget.structured_mut());
+        let mut decode = JsonDecodeSession::borrowing_value(self.budget.structured_mut());
         decode_slice(input, &mut decode)
     }
 
@@ -152,7 +152,7 @@ impl<'a> ConversionSession<'a> {
     where
         S: DeserializeSeed<'de>,
     {
-        let mut decode = JsonDecodeSession::borrowing(None, None, self.budget.structured_mut());
+        let mut decode = JsonDecodeSession::borrowing_value(self.budget.structured_mut());
         decode_slice_seed(seed, input, &mut decode)
     }
 
@@ -183,7 +183,7 @@ impl<'a> ConversionSession<'a> {
         T: Serialize + ?Sized,
     {
         let (output, structured) = self.budget.split_json_mut();
-        let mut encode = JsonEncodeSession::borrowing(Some(output), structured);
+        let mut encode = JsonEncodeSession::borrowing_output(output, structured);
         encode_to_vec(value, &mut encode)
     }
 
