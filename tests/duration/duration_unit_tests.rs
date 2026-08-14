@@ -60,6 +60,7 @@ fn test_duration_unit_converts_supported_counts() {
     ];
 
     for (unit, value, expected) in cases {
+        assert_eq!(unit.duration_from_u64(value as u64), Ok(expected));
         assert_eq!(unit.duration_from_u128(value), Ok(expected));
     }
 

@@ -15,6 +15,14 @@ use qubit_datatype::ConversionSession;
 use qubit_datatype::DataConverter;
 use qubit_datatype::ScalarItem;
 use qubit_datatype::StringConversionPolicy;
+#[cfg(feature = "json")]
+use serde::Deserialize;
+#[cfg(feature = "json")]
+use serde::Deserializer;
+#[cfg(feature = "json")]
+use serde::Serialize;
+#[cfg(feature = "json")]
+use serde::de::DeserializeSeed;
 
 #[test]
 fn test_one_session_accumulates_multiple_conversions() {
@@ -144,4 +152,140 @@ fn test_scalar_admission_charges_source_and_items_once() {
         })
         .expect_err("the second scalar item should exceed the item budget");
     assert_eq!(error.resource(), &ConversionResource::Items);
+}
+
+/// Exercises the direct session accounting adapters and observability methods.
+#[test]
+fn test_direct_session_accounting_adapters() {
+    use std::fmt::Write;
+
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::default();
+    let mut session = ConversionSession::new(&policy, &limits);
+
+    assert_eq!(session.policy(), &policy);
+    assert_eq!(session.limits(), &limits);
+    session
+        .consume_input_bytes(1)
+        .expect("input bytes should fit");
+    session
+        .check_collection_source_bytes(1)
+        .expect("source bytes should fit");
+    session
+        .check_output_bytes(1)
+        .expect("output bytes should fit");
+    session
+        .consume_output_bytes(1)
+        .expect("output bytes should fit");
+    let rendered = session
+        .try_write_string(|writer| write!(writer.as_fmt(), "ok"))
+        .expect("rendered output should fit");
+    assert_eq!(rendered, "ok");
+
+    session
+        .enter_structured_node(1)
+        .expect("structured node should fit");
+    session
+        .enter_structured_node_usize(1)
+        .expect("native structured depth should fit");
+    session
+        .enter_structured_map(1, 1)
+        .expect("structured map should fit");
+    session
+        .enter_structured_map_usize(1, 1)
+        .expect("native structured map should fit");
+    session
+        .consume_structured_key_bytes(1)
+        .expect("structured key should fit");
+    session
+        .consume_structured_key_bytes_usize(1)
+        .expect("native structured key should fit");
+    session
+        .consume_structured_string_bytes(1)
+        .expect("structured string should fit");
+    session
+        .consume_structured_string_bytes_usize(1)
+        .expect("native structured string should fit");
+
+    assert_eq!(session.items_limit(), limits.operation().max_items());
+    assert_eq!(
+        session.input_bytes_limit(),
+        limits.operation().max_input_bytes()
+    );
+    assert_eq!(
+        session.output_bytes_limit(),
+        limits.operation().max_output_bytes()
+    );
+    assert_eq!(
+        session.structured_nodes_limit(),
+        limits.operation().max_structured_nodes()
+    );
+    assert_eq!(
+        session.structured_payload_bytes_limit(),
+        limits.operation().max_structured_payload_bytes()
+    );
+    assert!(session.items_remaining() <= session.items_limit());
+    assert!(session.items_used() <= session.items_limit());
+    assert!(session.input_bytes_used() <= session.input_bytes_limit());
+    assert!(session.input_bytes_remaining() <= session.input_bytes_limit());
+    assert!(session.output_bytes_used() <= session.output_bytes_limit());
+    assert!(session.output_bytes_remaining() <= session.output_bytes_limit());
+    assert!(session.structured_nodes_used() > 0);
+    assert!(session.structured_payload_bytes_used() > 0);
+}
+
+#[cfg(feature = "json")]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
+struct SessionJsonValue {
+    name: String,
+}
+
+#[cfg(feature = "json")]
+struct SessionJsonSeed;
+
+#[cfg(feature = "json")]
+impl<'de> DeserializeSeed<'de> for SessionJsonSeed {
+    type Value = SessionJsonValue;
+
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        SessionJsonValue::deserialize(deserializer)
+    }
+}
+
+/// Exercises JSON-specific session entry points and structured adapters.
+#[cfg(feature = "json")]
+#[test]
+fn test_json_session_accounting_adapters() {
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::default();
+    let mut session = ConversionSession::new(&policy, &limits);
+    let input = br#"{"name":"value"}"#;
+
+    let decoded: SessionJsonValue = session
+        .decode_json(input)
+        .expect("JSON should decode within the shared budget");
+    assert_eq!(decoded.name, "value");
+    let seeded: SessionJsonValue = session
+        .decode_json_seed(SessionJsonSeed, input)
+        .expect("seeded JSON should decode within the shared budget");
+    assert_eq!(seeded.name, "value");
+    let encoded = session
+        .encode_json(&decoded)
+        .expect("JSON should encode within the shared budget");
+    assert_eq!(encoded, input);
+    session
+        .enter_structured_sequence(1, 1)
+        .expect("structured sequence should fit");
+    session
+        .enter_structured_sequence_usize(1, 1)
+        .expect("native structured sequence should fit");
+    session
+        .consume_structured_number_bytes(1)
+        .expect("structured number should fit");
+    session
+        .consume_structured_number_bytes_usize(1)
+        .expect("native structured number should fit");
 }
