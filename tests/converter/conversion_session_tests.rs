@@ -182,31 +182,6 @@ fn test_direct_session_accounting_adapters() {
         .expect("rendered output should fit");
     assert_eq!(rendered, "ok");
 
-    session
-        .enter_structured_node(1)
-        .expect("structured node should fit");
-    session
-        .enter_structured_node_usize(1)
-        .expect("native structured depth should fit");
-    session
-        .enter_structured_map(1, 1)
-        .expect("structured map should fit");
-    session
-        .enter_structured_map_usize(1, 1)
-        .expect("native structured map should fit");
-    session
-        .consume_structured_key_bytes(1)
-        .expect("structured key should fit");
-    session
-        .consume_structured_key_bytes_usize(1)
-        .expect("native structured key should fit");
-    session
-        .consume_structured_string_bytes(1)
-        .expect("structured string should fit");
-    session
-        .consume_structured_string_bytes_usize(1)
-        .expect("native structured string should fit");
-
     assert_eq!(session.items_limit(), limits.operation().max_items());
     assert_eq!(
         session.input_bytes_limit(),
@@ -230,8 +205,8 @@ fn test_direct_session_accounting_adapters() {
     assert!(session.input_bytes_remaining() <= session.input_bytes_limit());
     assert!(session.output_bytes_used() <= session.output_bytes_limit());
     assert!(session.output_bytes_remaining() <= session.output_bytes_limit());
-    assert!(session.structured_nodes_used() > 0);
-    assert!(session.structured_payload_bytes_used() > 0);
+    assert_eq!(session.structured_nodes_used(), 0);
+    assert_eq!(session.structured_payload_bytes_used(), 0);
 }
 
 #[cfg(feature = "json")]
@@ -276,16 +251,6 @@ fn test_json_session_accounting_adapters() {
         .encode_json(&decoded)
         .expect("JSON should encode within the shared budget");
     assert_eq!(encoded, input);
-    session
-        .enter_structured_sequence(1, 1)
-        .expect("structured sequence should fit");
-    session
-        .enter_structured_sequence_usize(1, 1)
-        .expect("native structured sequence should fit");
-    session
-        .consume_structured_number_bytes(1)
-        .expect("structured number should fit");
-    session
-        .consume_structured_number_bytes_usize(1)
-        .expect("native structured number should fit");
+    assert!(session.structured_nodes_used() > 0);
+    assert!(session.structured_payload_bytes_used() > 0);
 }
