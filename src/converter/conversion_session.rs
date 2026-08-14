@@ -51,6 +51,8 @@ use super::error::DataConversionError;
 use super::internal::ConversionBudget;
 use super::options::ConversionLimits;
 use super::options::ConversionPolicy;
+use super::scalar_item::AdmittedScalarItem;
+use super::scalar_item::ScalarItem;
 
 /// Mutable conversion accounting shared by nested and batch conversions.
 #[must_use]
@@ -195,6 +197,43 @@ impl<'a> ConversionSession<'a> {
     #[inline]
     pub fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_item()
+    }
+
+    /// Checks and consumes one complete scalar collection source.
+    ///
+    /// This combines the source-size limit check with cumulative input-byte
+    /// accounting so callers cannot accidentally scan an unchecked source or
+    /// omit its input charge.
+    ///
+    /// # Errors
+    ///
+    /// Returns a measured budget error when the source is too large, its
+    /// length cannot be represented as `u64`, or the cumulative input budget
+    /// is exhausted.
+    #[inline]
+    pub fn admit_scalar_source_bytes_usize(
+        &mut self,
+        amount: usize,
+    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
+        self.check_collection_source_bytes_usize(amount)?;
+        self.consume_input_bytes_usize(amount)
+    }
+
+    /// Consumes one scalar item and returns a token for precharged conversion.
+    ///
+    /// Constructed tokens are intended for downstream deserializers that need
+    /// to continue conversion without charging the same item a second time.
+    ///
+    /// # Errors
+    ///
+    /// Returns a budget error when the cumulative item limit is exhausted.
+    #[inline]
+    pub fn admit_scalar_item(
+        &mut self,
+        item: ScalarItem<'_>,
+    ) -> Result<AdmittedScalarItem, BudgetError<ConversionResource, u64>> {
+        self.consume_item()?;
+        Ok(AdmittedScalarItem::new(item))
     }
 
     /// Consumes cumulative normalized input bytes.

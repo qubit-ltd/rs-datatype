@@ -55,6 +55,7 @@ pub use options::NumericConversionPolicy;
 pub use options::StringConversionPolicy;
 pub use options::StructuredConversionLimits;
 pub use options::SuffixlessDurationPolicy;
+pub use scalar_item::AdmittedScalarItem;
 pub use scalar_item::ScalarItem;
 pub use scalar_items::ScalarItems;
 pub use scalar_string_data_converters::ScalarStringDataConverters;
