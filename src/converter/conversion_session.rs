@@ -17,6 +17,7 @@ use qubit_budget::ResourceQuantity;
 use qubit_budget::json::JsonDecodeSession;
 #[cfg(feature = "json")]
 use qubit_budget::json::JsonEncodeSession;
+use qubit_budget::json::JsonValueTransaction;
 #[cfg(feature = "json")]
 use qubit_json::text::JsonDecodeError;
 #[cfg(feature = "json")]
@@ -179,8 +180,20 @@ impl<'a> ConversionSession<'a> {
         (),
         JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>,
     > {
-        JsonTreeProcessor::new(self.budget.structured_mut())
-            .process(value, &mut JsonAccountingVisitor)
+        let mut transaction = self.budget.structured_transaction();
+        let result = JsonTreeProcessor::new(&mut transaction)
+            .process(value, &mut JsonAccountingVisitor);
+        if result.is_ok() {
+            transaction.commit();
+        }
+        result
+    }
+
+    /// Starts a transactional admission over the shared structured budget.
+    pub(crate) fn structured_transaction(
+        &mut self,
+    ) -> JsonValueTransaction<'_, ConversionResource, u64> {
+        self.budget.structured_transaction()
     }
 
     /// Encodes JSON through the shared structured and output budgets.
@@ -377,128 +390,6 @@ impl<'a> ConversionSession<'a> {
         ) -> Result<(), E>,
     {
         self.budget.try_write_string(render)
-    }
-
-    /// Enters one structured scalar or container node.
-    #[inline]
-    pub fn enter_structured_node(
-        &mut self,
-        depth: u64,
-    ) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.budget.structured_mut().enter_node(depth)
-    }
-
-    /// Enters a structured node measured from a native traversal depth.
-    #[inline]
-    pub fn enter_structured_node_usize(
-        &mut self,
-        depth: usize,
-    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        self.budget.structured_mut().enter_node_usize(depth)
-    }
-
-    /// Enters one structured sequence node after checking a native item count.
-    #[cfg(feature = "json")]
-    #[inline]
-    pub fn enter_structured_sequence_usize(
-        &mut self,
-        depth: usize,
-        items: usize,
-    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        self.budget.structured_mut().enter_array_usize(depth, items)
-    }
-
-    /// Enters one structured sequence node after checking its item count.
-    #[cfg(feature = "json")]
-    #[inline]
-    pub fn enter_structured_sequence(
-        &mut self,
-        depth: u64,
-        items: u64,
-    ) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.budget.structured_mut().enter_array(depth, items)
-    }
-
-    /// Enters one structured map node after checking its entry count.
-    #[inline]
-    pub fn enter_structured_map(
-        &mut self,
-        depth: u64,
-        entries: u64,
-    ) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.budget.structured_mut().enter_object(depth, entries)
-    }
-
-    /// Enters a structured map measured from native depth and entry counts.
-    #[inline]
-    pub fn enter_structured_map_usize(
-        &mut self,
-        depth: usize,
-        entries: usize,
-    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        self.budget
-            .structured_mut()
-            .enter_object_usize(depth, entries)
-    }
-
-    /// Checks and consumes one structured object key payload.
-    #[inline]
-    pub fn consume_structured_key_bytes(
-        &mut self,
-        amount: u64,
-    ) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.budget.structured_mut().consume_key_bytes(amount)
-    }
-
-    /// Checks and consumes a structured key measured by a native string length.
-    #[inline]
-    pub fn consume_structured_key_bytes_usize(
-        &mut self,
-        amount: usize,
-    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        self.budget.structured_mut().consume_key_bytes_usize(amount)
-    }
-
-    /// Checks and consumes one structured string value payload.
-    #[inline]
-    pub fn consume_structured_string_bytes(
-        &mut self,
-        amount: u64,
-    ) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.budget.structured_mut().consume_string_bytes(amount)
-    }
-
-    /// Checks and consumes a structured string measured by a native length.
-    #[inline]
-    pub fn consume_structured_string_bytes_usize(
-        &mut self,
-        amount: usize,
-    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        self.budget
-            .structured_mut()
-            .consume_string_bytes_usize(amount)
-    }
-
-    /// Checks and consumes one structured number representation payload.
-    #[cfg(feature = "json")]
-    #[inline]
-    pub fn consume_structured_number_bytes(
-        &mut self,
-        amount: u64,
-    ) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.budget.structured_mut().consume_number_bytes(amount)
-    }
-
-    /// Checks and consumes a structured number measured by native text length.
-    #[cfg(feature = "json")]
-    #[inline]
-    pub fn consume_structured_number_bytes_usize(
-        &mut self,
-        amount: usize,
-    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        self.budget
-            .structured_mut()
-            .consume_number_bytes_usize(amount)
     }
 
     /// Returns remaining top-level item capacity.

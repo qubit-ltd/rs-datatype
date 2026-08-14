@@ -302,6 +302,31 @@ fn test_data_converter_json_text_accumulates_structured_nodes_in_session() {
     );
 }
 
+/// Verifies that a rejected JSON value leaves staged structure available to a
+/// subsequent conversion while retaining the source input charge.
+#[cfg(feature = "json")]
+#[test]
+fn test_failed_json_conversion_keeps_input_and_rolls_back_structure() {
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default().with_max_structured_nodes(2),
+    );
+    let mut session = ConversionSession::new(&policy, &limits);
+
+    assert!(
+        DataConverter::from("[0,1]")
+            .to_in::<serde_json::Value>(&mut session)
+            .is_err()
+    );
+    assert!(session.input_bytes_used() > 0);
+    assert_eq!(session.structured_nodes_used(), 0);
+
+    DataConverter::from("0")
+        .to_in::<serde_json::Value>(&mut session)
+        .expect("rolled-back structure budget must remain reusable");
+    assert_eq!(session.structured_nodes_used(), 1);
+}
+
 /// Tests that structured-source budget enforcement does not depend on source
 /// ownership or whether the target type changes.
 #[cfg(feature = "json")]
