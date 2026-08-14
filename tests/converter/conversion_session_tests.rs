@@ -13,6 +13,7 @@ use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::ConversionSession;
 use qubit_datatype::DataConverter;
+use qubit_datatype::ScalarItem;
 use qubit_datatype::StringConversionPolicy;
 
 #[test]
@@ -108,4 +109,35 @@ fn test_native_length_output_accounting_uses_shared_budget() {
         error.budget_error().map(|facts| *facts.resource()),
         Some(ConversionResource::OutputBytes)
     );
+}
+
+/// Verifies scalar source and item admission produce one-use conversion tokens.
+#[test]
+fn test_scalar_admission_charges_source_and_items_once() {
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::default().with_operation_limits(
+        ConversionOperationLimits::default()
+            .with_max_items(1)
+            .with_max_input_bytes(3),
+    );
+    let mut session = ConversionSession::new(&policy, &limits);
+
+    session
+        .admit_scalar_source_bytes_usize(3)
+        .expect("the complete scalar source should fit");
+    let admitted = session
+        .admit_scalar_item(ScalarItem {
+            source_index: 2,
+            value: "abc",
+        })
+        .expect("the first scalar item should fit");
+    assert_eq!(admitted.source_index(), 2);
+
+    let error = session
+        .admit_scalar_item(ScalarItem {
+            source_index: 3,
+            value: "d",
+        })
+        .expect_err("the second scalar item should exceed the item budget");
+    assert_eq!(error.resource(), &ConversionResource::Items);
 }
