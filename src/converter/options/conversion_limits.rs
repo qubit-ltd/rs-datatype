@@ -48,7 +48,8 @@ impl ConversionLimits {
     #[must_use = "the default conversion limits should be inspected"]
     #[inline(always)]
     pub fn default_ref() -> &'static Self {
-        static DEFAULT: LazyLock<ConversionLimits> = LazyLock::new(ConversionLimits::default);
+        static DEFAULT: LazyLock<ConversionLimits> =
+            LazyLock::new(ConversionLimits::default);
         &DEFAULT
     }
 
@@ -61,7 +62,10 @@ impl ConversionLimits {
 
     /// Returns a copy with different numeric value limits.
     #[inline(always)]
-    pub fn with_numeric_limits(mut self, numeric: NumericConversionLimits) -> Self {
+    pub fn with_numeric_limits(
+        mut self,
+        numeric: NumericConversionLimits,
+    ) -> Self {
         self.numeric = numeric;
         self
     }
@@ -75,7 +79,10 @@ impl ConversionLimits {
 
     /// Returns a copy with different scalar collection value limits.
     #[inline(always)]
-    pub fn with_collection_limits(mut self, collection: CollectionConversionLimits) -> Self {
+    pub fn with_collection_limits(
+        mut self,
+        collection: CollectionConversionLimits,
+    ) -> Self {
         self.collection = collection;
         self
     }
@@ -89,7 +96,10 @@ impl ConversionLimits {
 
     /// Returns a copy with different duration value limits.
     #[inline(always)]
-    pub fn with_duration_limits(mut self, duration: DurationConversionLimits) -> Self {
+    pub fn with_duration_limits(
+        mut self,
+        duration: DurationConversionLimits,
+    ) -> Self {
         self.duration = duration;
         self
     }
@@ -103,7 +113,10 @@ impl ConversionLimits {
 
     /// Returns a copy with different structured value limits.
     #[inline(always)]
-    pub fn with_structured_limits(mut self, structured: StructuredConversionLimits) -> Self {
+    pub fn with_structured_limits(
+        mut self,
+        structured: StructuredConversionLimits,
+    ) -> Self {
         self.structured = structured;
         self
     }
@@ -117,7 +130,10 @@ impl ConversionLimits {
 
     /// Returns a copy with different cumulative operation limits.
     #[inline(always)]
-    pub fn with_operation_limits(mut self, operation: ConversionOperationLimits) -> Self {
+    pub fn with_operation_limits(
+        mut self,
+        operation: ConversionOperationLimits,
+    ) -> Self {
         self.operation = operation;
         self
     }
