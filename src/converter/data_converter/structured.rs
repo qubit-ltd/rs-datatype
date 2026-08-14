@@ -10,6 +10,7 @@
 use std::collections::HashMap;
 
 use qubit_budget::MeasuredBudgetError;
+use qubit_budget::json::JsonMeasurement;
 #[cfg(feature = "json")]
 use qubit_json::text::JsonDecodeError;
 #[cfg(feature = "json")]
@@ -42,13 +43,20 @@ pub(super) fn account_string_map_structure(
     depth: usize,
     session: &mut ConversionSession<'_>,
 ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-    session.enter_structured_map_usize(depth, value.len())?;
+    let mut transaction = session.structured_transaction();
+    transaction.try_admit(JsonMeasurement::Object {
+        depth,
+        entries: value.len(),
+    })?;
     let value_depth = depth.saturating_add(1);
     for (key, value) in value {
-        session.consume_structured_key_bytes_usize(key.len())?;
-        session.enter_structured_node_usize(value_depth)?;
-        session.consume_structured_string_bytes_usize(value.len())?;
+        transaction.try_admit(JsonMeasurement::Key { bytes: key.len() })?;
+        transaction.try_admit(JsonMeasurement::String {
+            depth: value_depth,
+            bytes: value.len(),
+        })?;
     }
+    transaction.commit();
     Ok(())
 }
 
