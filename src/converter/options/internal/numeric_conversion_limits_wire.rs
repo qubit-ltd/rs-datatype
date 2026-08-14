@@ -27,8 +27,10 @@ impl Default for NumericConversionLimitsWire {
         Self {
             max_text_bytes: limits.max_text_bytes(),
             max_big_integer_digits: limits.max_big_integer_digits(),
-            max_big_decimal_coefficient_digits: limits.max_big_decimal_coefficient_digits(),
-            max_big_decimal_scale_magnitude: limits.max_big_decimal_scale_magnitude(),
+            max_big_decimal_coefficient_digits: limits
+                .max_big_decimal_coefficient_digits(),
+            max_big_decimal_scale_magnitude: limits
+                .max_big_decimal_scale_magnitude(),
         }
     }
 }
