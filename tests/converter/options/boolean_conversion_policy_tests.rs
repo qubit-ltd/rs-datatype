@@ -140,6 +140,15 @@ fn test_boolean_conversion_policy_only_reject_cross_set_conflicts() {
     );
 }
 
+#[test]
+fn test_boolean_conversion_policy_numeric_builder() {
+    let policy = BooleanConversionPolicy::strict()
+        .with_numeric_policy(BooleanNumericPolicy::NonZero);
+
+    assert_eq!(policy.numeric_policy(), BooleanNumericPolicy::NonZero);
+    assert_eq!(policy.parse("true"), Some(true));
+}
+
 /// Characterizes validation for large disjoint literal collections.
 #[test]
 fn test_boolean_conversion_policy_validate_large_disjoint_sets() {

@@ -163,3 +163,21 @@ fn test_scalar_items_supports_large_delimiter_sets() {
 
     assert_eq!(values, ["alpha", "bravo", "charlie"]);
 }
+
+#[test]
+fn test_scalar_items_can_be_cloned_before_iteration() {
+    let options =
+        CollectionConversionPolicy::default().with_split_scalar_strings(true);
+    let items = options
+        .scalar_items(&CollectionConversionLimits::default(), "alpha,beta");
+    let mut cloned = items.clone();
+
+    assert_eq!(
+        cloned
+            .next()
+            .expect("cloned iterator should yield an item")
+            .expect("item should be valid")
+            .value,
+        "alpha"
+    );
+}

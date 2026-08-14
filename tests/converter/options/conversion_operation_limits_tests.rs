@@ -69,3 +69,17 @@ fn test_conversion_operation_limits_bind_resources_and_defaults() {
         64 * 1024 * 1024
     );
 }
+
+#[test]
+fn test_conversion_operation_limits_deserialize_all_fields() {
+    let limits: ConversionOperationLimits = serde_json::from_str(
+        r#"{"items":3,"input_bytes":5,"output_bytes":7,"structured_nodes":11,"structured_payload_bytes":13}"#,
+    )
+    .expect("all operation limit fields should deserialize");
+
+    assert_eq!(limits.max_items(), 3);
+    assert_eq!(limits.max_input_bytes(), 5);
+    assert_eq!(limits.max_output_bytes(), 7);
+    assert_eq!(limits.max_structured_nodes(), 11);
+    assert_eq!(limits.max_structured_payload_bytes(), 13);
+}

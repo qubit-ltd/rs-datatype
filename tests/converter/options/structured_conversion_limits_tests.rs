@@ -34,6 +34,31 @@ fn test_structured_conversion_limits_defaults_and_customization() {
         defaults.max_map_entries(),
         StructuredConversionLimits::DEFAULT_MAX_MAP_ENTRIES
     );
+    assert_eq!(
+        defaults
+            .text()
+            .utf8_bytes_limit()
+            .expect("text limit")
+            .maximum(),
+        defaults.max_text_bytes()
+    );
+    assert_eq!(
+        defaults.max_text_bytes_limit().maximum(),
+        defaults.max_text_bytes()
+    );
+    assert_eq!(
+        defaults.value().max_depth().expect("depth limit"),
+        defaults.max_depth()
+    );
+    assert_eq!(defaults.max_depth_limit().maximum(), defaults.max_depth());
+    assert_eq!(
+        defaults.max_sequence_items_limit().maximum(),
+        defaults.max_sequence_items()
+    );
+    assert_eq!(
+        defaults.max_map_entries_limit().maximum(),
+        defaults.max_map_entries()
+    );
     let customized = defaults
         .with_max_depth(4)
         .with_max_sequence_items(5)

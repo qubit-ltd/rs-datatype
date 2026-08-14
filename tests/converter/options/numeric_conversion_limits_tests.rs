@@ -20,6 +20,14 @@ fn test_numeric_conversion_limits_contract() {
     );
     assert_eq!(defaults.max_text_bytes(), 16_384);
     assert_eq!(defaults.max_big_integer_digits(), 16_384);
+    assert_eq!(
+        defaults.max_text_bytes_limit().maximum(),
+        defaults.max_text_bytes()
+    );
+    assert_eq!(
+        defaults.max_big_integer_digits_limit().maximum(),
+        defaults.max_big_integer_digits()
+    );
 
     let limits = defaults
         .with_max_text_bytes(32)
