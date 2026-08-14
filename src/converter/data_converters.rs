@@ -128,7 +128,8 @@ where
         )
     }
 
-    /// Converts every source item to the requested target type using options.
+    /// Converts every source item to the requested target type using the
+    /// specified policy and limits.
     ///
     /// # Type Parameters
     ///
@@ -136,7 +137,8 @@ where
     ///
     /// # Parameters
     ///
-    /// * `options` - Conversion options used for each element.
+    /// * `policy` - Semantic conversion policy used for each element.
+    /// * `limits` - Value-level and operation-level resource limits.
     ///
     /// # Returns
     ///
@@ -228,8 +230,8 @@ where
         )
     }
 
-    /// Converts the first source item to the requested target type using
-    /// options.
+    /// Converts the first source item to the requested target type using the
+    /// specified policy and limits.
     ///
     /// # Type Parameters
     ///
@@ -237,7 +239,8 @@ where
     ///
     /// # Parameters
     ///
-    /// * `options` - Conversion options used for parsing.
+    /// * `policy` - Semantic conversion policy used for parsing.
+    /// * `limits` - Value-level and operation-level resource limits.
     ///
     /// # Returns
     ///
