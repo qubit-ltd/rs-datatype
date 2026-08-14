@@ -24,7 +24,11 @@ use qubit_datatype::converter::InvalidValueReason;
 #[test]
 fn test_data_conversion_error_constructors_and_accessors() {
     let reason = InvalidValueReason::OutOfRange;
-    let error = DataConversionError::invalid(DataType::Int64, DataType::UInt8, reason.clone());
+    let error = DataConversionError::invalid(
+        DataType::Int64,
+        DataType::UInt8,
+        reason.clone(),
+    );
     assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
     assert!(!error.is_missing());
     assert_eq!(error.from_type(), Some(DataType::Int64));
@@ -73,7 +77,8 @@ fn test_data_conversion_error_limit_exceeded_contract() {
 /// Test that measurement failures remain distinct from budget-limit failures.
 #[test]
 fn test_data_conversion_error_quantity_contract() {
-    let source = QuantityConversionError::new(QuantityMeasurement::Usize(9), "u8");
+    let source =
+        QuantityConversionError::new(QuantityMeasurement::Usize(9), "u8");
     let error = DataConversionError::quantity(
         DataType::String,
         DataType::Json,

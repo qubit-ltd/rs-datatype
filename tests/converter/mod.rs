@@ -12,6 +12,7 @@
 mod conversion_budget_tests;
 mod conversion_resource_tests;
 mod conversion_session_tests;
+mod admitted_scalar_item_tests;
 mod data_conversion_target_tests;
 mod data_converter;
 mod data_converter_output_budget_tests;
