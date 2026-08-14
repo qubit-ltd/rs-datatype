@@ -13,6 +13,7 @@ use qubit_budget::BudgetedStringWriter;
 use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceBudget;
 use qubit_budget::json::JsonValueBudget;
+use qubit_budget::json::JsonValueTransaction;
 
 use super::super::conversion_resource::ConversionResource;
 use super::super::options::ConversionLimits;
@@ -164,19 +165,25 @@ impl ConversionBudget {
     }
 
     pub(crate) fn structured_nodes_used(&self) -> u64 {
-        self.structured.structure_budget().used_nodes()
+        self.structured.used_nodes().unwrap_or(0)
     }
 
     pub(crate) fn structured_payload_bytes_used(&self) -> u64 {
-        match self.structured.payload_budget() {
-            Some(payload) => payload.used(),
-            None => 0,
-        }
+        self.structured.used_payload_bytes().unwrap_or(0)
     }
 
-    /// Returns shared structured accounting.
+    /// Starts an all-or-nothing transaction over the shared structured budget.
     #[inline(always)]
-    pub(crate) const fn structured_mut(
+    pub(crate) fn structured_transaction(
+        &mut self,
+    ) -> JsonValueTransaction<'_, ConversionResource, u64> {
+        self.structured.transaction()
+    }
+
+    /// Returns shared structured accounting for JSON sessions.
+    #[cfg(feature = "json")]
+    #[inline(always)]
+    pub(crate) fn structured_mut(
         &mut self,
     ) -> &mut JsonValueBudget<ConversionResource, u64> {
         &mut self.structured
