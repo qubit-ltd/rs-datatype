@@ -42,8 +42,9 @@ fn test_parse_duration_text_respects_parse_mode() {
 #[test]
 fn test_parse_duration_text_respects_suffixless_policy() {
     let reject = DurationTextOptions::default();
-    let seconds = DurationTextOptions::default()
-        .with_suffixless_policy(SuffixlessDurationPolicy::Assume(DurationUnit::Seconds));
+    let seconds = DurationTextOptions::default().with_suffixless_policy(
+        SuffixlessDurationPolicy::Assume(DurationUnit::Seconds),
+    );
 
     assert_eq!(
         parse_duration_text("2", &reject),
@@ -69,7 +70,10 @@ fn test_parse_duration_text_classifies_errors() {
         Err(DurationParseError::UnsupportedUnit),
     );
     assert_eq!(
-        parse_duration_text("340282366920938463463374607431768211456ns", &options,),
+        parse_duration_text(
+            "340282366920938463463374607431768211456ns",
+            &options,
+        ),
         Err(DurationParseError::OutOfRange),
     );
     assert_eq!(
