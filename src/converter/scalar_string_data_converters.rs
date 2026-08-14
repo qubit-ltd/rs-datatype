@@ -76,7 +76,8 @@ impl<'a> ScalarStringDataConverters<'a> {
         )
     }
 
-    /// Converts the scalar string to a vector using options.
+    /// Converts the scalar string to a vector using the specified policy and
+    /// limits.
     ///
     /// # Type Parameters
     ///
@@ -84,8 +85,9 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// # Parameters
     ///
-    /// * `options` - Conversion options used for scalar string normalization,
-    ///   splitting, and item conversion.
+    /// * `policy` - Semantic conversion policy used for scalar string
+    ///   normalization, splitting, and item conversion.
+    /// * `limits` - Value-level and operation-level resource limits.
     ///
     /// # Returns
     ///
