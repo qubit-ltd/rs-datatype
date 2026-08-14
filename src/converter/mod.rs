@@ -22,6 +22,7 @@ mod scalar_item;
 mod scalar_items;
 mod scalar_string_data_converters;
 
+pub use admitted_scalar_item::AdmittedScalarItem;
 pub use conversion_resource::ConversionResource;
 pub use conversion_session::ConversionSession;
 pub use data_conversion_target::DataConversionTarget;
@@ -56,7 +57,6 @@ pub use options::NumericConversionPolicy;
 pub use options::StringConversionPolicy;
 pub use options::StructuredConversionLimits;
 pub use options::SuffixlessDurationPolicy;
-pub use admitted_scalar_item::AdmittedScalarItem;
 pub use scalar_item::ScalarItem;
 pub use scalar_items::ScalarItems;
 pub use scalar_string_data_converters::ScalarStringDataConverters;
