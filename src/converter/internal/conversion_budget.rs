@@ -12,7 +12,6 @@ use qubit_budget::BudgetedStringError;
 use qubit_budget::BudgetedStringWriter;
 use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceBudget;
-use qubit_budget::ResourceQuantity;
 use qubit_budget::json::JsonValueBudget;
 
 use super::super::conversion_resource::ConversionResource;
@@ -76,11 +75,7 @@ impl ConversionBudget {
         &mut self,
         amount: usize,
     ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        let amount = u64::try_from_usize(amount).map_err(|source| {
-            MeasuredBudgetError::quantity(*self.input_bytes.resource(), source)
-        })?;
-        self.consume_input_bytes(amount)
-            .map_err(MeasuredBudgetError::from)
+        self.input_bytes.try_consume_usize(amount)
     }
 
     /// Checks output capacity without changing accounting.
@@ -98,11 +93,7 @@ impl ConversionBudget {
         &self,
         amount: usize,
     ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        let amount = u64::try_from_usize(amount).map_err(|source| {
-            MeasuredBudgetError::quantity(*self.output_bytes.resource(), source)
-        })?;
-        self.check_output_bytes(amount)
-            .map_err(MeasuredBudgetError::from)
+        self.output_bytes.check_available_usize(amount)
     }
 
     /// Consumes output payload bytes.
@@ -120,11 +111,7 @@ impl ConversionBudget {
         &mut self,
         amount: usize,
     ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        let amount = u64::try_from_usize(amount).map_err(|source| {
-            MeasuredBudgetError::quantity(*self.output_bytes.resource(), source)
-        })?;
-        self.consume_output_bytes(amount)
-            .map_err(MeasuredBudgetError::from)
+        self.output_bytes.try_consume_usize(amount)
     }
 
     /// Renders and commits one String payload transactionally.
