@@ -40,7 +40,7 @@ pub enum ScalarItemError {
 }
 
 impl ScalarItemError {
-    /// Creates an empty-item rejection for the original source position.
+    /// Creates a blank-item rejection for the original source position.
     ///
     /// # Parameters
     ///
@@ -50,7 +50,7 @@ impl ScalarItemError {
     ///
     /// An empty-item rejection containing the rejected source position.
     #[inline(always)]
-    pub const fn new(source_index: usize) -> Self {
+    pub const fn blank_rejected(source_index: usize) -> Self {
         Self::BlankRejected { source_index }
     }
 
