@@ -174,7 +174,7 @@ resource caps. Errors retain type context but never retain the source value.
 
 `ConversionLimits` separately groups numeric, collection, duration, structured,
 and operation resource limits. `ConversionOperationLimits` configures
-cumulative items, normalized input bytes, String output bytes, structured
+cumulative items, input bytes, String output bytes, structured
 nodes, and structured payload bytes for one session.
 
 `strict()` is the default. `env_friendly()` trims strings, accepts common
@@ -285,7 +285,7 @@ requires divisibility by the output unit; half-up rounding must be selected
 explicitly. Output always uses `µs` for microseconds and `min` for minutes.
 
 With only the `duration` feature, `DurationTextOptions` selects the suffixless
-policy and unit parse mode and bounds input to 1 MiB by default.
+policy and unit parse mode and bounds input to 256 bytes by default.
 `parse_duration_text` enforces that byte limit before suffix processing,
 performs checked parsing without implicit trimming, and `format_duration_exact`
 selects the largest exact preferred unit.
