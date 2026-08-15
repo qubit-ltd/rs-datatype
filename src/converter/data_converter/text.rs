@@ -184,7 +184,11 @@ fn map_fmt_output_error_from_type(
 ) -> DataConversionError {
     match error {
         BudgetedStringError::Budget(error) => {
-            DataConversionError::limit_exceeded(from, DataType::String, error)
+            DataConversionError::limit_exceeded(
+                from,
+                DataType::String,
+                error.into(),
+            )
         }
         BudgetedStringError::Quantity { resource, source } => {
             DataConversionError::quantity(

@@ -24,7 +24,7 @@ pub(crate) struct ConversionBudget {
     /// Cumulative converted-item budget.
     items: ResourceBudget<ConversionResource, u64>,
 
-    /// Cumulative normalized input-byte budget.
+    /// Cumulative input-byte budget.
     input_bytes: ResourceBudget<ConversionResource, u64>,
 
     /// Cumulative output payload-byte budget.
@@ -66,16 +66,16 @@ impl ConversionBudget {
     pub(crate) fn consume_item(
         &mut self,
     ) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.items.try_consume(1)
+        self.items.try_consume(1).map_err(Into::into)
     }
 
-    /// Consumes normalized input bytes.
+    /// Consumes input bytes.
     #[inline]
     pub(crate) fn consume_input_bytes(
         &mut self,
         amount: u64,
     ) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.input_bytes.try_consume(amount)
+        self.input_bytes.try_consume(amount).map_err(Into::into)
     }
 
     /// Consumes input bytes measured by Rust's native string length type.
@@ -93,7 +93,9 @@ impl ConversionBudget {
         &self,
         amount: u64,
     ) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.output_bytes.check_available(amount)
+        self.output_bytes
+            .check_available(amount)
+            .map_err(Into::into)
     }
 
     /// Checks output bytes measured by Rust's native string length type.
@@ -111,7 +113,7 @@ impl ConversionBudget {
         &mut self,
         amount: u64,
     ) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.output_bytes.try_consume(amount)
+        self.output_bytes.try_consume(amount).map_err(Into::into)
     }
 
     /// Consumes output bytes measured by Rust's native string length type.

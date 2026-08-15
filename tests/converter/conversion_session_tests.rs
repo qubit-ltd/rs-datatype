@@ -60,16 +60,21 @@ fn test_independent_sessions_reset_operation_usage() {
 }
 
 #[test]
-fn test_trimmed_text_is_charged_once() {
+fn test_trimmed_text_is_charged_by_raw_input_length() {
     let policy = ConversionPolicy::default()
         .with_string_policy(StringConversionPolicy::default().with_trim(true));
     let limits = ConversionLimits::default().with_operation_limits(
         ConversionOperationLimits::default().with_max_input_bytes(2),
     );
 
-    DataConverter::from(" 12 ")
+    let error = DataConverter::from(" 12 ")
         .to_with::<u16>(&policy, &limits)
-        .expect("trimmed text should consume its normalized length once");
+        .expect_err("raw whitespace must count toward the input budget");
+
+    assert_eq!(
+        error.budget_error().map(|facts| *facts.resource()),
+        Some(ConversionResource::InputBytes),
+    );
 }
 
 #[test]
