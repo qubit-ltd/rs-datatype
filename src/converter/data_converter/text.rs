@@ -196,7 +196,8 @@ fn map_fmt_output_error_from_type(
         }
         BudgetedStringError::Render(_)
         | BudgetedStringError::InvalidUtf8(_)
-        | BudgetedStringError::LengthOverflow => DataConversionError::invalid(
+        | BudgetedStringError::LengthOverflow
+        | BudgetedStringError::Allocation(_) => DataConversionError::invalid(
             from,
             DataType::String,
             InvalidValueReason::OutOfRange,
