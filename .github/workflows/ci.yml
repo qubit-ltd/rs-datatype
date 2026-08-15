@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   rust-ci:
-    uses: qubit-ltd/rs-ci/.github/workflows/rust-ci.yml@main
+    uses: qubit-ltd/rs-ci/.github/workflows/rust-ci.yml@89562a86c0d9419595895b6dc45c8210ca70f59f
     with:
       cargo_fuzz_max_len: "16384"
       coverage_enforce_thresholds: "1"
