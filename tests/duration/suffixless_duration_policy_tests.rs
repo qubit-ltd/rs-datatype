@@ -14,10 +14,7 @@ use qubit_datatype::SuffixlessDurationPolicy;
 #[test]
 fn test_suffixless_duration_policy_default_and_serde() {
     let default = SuffixlessDurationPolicy::default();
-    assert_eq!(
-        default,
-        SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds),
-    );
+    assert_eq!(default, SuffixlessDurationPolicy::Reject);
 
     let reject = serde_json::to_string(&SuffixlessDurationPolicy::Reject)
         .expect("reject policy should serialize");

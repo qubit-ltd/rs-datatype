@@ -28,7 +28,7 @@ pub struct DurationTextOptions {
 
 impl DurationTextOptions {
     /// Default maximum accepted Duration source text length in bytes.
-    pub const DEFAULT_MAX_TEXT_BYTES: usize = 1_048_576;
+    pub const DEFAULT_MAX_TEXT_BYTES: usize = 256;
 
     /// Creates Duration text options from independent parsing policies.
     ///
