@@ -23,11 +23,9 @@ use qubit_json::text::JsonDecodeError;
 #[cfg(feature = "json")]
 use qubit_json::text::JsonEncodeError;
 #[cfg(feature = "json")]
-use qubit_json::text::decode_admitted_slice_seed;
+use qubit_json::text::JsonTextDecoder;
 #[cfg(feature = "json")]
-use qubit_json::text::decode_slice;
-#[cfg(feature = "json")]
-use qubit_json::text::encode_to_vec;
+use qubit_json::text::JsonTextEncoder;
 #[cfg(feature = "json")]
 use qubit_json::tree::JsonTreeContext;
 #[cfg(feature = "json")]
@@ -149,7 +147,7 @@ impl<'a> ConversionSession<'a> {
     {
         let mut decode =
             JsonDecodeSession::borrowing_value(self.budget.structured_mut());
-        decode_slice(input, &mut decode)
+        JsonTextDecoder::new(&mut decode).decode(input)
     }
 
     /// Decodes JSON through a seed while charging the shared budget directly.
@@ -167,7 +165,7 @@ impl<'a> ConversionSession<'a> {
     {
         let mut decode =
             JsonDecodeSession::borrowing_value(self.budget.structured_mut());
-        decode_admitted_slice_seed(seed, input, &mut decode)
+        JsonTextDecoder::new(&mut decode).decode_seed(seed, input)
     }
 
     /// Accounts an already materialized JSON value through rs-budget's
@@ -214,7 +212,7 @@ impl<'a> ConversionSession<'a> {
         let (output, structured) = self.budget.split_json_mut();
         let mut encode =
             JsonEncodeSession::borrowing_output(output, structured);
-        encode_to_vec(value, &mut encode)
+        JsonTextEncoder::new(&mut encode).to_vec(value)
     }
 
     /// Consumes one top-level conversion item.

@@ -256,7 +256,7 @@ pub(super) fn map_json_decode_error_from_type(
                 source: error,
             } => DataConversionError::quantity(source, target, resource, error),
         },
-        JsonDecodeError::Syntax(_) | JsonDecodeError::Deserialize(_) => {
+        JsonDecodeError::Syntax(_) | JsonDecodeError::Deserialize { .. } => {
             DataConversionError::invalid(
                 source,
                 target,
