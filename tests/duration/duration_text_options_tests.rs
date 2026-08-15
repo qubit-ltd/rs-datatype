@@ -14,6 +14,7 @@ use qubit_datatype::SuffixlessDurationPolicy;
 /// Tests defaults, construction, and immutable option updates.
 #[test]
 fn test_duration_text_options_builders() {
+    assert_eq!(DurationTextOptions::DEFAULT_MAX_TEXT_BYTES, 256);
     assert_eq!(
         DurationTextOptions::default(),
         DurationTextOptions::new(

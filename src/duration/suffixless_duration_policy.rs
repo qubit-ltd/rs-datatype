@@ -32,13 +32,13 @@ pub enum SuffixlessDurationPolicy {
 }
 
 impl Default for SuffixlessDurationPolicy {
-    /// Preserves the default convention that suffixless text is milliseconds.
+    /// Creates the strict default that rejects suffixless text.
     ///
     /// # Returns
     ///
-    /// [`Self::Assume`] containing [`DurationUnit::Milliseconds`].
+    /// [`Self::Reject`].
     #[inline(always)]
     fn default() -> Self {
-        Self::Assume(DurationUnit::Milliseconds)
+        Self::Reject
     }
 }
