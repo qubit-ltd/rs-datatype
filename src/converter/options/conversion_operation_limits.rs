@@ -23,7 +23,7 @@ pub struct ConversionOperationLimits {
     /// Cumulative item limit for one conversion operation.
     items: ResourceLimit<ConversionResource, u64>,
 
-    /// Cumulative normalized input byte limit.
+    /// Cumulative input byte limit.
     input_bytes: ResourceLimit<ConversionResource, u64>,
 
     /// Cumulative output payload byte limit.
@@ -39,7 +39,7 @@ pub struct ConversionOperationLimits {
 impl ConversionOperationLimits {
     /// Default maximum number of top-level items in one session.
     pub const DEFAULT_MAX_ITEMS: u64 = 65_536;
-    /// Default cumulative normalized input byte budget.
+    /// Default cumulative input byte budget.
     pub const DEFAULT_MAX_INPUT_BYTES: u64 = 64 * 1024 * 1024;
     /// Default cumulative output byte budget.
     pub const DEFAULT_MAX_OUTPUT_BYTES: u64 = 64 * 1024 * 1024;

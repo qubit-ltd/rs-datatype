@@ -266,7 +266,7 @@ impl<'a> ConversionSession<'a> {
         Ok(AdmittedScalarItem::new(item))
     }
 
-    /// Consumes cumulative normalized input bytes.
+    /// Consumes cumulative input bytes.
     ///
     /// # Errors
     ///
@@ -308,6 +308,7 @@ impl<'a> ConversionSession<'a> {
             self.limits.collection().max_source_bytes(),
         )
         .check(actual)
+        .map_err(Into::into)
     }
 
     /// Checks a scalar collection source measured by a native slice length.

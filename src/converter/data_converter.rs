@@ -428,20 +428,15 @@ impl DataConverter<'_> {
     ) -> Result<(), DataConversionError> {
         match self {
             Self::String(value) => {
-                let normalized = if session.policy().string().trim() {
-                    value.trim()
-                } else {
-                    value.as_ref()
-                };
-                session
-                    .consume_input_bytes_usize(normalized.len())
-                    .map_err(|limit| {
+                session.consume_input_bytes_usize(value.len()).map_err(
+                    |limit| {
                         DataConversionError::measured_limit(
                             self.data_type(),
                             target,
                             limit,
                         )
-                    })?;
+                    },
+                )?;
             }
             #[cfg(feature = "json")]
             Self::Json(value) if target == DataType::Json => {

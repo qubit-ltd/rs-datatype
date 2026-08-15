@@ -30,7 +30,7 @@ pub enum ConversionResource {
     BigDecimalScaleMagnitude,
     /// Number of top-level conversion items.
     Items,
-    /// Cumulative normalized input bytes.
+    /// Cumulative input bytes.
     InputBytes,
     /// Cumulative UTF-8 payload bytes produced by built-in String targets.
     OutputBytes,
