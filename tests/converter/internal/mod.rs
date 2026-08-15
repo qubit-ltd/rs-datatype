@@ -7,6 +7,7 @@
 // =============================================================================
 //! Internal support types shared by converter integration tests.
 
+mod conversion_budget_tests;
 mod inflated_size_hint_iterator_tests;
 #[cfg(feature = "chrono")]
 mod matrix_outcome_tests;
