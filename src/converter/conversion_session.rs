@@ -23,9 +23,9 @@ use qubit_json::text::JsonDecodeError;
 #[cfg(feature = "json")]
 use qubit_json::text::JsonEncodeError;
 #[cfg(feature = "json")]
-use qubit_json::text::decode_slice;
+use qubit_json::text::decode_admitted_slice_seed;
 #[cfg(feature = "json")]
-use qubit_json::text::decode_slice_seed;
+use qubit_json::text::decode_slice;
 #[cfg(feature = "json")]
 use qubit_json::text::encode_to_vec;
 #[cfg(feature = "json")]
@@ -33,7 +33,7 @@ use qubit_json::tree::JsonTreeContext;
 #[cfg(feature = "json")]
 use qubit_json::tree::JsonTreeProcessError;
 #[cfg(feature = "json")]
-use qubit_json::tree::JsonTreeProcessor;
+use qubit_json::tree::JsonTreeReader;
 #[cfg(feature = "json")]
 use qubit_json::tree::JsonTreeVisitor;
 #[cfg(feature = "json")]
@@ -167,7 +167,7 @@ impl<'a> ConversionSession<'a> {
     {
         let mut decode =
             JsonDecodeSession::borrowing_value(self.budget.structured_mut());
-        decode_slice_seed(seed, input, &mut decode)
+        decode_admitted_slice_seed(seed, input, &mut decode)
     }
 
     /// Accounts an already materialized JSON value through rs-budget's
@@ -181,7 +181,7 @@ impl<'a> ConversionSession<'a> {
         JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>,
     > {
         let mut transaction = self.budget.structured_transaction();
-        let result = JsonTreeProcessor::new(&mut transaction)
+        let result = JsonTreeReader::new(&mut transaction)
             .process(value, &mut JsonAccountingVisitor);
         if result.is_ok() {
             transaction.commit();
