@@ -249,7 +249,7 @@ ASCII `us`、微符号 `µs` 与希腊 mu `μs` 三种微秒拼写。Lenient 额
 输出微秒时固定使用 `µs`，输出分钟时固定使用 `min`。
 
 仅启用 `duration` feature 时，`DurationTextOptions` 可选择无后缀策略和单位解析模式，
-并默认把输入限制为 1 MiB；`parse_duration_text` 在处理后缀前先执行该字节上限，
+并默认把输入限制为 256 字节；`parse_duration_text` 在处理后缀前先执行该字节上限，
 再在不隐式 trim 的情况下执行带范围检查的解析，`format_duration_exact` 自动选择
 最大的精确首选单位。
 Duration 解析错误只保留稳定类别和静态规范单位，不回显也不持有任意长度的输入后缀。
