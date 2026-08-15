@@ -83,7 +83,7 @@ impl StructuredConversionLimits {
     #[inline(always)]
     pub fn with_max_text_bytes(mut self, maximum: u64) -> Self {
         self.text =
-            StringLimits::empty().with_utf8_bytes_limit(ResourceLimit::new(
+            StringLimits::new().with_utf8_bytes_limit(ResourceLimit::new(
                 ConversionResource::StructuredTextBytes,
                 maximum,
             ));
@@ -207,7 +207,7 @@ impl Default for StructuredConversionLimits {
     #[inline(always)]
     fn default() -> Self {
         Self {
-            text: StringLimits::empty().with_utf8_bytes_limit(
+            text: StringLimits::new().with_utf8_bytes_limit(
                 ResourceLimit::new(
                     ConversionResource::StructuredTextBytes,
                     Self::DEFAULT_MAX_TEXT_BYTES,
@@ -215,7 +215,7 @@ impl Default for StructuredConversionLimits {
             ),
             value: JsonValueLimits::<ConversionResource, u64>::default()
                 .with_structure_limits(
-                    StructureLimits::empty()
+                    StructureLimits::<ConversionResource, u64>::new()
                         .with_depth_limit(ResourceLimit::new(
                             ConversionResource::StructuredDepth,
                             Self::DEFAULT_MAX_DEPTH,

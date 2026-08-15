@@ -98,7 +98,7 @@ impl NumericConversionLimits {
     /// Updated limits.
     #[inline(always)]
     pub fn with_max_text_bytes(mut self, maximum: u64) -> Self {
-        self.text = StringLimits::empty().with_utf8_bytes_limit(
+        self.text = StringLimits::new().with_utf8_bytes_limit(
             ResourceLimit::new(ConversionResource::NumericTextBytes, maximum),
         );
         self
@@ -280,14 +280,14 @@ impl Default for NumericConversionLimits {
     #[inline(always)]
     fn default() -> Self {
         Self {
-            text: StringLimits::empty().with_utf8_bytes_limit(
+            text: StringLimits::new().with_utf8_bytes_limit(
                 ResourceLimit::new(
                     ConversionResource::NumericTextBytes,
                     Self::DEFAULT_MAX_TEXT_BYTES,
                 ),
             ),
             #[cfg(feature = "big-integer")]
-            big_integer: BigIntegerLimits::empty()
+            big_integer: BigIntegerLimits::new()
                 .with_significant_decimal_digits_limit(ResourceLimit::new(
                     ConversionResource::BigIntegerDigits,
                     Self::DEFAULT_MAX_BIG_INTEGER_DIGITS,
@@ -298,9 +298,9 @@ impl Default for NumericConversionLimits {
                 Self::DEFAULT_MAX_BIG_INTEGER_DIGITS,
             ),
             #[cfg(feature = "big-decimal")]
-            big_decimal: BigDecimalLimits::empty()
+            big_decimal: BigDecimalLimits::new()
                 .with_coefficient_limits(
-                    BigIntegerLimits::empty()
+                    BigIntegerLimits::new()
                         .with_significant_decimal_digits_limit(
                         ResourceLimit::new(
                             ConversionResource::BigDecimalCoefficientDigits,
