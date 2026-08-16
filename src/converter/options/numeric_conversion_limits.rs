@@ -98,9 +98,12 @@ impl NumericConversionLimits {
     /// Updated limits.
     #[inline(always)]
     pub fn with_max_text_bytes(mut self, maximum: u64) -> Self {
-        self.text = StringLimits::new().with_utf8_bytes_limit(
-            ResourceLimit::new(ConversionResource::NumericTextBytes, maximum),
-        );
+        self.text = StringLimits::builder()
+            .utf8_bytes_limit(ResourceLimit::new(
+                ConversionResource::NumericTextBytes,
+                maximum,
+            ))
+            .build();
         self
     }
 
@@ -161,12 +164,12 @@ impl NumericConversionLimits {
     pub fn with_max_big_integer_digits(mut self, maximum: u64) -> Self {
         #[cfg(feature = "big-integer")]
         {
-            self.big_integer = self
-                .big_integer
-                .with_significant_decimal_digits_limit(ResourceLimit::new(
+            self.big_integer = BigIntegerLimits::builder()
+                .significant_decimal_digits_limit(ResourceLimit::new(
                     ConversionResource::BigIntegerDigits,
                     maximum,
-                ));
+                ))
+                .build();
         }
         #[cfg(not(feature = "big-integer"))]
         {
@@ -203,14 +206,22 @@ impl NumericConversionLimits {
     ) -> Self {
         #[cfg(feature = "big-decimal")]
         {
-            self.big_decimal = self.big_decimal.with_coefficient_limits(
-                self.big_decimal
-                    .coefficient_limits()
-                    .with_significant_decimal_digits_limit(ResourceLimit::new(
-                        ConversionResource::BigDecimalCoefficientDigits,
-                        maximum,
-                    )),
-            );
+            self.big_decimal = BigDecimalLimits::builder()
+                .coefficient_limits(
+                    BigIntegerLimits::builder()
+                        .significant_decimal_digits_limit(ResourceLimit::new(
+                            ConversionResource::BigDecimalCoefficientDigits,
+                            maximum,
+                        ))
+                        .build(),
+                )
+                .scale_magnitude_limit(
+                    *self
+                        .big_decimal
+                        .scale_magnitude_limit()
+                        .expect("scale limit is configured"),
+                )
+                .build();
         }
         #[cfg(not(feature = "big-decimal"))]
         {
@@ -253,12 +264,13 @@ impl NumericConversionLimits {
     ) -> Self {
         #[cfg(feature = "big-decimal")]
         {
-            self.big_decimal = self.big_decimal.with_scale_magnitude_limit(
-                ResourceLimit::new(
+            self.big_decimal = BigDecimalLimits::builder()
+                .coefficient_limits(*self.big_decimal.coefficient_limits())
+                .scale_magnitude_limit(ResourceLimit::new(
                     ConversionResource::BigDecimalScaleMagnitude,
                     maximum,
-                ),
-            );
+                ))
+                .build();
         }
         #[cfg(not(feature = "big-decimal"))]
         {
@@ -280,38 +292,39 @@ impl Default for NumericConversionLimits {
     #[inline(always)]
     fn default() -> Self {
         Self {
-            text: StringLimits::new().with_utf8_bytes_limit(
-                ResourceLimit::new(
+            text: StringLimits::builder()
+                .utf8_bytes_limit(ResourceLimit::new(
                     ConversionResource::NumericTextBytes,
                     Self::DEFAULT_MAX_TEXT_BYTES,
-                ),
-            ),
+                ))
+                .build(),
             #[cfg(feature = "big-integer")]
-            big_integer: BigIntegerLimits::new()
-                .with_significant_decimal_digits_limit(ResourceLimit::new(
+            big_integer: BigIntegerLimits::builder()
+                .significant_decimal_digits_limit(ResourceLimit::new(
                     ConversionResource::BigIntegerDigits,
                     Self::DEFAULT_MAX_BIG_INTEGER_DIGITS,
-                )),
+                ))
+                .build(),
             #[cfg(not(feature = "big-integer"))]
             max_big_integer_digits: ResourceLimit::new(
                 ConversionResource::BigIntegerDigits,
                 Self::DEFAULT_MAX_BIG_INTEGER_DIGITS,
             ),
             #[cfg(feature = "big-decimal")]
-            big_decimal: BigDecimalLimits::new()
-                .with_coefficient_limits(
-                    BigIntegerLimits::new()
-                        .with_significant_decimal_digits_limit(
-                        ResourceLimit::new(
+            big_decimal: BigDecimalLimits::builder()
+                .coefficient_limits(
+                    BigIntegerLimits::builder()
+                        .significant_decimal_digits_limit(ResourceLimit::new(
                             ConversionResource::BigDecimalCoefficientDigits,
                             Self::DEFAULT_MAX_BIG_DECIMAL_COEFFICIENT_DIGITS,
-                        ),
-                    ),
+                        ))
+                        .build(),
                 )
-                .with_scale_magnitude_limit(ResourceLimit::new(
+                .scale_magnitude_limit(ResourceLimit::new(
                     ConversionResource::BigDecimalScaleMagnitude,
                     Self::DEFAULT_MAX_BIG_DECIMAL_SCALE_MAGNITUDE,
-                )),
+                ))
+                .build(),
             #[cfg(not(feature = "big-decimal"))]
             max_big_decimal_coefficient_digits: ResourceLimit::new(
                 ConversionResource::BigDecimalCoefficientDigits,
