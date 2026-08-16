@@ -19,21 +19,21 @@ use qubit_budget::json::JsonDecodeSession;
 use qubit_budget::json::JsonEncodeSession;
 use qubit_budget::json::JsonValueTransaction;
 #[cfg(feature = "json")]
-use qubit_json::text::JsonDecodeError;
+use qubit_json::decode::JsonDecodeError;
 #[cfg(feature = "json")]
-use qubit_json::text::JsonEncodeError;
+use qubit_json::decode::JsonDecoder;
 #[cfg(feature = "json")]
-use qubit_json::text::JsonTextDecoder;
+use qubit_json::encode::JsonEncodeError;
 #[cfg(feature = "json")]
-use qubit_json::text::JsonTextEncoder;
+use qubit_json::encode::JsonEncoder;
 #[cfg(feature = "json")]
-use qubit_json::tree::JsonTreeContext;
+use qubit_json::value::traverse::JsonTreeContext;
 #[cfg(feature = "json")]
-use qubit_json::tree::JsonTreeProcessError;
+use qubit_json::value::traverse::JsonTreeProcessError;
 #[cfg(feature = "json")]
-use qubit_json::tree::JsonTreeReader;
+use qubit_json::value::traverse::JsonTreeReader;
 #[cfg(feature = "json")]
-use qubit_json::tree::JsonTreeVisitor;
+use qubit_json::value::traverse::JsonTreeVisitor;
 #[cfg(feature = "json")]
 use serde::Deserialize;
 #[cfg(feature = "json")]
@@ -147,7 +147,7 @@ impl<'a> ConversionSession<'a> {
     {
         let mut decode =
             JsonDecodeSession::borrowing_value(self.budget.structured_mut());
-        JsonTextDecoder::new(&mut decode).decode(input)
+        JsonDecoder::new(&mut decode).decode(input)
     }
 
     /// Decodes JSON through a seed while charging the shared budget directly.
@@ -165,7 +165,7 @@ impl<'a> ConversionSession<'a> {
     {
         let mut decode =
             JsonDecodeSession::borrowing_value(self.budget.structured_mut());
-        JsonTextDecoder::new(&mut decode).decode_seed(seed, input)
+        JsonDecoder::new(&mut decode).decode_seed(seed, input)
     }
 
     /// Accounts an already materialized JSON value through rs-budget's
@@ -212,7 +212,7 @@ impl<'a> ConversionSession<'a> {
         let (output, structured) = self.budget.split_json_mut();
         let mut encode =
             JsonEncodeSession::borrowing_output(output, structured);
-        JsonTextEncoder::new(&mut encode).to_vec(value)
+        JsonEncoder::new(&mut encode).to_vec(value)
     }
 
     /// Consumes one top-level conversion item.

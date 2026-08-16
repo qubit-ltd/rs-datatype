@@ -26,7 +26,7 @@ use qubit_budget::BudgetedStringError;
 #[cfg(feature = "json")]
 use qubit_budget::MeasuredBudgetError;
 #[cfg(feature = "json")]
-use qubit_json::text::JsonEncodeError;
+use qubit_json::encode::JsonEncodeError;
 #[cfg(feature = "url")]
 use url::Url;
 
