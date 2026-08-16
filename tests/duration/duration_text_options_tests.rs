@@ -23,14 +23,15 @@ fn test_duration_text_options_builders() {
         ),
     );
     assert_eq!(
-        DurationTextOptions::default().max_text_bytes(),
+        DurationTextOptions::builder().build().max_text_bytes(),
         DurationTextOptions::DEFAULT_MAX_TEXT_BYTES,
     );
 
-    let options = DurationTextOptions::default()
-        .with_suffixless_policy(SuffixlessDurationPolicy::Reject)
-        .with_unit_parse_mode(DurationUnitParseMode::Lenient)
-        .with_max_text_bytes(4_096);
+    let options = DurationTextOptions::builder()
+        .suffixless_policy(SuffixlessDurationPolicy::Reject)
+        .unit_parse_mode(DurationUnitParseMode::Lenient)
+        .max_text_bytes(4_096)
+        .build();
     assert_eq!(
         options.suffixless_policy(),
         SuffixlessDurationPolicy::Reject,

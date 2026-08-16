@@ -1,1 +1,15 @@
-multiple-public-types | src/converter/scalar_item.rs | Borrowed scalar items and admitted scalar tokens form one cohesive conversion API.
+# Builders intentionally live beside their public value types so the builder
+# API and its target remain discoverable in one module.
+multiple-public-types | src/converter/options/boolean_conversion_policy.rs | Keep the boolean policy and its builder together.
+multiple-public-types | src/converter/options/collection_conversion_limits.rs | Keep collection limits and their builder together.
+multiple-public-types | src/converter/options/collection_conversion_policy.rs | Keep collection policy and its builder together.
+multiple-public-types | src/converter/options/conversion_limits.rs | Keep aggregate limits and their builder together.
+multiple-public-types | src/converter/options/conversion_operation_limits.rs | Keep operation limits and their builder together.
+multiple-public-types | src/converter/options/conversion_policy.rs | Keep aggregate policy and its builder together.
+multiple-public-types | src/converter/options/duration_conversion_limits.rs | Keep duration limits and their builder together.
+multiple-public-types | src/converter/options/duration_conversion_policy.rs | Keep duration policy and its builder together.
+multiple-public-types | src/converter/options/numeric_conversion_limits.rs | Keep numeric limits and their builder together.
+multiple-public-types | src/converter/options/numeric_conversion_policy.rs | Keep numeric policy and its builder together.
+multiple-public-types | src/converter/options/string_conversion_policy.rs | Keep string policy and its builder together.
+multiple-public-types | src/converter/options/structured_conversion_limits.rs | Keep structured limits and their builder together.
+multiple-public-types | src/duration/duration_text_options.rs | Keep duration text options and their builder together.

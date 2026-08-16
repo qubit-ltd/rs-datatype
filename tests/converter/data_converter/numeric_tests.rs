@@ -76,10 +76,12 @@ fn create_huge_bigint() -> BigInt {
 }
 
 /// Creates strict options with the supplied numeric resource limits.
-fn options_with_limits(limits: NumericConversionLimits) -> (ConversionPolicy, ConversionLimits) {
+fn options_with_limits(
+    limits: NumericConversionLimits,
+) -> (ConversionPolicy, ConversionLimits) {
     (
         ConversionPolicy::strict(),
-        ConversionLimits::default().with_numeric_limits(limits),
+        ConversionLimits::builder().numeric_limits(limits).build(),
     )
 }
 
@@ -318,7 +320,8 @@ fn test_data_converter_float_targets_accept_supported_sources() {
         .chain([DataConverter::from(&big_int)])
         .collect::<Vec<_>>();
     #[cfg(feature = "big-decimal")]
-    let big_decimal = BigDecimal::from_str("21.5").expect("test BigDecimal should parse");
+    let big_decimal =
+        BigDecimal::from_str("21.5").expect("test BigDecimal should parse");
     #[cfg(feature = "big-decimal")]
     let f32_sources = f32_sources
         .into_iter()
@@ -456,14 +459,16 @@ fn test_data_converter_big_number_conversions_check_range() {
         .expect("in-range BigInt should convert to i64");
     assert_eq!(converted, i64::MAX);
 
-    let huge_int = BigInt::parse_bytes(b"999999999999999999999999999999999999", 10)
-        .expect("test BigInt literal should parse");
+    let huge_int =
+        BigInt::parse_bytes(b"999999999999999999999999999999999999", 10)
+            .expect("test BigInt literal should parse");
     assert!(matches!(
         DataConverter::from(&huge_int).to::<i64>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange)
     )));
 
-    let decimal = BigDecimal::from_str("123.75").expect("test BigDecimal should parse");
+    let decimal =
+        BigDecimal::from_str("123.75").expect("test BigDecimal should parse");
     let converted: f64 = DataConverter::from(&decimal)
         .to()
         .expect("BigDecimal should convert to f64");
@@ -487,7 +492,8 @@ fn test_data_converter_big_numbers_preserve_unsigned_only_u128_values() {
 fn test_data_converter_numeric_lossy_conversion() {
     let options = ConversionPolicy::lossy();
     assert_eq!(
-        DataConverter::from("-2.9").to_with::<i32>(&options, ConversionLimits::default_ref()),
+        DataConverter::from("-2.9")
+            .to_with::<i32>(&options, ConversionLimits::default_ref()),
         Ok(-2)
     );
 }
@@ -511,7 +517,8 @@ fn test_data_converter_big_decimal_extreme_exponents_are_bounded() {
     ));
     let lossy = ConversionPolicy::lossy();
     assert_eq!(
-        DataConverter::from(&tiny).to_with::<i32>(&lossy, ConversionLimits::default_ref()),
+        DataConverter::from(&tiny)
+            .to_with::<i32>(&lossy, ConversionLimits::default_ref()),
         Ok(0)
     );
 }
@@ -574,7 +581,8 @@ fn test_data_converter_core_numeric_parser_covers_decimal_boundaries() {
     assert_eq!(DataConverter::from("+1").to::<i128>(), Ok(1));
     assert_eq!(DataConverter::from("1e2").to::<i128>(), Ok(100));
     assert_eq!(
-        DataConverter::from("1e-2").to_with::<i128>(&lossy, ConversionLimits::default_ref()),
+        DataConverter::from("1e-2")
+            .to_with::<i128>(&lossy, ConversionLimits::default_ref()),
         Ok(0)
     );
     assert_eq!(DataConverter::from("-0.0").to::<i128>(), Ok(0));
@@ -642,8 +650,8 @@ fn test_data_converter_core_numeric_parser_covers_decimal_boundaries() {
 #[test]
 #[cfg(feature = "big-number")]
 fn test_data_converter_big_integer_target_covers_numeric_sources() {
-    let integral_decimal =
-        BigDecimal::from_str("12.0").expect("integral decimal fixture should parse");
+    let integral_decimal = BigDecimal::from_str("12.0")
+        .expect("integral decimal fixture should parse");
     let sources = [
         (DataConverter::from(true), BigInt::from(1)),
         (DataConverter::from('A'), BigInt::from(65)),
@@ -676,15 +684,16 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
     )));
     assert_eq!(
-        DataConverter::from(12.5f64).to_with::<BigInt>(&lossy, ConversionLimits::default_ref()),
+        DataConverter::from(12.5f64)
+            .to_with::<BigInt>(&lossy, ConversionLimits::default_ref()),
         Ok(BigInt::from(12))
     );
     assert!(matches!(
         DataConverter::from(f64::NAN).to::<BigInt>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::NonFinite)
     )));
-    let fractional_decimal =
-        BigDecimal::from_str("12.5").expect("fractional decimal fixture should parse");
+    let fractional_decimal = BigDecimal::from_str("12.5")
+        .expect("fractional decimal fixture should parse");
     assert!(matches!(
         DataConverter::from(&fractional_decimal).to::<BigInt>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
@@ -700,8 +709,8 @@ fn test_data_converter_big_integer_target_covers_numeric_sources() {
             .to_with::<f64>(&lossy, ConversionLimits::default_ref()),
         Ok(9_007_199_254_740_992.0)
     );
-    let imprecise_decimal =
-        BigDecimal::from_str("0.1").expect("imprecise decimal fixture should parse");
+    let imprecise_decimal = BigDecimal::from_str("0.1")
+        .expect("imprecise decimal fixture should parse");
     assert!(matches!(
         DataConverter::from(&imprecise_decimal).to::<f64>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)
@@ -743,7 +752,8 @@ fn test_data_converter_big_integer_target_applies_policy_to_decimal_text() {
 
     let lossy = ConversionPolicy::lossy();
     assert_eq!(
-        DataConverter::from("-12.5").to_with::<BigInt>(&lossy, ConversionLimits::default_ref()),
+        DataConverter::from("-12.5")
+            .to_with::<BigInt>(&lossy, ConversionLimits::default_ref()),
         Ok(BigInt::from(-12))
     );
 }
@@ -818,11 +828,11 @@ fn test_data_converter_numeric_boundary_branches() {
     {
         let zero = BigDecimal::from(0);
         assert_eq!(DataConverter::from(&zero).to::<i32>(), Ok(0));
-        let integral_decimal =
-            BigDecimal::from_str("12.0").expect("integral decimal fixture should parse");
+        let integral_decimal = BigDecimal::from_str("12.0")
+            .expect("integral decimal fixture should parse");
         assert_eq!(DataConverter::from(&integral_decimal).to::<i32>(), Ok(12));
-        let fractional =
-            BigDecimal::from_str("12.9").expect("fractional decimal fixture should parse");
+        let fractional = BigDecimal::from_str("12.9")
+            .expect("fractional decimal fixture should parse");
         let lossy = ConversionPolicy::lossy();
         assert_eq!(
             DataConverter::from(&fractional)
@@ -832,11 +842,13 @@ fn test_data_converter_numeric_boundary_branches() {
 
         assert_eq!(
             DataConverter::from(1.25f32).to::<BigDecimal>(),
-            Ok(BigDecimal::from_str("1.25").expect("decimal fixture should parse")),
+            Ok(BigDecimal::from_str("1.25")
+                .expect("decimal fixture should parse")),
         );
         assert_eq!(
             DataConverter::from(1.25f64).to::<BigDecimal>(),
-            Ok(BigDecimal::from_str("1.25").expect("decimal fixture should parse")),
+            Ok(BigDecimal::from_str("1.25")
+                .expect("decimal fixture should parse")),
         );
         assert_eq!(
             DataConverter::from("12").to::<BigDecimal>(),
@@ -854,11 +866,14 @@ fn test_data_converter_numeric_boundary_branches() {
 ))]
 #[test]
 fn test_data_converter_big_decimal_rejects_rich_non_numeric_sources() {
-    let date = NaiveDate::from_ymd_opt(2026, 7, 12).expect("date fixture should be valid");
-    let time = NaiveTime::from_hms_opt(1, 2, 3).expect("time fixture should be valid");
+    let date = NaiveDate::from_ymd_opt(2026, 7, 12)
+        .expect("date fixture should be valid");
+    let time =
+        NaiveTime::from_hms_opt(1, 2, 3).expect("time fixture should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
-    let url = Url::parse("https://example.com").expect("URL fixture should parse");
+    let url =
+        Url::parse("https://example.com").expect("URL fixture should parse");
     let map = HashMap::from([("k".to_string(), "v".to_string())]);
     let json = serde_json::json!({"k": "v"});
     assert!(DataConverter::from(date).to::<BigDecimal>().is_err());
@@ -878,12 +893,15 @@ fn test_data_converter_big_decimal_rejects_rich_non_numeric_sources() {
 /// Test numeric text byte limits after string normalization.
 #[test]
 fn test_numeric_text_byte_limit_boundaries() {
-    let limits = NumericConversionLimits::default().with_max_text_bytes(3);
-    let (options, conversion_limits) = options_with_limits(limits);
-    let options = options.with_string_policy(StringConversionPolicy::default().with_trim(true));
+    let limits = NumericConversionLimits::builder().max_text_bytes(3).build();
+    let (_options, conversion_limits) = options_with_limits(limits);
+    let options = ConversionPolicy::builder()
+        .string_policy(StringConversionPolicy::builder().trim(true))
+        .build();
 
     assert_eq!(
-        DataConverter::from(" 123 ").to_with::<u32>(&options, &conversion_limits),
+        DataConverter::from(" 123 ")
+            .to_with::<u32>(&options, &conversion_limits),
         Ok(123),
     );
     let error = DataConverter::from("1234")
@@ -906,10 +924,12 @@ fn test_numeric_text_byte_limit_boundaries() {
 /// Test text-to-float rounding still enforces its text byte budget.
 #[test]
 fn test_numeric_text_limit_applies_before_float_parsing() {
-    let options =
-        ConversionPolicy::strict().with_numeric_policy(NumericConversionPolicy::env_friendly());
-    let limits = ConversionLimits::default()
-        .with_numeric_limits(NumericConversionLimits::default().with_max_text_bytes(3));
+    let options = ConversionPolicy::builder()
+        .numeric_policy(NumericConversionPolicy::env_friendly())
+        .build();
+    let limits = ConversionLimits::builder()
+        .numeric_limits(NumericConversionLimits::builder().max_text_bytes(3))
+        .build();
 
     assert_eq!(
         DataConverter::from("0.1").to_with::<f32>(&options, &limits),
@@ -933,15 +953,22 @@ fn test_numeric_text_limit_applies_before_float_parsing() {
 #[test]
 #[cfg(feature = "big-integer")]
 fn test_big_integer_digit_limit_text_boundaries() {
-    let (at_limit, at_limit_limits) =
-        options_with_limits(NumericConversionLimits::default().with_max_big_integer_digits(4));
+    let (at_limit, at_limit_limits) = options_with_limits(
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(4)
+            .build(),
+    );
     assert_eq!(
-        DataConverter::from("1e3").to_with::<BigInt>(&at_limit, &at_limit_limits),
+        DataConverter::from("1e3")
+            .to_with::<BigInt>(&at_limit, &at_limit_limits),
         Ok(BigInt::from(1_000)),
     );
 
-    let (over_limit, over_limit_limits) =
-        options_with_limits(NumericConversionLimits::default().with_max_big_integer_digits(3));
+    let (over_limit, over_limit_limits) = options_with_limits(
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(3)
+            .build(),
+    );
     let error = DataConverter::from("1e3")
         .to_with::<BigInt>(&over_limit, &over_limit_limits)
         .expect_err("four result digits must exceed a three-digit limit");
@@ -955,18 +982,25 @@ fn test_big_integer_digit_limit_text_boundaries() {
         }),
     );
 
-    let (zero_limit, zero_limit_limits) =
-        options_with_limits(NumericConversionLimits::default().with_max_big_integer_digits(0));
+    let (zero_limit, zero_limit_limits) = options_with_limits(
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(0)
+            .build(),
+    );
     assert_eq!(
-        DataConverter::from("0e999").to_with::<BigInt>(&zero_limit, &zero_limit_limits),
+        DataConverter::from("0e999")
+            .to_with::<BigInt>(&zero_limit, &zero_limit_limits),
         Ok(BigInt::from(0)),
     );
     assert_eq!(
         DataConverter::from("0001").to_with::<BigInt>(
             &ConversionPolicy::strict(),
-            &ConversionLimits::default().with_numeric_limits(
-                NumericConversionLimits::default().with_max_big_integer_digits(1),
-            ),
+            &ConversionLimits::builder()
+                .numeric_limits(
+                    NumericConversionLimits::builder()
+                        .max_big_integer_digits(1),
+                )
+                .build(),
         ),
         Ok(BigInt::from(1)),
     );
@@ -981,15 +1015,22 @@ fn test_big_integer_digit_limit_text_boundaries() {
 #[cfg(feature = "big-number")]
 fn test_big_integer_digit_limit_big_decimal_expansion() {
     let decimal = BigDecimal::new(BigInt::from(1), -3);
-    let (at_limit, at_limit_limits) =
-        options_with_limits(NumericConversionLimits::default().with_max_big_integer_digits(4));
+    let (at_limit, at_limit_limits) = options_with_limits(
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(4)
+            .build(),
+    );
     assert_eq!(
-        DataConverter::from(&decimal).to_with::<BigInt>(&at_limit, &at_limit_limits),
+        DataConverter::from(&decimal)
+            .to_with::<BigInt>(&at_limit, &at_limit_limits),
         Ok(BigInt::from(1_000)),
     );
 
-    let (over_limit, over_limit_limits) =
-        options_with_limits(NumericConversionLimits::default().with_max_big_integer_digits(3));
+    let (over_limit, over_limit_limits) = options_with_limits(
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(3)
+            .build(),
+    );
     let error = DataConverter::from(&decimal)
         .to_with::<BigInt>(&over_limit, &over_limit_limits)
         .expect_err("BigDecimal expansion must honor the digit limit");
@@ -1015,14 +1056,18 @@ fn test_data_converter_consuming_big_number_identity_preserves_limits() {
         Ok(integer),
     );
 
-    let decimal = BigDecimal::from_str("12345.6789").expect("test BigDecimal literal should parse");
+    let decimal = BigDecimal::from_str("12345.6789")
+        .expect("test BigDecimal literal should parse");
     assert_eq!(
         DataConverter::from(decimal.clone()).into_target::<BigDecimal>(),
         Ok(decimal),
     );
 
-    let (options, limits) =
-        options_with_limits(NumericConversionLimits::default().with_max_big_integer_digits(4));
+    let (options, limits) = options_with_limits(
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(4)
+            .build(),
+    );
     let error = DataConverter::from(BigInt::from(12_345_u32))
         .into_target_with::<BigInt>(&options, &limits)
         .expect_err("consuming BigInteger identity must honor the digit limit");

@@ -6,6 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! # Conversion Policy
+// qubit-style: allow multiple-public-types
 //!
 //! Defines grouped semantic policy for common data conversion behavior.
 
@@ -16,12 +17,17 @@ use serde::Serialize;
 
 use super::blank_string_policy::BlankStringPolicy;
 use super::boolean_conversion_policy::BooleanConversionPolicy;
+use super::boolean_conversion_policy::BooleanConversionPolicyBuilder;
 use super::collection_conversion_policy::CollectionConversionPolicy;
+use super::collection_conversion_policy::CollectionConversionPolicyBuilder;
 use super::duration_conversion_policy::DurationConversionPolicy;
+use super::duration_conversion_policy::DurationConversionPolicyBuilder;
 use super::duration_rounding_policy::DurationRoundingPolicy;
 use super::empty_item_policy::EmptyItemPolicy;
 use super::numeric_conversion_policy::NumericConversionPolicy;
+use super::numeric_conversion_policy::NumericConversionPolicyBuilder;
 use super::string_conversion_policy::StringConversionPolicy;
+use super::string_conversion_policy::StringConversionPolicyBuilder;
 
 /// Aggregates all policies used by the conversion engine.
 ///
@@ -60,6 +66,12 @@ pub struct ConversionPolicy {
 }
 
 impl ConversionPolicy {
+    /// Creates a builder initialized with the default conversion policy.
+    #[inline]
+    #[must_use]
+    pub fn builder() -> ConversionPolicyBuilder {
+        ConversionPolicyBuilder::new()
+    }
     /// Creates the strict conversion profile used by [`Default`].
     ///
     /// The profile requires exact numeric and duration conversions, preserves
@@ -163,7 +175,8 @@ impl ConversionPolicy {
     #[must_use = "the default conversion policy should be inspected"]
     #[inline(always)]
     pub fn default_ref() -> &'static Self {
-        static DEFAULT: LazyLock<ConversionPolicy> = LazyLock::new(ConversionPolicy::default);
+        static DEFAULT: LazyLock<ConversionPolicy> =
+            LazyLock::new(ConversionPolicy::default);
         &DEFAULT
     }
 
@@ -188,7 +201,10 @@ impl ConversionPolicy {
     ///
     /// Returns the updated options value.
     #[inline(always)]
-    pub fn with_numeric_policy(mut self, numeric: NumericConversionPolicy) -> Self {
+    pub(crate) fn with_numeric_policy(
+        mut self,
+        numeric: NumericConversionPolicy,
+    ) -> Self {
         self.numeric = numeric;
         self
     }
@@ -214,7 +230,10 @@ impl ConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_string_policy(mut self, string: StringConversionPolicy) -> Self {
+    pub(crate) fn with_string_policy(
+        mut self,
+        string: StringConversionPolicy,
+    ) -> Self {
         self.string = string;
         self
     }
@@ -229,7 +248,10 @@ impl ConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_blank_string_policy(mut self, policy: BlankStringPolicy) -> Self {
+    pub(crate) fn with_blank_string_policy(
+        mut self,
+        policy: BlankStringPolicy,
+    ) -> Self {
         self.string = self.string.with_blank_string_policy(policy);
         self
     }
@@ -255,7 +277,10 @@ impl ConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_boolean_policy(mut self, boolean: BooleanConversionPolicy) -> Self {
+    pub(crate) fn with_boolean_policy(
+        mut self,
+        boolean: BooleanConversionPolicy,
+    ) -> Self {
         self.boolean = boolean;
         self
     }
@@ -281,7 +306,10 @@ impl ConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_collection_policy(mut self, collection: CollectionConversionPolicy) -> Self {
+    pub(crate) fn with_collection_policy(
+        mut self,
+        collection: CollectionConversionPolicy,
+    ) -> Self {
         self.collection = collection;
         self
     }
@@ -296,7 +324,10 @@ impl ConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_empty_item_policy(mut self, policy: EmptyItemPolicy) -> Self {
+    pub(crate) fn with_empty_item_policy(
+        mut self,
+        policy: EmptyItemPolicy,
+    ) -> Self {
         self.collection = self.collection.with_empty_item_policy(policy);
         self
     }
@@ -322,9 +353,138 @@ impl ConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_duration_policy(mut self, duration: DurationConversionPolicy) -> Self {
+    pub(crate) fn with_duration_policy(
+        mut self,
+        duration: DurationConversionPolicy,
+    ) -> Self {
         self.duration = duration;
         self
+    }
+}
+
+/// Builder for [`ConversionPolicy`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConversionPolicyBuilder {
+    policy: ConversionPolicy,
+}
+
+impl From<NumericConversionPolicyBuilder> for NumericConversionPolicy {
+    fn from(builder: NumericConversionPolicyBuilder) -> Self {
+        builder.build()
+    }
+}
+
+impl From<StringConversionPolicyBuilder> for StringConversionPolicy {
+    fn from(builder: StringConversionPolicyBuilder) -> Self {
+        builder.build()
+    }
+}
+
+impl From<CollectionConversionPolicyBuilder> for CollectionConversionPolicy {
+    fn from(builder: CollectionConversionPolicyBuilder) -> Self {
+        builder.build()
+    }
+}
+
+impl From<DurationConversionPolicyBuilder> for DurationConversionPolicy {
+    fn from(builder: DurationConversionPolicyBuilder) -> Self {
+        builder.build()
+    }
+}
+
+impl From<BooleanConversionPolicyBuilder> for BooleanConversionPolicy {
+    fn from(builder: BooleanConversionPolicyBuilder) -> Self {
+        builder
+            .build()
+            .expect("builder must preserve literal invariants")
+    }
+}
+
+impl ConversionPolicyBuilder {
+    /// Creates a builder initialized with the documented defaults.
+    #[inline]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            policy: ConversionPolicy::default(),
+        }
+    }
+    /// Configures numeric conversion policy.
+    #[inline(always)]
+    #[must_use]
+    pub fn numeric_policy(
+        self,
+        policy: impl Into<NumericConversionPolicy>,
+    ) -> Self {
+        Self {
+            policy: self.policy.with_numeric_policy(policy.into()),
+        }
+    }
+    /// Configures string conversion policy.
+    #[inline(always)]
+    #[must_use]
+    pub fn string_policy(
+        self,
+        policy: impl Into<StringConversionPolicy>,
+    ) -> Self {
+        Self {
+            policy: self.policy.with_string_policy(policy.into()),
+        }
+    }
+    /// Configures blank string handling.
+    #[inline(always)]
+    #[must_use]
+    pub fn blank_string_policy(self, policy: BlankStringPolicy) -> Self {
+        Self {
+            policy: self.policy.with_blank_string_policy(policy),
+        }
+    }
+    /// Configures boolean conversion policy.
+    #[inline(always)]
+    #[must_use]
+    pub fn boolean_policy(
+        self,
+        policy: impl Into<BooleanConversionPolicy>,
+    ) -> Self {
+        Self {
+            policy: self.policy.with_boolean_policy(policy.into()),
+        }
+    }
+    /// Configures collection conversion policy.
+    #[inline(always)]
+    #[must_use]
+    pub fn collection_policy(
+        self,
+        policy: impl Into<CollectionConversionPolicy>,
+    ) -> Self {
+        Self {
+            policy: self.policy.with_collection_policy(policy.into()),
+        }
+    }
+    /// Configures empty collection item handling.
+    #[inline(always)]
+    #[must_use]
+    pub fn empty_item_policy(self, policy: EmptyItemPolicy) -> Self {
+        Self {
+            policy: self.policy.with_empty_item_policy(policy),
+        }
+    }
+    /// Configures duration conversion policy.
+    #[inline(always)]
+    #[must_use]
+    pub fn duration_policy(
+        self,
+        policy: impl Into<DurationConversionPolicy>,
+    ) -> Self {
+        Self {
+            policy: self.policy.with_duration_policy(policy.into()),
+        }
+    }
+    /// Builds the configured conversion policy.
+    #[inline]
+    #[must_use]
+    pub fn build(self) -> ConversionPolicy {
+        self.policy
     }
 }
 

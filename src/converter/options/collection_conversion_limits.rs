@@ -6,6 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Value limits for scalar-string collection conversion.
+// qubit-style: allow multiple-public-types
 
 use serde::Deserialize;
 use serde::Serialize;
@@ -29,6 +30,13 @@ impl CollectionConversionLimits {
     /// Default maximum number of retained scalar collection items.
     pub const DEFAULT_MAX_ITEMS: u64 = 65_536;
 
+    /// Creates a builder initialized with the default collection limits.
+    #[inline]
+    #[must_use]
+    pub const fn builder() -> CollectionConversionLimitsBuilder {
+        CollectionConversionLimitsBuilder::new()
+    }
+
     /// Returns the source text byte maximum.
     ///
     /// # Returns
@@ -38,21 +46,6 @@ impl CollectionConversionLimits {
     #[must_use]
     pub const fn max_source_bytes(&self) -> u64 {
         self.max_source_bytes
-    }
-
-    /// Returns a copy with a different source text byte maximum.
-    ///
-    /// # Parameters
-    ///
-    /// * `maximum` - Maximum accepted UTF-8 source bytes.
-    ///
-    /// # Returns
-    ///
-    /// Updated limits.
-    #[inline(always)]
-    pub const fn with_max_source_bytes(mut self, maximum: u64) -> Self {
-        self.max_source_bytes = maximum;
-        self
     }
 
     /// Returns the retained-item maximum.
@@ -65,20 +58,49 @@ impl CollectionConversionLimits {
     pub const fn max_items(&self) -> u64 {
         self.max_items
     }
+}
 
-    /// Returns a copy with a different retained-item maximum.
-    ///
-    /// # Parameters
-    ///
-    /// * `maximum` - Maximum retained items; zero permits only an empty result.
-    ///
-    /// # Returns
-    ///
-    /// Updated limits.
+/// Builder for [`CollectionConversionLimits`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CollectionConversionLimitsBuilder {
+    limits: CollectionConversionLimits,
+}
+
+impl CollectionConversionLimitsBuilder {
+    /// Creates a builder initialized with the documented defaults.
+    #[inline]
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            limits: CollectionConversionLimits {
+                max_source_bytes:
+                    CollectionConversionLimits::DEFAULT_MAX_SOURCE_BYTES,
+                max_items: CollectionConversionLimits::DEFAULT_MAX_ITEMS,
+            },
+        }
+    }
+
+    /// Configures the maximum UTF-8 source size.
     #[inline(always)]
-    pub const fn with_max_items(mut self, maximum: u64) -> Self {
-        self.max_items = maximum;
+    #[must_use]
+    pub const fn max_source_bytes(mut self, maximum: u64) -> Self {
+        self.limits.max_source_bytes = maximum;
         self
+    }
+
+    /// Configures the maximum retained item count.
+    #[inline(always)]
+    #[must_use]
+    pub const fn max_items(mut self, maximum: u64) -> Self {
+        self.limits.max_items = maximum;
+        self
+    }
+
+    /// Builds the configured collection limits.
+    #[inline]
+    #[must_use]
+    pub const fn build(self) -> CollectionConversionLimits {
+        self.limits
     }
 }
 

@@ -7,6 +7,8 @@
 // =============================================================================
 //! Lightweight Duration units, policies, parsing, and exact formatting.
 
+#![allow(clippy::double_must_use, clippy::new_without_default)]
+
 mod duration_overflow_error;
 mod duration_parse_error;
 mod duration_text_options;
@@ -19,6 +21,7 @@ mod suffixless_duration_policy;
 pub use duration_overflow_error::DurationOverflowError;
 pub use duration_parse_error::DurationParseError;
 pub use duration_text_options::DurationTextOptions;
+pub use duration_text_options::DurationTextOptionsBuilder;
 pub use duration_unit::DurationUnit;
 pub use duration_unit_parse_mode::DurationUnitParseMode;
 pub use format_duration_exact::format_duration_exact;

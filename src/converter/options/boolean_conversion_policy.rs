@@ -6,6 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! # Boolean Conversion Policy
+// qubit-style: allow multiple-public-types
 //!
 //! Defines policy that controls string-to-boolean conversion.
 
@@ -31,7 +32,10 @@ use super::internal::UncheckedBooleanConversionPolicy;
 ///
 /// `true` when any literal occurs on both sides with identical bytes.
 #[must_use]
-fn case_sensitive_literals_overlap(true_literals: &[String], false_literals: &[String]) -> bool {
+fn case_sensitive_literals_overlap(
+    true_literals: &[String],
+    false_literals: &[String],
+) -> bool {
     let true_literals = true_literals
         .iter()
         .map(String::as_str)
@@ -78,10 +82,11 @@ fn ascii_case_insensitive_literals_overlap(
 /// ```
 /// use qubit_datatype::{BooleanConversionPolicy, BooleanNumericPolicy};
 ///
-/// let options = BooleanConversionPolicy::strict()
-///     .with_true_literal("enabled")
-///     .expect("literal sets are disjoint")
-///     .with_numeric_policy(BooleanNumericPolicy::Reject);
+/// let options = BooleanConversionPolicy::builder()
+///     .true_literal("enabled")
+///     .numeric_policy(BooleanNumericPolicy::Reject)
+///     .build()
+///     .expect("literal sets are disjoint");
 /// assert_eq!(options.parse("ENABLED"), Some(true));
 /// assert_eq!(options.parse("unknown"), None);
 /// ```
@@ -99,6 +104,12 @@ pub struct BooleanConversionPolicy {
 }
 
 impl BooleanConversionPolicy {
+    /// Creates a builder initialized with the strict boolean policy.
+    #[inline]
+    #[must_use]
+    pub fn builder() -> BooleanConversionPolicyBuilder {
+        BooleanConversionPolicyBuilder::new()
+    }
     /// Text literals accepted as `true` by the strict/default profile.
     pub const DEFAULT_TRUE_LITERALS: &'static [&'static str] = &["true"];
 
@@ -168,8 +179,16 @@ impl BooleanConversionPolicy {
     #[inline]
     pub fn env_friendly() -> Self {
         Self {
-            true_literals: vec!["true".to_string(), "yes".to_string(), "on".to_string()],
-            false_literals: vec!["false".to_string(), "no".to_string(), "off".to_string()],
+            true_literals: vec![
+                "true".to_string(),
+                "yes".to_string(),
+                "on".to_string(),
+            ],
+            false_literals: vec![
+                "false".to_string(),
+                "no".to_string(),
+                "off".to_string(),
+            ],
             case_sensitive: false,
             numeric_policy: BooleanNumericPolicy::default(),
         }
@@ -201,7 +220,10 @@ impl BooleanConversionPolicy {
     /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
     /// false literal under the configured case-sensitivity rule.
     #[inline]
-    pub fn with_true_literal(mut self, literal: &str) -> Result<Self, BooleanLiteralConflictError> {
+    pub(crate) fn with_true_literal(
+        mut self,
+        literal: &str,
+    ) -> Result<Self, BooleanLiteralConflictError> {
         self.true_literals.push(literal.to_string());
         self.validate()?;
         Ok(self)
@@ -233,7 +255,7 @@ impl BooleanConversionPolicy {
     /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
     /// true literal under the configured case-sensitivity rule.
     #[inline]
-    pub fn with_false_literal(
+    pub(crate) fn with_false_literal(
         mut self,
         literal: &str,
     ) -> Result<Self, BooleanLiteralConflictError> {
@@ -268,7 +290,7 @@ impl BooleanConversionPolicy {
     /// Returns [`BooleanLiteralConflictError`] when changing the matching rule
     /// makes a true literal equal to a false literal.
     #[inline]
-    pub fn with_case_sensitive(
+    pub(crate) fn with_case_sensitive(
         mut self,
         case_sensitive: bool,
     ) -> Result<Self, BooleanLiteralConflictError> {
@@ -297,7 +319,10 @@ impl BooleanConversionPolicy {
     ///
     /// Returns the updated options value.
     #[inline(always)]
-    pub fn with_numeric_policy(mut self, numeric_policy: BooleanNumericPolicy) -> Self {
+    pub(crate) fn with_numeric_policy(
+        mut self,
+        numeric_policy: BooleanNumericPolicy,
+    ) -> Self {
         self.numeric_policy = numeric_policy;
         self
     }
@@ -317,7 +342,8 @@ impl BooleanConversionPolicy {
         if self.case_sensitive {
             if self.true_literals.iter().any(|literal| literal == value) {
                 Some(true)
-            } else if self.false_literals.iter().any(|literal| literal == value) {
+            } else if self.false_literals.iter().any(|literal| literal == value)
+            {
                 Some(false)
             } else {
                 None
@@ -352,15 +378,82 @@ impl BooleanConversionPolicy {
     #[inline]
     pub fn validate(&self) -> Result<(), BooleanLiteralConflictError> {
         let overlaps = if self.case_sensitive {
-            case_sensitive_literals_overlap(&self.true_literals, &self.false_literals)
+            case_sensitive_literals_overlap(
+                &self.true_literals,
+                &self.false_literals,
+            )
         } else {
-            ascii_case_insensitive_literals_overlap(&self.true_literals, &self.false_literals)
+            ascii_case_insensitive_literals_overlap(
+                &self.true_literals,
+                &self.false_literals,
+            )
         };
         if overlaps {
             Err(BooleanLiteralConflictError)
         } else {
             Ok(())
         }
+    }
+}
+
+/// Builder for [`BooleanConversionPolicy`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BooleanConversionPolicyBuilder {
+    policy: Result<BooleanConversionPolicy, BooleanLiteralConflictError>,
+}
+
+impl BooleanConversionPolicyBuilder {
+    /// Creates a builder initialized with the strict boolean policy.
+    #[inline]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            policy: Ok(BooleanConversionPolicy::strict()),
+        }
+    }
+    /// Adds a literal recognized as `true`.
+    #[inline]
+    #[must_use]
+    pub fn true_literal(mut self, literal: &str) -> Self {
+        self.policy = self
+            .policy
+            .and_then(|policy| policy.with_true_literal(literal));
+        self
+    }
+    /// Adds a literal recognized as `false`.
+    #[inline]
+    #[must_use]
+    pub fn false_literal(mut self, literal: &str) -> Self {
+        self.policy = self
+            .policy
+            .and_then(|policy| policy.with_false_literal(literal));
+        self
+    }
+    /// Configures case sensitivity.
+    #[inline]
+    #[must_use]
+    pub fn case_sensitive(mut self, enabled: bool) -> Self {
+        self.policy = self
+            .policy
+            .and_then(|policy| policy.with_case_sensitive(enabled));
+        self
+    }
+    /// Configures integer-to-boolean conversion.
+    #[inline(always)]
+    #[must_use]
+    pub fn numeric_policy(mut self, policy: BooleanNumericPolicy) -> Self {
+        self.policy = self
+            .policy
+            .map(|options| options.with_numeric_policy(policy));
+        self
+    }
+    /// Builds the configured policy and validates literal conflicts.
+    #[inline]
+    #[must_use]
+    pub fn build(
+        self,
+    ) -> Result<BooleanConversionPolicy, BooleanLiteralConflictError> {
+        self.policy
     }
 }
 
@@ -401,7 +494,8 @@ impl<'de> Deserialize<'de> for BooleanConversionPolicy {
     where
         D: Deserializer<'de>,
     {
-        let definition = UncheckedBooleanConversionPolicy::deserialize(deserializer)?;
+        let definition =
+            UncheckedBooleanConversionPolicy::deserialize(deserializer)?;
         Self::try_new(
             definition.true_literals,
             definition.false_literals,

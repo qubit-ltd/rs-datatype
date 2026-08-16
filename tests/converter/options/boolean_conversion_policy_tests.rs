@@ -27,13 +27,12 @@ fn test_boolean_conversion_policy_cover_literal_branches() {
     assert_eq!(env_options.parse(" YES "), None);
     assert_eq!(env_options.parse("maybe"), None);
 
-    let case_sensitive = BooleanConversionPolicy::strict()
-        .with_case_sensitive(true)
-        .expect("case-sensitive literals should remain disjoint")
-        .with_true_literal("Enabled")
-        .expect("Enabled should not conflict")
-        .with_false_literal("Disabled")
-        .expect("Disabled should not conflict");
+    let case_sensitive = BooleanConversionPolicy::builder()
+        .case_sensitive(true)
+        .true_literal("Enabled")
+        .false_literal("Disabled")
+        .build()
+        .expect("custom literals should remain disjoint");
 
     assert_eq!(case_sensitive.parse("Enabled"), Some(true));
     assert_eq!(case_sensitive.parse("enabled"), None);
@@ -69,20 +68,18 @@ fn test_boolean_conversion_policy_env_friendly_profile() {
 #[test]
 fn test_boolean_conversion_policy_builders_preserve_literal_invariant() {
     assert!(
-        BooleanConversionPolicy::strict()
-            .with_false_literal("TRUE")
+        BooleanConversionPolicy::builder()
+            .false_literal("TRUE")
+            .build()
             .is_err(),
     );
     assert!(
-        BooleanConversionPolicy::try_new(
-            vec!["enabled".to_string()],
-            vec!["ENABLED".to_string()],
-            true,
-            BooleanNumericPolicy::ZeroOrOne,
-        )
-        .expect("case-sensitive literals are distinct")
-        .with_case_sensitive(false)
-        .is_err(),
+        BooleanConversionPolicy::builder()
+            .true_literal("enabled")
+            .false_literal("ENABLED")
+            .case_sensitive(false)
+            .build()
+            .is_err()
     );
 }
 
@@ -142,8 +139,10 @@ fn test_boolean_conversion_policy_only_reject_cross_set_conflicts() {
 
 #[test]
 fn test_boolean_conversion_policy_numeric_builder() {
-    let policy =
-        BooleanConversionPolicy::strict().with_numeric_policy(BooleanNumericPolicy::NonZero);
+    let policy = BooleanConversionPolicy::builder()
+        .numeric_policy(BooleanNumericPolicy::NonZero)
+        .build()
+        .expect("numeric policy should be valid");
 
     assert_eq!(policy.numeric_policy(), BooleanNumericPolicy::NonZero);
     assert_eq!(policy.parse("true"), Some(true));
@@ -152,8 +151,10 @@ fn test_boolean_conversion_policy_numeric_builder() {
 /// Characterizes validation for large disjoint literal collections.
 #[test]
 fn test_boolean_conversion_policy_validate_large_disjoint_sets() {
-    let true_literals = (0..4096).map(|index| format!("true-{index}")).collect();
-    let false_literals = (0..4096).map(|index| format!("false-{index}")).collect();
+    let true_literals =
+        (0..4096).map(|index| format!("true-{index}")).collect();
+    let false_literals =
+        (0..4096).map(|index| format!("false-{index}")).collect();
 
     assert!(
         BooleanConversionPolicy::try_new(
@@ -174,7 +175,8 @@ fn test_boolean_conversion_policy_serde_and_defaults() {
     assert_eq!(BooleanConversionPolicy::DEFAULT_FALSE_LITERALS, &["false"],);
     assert_eq!(defaults.true_literals(), &["true".to_string()]);
     assert_eq!(defaults.false_literals(), &["false".to_string()]);
-    let wire = serde_json::to_string(&defaults).expect("boolean policys should serialize");
+    let wire = serde_json::to_string(&defaults)
+        .expect("boolean policys should serialize");
     assert_eq!(
         serde_json::from_str::<BooleanConversionPolicy>(&wire)
             .expect("boolean policys should deserialize"),

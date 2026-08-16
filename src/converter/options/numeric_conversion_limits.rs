@@ -6,6 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Resource limits for numeric conversions.
+// qubit-style: allow multiple-public-types
 
 #[cfg(feature = "big-decimal")]
 use qubit_budget::BigDecimalLimits;
@@ -48,6 +49,12 @@ pub struct NumericConversionLimits {
 }
 
 impl NumericConversionLimits {
+    /// Creates a builder initialized with the default numeric limits.
+    #[inline]
+    #[must_use]
+    pub fn builder() -> NumericConversionLimitsBuilder {
+        NumericConversionLimitsBuilder::new()
+    }
     /// Default maximum normalized numeric text length in bytes.
     pub const DEFAULT_MAX_TEXT_BYTES: u64 = 16_384;
 
@@ -79,7 +86,9 @@ impl NumericConversionLimits {
 
     /// Returns the numeric text resource limit.
     #[inline(always)]
-    pub fn max_text_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
+    pub fn max_text_bytes_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, u64> {
         self.text
             .utf8_bytes_limit()
             .expect("numeric text limit is configured")
@@ -95,7 +104,7 @@ impl NumericConversionLimits {
     ///
     /// Updated limits.
     #[inline(always)]
-    pub fn with_max_text_bytes(mut self, maximum: u64) -> Self {
+    pub(crate) fn with_max_text_bytes(mut self, maximum: u64) -> Self {
         self.text = StringLimits::builder()
             .utf8_bytes_limit(ResourceLimit::new(
                 ConversionResource::NumericTextBytes,
@@ -134,7 +143,9 @@ impl NumericConversionLimits {
 
     /// Returns the BigInteger digit resource limit.
     #[inline(always)]
-    pub fn max_big_integer_digits_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
+    pub fn max_big_integer_digits_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, u64> {
         #[cfg(feature = "big-integer")]
         {
             self.big_integer
@@ -157,7 +168,7 @@ impl NumericConversionLimits {
     ///
     /// Updated limits.
     #[inline(always)]
-    pub fn with_max_big_integer_digits(mut self, maximum: u64) -> Self {
+    pub(crate) fn with_max_big_integer_digits(mut self, maximum: u64) -> Self {
         #[cfg(feature = "big-integer")]
         {
             self.big_integer = BigIntegerLimits::builder()
@@ -169,8 +180,10 @@ impl NumericConversionLimits {
         }
         #[cfg(not(feature = "big-integer"))]
         {
-            self.max_big_integer_digits =
-                ResourceLimit::new(ConversionResource::BigIntegerDigits, maximum);
+            self.max_big_integer_digits = ResourceLimit::new(
+                ConversionResource::BigIntegerDigits,
+                maximum,
+            );
         }
         self
     }
@@ -194,7 +207,10 @@ impl NumericConversionLimits {
 
     /// Returns a copy with a different BigDecimal coefficient digit maximum.
     #[inline(always)]
-    pub fn with_max_big_decimal_coefficient_digits(mut self, maximum: u64) -> Self {
+    pub(crate) fn with_max_big_decimal_coefficient_digits(
+        mut self,
+        maximum: u64,
+    ) -> Self {
         #[cfg(feature = "big-decimal")]
         {
             self.big_decimal = BigDecimalLimits::builder()
@@ -216,8 +232,10 @@ impl NumericConversionLimits {
         }
         #[cfg(not(feature = "big-decimal"))]
         {
-            self.max_big_decimal_coefficient_digits =
-                ResourceLimit::new(ConversionResource::BigDecimalCoefficientDigits, maximum);
+            self.max_big_decimal_coefficient_digits = ResourceLimit::new(
+                ConversionResource::BigDecimalCoefficientDigits,
+                maximum,
+            );
         }
         self
     }
@@ -247,7 +265,10 @@ impl NumericConversionLimits {
 
     /// Returns a copy with a different absolute BigDecimal scale maximum.
     #[inline(always)]
-    pub fn with_max_big_decimal_scale_magnitude(mut self, maximum: u64) -> Self {
+    pub(crate) fn with_max_big_decimal_scale_magnitude(
+        mut self,
+        maximum: u64,
+    ) -> Self {
         #[cfg(feature = "big-decimal")]
         {
             self.big_decimal = BigDecimalLimits::builder()
@@ -260,10 +281,69 @@ impl NumericConversionLimits {
         }
         #[cfg(not(feature = "big-decimal"))]
         {
-            self.max_big_decimal_scale_magnitude =
-                ResourceLimit::new(ConversionResource::BigDecimalScaleMagnitude, maximum);
+            self.max_big_decimal_scale_magnitude = ResourceLimit::new(
+                ConversionResource::BigDecimalScaleMagnitude,
+                maximum,
+            );
         }
         self
+    }
+}
+
+/// Builder for [`NumericConversionLimits`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NumericConversionLimitsBuilder {
+    limits: NumericConversionLimits,
+}
+
+impl NumericConversionLimitsBuilder {
+    /// Creates a builder initialized with the documented defaults.
+    #[inline]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            limits: NumericConversionLimits::default(),
+        }
+    }
+    /// Configures the numeric text byte maximum.
+    #[inline(always)]
+    #[must_use]
+    pub fn max_text_bytes(self, maximum: u64) -> Self {
+        Self {
+            limits: self.limits.with_max_text_bytes(maximum),
+        }
+    }
+    /// Configures the BigInt digit maximum.
+    #[inline(always)]
+    #[must_use]
+    pub fn max_big_integer_digits(self, maximum: u64) -> Self {
+        Self {
+            limits: self.limits.with_max_big_integer_digits(maximum),
+        }
+    }
+    /// Configures the BigDecimal coefficient digit maximum.
+    #[inline(always)]
+    #[must_use]
+    pub fn max_big_decimal_coefficient_digits(self, maximum: u64) -> Self {
+        Self {
+            limits: self
+                .limits
+                .with_max_big_decimal_coefficient_digits(maximum),
+        }
+    }
+    /// Configures the BigDecimal scale magnitude maximum.
+    #[inline(always)]
+    #[must_use]
+    pub fn max_big_decimal_scale_magnitude(self, maximum: u64) -> Self {
+        Self {
+            limits: self.limits.with_max_big_decimal_scale_magnitude(maximum),
+        }
+    }
+    /// Builds the configured numeric limits.
+    #[inline]
+    #[must_use]
+    pub fn build(self) -> NumericConversionLimits {
+        self.limits
     }
 }
 
@@ -331,8 +411,10 @@ impl Serialize for NumericConversionLimits {
         NumericConversionLimitsWire {
             max_text_bytes: self.max_text_bytes(),
             max_big_integer_digits: self.max_big_integer_digits(),
-            max_big_decimal_coefficient_digits: self.max_big_decimal_coefficient_digits(),
-            max_big_decimal_scale_magnitude: self.max_big_decimal_scale_magnitude(),
+            max_big_decimal_coefficient_digits: self
+                .max_big_decimal_coefficient_digits(),
+            max_big_decimal_scale_magnitude: self
+                .max_big_decimal_scale_magnitude(),
         }
         .serialize(serializer)
     }
@@ -347,7 +429,11 @@ impl<'de> Deserialize<'de> for NumericConversionLimits {
         Ok(Self::default()
             .with_max_text_bytes(wire.max_text_bytes)
             .with_max_big_integer_digits(wire.max_big_integer_digits)
-            .with_max_big_decimal_coefficient_digits(wire.max_big_decimal_coefficient_digits)
-            .with_max_big_decimal_scale_magnitude(wire.max_big_decimal_scale_magnitude))
+            .with_max_big_decimal_coefficient_digits(
+                wire.max_big_decimal_coefficient_digits,
+            )
+            .with_max_big_decimal_scale_magnitude(
+                wire.max_big_decimal_scale_magnitude,
+            ))
     }
 }

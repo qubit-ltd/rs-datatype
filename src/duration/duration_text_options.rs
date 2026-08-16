@@ -6,6 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Options for Duration text parsing.
+// qubit-style: allow multiple-public-types
 
 use serde::Deserialize;
 use serde::Serialize;
@@ -27,6 +28,12 @@ pub struct DurationTextOptions {
 }
 
 impl DurationTextOptions {
+    /// Creates a builder initialized with the default text options.
+    #[inline]
+    #[must_use]
+    pub fn builder() -> DurationTextOptionsBuilder {
+        DurationTextOptionsBuilder::new()
+    }
     /// Default maximum accepted Duration source text length in bytes.
     pub const DEFAULT_MAX_TEXT_BYTES: usize = 256;
 
@@ -72,7 +79,7 @@ impl DurationTextOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_suffixless_policy(
+    pub(crate) const fn with_suffixless_policy(
         mut self,
         suffixless_policy: SuffixlessDurationPolicy,
     ) -> Self {
@@ -100,7 +107,10 @@ impl DurationTextOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_unit_parse_mode(mut self, unit_parse_mode: DurationUnitParseMode) -> Self {
+    pub(crate) const fn with_unit_parse_mode(
+        mut self,
+        unit_parse_mode: DurationUnitParseMode,
+    ) -> Self {
         self.unit_parse_mode = unit_parse_mode;
         self
     }
@@ -133,9 +143,59 @@ impl DurationTextOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub const fn with_max_text_bytes(mut self, maximum: usize) -> Self {
+    pub(crate) const fn with_max_text_bytes(mut self, maximum: usize) -> Self {
         self.max_text_bytes = maximum;
         self
+    }
+}
+
+/// Builder for [`DurationTextOptions`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DurationTextOptionsBuilder {
+    options: DurationTextOptions,
+}
+
+impl DurationTextOptionsBuilder {
+    /// Creates a builder initialized with the documented defaults.
+    #[inline]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            options: DurationTextOptions::default(),
+        }
+    }
+    /// Configures suffixless input handling.
+    #[inline(always)]
+    #[must_use]
+    pub const fn suffixless_policy(
+        self,
+        policy: SuffixlessDurationPolicy,
+    ) -> Self {
+        Self {
+            options: self.options.with_suffixless_policy(policy),
+        }
+    }
+    /// Configures explicit unit parsing.
+    #[inline(always)]
+    #[must_use]
+    pub const fn unit_parse_mode(self, mode: DurationUnitParseMode) -> Self {
+        Self {
+            options: self.options.with_unit_parse_mode(mode),
+        }
+    }
+    /// Configures the maximum text size.
+    #[inline(always)]
+    #[must_use]
+    pub const fn max_text_bytes(self, maximum: usize) -> Self {
+        Self {
+            options: self.options.with_max_text_bytes(maximum),
+        }
+    }
+    /// Builds the configured text options.
+    #[inline]
+    #[must_use]
+    pub const fn build(self) -> DurationTextOptions {
+        self.options
     }
 }
 

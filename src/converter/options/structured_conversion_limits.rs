@@ -6,6 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Resource limits for structured text conversions.
+// qubit-style: allow multiple-public-types
 
 use qubit_budget::ResourceLimit;
 use qubit_budget::StringLimits;
@@ -33,6 +34,12 @@ pub struct StructuredConversionLimits {
 }
 
 impl StructuredConversionLimits {
+    /// Creates a builder initialized with the default structured limits.
+    #[inline]
+    #[must_use]
+    pub fn builder() -> StructuredConversionLimitsBuilder {
+        StructuredConversionLimitsBuilder::new()
+    }
     /// Default maximum normalized structured text length in bytes.
     pub const DEFAULT_MAX_TEXT_BYTES: u64 = 1_048_576;
     /// Default maximum root-inclusive depth.
@@ -79,7 +86,7 @@ impl StructuredConversionLimits {
     ///
     /// Updated limits.
     #[inline(always)]
-    pub fn with_max_text_bytes(mut self, maximum: u64) -> Self {
+    pub(crate) fn with_max_text_bytes(mut self, maximum: u64) -> Self {
         self.text = StringLimits::builder()
             .utf8_bytes_limit(ResourceLimit::new(
                 ConversionResource::StructuredTextBytes,
@@ -124,7 +131,7 @@ impl StructuredConversionLimits {
 
     /// Returns a copy with a different depth maximum.
     #[inline(always)]
-    pub fn with_max_depth(mut self, maximum: u64) -> Self {
+    pub(crate) fn with_max_depth(mut self, maximum: u64) -> Self {
         self.value = rebuild_value(
             &self.value,
             rebuild_structure(
@@ -163,7 +170,7 @@ impl StructuredConversionLimits {
 
     /// Returns a copy with a different sequence item maximum.
     #[inline(always)]
-    pub fn with_max_sequence_items(mut self, maximum: u64) -> Self {
+    pub(crate) fn with_max_sequence_items(mut self, maximum: u64) -> Self {
         self.value = rebuild_value(
             &self.value,
             rebuild_structure(
@@ -202,7 +209,7 @@ impl StructuredConversionLimits {
 
     /// Returns a copy with a different map entry maximum.
     #[inline(always)]
-    pub fn with_max_map_entries(mut self, maximum: u64) -> Self {
+    pub(crate) fn with_max_map_entries(mut self, maximum: u64) -> Self {
         self.value = rebuild_value(
             &self.value,
             rebuild_structure(
@@ -215,6 +222,61 @@ impl StructuredConversionLimits {
             None,
         );
         self
+    }
+}
+
+/// Builder for [`StructuredConversionLimits`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StructuredConversionLimitsBuilder {
+    limits: StructuredConversionLimits,
+}
+
+impl StructuredConversionLimitsBuilder {
+    /// Creates a builder initialized with the documented defaults.
+    #[inline]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            limits: StructuredConversionLimits::default(),
+        }
+    }
+    /// Configures the normalized text byte maximum.
+    #[inline(always)]
+    #[must_use]
+    pub fn max_text_bytes(self, maximum: u64) -> Self {
+        Self {
+            limits: self.limits.with_max_text_bytes(maximum),
+        }
+    }
+    /// Configures the depth maximum.
+    #[inline(always)]
+    #[must_use]
+    pub fn max_depth(self, maximum: u64) -> Self {
+        Self {
+            limits: self.limits.with_max_depth(maximum),
+        }
+    }
+    /// Configures the sequence item maximum.
+    #[inline(always)]
+    #[must_use]
+    pub fn max_sequence_items(self, maximum: u64) -> Self {
+        Self {
+            limits: self.limits.with_max_sequence_items(maximum),
+        }
+    }
+    /// Configures the map entry maximum.
+    #[inline(always)]
+    #[must_use]
+    pub fn max_map_entries(self, maximum: u64) -> Self {
+        Self {
+            limits: self.limits.with_max_map_entries(maximum),
+        }
+    }
+    /// Builds the configured structured limits.
+    #[inline]
+    #[must_use]
+    pub fn build(self) -> StructuredConversionLimits {
+        self.limits
     }
 }
 

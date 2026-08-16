@@ -47,23 +47,30 @@ fuzz_target!(|data: &[u8]| {
         1 => EmptyItemPolicy::Skip,
         _ => EmptyItemPolicy::Reject,
     };
-    let collection = CollectionConversionPolicy::default()
-        .with_split_scalar_strings(true)
-        .with_delimiters(delimiters)
-        .with_trim_items(policy_control & 0b100 != 0)
-        .with_empty_item_policy(empty_item_policy);
-    let limits = ConversionLimits::default().with_collection_limits(
-        CollectionConversionLimits::default().with_max_items(
-            u64::try_from(max_items).expect("fuzz policy byte fits u64"),
-        ),
-    );
+    let collection = CollectionConversionPolicy::builder()
+        .split_scalar_strings(true)
+        .delimiters(delimiters)
+        .trim_items(policy_control & 0b100 != 0)
+        .empty_item_policy(empty_item_policy)
+        .build();
+    let limits = ConversionLimits::builder()
+        .collection_limits(
+            CollectionConversionLimits::builder()
+                .max_items(
+                    u64::try_from(max_items)
+                        .expect("fuzz policy byte fits u64"),
+                )
+                .build(),
+        )
+        .build();
 
     for item in collection.scalar_items(limits.collection(), text) {
         let _ = item;
     }
 
-    let options =
-        ConversionPolicy::env_friendly().with_collection_policy(collection);
+    let options = ConversionPolicy::builder()
+        .collection_policy(collection)
+        .build();
     let converter = ScalarStringDataConverters::from(text);
     let first = converter.to_first_with::<String>(&options, &limits);
     let values = converter.to_vec_with::<String>(&options, &limits);

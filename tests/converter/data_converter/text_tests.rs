@@ -552,8 +552,9 @@ fn test_data_converter_consuming_string_identity_reuses_owned_storage() {
         .expect("borrowed String identity conversion should succeed");
     assert_ne!(converted.as_ptr(), borrowed_pointer);
 
-    let options = ConversionPolicy::default()
-        .with_string_policy(StringConversionPolicy::default().with_trim(true));
+    let options = ConversionPolicy::builder()
+        .string_policy(StringConversionPolicy::builder().trim(true))
+        .build();
     let trimmed = DataConverter::from(String::from("  payload  "))
         .into_target_with::<String>(&options, ConversionLimits::default_ref())
         .expect("consuming String conversion should still trim text");

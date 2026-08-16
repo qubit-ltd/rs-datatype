@@ -71,14 +71,15 @@ fn test_conversion_policy_profiles_preserve_semantic_defaults() {
 
 #[test]
 fn test_conversion_policy_builders_replace_each_policy_group() {
-    let policy = ConversionPolicy::default()
-        .with_numeric_policy(NumericConversionPolicy::lossy())
-        .with_string_policy(StringConversionPolicy::default().with_trim(true))
-        .with_blank_string_policy(BlankStringPolicy::TreatAsMissing)
-        .with_boolean_policy(BooleanConversionPolicy::env_friendly())
-        .with_collection_policy(CollectionConversionPolicy::env_friendly())
-        .with_empty_item_policy(EmptyItemPolicy::Skip)
-        .with_duration_policy(DurationConversionPolicy::default());
+    let policy = ConversionPolicy::builder()
+        .numeric_policy(NumericConversionPolicy::lossy())
+        .string_policy(StringConversionPolicy::builder().trim(true).build())
+        .blank_string_policy(BlankStringPolicy::TreatAsMissing)
+        .boolean_policy(BooleanConversionPolicy::env_friendly())
+        .collection_policy(CollectionConversionPolicy::env_friendly())
+        .empty_item_policy(EmptyItemPolicy::Skip)
+        .duration_policy(DurationConversionPolicy::default())
+        .build();
 
     assert_eq!(policy.numeric(), &NumericConversionPolicy::lossy());
     assert!(policy.string().trim());

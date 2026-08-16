@@ -43,10 +43,12 @@ use qubit_datatype::NumericConversionLimits;
 /// Strict conversion options carrying the requested digit limit.
 #[cfg(feature = "big-integer")]
 fn limits_with_big_integer_digit_limit(maximum: usize) -> ConversionLimits {
-    ConversionLimits::default().with_numeric_limits(
-        NumericConversionLimits::default()
-            .with_max_big_integer_digits(u64::try_from(maximum).unwrap()),
-    )
+    ConversionLimits::builder()
+        .numeric_limits(
+            NumericConversionLimits::builder()
+                .max_big_integer_digits(u64::try_from(maximum).unwrap()),
+        )
+        .build()
 }
 
 /// Verifies primitive integer conversion preserves the complete value.
