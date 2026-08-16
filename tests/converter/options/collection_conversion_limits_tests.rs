@@ -26,7 +26,8 @@ fn test_collection_conversion_limits_defaults_builders_and_wire() {
         .max_items(3)
         .build();
     assert_eq!(
-        serde_json::to_string(&limits).expect("collection limits should serialize"),
+        serde_json::to_string(&limits)
+            .expect("collection limits should serialize"),
         r#"{"max_source_bytes":128,"max_items":3}"#
     );
     assert_eq!(

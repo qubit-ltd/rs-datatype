@@ -65,7 +65,10 @@ pub struct ConversionSession<'a> {
 impl<'a> ConversionSession<'a> {
     /// Creates a fresh session from immutable policy and limit configuration.
     #[inline]
-    pub fn new(policy: &'a ConversionPolicy, limits: &'a ConversionLimits) -> Self {
+    pub fn new(
+        policy: &'a ConversionPolicy,
+        limits: &'a ConversionLimits,
+    ) -> Self {
         Self {
             policy,
             limits,
@@ -99,7 +102,10 @@ impl<'a> ConversionSession<'a> {
     /// source input again unless it intentionally represents another
     /// top-level unit of work.
     #[inline(always)]
-    pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
+    pub fn delegate<T>(
+        &mut self,
+        source: &DataConverter<'_>,
+    ) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -111,7 +117,10 @@ impl<'a> ConversionSession<'a> {
     /// This has the same accounting contract as [`Self::delegate`], while
     /// transferring ownership of the nested source to the target.
     #[inline(always)]
-    pub fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
+    pub fn delegate_owned<T>(
+        &mut self,
+        source: DataConverter<'_>,
+    ) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -136,7 +145,8 @@ impl<'a> ConversionSession<'a> {
     where
         T: Deserialize<'de>,
     {
-        let mut decode = JsonDecodeSession::borrowing_value(self.budget.structured_mut());
+        let mut decode =
+            JsonDecodeSession::borrowing_value(self.budget.structured_mut());
         JsonTextDecoder::new(&mut decode).decode(input)
     }
 
@@ -153,7 +163,8 @@ impl<'a> ConversionSession<'a> {
     where
         S: DeserializeSeed<'de>,
     {
-        let mut decode = JsonDecodeSession::borrowing_value(self.budget.structured_mut());
+        let mut decode =
+            JsonDecodeSession::borrowing_value(self.budget.structured_mut());
         JsonTextDecoder::new(&mut decode).decode_seed(seed, input)
     }
 
@@ -163,10 +174,13 @@ impl<'a> ConversionSession<'a> {
     pub(crate) fn account_json_value(
         &mut self,
         value: &Value,
-    ) -> Result<(), JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>> {
+    ) -> Result<
+        (),
+        JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>,
+    > {
         let mut transaction = self.budget.structured_transaction();
-        let result =
-            JsonTreeReader::new(&mut transaction).process(value, &mut JsonAccountingVisitor);
+        let result = JsonTreeReader::new(&mut transaction)
+            .process(value, &mut JsonAccountingVisitor);
         if result.is_ok() {
             transaction.commit();
         }
@@ -196,7 +210,8 @@ impl<'a> ConversionSession<'a> {
         T: Serialize + ?Sized,
     {
         let (output, structured) = self.budget.split_json_mut();
-        let mut encode = JsonEncodeSession::borrowing_output(output, structured);
+        let mut encode =
+            JsonEncodeSession::borrowing_output(output, structured);
         JsonTextEncoder::new(&mut encode).to_vec(value)
     }
 
@@ -206,7 +221,9 @@ impl<'a> ConversionSession<'a> {
     ///
     /// Returns a budget error when the cumulative item limit is exhausted.
     #[inline]
-    pub fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
+    pub fn consume_item(
+        &mut self,
+    ) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_item()
     }
 
@@ -303,7 +320,10 @@ impl<'a> ConversionSession<'a> {
             self.limits.collection().max_source_bytes(),
         );
         let actual = u64::try_from_usize(actual).map_err(|source| {
-            MeasuredBudgetError::quantity(ConversionResource::CollectionSourceBytes, source)
+            MeasuredBudgetError::quantity(
+                ConversionResource::CollectionSourceBytes,
+                source,
+            )
         })?;
         limit.check(actual).map_err(MeasuredBudgetError::from)
     }
@@ -364,7 +384,9 @@ impl<'a> ConversionSession<'a> {
     ) -> Result<String, BudgetedStringError<ConversionResource, E>>
     where
         E: std::fmt::Debug + std::fmt::Display,
-        F: FnOnce(&mut BudgetedStringWriter<'_, ConversionResource>) -> Result<(), E>,
+        F: FnOnce(
+            &mut BudgetedStringWriter<'_, ConversionResource>,
+        ) -> Result<(), E>,
     {
         self.budget.try_write_string(render)
     }
@@ -476,7 +498,11 @@ impl JsonTreeVisitor for JsonAccountingVisitor {
     type Error = std::convert::Infallible;
 
     /// Accepts every budget-admitted JSON node.
-    fn enter(&mut self, _value: &Value, _context: JsonTreeContext<'_>) -> Result<(), Self::Error> {
+    fn enter(
+        &mut self,
+        _value: &Value,
+        _context: JsonTreeContext<'_>,
+    ) -> Result<(), Self::Error> {
         Ok(())
     }
 }
