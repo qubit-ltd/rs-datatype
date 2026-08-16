@@ -147,7 +147,7 @@ impl<'a> ConversionSession<'a> {
     {
         let mut decode =
             JsonDecodeSession::borrowing_value(self.budget.structured_mut());
-        JsonDecoder::new(&mut decode).decode(input)
+        JsonDecoder::default().decode_utf8(input, &mut decode)
     }
 
     /// Decodes JSON through a seed while charging the shared budget directly.
@@ -165,7 +165,7 @@ impl<'a> ConversionSession<'a> {
     {
         let mut decode =
             JsonDecodeSession::borrowing_value(self.budget.structured_mut());
-        JsonDecoder::new(&mut decode).decode_seed(seed, input)
+        JsonDecoder::default().decode_seed_utf8(seed, input, &mut decode)
     }
 
     /// Accounts an already materialized JSON value through rs-budget's
