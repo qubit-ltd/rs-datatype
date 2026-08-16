@@ -25,7 +25,8 @@ use qubit_datatype::NumericComparisonPolicy;
 fn test_exact_decimal_ignores_redundant_scale() {
     let decimal = BigDecimal::from_str("1.00").expect("test decimal");
     assert_eq!(
-        NumberRef::from(&decimal).compare(NumberRef::from(1_u8), NumericComparisonPolicy::Exact,),
+        NumberRef::from(&decimal)
+            .compare(NumberRef::from(1_u8), NumericComparisonPolicy::Exact,),
         Some(Ordering::Equal),
     );
 }
