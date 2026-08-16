@@ -48,15 +48,16 @@ fn test_scalar_string_data_converters_to_first_converts_unsplit_scalar() {
 /// Test configurable scalar string splitting for vector conversion.
 #[test]
 fn test_scalar_string_data_converters_to_vec_with_splits_items() {
-    let options = ConversionPolicy::default()
-        .with_string_policy(StringConversionPolicy::default().with_trim(true))
-        .with_collection_policy(
-            CollectionConversionPolicy::default()
-                .with_split_scalar_strings(true)
-                .with_delimiters([',', ';'])
-                .with_trim_items(true)
-                .with_empty_item_policy(EmptyItemPolicy::Skip),
-        );
+    let options = ConversionPolicy::builder()
+        .string_policy(StringConversionPolicy::builder().trim(true))
+        .collection_policy(
+            CollectionConversionPolicy::builder()
+                .split_scalar_strings(true)
+                .delimiters([',', ';'])
+                .trim_items(true)
+                .empty_item_policy(EmptyItemPolicy::Skip),
+        )
+        .build();
 
     let ports: Vec<u16> =
         ScalarStringDataConverters::from(" 8080, 8081;; 8082 ")
@@ -81,11 +82,13 @@ fn test_scalar_string_data_converters_to_first_with_splits_items() {
 /// Test scalar string normalization errors.
 #[test]
 fn test_scalar_string_data_converters_to_vec_with_reports_missing_scalar() {
-    let options = ConversionPolicy::default().with_string_policy(
-        StringConversionPolicy::default()
-            .with_trim(true)
-            .with_blank_string_policy(BlankStringPolicy::TreatAsMissing),
-    );
+    let options = ConversionPolicy::builder()
+        .string_policy(
+            StringConversionPolicy::builder()
+                .trim(true)
+                .blank_string_policy(BlankStringPolicy::TreatAsMissing),
+        )
+        .build();
 
     let error = ScalarStringDataConverters::from("   ")
         .to_vec_with::<u16>(&options, ConversionLimits::default_ref())
@@ -101,11 +104,13 @@ fn test_scalar_string_data_converters_to_vec_with_reports_missing_scalar() {
 /// Test scalar string first-value normalization errors.
 #[test]
 fn test_scalar_string_data_converters_to_first_with_reports_missing_scalar() {
-    let options = ConversionPolicy::default().with_string_policy(
-        StringConversionPolicy::default()
-            .with_trim(true)
-            .with_blank_string_policy(BlankStringPolicy::TreatAsMissing),
-    );
+    let options = ConversionPolicy::builder()
+        .string_policy(
+            StringConversionPolicy::builder()
+                .trim(true)
+                .blank_string_policy(BlankStringPolicy::TreatAsMissing),
+        )
+        .build();
 
     assert_eq!(
         ScalarStringDataConverters::from("   ")
@@ -120,11 +125,13 @@ fn test_scalar_string_data_converters_to_first_with_reports_missing_scalar() {
 /// Test scalar string empty item rejection.
 #[test]
 fn test_scalar_string_data_converters_to_vec_with_rejects_empty_item() {
-    let options = ConversionPolicy::default().with_collection_policy(
-        CollectionConversionPolicy::default()
-            .with_split_scalar_strings(true)
-            .with_empty_item_policy(EmptyItemPolicy::Reject),
-    );
+    let options = ConversionPolicy::builder()
+        .collection_policy(
+            CollectionConversionPolicy::builder()
+                .split_scalar_strings(true)
+                .empty_item_policy(EmptyItemPolicy::Reject),
+        )
+        .build();
 
     let error = ScalarStringDataConverters::from("1,,2")
         .to_vec_with::<u16>(&options, ConversionLimits::default_ref())
@@ -144,14 +151,16 @@ fn test_scalar_string_data_converters_to_vec_with_rejects_empty_item() {
 /// Test vector conversion reports the first retained item over the limit.
 #[test]
 fn test_scalar_string_data_converters_to_vec_with_enforces_item_limit() {
-    let options = ConversionPolicy::default().with_collection_policy(
-        CollectionConversionPolicy::default()
-            .with_split_scalar_strings(true)
-            .with_empty_item_policy(EmptyItemPolicy::Skip),
-    );
-    let limits = ConversionLimits::default().with_collection_limits(
-        CollectionConversionLimits::default().with_max_items(2),
-    );
+    let options = ConversionPolicy::builder()
+        .collection_policy(
+            CollectionConversionPolicy::builder()
+                .split_scalar_strings(true)
+                .empty_item_policy(EmptyItemPolicy::Skip),
+        )
+        .build();
+    let limits = ConversionLimits::builder()
+        .collection_limits(CollectionConversionLimits::builder().max_items(2))
+        .build();
     let error = ScalarStringDataConverters::from("1,,2,3")
         .to_vec_with::<u16>(&options, &limits)
         .expect_err("third retained item must exceed the limit");
@@ -176,24 +185,28 @@ fn test_scalar_string_data_converters_to_vec_with_enforces_item_limit() {
 /// Test first conversion remains lazy and honors a zero item limit.
 #[test]
 fn test_scalar_string_data_converters_to_first_with_item_limit() {
-    let one = ConversionPolicy::default().with_collection_policy(
-        CollectionConversionPolicy::default().with_split_scalar_strings(true),
-    );
-    let one_limit = ConversionLimits::default().with_collection_limits(
-        CollectionConversionLimits::default().with_max_items(1),
-    );
+    let one = ConversionPolicy::builder()
+        .collection_policy(
+            CollectionConversionPolicy::builder().split_scalar_strings(true),
+        )
+        .build();
+    let one_limit = ConversionLimits::builder()
+        .collection_limits(CollectionConversionLimits::builder().max_items(1))
+        .build();
     assert_eq!(
         ScalarStringDataConverters::from("1,2,3")
             .to_first_with::<u16>(&one, &one_limit),
         Ok(1),
     );
 
-    let zero = ConversionPolicy::default().with_collection_policy(
-        CollectionConversionPolicy::default().with_split_scalar_strings(true),
-    );
-    let zero_limit = ConversionLimits::default().with_collection_limits(
-        CollectionConversionLimits::default().with_max_items(0),
-    );
+    let zero = ConversionPolicy::builder()
+        .collection_policy(
+            CollectionConversionPolicy::builder().split_scalar_strings(true),
+        )
+        .build();
+    let zero_limit = ConversionLimits::builder()
+        .collection_limits(CollectionConversionLimits::builder().max_items(0))
+        .build();
     let error = ScalarStringDataConverters::from("1,2,3")
         .to_first_with::<u16>(&zero, &zero_limit)
         .expect_err("zero limit must reject the first retained item");
@@ -211,11 +224,13 @@ fn test_scalar_string_data_converters_to_first_with_item_limit() {
 /// Test scalar string first-value empty item rejection.
 #[test]
 fn test_scalar_string_data_converters_to_first_with_rejects_empty_item() {
-    let options = ConversionPolicy::default().with_collection_policy(
-        CollectionConversionPolicy::default()
-            .with_split_scalar_strings(true)
-            .with_empty_item_policy(EmptyItemPolicy::Reject),
-    );
+    let options = ConversionPolicy::builder()
+        .collection_policy(
+            CollectionConversionPolicy::builder()
+                .split_scalar_strings(true)
+                .empty_item_policy(EmptyItemPolicy::Reject),
+        )
+        .build();
 
     assert_eq!(
         ScalarStringDataConverters::from(",1,2")
@@ -231,11 +246,13 @@ fn test_scalar_string_data_converters_to_first_with_rejects_empty_item() {
 /// Test scalar string first-value behavior when all items are skipped.
 #[test]
 fn test_scalar_string_data_converters_to_first_with_reports_empty_after_skip() {
-    let options = ConversionPolicy::default().with_collection_policy(
-        CollectionConversionPolicy::default()
-            .with_split_scalar_strings(true)
-            .with_empty_item_policy(EmptyItemPolicy::Skip),
-    );
+    let options = ConversionPolicy::builder()
+        .collection_policy(
+            CollectionConversionPolicy::builder()
+                .split_scalar_strings(true)
+                .empty_item_policy(EmptyItemPolicy::Skip),
+        )
+        .build();
 
     assert_eq!(
         ScalarStringDataConverters::from(",,")
@@ -247,11 +264,13 @@ fn test_scalar_string_data_converters_to_first_with_reports_empty_after_skip() {
 /// Test that skipped empty items do not renumber later source failures.
 #[test]
 fn test_scalar_string_data_converters_preserves_original_source_index() {
-    let options = ConversionPolicy::default().with_collection_policy(
-        CollectionConversionPolicy::default()
-            .with_split_scalar_strings(true)
-            .with_empty_item_policy(EmptyItemPolicy::Skip),
-    );
+    let options = ConversionPolicy::builder()
+        .collection_policy(
+            CollectionConversionPolicy::builder()
+                .split_scalar_strings(true)
+                .empty_item_policy(EmptyItemPolicy::Skip),
+        )
+        .build();
 
     let error = ScalarStringDataConverters::from("1,,bad")
         .to_vec_with::<u16>(&options, ConversionLimits::default_ref())
@@ -263,11 +282,13 @@ fn test_scalar_string_data_converters_preserves_original_source_index() {
 /// Test that first-value conversion does not inspect a rejected tail item.
 #[test]
 fn test_scalar_string_data_converters_to_first_short_circuits_tail() {
-    let options = ConversionPolicy::default().with_collection_policy(
-        CollectionConversionPolicy::default()
-            .with_split_scalar_strings(true)
-            .with_empty_item_policy(EmptyItemPolicy::Reject),
-    );
+    let options = ConversionPolicy::builder()
+        .collection_policy(
+            CollectionConversionPolicy::builder()
+                .split_scalar_strings(true)
+                .empty_item_policy(EmptyItemPolicy::Reject),
+        )
+        .build();
 
     let first = ScalarStringDataConverters::from("1,,")
         .to_first_with::<u16>(&options, ConversionLimits::default_ref())
@@ -279,11 +300,13 @@ fn test_scalar_string_data_converters_to_first_short_circuits_tail() {
 /// Test whole-scalar blank rejection is reported as a conversion failure.
 #[test]
 fn test_scalar_string_data_converters_rejects_blank_scalar() {
-    let options = ConversionPolicy::default().with_string_policy(
-        StringConversionPolicy::default()
-            .with_trim(true)
-            .with_blank_string_policy(BlankStringPolicy::Reject),
-    );
+    let options = ConversionPolicy::builder()
+        .string_policy(
+            StringConversionPolicy::builder()
+                .trim(true)
+                .blank_string_policy(BlankStringPolicy::Reject),
+        )
+        .build();
 
     let error = ScalarStringDataConverters::from("   ")
         .to_vec_with::<u16>(&options, ConversionLimits::default_ref())
@@ -322,9 +345,11 @@ fn test_scalar_string_data_converters_env_blank_list_is_empty() {
 fn test_scalar_string_data_converters_checks_delimiter_only_source_before_scan()
 {
     let policy = ConversionPolicy::env_friendly();
-    let limits = ConversionLimits::default().with_collection_limits(
-        CollectionConversionLimits::default().with_max_source_bytes(3),
-    );
+    let limits = ConversionLimits::builder()
+        .collection_limits(
+            CollectionConversionLimits::builder().max_source_bytes(3),
+        )
+        .build();
 
     let error = ScalarStringDataConverters::from(",,,,")
         .to_vec_with::<String>(&policy, &limits)
@@ -344,9 +369,11 @@ fn test_scalar_string_data_converters_checks_delimiter_only_source_before_scan()
 #[test]
 fn test_scalar_string_data_converters_to_first_checks_complete_source() {
     let policy = ConversionPolicy::env_friendly();
-    let limits = ConversionLimits::default().with_collection_limits(
-        CollectionConversionLimits::default().with_max_source_bytes(3),
-    );
+    let limits = ConversionLimits::builder()
+        .collection_limits(
+            CollectionConversionLimits::builder().max_source_bytes(3),
+        )
+        .build();
 
     let error = ScalarStringDataConverters::from("1,long-tail")
         .to_first_with::<u16>(&policy, &limits)

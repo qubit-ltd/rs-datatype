@@ -127,13 +127,13 @@ fn benchmark_big_integer_text(c: &mut Criterion) {
         for (name, digits) in BIG_NUMBER_TEXT_SIZES {
             let source = "9".repeat(digits);
             let options = ConversionPolicy::strict();
-            let limits = ConversionLimits::default().with_numeric_limits(
-                NumericConversionLimits::default()
-                    .with_max_text_bytes(u64::try_from(digits).unwrap())
-                    .with_max_big_integer_digits(
-                        u64::try_from(digits).unwrap(),
-                    ),
-            );
+            let limits = ConversionLimits::builder()
+                .numeric_limits(
+                    NumericConversionLimits::builder()
+                        .max_text_bytes(u64::try_from(digits).unwrap())
+                        .max_big_integer_digits(u64::try_from(digits).unwrap()),
+                )
+                .build();
             DataConverter::from(source.as_str())
                 .to_with::<num_bigint::BigInt>(&options, &limits)
                 .expect("integer benchmark fixture should parse");
@@ -167,13 +167,13 @@ fn benchmark_big_decimal_text(c: &mut Criterion) {
         for (name, digits) in BIG_NUMBER_TEXT_SIZES {
             let source = "9".repeat(digits);
             let options = ConversionPolicy::strict();
-            let limits = ConversionLimits::default().with_numeric_limits(
-                NumericConversionLimits::default()
-                    .with_max_text_bytes(u64::try_from(digits).unwrap())
-                    .with_max_big_integer_digits(
-                        u64::try_from(digits).unwrap(),
-                    ),
-            );
+            let limits = ConversionLimits::builder()
+                .numeric_limits(
+                    NumericConversionLimits::builder()
+                        .max_text_bytes(u64::try_from(digits).unwrap())
+                        .max_big_integer_digits(u64::try_from(digits).unwrap()),
+                )
+                .build();
             DataConverter::from(source.as_str())
                 .to_with::<bigdecimal::BigDecimal>(&options, &limits)
                 .expect("decimal benchmark fixture should parse");

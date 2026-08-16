@@ -29,10 +29,12 @@ fn benchmark_scalar_string_output(c: &mut Criterion) {
     for size in TEXT_SIZES {
         let source = "7".repeat(size);
         let policy = ConversionPolicy::strict();
-        let limits = ConversionLimits::default().with_operation_limits(
-            ConversionOperationLimits::default()
-                .with_max_output_bytes(u64::try_from(source.len()).unwrap()),
-        );
+        let limits = ConversionLimits::builder()
+            .operation_limits(
+                ConversionOperationLimits::builder()
+                    .max_output_bytes(u64::try_from(source.len()).unwrap()),
+            )
+            .build();
         group.bench_with_input(
             BenchmarkId::new("borrowed_identity", size),
             &source,
@@ -77,9 +79,11 @@ fn benchmark_string_map_output(c: &mut Criterion) {
         ("c".to_owned(), "3".to_owned()),
     ]);
     let policy = ConversionPolicy::strict();
-    let limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default().with_max_output_bytes(32),
-    );
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder().max_output_bytes(32),
+        )
+        .build();
     group.bench_function("borrowed", |bench| {
         bench.iter(|| {
             let mut session = ConversionSession::new(&policy, &limits);

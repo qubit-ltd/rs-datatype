@@ -16,22 +16,27 @@ use qubit_datatype::converter::StructuredConversionLimits;
 
 #[test]
 fn test_conversion_limits_aggregate_exact_limit_groups() {
-    let limits = ConversionLimits::default()
-        .with_numeric_limits(
-            NumericConversionLimits::default().with_max_text_bytes(11),
+    let limits = ConversionLimits::builder()
+        .numeric_limits(
+            NumericConversionLimits::builder()
+                .max_text_bytes(11)
+                .build(),
         )
-        .with_collection_limits(
-            CollectionConversionLimits::default().with_max_items(13),
+        .collection_limits(
+            CollectionConversionLimits::builder().max_items(13).build(),
         )
-        .with_duration_limits(
-            DurationConversionLimits::default().with_max_text_bytes(17),
+        .duration_limits(
+            DurationConversionLimits::builder()
+                .max_text_bytes(17)
+                .build(),
         )
-        .with_structured_limits(
-            StructuredConversionLimits::default().with_max_depth(19),
+        .structured_limits(
+            StructuredConversionLimits::builder().max_depth(19).build(),
         )
-        .with_operation_limits(
-            ConversionOperationLimits::default().with_max_items(23),
-        );
+        .operation_limits(
+            ConversionOperationLimits::builder().max_items(23).build(),
+        )
+        .build();
 
     assert_eq!(limits.numeric().max_text_bytes(), 11);
     assert_eq!(limits.collection().max_items(), 13);

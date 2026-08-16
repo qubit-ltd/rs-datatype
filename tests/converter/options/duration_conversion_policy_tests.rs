@@ -29,15 +29,16 @@ fn test_duration_conversion_policy_defaults_preserve_semantics() {
 
 #[test]
 fn test_duration_conversion_policy_exact_wire_has_no_limits() {
-    let policy = DurationConversionPolicy::default()
-        .with_numeric_input_unit(DurationUnit::Seconds)
-        .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(
+    let policy = DurationConversionPolicy::builder()
+        .numeric_input_unit(DurationUnit::Seconds)
+        .suffixless_string_policy(SuffixlessDurationPolicy::Assume(
             DurationUnit::Minutes,
         ))
-        .with_unit_parse_mode(DurationUnitParseMode::Lenient)
-        .with_output_unit(DurationUnit::Hours)
-        .with_append_unit_suffix(false)
-        .with_rounding_policy(DurationRoundingPolicy::HalfUp);
+        .unit_parse_mode(DurationUnitParseMode::Lenient)
+        .output_unit(DurationUnit::Hours)
+        .append_unit_suffix(false)
+        .rounding_policy(DurationRoundingPolicy::HalfUp)
+        .build();
     let wire = serde_json::to_string(&policy)
         .expect("duration policy should serialize");
     assert_eq!(

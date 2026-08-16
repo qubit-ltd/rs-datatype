@@ -151,11 +151,13 @@ fn test_data_converters_from_iterator_converts_all_values() {
 /// Test configurable batch conversion.
 #[test]
 fn test_data_converters_to_vec_with_applies_options() {
-    let options = ConversionPolicy::default().with_string_policy(
-        StringConversionPolicy::default()
-            .with_trim(true)
-            .with_blank_string_policy(BlankStringPolicy::Reject),
-    );
+    let options = ConversionPolicy::builder()
+        .string_policy(
+            StringConversionPolicy::builder()
+                .trim(true)
+                .blank_string_policy(BlankStringPolicy::Reject),
+        )
+        .build();
 
     let ports: Vec<u16> =
         DataConverters::from(vec![" 8080 ".to_string(), " 8081 ".to_string()])
@@ -168,9 +170,9 @@ fn test_data_converters_to_vec_with_applies_options() {
 #[test]
 fn test_data_converters_to_vec_in_enforces_session_item_budget() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default().with_max_items(2),
-    );
+    let limits = ConversionLimits::builder()
+        .operation_limits(ConversionOperationLimits::builder().max_items(2))
+        .build();
     let mut session = ConversionSession::new(&policy, &limits);
     let error = DataConverters::from_iterator(["1", "2", "3"].into_iter())
         .to_vec_in::<u16>(&mut session)

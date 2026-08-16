@@ -41,10 +41,11 @@ fn test_numeric_conversion_policy_profiles_preserve_semantics() {
 
 #[test]
 fn test_numeric_conversion_policy_exact_wire_has_no_limits() {
-    let policy = NumericConversionPolicy::strict()
-        .with_fractional_to_integer(FractionalToIntegerPolicy::Truncate)
-        .with_numeric_to_float(FloatRoundingPolicy::NearestEven)
-        .with_text_to_float(FloatRoundingPolicy::NearestEven);
+    let policy = NumericConversionPolicy::builder()
+        .fractional_to_integer(FractionalToIntegerPolicy::Truncate)
+        .numeric_to_float(FloatRoundingPolicy::NearestEven)
+        .text_to_float(FloatRoundingPolicy::NearestEven)
+        .build();
     let wire = serde_json::to_string(&policy)
         .expect("numeric policy should serialize");
     assert_eq!(

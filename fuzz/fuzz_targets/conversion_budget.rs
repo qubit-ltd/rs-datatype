@@ -33,12 +33,16 @@ fuzz_target!(|data: &[u8]| {
 
     let output_limit = data.first().map_or(0, |value| usize::from(*value));
     let policy = ConversionPolicy::strict();
-    let limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default().with_max_output_bytes(
-            u64::try_from(output_limit)
-                .expect("fuzz output limit byte fits u64"),
-        ),
-    );
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder()
+                .max_output_bytes(
+                    u64::try_from(output_limit)
+                        .expect("fuzz output limit byte fits u64"),
+                )
+                .build(),
+        )
+        .build();
 
     let number = i128::from_le_bytes(padded_bytes::<16>(data));
     assert_borrowed_and_owned_number(number, &policy, &limits);

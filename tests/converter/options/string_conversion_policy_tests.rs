@@ -38,21 +38,24 @@ fn test_string_conversion_policy_reject_unknown_fields() {
 /// Test string policy policy branches.
 #[test]
 fn test_string_conversion_policy_cover_policy_branches() {
-    let preserved = StringConversionPolicy::default()
-        .with_trim(false)
-        .with_blank_string_policy(BlankStringPolicy::Preserve)
+    let preserved = StringConversionPolicy::builder()
+        .trim(false)
+        .blank_string_policy(BlankStringPolicy::Preserve)
+        .build()
         .normalize("   ")
         .expect("blank string should be preserved");
     assert_eq!(preserved, "   ");
 
-    let rejected = StringConversionPolicy::default()
-        .with_blank_string_policy(BlankStringPolicy::Reject)
+    let rejected = StringConversionPolicy::builder()
+        .blank_string_policy(BlankStringPolicy::Reject)
+        .build()
         .normalize("   ");
     assert_eq!(rejected, Err(StringNormalizationError::BlankRejected));
 
-    let missing = StringConversionPolicy::default()
-        .with_trim(true)
-        .with_blank_string_policy(BlankStringPolicy::TreatAsMissing)
+    let missing = StringConversionPolicy::builder()
+        .trim(true)
+        .blank_string_policy(BlankStringPolicy::TreatAsMissing)
+        .build()
         .normalize("   ");
     assert_eq!(missing, Err(StringNormalizationError::Missing));
 }
@@ -61,8 +64,9 @@ fn test_string_conversion_policy_cover_policy_branches() {
 #[test]
 fn test_string_conversion_policy_normalize_returns_borrowed_slice() {
     let input = String::from("  value  ");
-    let normalized = StringConversionPolicy::default()
-        .with_trim(true)
+    let normalized = StringConversionPolicy::builder()
+        .trim(true)
+        .build()
         .normalize(&input)
         .expect("non-blank input should normalize");
 
@@ -73,8 +77,9 @@ fn test_string_conversion_policy_normalize_returns_borrowed_slice() {
 /// Test the structured blank rejection category.
 #[test]
 fn test_string_conversion_policy_rejects_blank_structurally() {
-    let error = StringConversionPolicy::default()
-        .with_blank_string_policy(BlankStringPolicy::Reject)
+    let error = StringConversionPolicy::builder()
+        .blank_string_policy(BlankStringPolicy::Reject)
+        .build()
         .normalize("   ")
         .expect_err("blank text should be rejected");
 
@@ -84,9 +89,10 @@ fn test_string_conversion_policy_rejects_blank_structurally() {
 /// Test the normalization result used for blank-as-missing policy.
 #[test]
 fn test_string_conversion_policy_reports_missing_normalization() {
-    let error = StringConversionPolicy::default()
-        .with_trim(true)
-        .with_blank_string_policy(BlankStringPolicy::TreatAsMissing)
+    let error = StringConversionPolicy::builder()
+        .trim(true)
+        .blank_string_policy(BlankStringPolicy::TreatAsMissing)
+        .build()
         .normalize("   ")
         .expect_err("blank text should be treated as missing");
 
@@ -97,8 +103,9 @@ fn test_string_conversion_policy_reports_missing_normalization() {
 #[test]
 fn test_string_conversion_policy_normalize_optional() {
     let input = String::from("  value  ");
-    let normalized = StringConversionPolicy::default()
-        .with_trim(true)
+    let normalized = StringConversionPolicy::builder()
+        .trim(true)
+        .build()
         .normalize_optional(&input)
         .expect("non-blank input should normalize");
     assert_eq!(normalized, Some("value"));
@@ -109,13 +116,15 @@ fn test_string_conversion_policy_normalize_optional() {
         input[2..].as_ptr(),
     );
 
-    let missing = StringConversionPolicy::default()
-        .with_blank_string_policy(BlankStringPolicy::TreatAsMissing)
+    let missing = StringConversionPolicy::builder()
+        .blank_string_policy(BlankStringPolicy::TreatAsMissing)
+        .build()
         .normalize_optional("   ");
     assert_eq!(missing, Ok(None));
 
-    let rejected = StringConversionPolicy::default()
-        .with_blank_string_policy(BlankStringPolicy::Reject)
+    let rejected = StringConversionPolicy::builder()
+        .blank_string_policy(BlankStringPolicy::Reject)
+        .build()
         .normalize_optional("   ");
     assert_eq!(rejected, Err(StringNormalizationError::BlankRejected));
 }

@@ -19,8 +19,10 @@ use qubit_datatype::parse_duration_text;
 /// Tests strict and lenient unit symbol parsing.
 #[test]
 fn test_parse_duration_text_respects_parse_mode() {
-    let strict = DurationTextOptions::default();
-    let lenient = strict.with_unit_parse_mode(DurationUnitParseMode::Lenient);
+    let strict = DurationTextOptions::builder().build();
+    let lenient = DurationTextOptions::builder()
+        .unit_parse_mode(DurationUnitParseMode::Lenient)
+        .build();
 
     for text in ["2us", "2µs", "2μs"] {
         assert_eq!(
@@ -42,9 +44,11 @@ fn test_parse_duration_text_respects_parse_mode() {
 #[test]
 fn test_parse_duration_text_respects_suffixless_policy() {
     let reject = DurationTextOptions::default();
-    let seconds = DurationTextOptions::default().with_suffixless_policy(
-        SuffixlessDurationPolicy::Assume(DurationUnit::Seconds),
-    );
+    let seconds = DurationTextOptions::builder()
+        .suffixless_policy(SuffixlessDurationPolicy::Assume(
+            DurationUnit::Seconds,
+        ))
+        .build();
 
     assert_eq!(
         parse_duration_text("2", &reject),
@@ -85,7 +89,7 @@ fn test_parse_duration_text_classifies_errors() {
 /// Tests that duration input is bounded before syntax and suffix processing.
 #[test]
 fn test_parse_duration_text_enforces_byte_limit() {
-    let options = DurationTextOptions::default().with_max_text_bytes(3);
+    let options = DurationTextOptions::builder().max_text_bytes(3).build();
 
     assert_eq!(
         parse_duration_text("2ms", &options),

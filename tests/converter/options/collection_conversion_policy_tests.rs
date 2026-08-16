@@ -27,11 +27,12 @@ fn test_collection_conversion_policy_profiles_preserve_semantics() {
 
 #[test]
 fn test_collection_conversion_policy_exact_wire_has_no_limits() {
-    let policy = CollectionConversionPolicy::default()
-        .with_split_scalar_strings(true)
-        .with_delimiters([',', ';'])
-        .with_trim_items(true)
-        .with_empty_item_policy(EmptyItemPolicy::Skip);
+    let policy = CollectionConversionPolicy::builder()
+        .split_scalar_strings(true)
+        .delimiters([',', ';'])
+        .trim_items(true)
+        .empty_item_policy(EmptyItemPolicy::Skip)
+        .build();
     let wire = serde_json::to_string(&policy)
         .expect("collection policy should serialize");
     assert_eq!(
