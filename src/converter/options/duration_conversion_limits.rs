@@ -6,6 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Value limits for duration conversion.
+// qubit-style: allow multiple-public-types
 
 use serde::Deserialize;
 use serde::Serialize;
@@ -26,6 +27,13 @@ impl DurationConversionLimits {
     pub const DEFAULT_MAX_TEXT_BYTES: usize =
         DurationTextOptions::DEFAULT_MAX_TEXT_BYTES;
 
+    /// Creates a builder initialized with the default duration limits.
+    #[inline]
+    #[must_use]
+    pub const fn builder() -> DurationConversionLimitsBuilder {
+        DurationConversionLimitsBuilder::new()
+    }
+
     /// Returns the duration source text byte maximum.
     ///
     /// # Returns
@@ -36,20 +44,40 @@ impl DurationConversionLimits {
     pub const fn max_text_bytes(&self) -> usize {
         self.max_text_bytes
     }
+}
 
-    /// Returns a copy with a different duration source text byte maximum.
-    ///
-    /// # Parameters
-    ///
-    /// * `maximum` - Maximum accepted UTF-8 source bytes.
-    ///
-    /// # Returns
-    ///
-    /// Updated limits.
+/// Builder for [`DurationConversionLimits`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DurationConversionLimitsBuilder {
+    limits: DurationConversionLimits,
+}
+
+impl DurationConversionLimitsBuilder {
+    /// Creates a builder initialized with the documented default.
+    #[inline]
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            limits: DurationConversionLimits {
+                max_text_bytes:
+                    DurationConversionLimits::DEFAULT_MAX_TEXT_BYTES,
+            },
+        }
+    }
+
+    /// Configures the maximum duration source text size.
     #[inline(always)]
-    pub const fn with_max_text_bytes(mut self, maximum: usize) -> Self {
-        self.max_text_bytes = maximum;
+    #[must_use]
+    pub const fn max_text_bytes(mut self, maximum: usize) -> Self {
+        self.limits.max_text_bytes = maximum;
         self
+    }
+
+    /// Builds the configured duration limits.
+    #[inline]
+    #[must_use]
+    pub const fn build(self) -> DurationConversionLimits {
+        self.limits
     }
 }
 

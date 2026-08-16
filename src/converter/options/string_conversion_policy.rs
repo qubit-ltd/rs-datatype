@@ -6,6 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! # String Conversion Policy
+// qubit-style: allow multiple-public-types
 //!
 //! Defines policy that controls string-source normalization.
 
@@ -57,6 +58,12 @@ impl Default for StringConversionPolicy {
 }
 
 impl StringConversionPolicy {
+    /// Creates a builder initialized with the default string policy.
+    #[inline]
+    #[must_use]
+    pub fn builder() -> StringConversionPolicyBuilder {
+        StringConversionPolicyBuilder::new()
+    }
     /// Creates options suitable for environment-variable input.
     ///
     /// The profile trims surrounding whitespace and treats a blank value as
@@ -94,7 +101,7 @@ impl StringConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_trim(mut self, trim: bool) -> Self {
+    pub(crate) fn with_trim(mut self, trim: bool) -> Self {
         self.trim = trim;
         self
     }
@@ -119,7 +126,7 @@ impl StringConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub fn with_blank_string_policy(
+    pub(crate) fn with_blank_string_policy(
         mut self,
         policy: BlankStringPolicy,
     ) -> Self {
@@ -195,5 +202,44 @@ impl StringConversionPolicy {
             Err(StringNormalizationError::Missing) => Ok(None),
             Err(error) => Err(error),
         }
+    }
+}
+
+/// Builder for [`StringConversionPolicy`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StringConversionPolicyBuilder {
+    policy: StringConversionPolicy,
+}
+
+impl StringConversionPolicyBuilder {
+    /// Creates a builder initialized with the documented defaults.
+    #[inline]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            policy: StringConversionPolicy::default(),
+        }
+    }
+    /// Configures trimming.
+    #[inline(always)]
+    #[must_use]
+    pub fn trim(self, trim: bool) -> Self {
+        Self {
+            policy: self.policy.with_trim(trim),
+        }
+    }
+    /// Configures blank-string handling.
+    #[inline(always)]
+    #[must_use]
+    pub fn blank_string_policy(self, policy: BlankStringPolicy) -> Self {
+        Self {
+            policy: self.policy.with_blank_string_policy(policy),
+        }
+    }
+    /// Builds the configured string policy.
+    #[inline]
+    #[must_use]
+    pub fn build(self) -> StringConversionPolicy {
+        self.policy
     }
 }

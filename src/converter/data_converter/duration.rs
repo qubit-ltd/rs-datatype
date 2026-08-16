@@ -90,11 +90,11 @@ fn duration_text_options(
     options: &ConversionPolicy,
     limits: &DurationConversionLimits,
 ) -> DurationTextOptions {
-    DurationTextOptions::new(
-        options.duration().suffixless_string_policy(),
-        options.duration().unit_parse_mode(),
-    )
-    .with_max_text_bytes(limits.max_text_bytes())
+    DurationTextOptions::builder()
+        .suffixless_policy(options.duration().suffixless_string_policy())
+        .unit_parse_mode(options.duration().unit_parse_mode())
+        .max_text_bytes(limits.max_text_bytes())
+        .build()
 }
 
 /// Selects the expected duration grammar for an invalid source value.
