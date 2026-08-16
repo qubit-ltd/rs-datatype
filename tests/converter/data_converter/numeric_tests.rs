@@ -81,7 +81,7 @@ fn options_with_limits(
 ) -> (ConversionPolicy, ConversionLimits) {
     (
         ConversionPolicy::strict(),
-        ConversionLimits::default().with_numeric_limits(limits),
+        ConversionLimits::builder().numeric_limits(limits).build(),
     )
 }
 
@@ -893,10 +893,11 @@ fn test_data_converter_big_decimal_rejects_rich_non_numeric_sources() {
 /// Test numeric text byte limits after string normalization.
 #[test]
 fn test_numeric_text_byte_limit_boundaries() {
-    let limits = NumericConversionLimits::default().with_max_text_bytes(3);
-    let (options, conversion_limits) = options_with_limits(limits);
-    let options = options
-        .with_string_policy(StringConversionPolicy::default().with_trim(true));
+    let limits = NumericConversionLimits::builder().max_text_bytes(3).build();
+    let (_options, conversion_limits) = options_with_limits(limits);
+    let options = ConversionPolicy::builder()
+        .string_policy(StringConversionPolicy::builder().trim(true))
+        .build();
 
     assert_eq!(
         DataConverter::from(" 123 ")
@@ -923,11 +924,12 @@ fn test_numeric_text_byte_limit_boundaries() {
 /// Test text-to-float rounding still enforces its text byte budget.
 #[test]
 fn test_numeric_text_limit_applies_before_float_parsing() {
-    let options = ConversionPolicy::strict()
-        .with_numeric_policy(NumericConversionPolicy::env_friendly());
-    let limits = ConversionLimits::default().with_numeric_limits(
-        NumericConversionLimits::default().with_max_text_bytes(3),
-    );
+    let options = ConversionPolicy::builder()
+        .numeric_policy(NumericConversionPolicy::env_friendly())
+        .build();
+    let limits = ConversionLimits::builder()
+        .numeric_limits(NumericConversionLimits::builder().max_text_bytes(3))
+        .build();
 
     assert_eq!(
         DataConverter::from("0.1").to_with::<f32>(&options, &limits),
@@ -952,7 +954,9 @@ fn test_numeric_text_limit_applies_before_float_parsing() {
 #[cfg(feature = "big-integer")]
 fn test_big_integer_digit_limit_text_boundaries() {
     let (at_limit, at_limit_limits) = options_with_limits(
-        NumericConversionLimits::default().with_max_big_integer_digits(4),
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(4)
+            .build(),
     );
     assert_eq!(
         DataConverter::from("1e3")
@@ -961,7 +965,9 @@ fn test_big_integer_digit_limit_text_boundaries() {
     );
 
     let (over_limit, over_limit_limits) = options_with_limits(
-        NumericConversionLimits::default().with_max_big_integer_digits(3),
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(3)
+            .build(),
     );
     let error = DataConverter::from("1e3")
         .to_with::<BigInt>(&over_limit, &over_limit_limits)
@@ -977,7 +983,9 @@ fn test_big_integer_digit_limit_text_boundaries() {
     );
 
     let (zero_limit, zero_limit_limits) = options_with_limits(
-        NumericConversionLimits::default().with_max_big_integer_digits(0),
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(0)
+            .build(),
     );
     assert_eq!(
         DataConverter::from("0e999")
@@ -987,10 +995,12 @@ fn test_big_integer_digit_limit_text_boundaries() {
     assert_eq!(
         DataConverter::from("0001").to_with::<BigInt>(
             &ConversionPolicy::strict(),
-            &ConversionLimits::default().with_numeric_limits(
-                NumericConversionLimits::default()
-                    .with_max_big_integer_digits(1),
-            ),
+            &ConversionLimits::builder()
+                .numeric_limits(
+                    NumericConversionLimits::builder()
+                        .max_big_integer_digits(1),
+                )
+                .build(),
         ),
         Ok(BigInt::from(1)),
     );
@@ -1006,7 +1016,9 @@ fn test_big_integer_digit_limit_text_boundaries() {
 fn test_big_integer_digit_limit_big_decimal_expansion() {
     let decimal = BigDecimal::new(BigInt::from(1), -3);
     let (at_limit, at_limit_limits) = options_with_limits(
-        NumericConversionLimits::default().with_max_big_integer_digits(4),
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(4)
+            .build(),
     );
     assert_eq!(
         DataConverter::from(&decimal)
@@ -1015,7 +1027,9 @@ fn test_big_integer_digit_limit_big_decimal_expansion() {
     );
 
     let (over_limit, over_limit_limits) = options_with_limits(
-        NumericConversionLimits::default().with_max_big_integer_digits(3),
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(3)
+            .build(),
     );
     let error = DataConverter::from(&decimal)
         .to_with::<BigInt>(&over_limit, &over_limit_limits)
@@ -1050,7 +1064,9 @@ fn test_data_converter_consuming_big_number_identity_preserves_limits() {
     );
 
     let (options, limits) = options_with_limits(
-        NumericConversionLimits::default().with_max_big_integer_digits(4),
+        NumericConversionLimits::builder()
+            .max_big_integer_digits(4)
+            .build(),
     );
     let error = DataConverter::from(BigInt::from(12_345_u32))
         .into_target_with::<BigInt>(&options, &limits)

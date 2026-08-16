@@ -94,10 +94,12 @@ fn test_integer_to_f32_rejects_overflow() {
 /// Verifies numeric-to-float rounding can be enabled independently.
 #[test]
 fn test_numeric_to_float_rounding_is_independent() {
-    let options = ConversionPolicy::strict().with_numeric_policy(
-        NumericConversionPolicy::strict()
-            .with_numeric_to_float(FloatRoundingPolicy::NearestEven),
-    );
+    let options = ConversionPolicy::builder()
+        .numeric_policy(
+            NumericConversionPolicy::builder()
+                .numeric_to_float(FloatRoundingPolicy::NearestEven),
+        )
+        .build();
 
     assert_eq!(
         DataConverter::from(16_777_217_u32)

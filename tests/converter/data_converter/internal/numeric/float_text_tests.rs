@@ -56,10 +56,12 @@ fn test_lossy_text_to_f32_avoids_double_rounding() {
 /// Verifies text-to-float rounding can be enabled independently.
 #[test]
 fn test_text_to_float_rounding_is_independent() {
-    let options = ConversionPolicy::strict().with_numeric_policy(
-        NumericConversionPolicy::strict()
-            .with_text_to_float(FloatRoundingPolicy::NearestEven),
-    );
+    let options = ConversionPolicy::builder()
+        .numeric_policy(
+            NumericConversionPolicy::builder()
+                .text_to_float(FloatRoundingPolicy::NearestEven),
+        )
+        .build();
 
     assert_eq!(
         DataConverter::from("0.1")

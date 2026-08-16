@@ -176,9 +176,11 @@ fn assert_budget_resource<T>(
 #[test]
 fn test_data_converter_rejects_oversize_structured_text() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default().with_structured_limits(
-        StructuredConversionLimits::default().with_max_text_bytes(2),
-    );
+    let limits = ConversionLimits::builder()
+        .structured_limits(
+            StructuredConversionLimits::builder().max_text_bytes(2),
+        )
+        .build();
 
     assert!(
         DataConverter::from("[]")
@@ -225,27 +227,37 @@ fn test_data_converter_rejects_oversize_structured_text() {
 #[test]
 fn test_data_converter_rejects_json_text_exceeding_structure_limits() {
     let policy = ConversionPolicy::default();
-    let depth_limits = ConversionLimits::default().with_structured_limits(
-        StructuredConversionLimits::default().with_max_depth(2),
-    );
+    let depth_limits = ConversionLimits::builder()
+        .structured_limits(
+            StructuredConversionLimits::builder().max_depth(2).build(),
+        )
+        .build();
     assert_budget_resource(
         DataConverter::from("[[0]]")
             .to_with::<serde_json::Value>(&policy, &depth_limits),
         ConversionResource::StructuredDepth,
     );
 
-    let sequence_limits = ConversionLimits::default().with_structured_limits(
-        StructuredConversionLimits::default().with_max_sequence_items(1),
-    );
+    let sequence_limits = ConversionLimits::builder()
+        .structured_limits(
+            StructuredConversionLimits::builder()
+                .max_sequence_items(1)
+                .build(),
+        )
+        .build();
     assert_budget_resource(
         DataConverter::from("[0,1]")
             .to_with::<serde_json::Value>(&policy, &sequence_limits),
         ConversionResource::SequenceItems,
     );
 
-    let map_limits = ConversionLimits::default().with_structured_limits(
-        StructuredConversionLimits::default().with_max_map_entries(1),
-    );
+    let map_limits = ConversionLimits::builder()
+        .structured_limits(
+            StructuredConversionLimits::builder()
+                .max_map_entries(1)
+                .build(),
+        )
+        .build();
     assert_budget_resource(
         DataConverter::from(r#"{"first":"1","second":"2"}"#).to_with::<HashMap<
             String,
@@ -267,9 +279,13 @@ fn test_data_converter_string_map_limit_precedes_serialization() {
         ("second".to_owned(), "2".to_owned()),
     ]);
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default().with_structured_limits(
-        StructuredConversionLimits::default().with_max_map_entries(1),
-    );
+    let limits = ConversionLimits::builder()
+        .structured_limits(
+            StructuredConversionLimits::builder()
+                .max_map_entries(1)
+                .build(),
+        )
+        .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
     let error = DataConverter::from(&source)
@@ -288,9 +304,11 @@ fn test_data_converter_string_map_limit_precedes_serialization() {
 #[test]
 fn test_data_converter_json_text_accumulates_structured_nodes_in_session() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default().with_max_structured_nodes(2),
-    );
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder().max_structured_nodes(2),
+        )
+        .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
     DataConverter::from("[0]")
@@ -308,9 +326,11 @@ fn test_data_converter_json_text_accumulates_structured_nodes_in_session() {
 #[test]
 fn test_failed_json_conversion_keeps_input_and_rolls_back_structure() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default().with_max_structured_nodes(2),
-    );
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder().max_structured_nodes(2),
+        )
+        .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
     assert!(
@@ -333,9 +353,11 @@ fn test_failed_json_conversion_keeps_input_and_rolls_back_structure() {
 #[test]
 fn test_data_converter_structured_budget_is_content_invariant() {
     let policy = ConversionPolicy::default();
-    let json_limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default().with_max_structured_nodes(1),
-    );
+    let json_limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder().max_structured_nodes(1),
+        )
+        .build();
     let json = serde_json::json!(["value"]);
     assert_budget_resource(
         DataConverter::from(&json)
@@ -348,9 +370,11 @@ fn test_data_converter_structured_budget_is_content_invariant() {
         ConversionResource::StructuredNodes,
     );
 
-    let map_limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default().with_max_structured_nodes(1),
-    );
+    let map_limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder().max_structured_nodes(1),
+        )
+        .build();
     let map = HashMap::from([("key".to_owned(), "value".to_owned())]);
     assert_budget_resource(
         DataConverter::from(&map)
@@ -363,9 +387,11 @@ fn test_data_converter_structured_budget_is_content_invariant() {
         ConversionResource::StructuredNodes,
     );
 
-    let string_limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default().with_max_structured_nodes(1),
-    );
+    let string_limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder().max_structured_nodes(1),
+        )
+        .build();
     let json = serde_json::json!(["value"]);
     assert_budget_resource(
         DataConverter::from(json)
@@ -379,9 +405,11 @@ fn test_data_converter_structured_budget_is_content_invariant() {
 #[test]
 fn test_data_converter_rejects_oversize_url_text() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default().with_structured_limits(
-        StructuredConversionLimits::default().with_max_text_bytes(14),
-    );
+    let limits = ConversionLimits::builder()
+        .structured_limits(
+            StructuredConversionLimits::builder().max_text_bytes(14),
+        )
+        .build();
 
     assert_eq!(
         DataConverter::from("https://a.test").to_with::<Url>(&policy, &limits),

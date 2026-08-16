@@ -16,10 +16,12 @@ use qubit_datatype::ConversionSession;
 use qubit_datatype::DataConverter;
 
 fn limits_with_output_limit(maximum: usize) -> ConversionLimits {
-    ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default()
-            .with_max_output_bytes(u64::try_from(maximum).unwrap()),
-    )
+    ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder()
+                .max_output_bytes(u64::try_from(maximum).unwrap()),
+        )
+        .build()
 }
 
 #[test]
