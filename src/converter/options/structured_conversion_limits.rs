@@ -63,9 +63,7 @@ impl StructuredConversionLimits {
 
     /// Returns the structured text resource limit.
     #[inline(always)]
-    pub fn max_text_bytes_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, u64> {
+    pub fn max_text_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         self.text
             .utf8_bytes_limit()
             .expect("structured text limit is configured")
@@ -90,13 +88,7 @@ impl StructuredConversionLimits {
             .build();
         self.value = rebuild_value(
             &self.value,
-            rebuild_structure(
-                self.value.structure_limits(),
-                None,
-                None,
-                None,
-                None,
-            ),
+            rebuild_structure(self.value.structure_limits(), None, None, None, None),
             Some(ResourceLimit::new(
                 ConversionResource::StructuredTextBytes,
                 maximum,
@@ -161,9 +153,7 @@ impl StructuredConversionLimits {
 
     /// Returns the sequence item resource limit.
     #[inline(always)]
-    pub fn max_sequence_items_limit(
-        &self,
-    ) -> ResourceLimit<ConversionResource, u64> {
+    pub fn max_sequence_items_limit(&self) -> ResourceLimit<ConversionResource, u64> {
         self.value
             .structure_limits()
             .sequence_items_limit()
@@ -202,9 +192,7 @@ impl StructuredConversionLimits {
 
     /// Returns the map entry resource limit.
     #[inline(always)]
-    pub fn max_map_entries_limit(
-        &self,
-    ) -> ResourceLimit<ConversionResource, u64> {
+    pub fn max_map_entries_limit(&self) -> ResourceLimit<ConversionResource, u64> {
         self.value
             .structure_limits()
             .map_entries_limit()
@@ -221,10 +209,7 @@ impl StructuredConversionLimits {
                 self.value.structure_limits(),
                 None,
                 None,
-                Some(ResourceLimit::new(
-                    ConversionResource::MapEntries,
-                    maximum,
-                )),
+                Some(ResourceLimit::new(ConversionResource::MapEntries, maximum)),
                 None,
             ),
             None,
@@ -285,18 +270,13 @@ fn rebuild_structure(
     if let Some(limit) = depth.or_else(|| source.depth_limit().cloned()) {
         builder = builder.depth_limit(limit);
     }
-    if let Some(limit) =
-        sequence_items.or_else(|| source.sequence_items_limit().cloned())
-    {
+    if let Some(limit) = sequence_items.or_else(|| source.sequence_items_limit().cloned()) {
         builder = builder.sequence_items_limit(limit);
     }
-    if let Some(limit) =
-        map_entries.or_else(|| source.map_entries_limit().cloned())
-    {
+    if let Some(limit) = map_entries.or_else(|| source.map_entries_limit().cloned()) {
         builder = builder.map_entries_limit(limit);
     }
-    if let Some(limit) = key_bytes.or_else(|| source.key_bytes_limit().cloned())
-    {
+    if let Some(limit) = key_bytes.or_else(|| source.key_bytes_limit().cloned()) {
         builder = builder.key_bytes_limit(limit);
     }
     builder.build()
@@ -308,9 +288,7 @@ fn rebuild_value(
     string_bytes: Option<ResourceLimit<ConversionResource, u64>>,
 ) -> JsonValueLimits<ConversionResource, u64> {
     let mut builder = JsonValueLimits::builder().structure_limits(structure);
-    if let Some(limit) =
-        string_bytes.or_else(|| source.string_bytes_limit().cloned())
-    {
+    if let Some(limit) = string_bytes.or_else(|| source.string_bytes_limit().cloned()) {
         builder = builder.string_bytes_limit(limit);
     }
     if let Some(limit) = source.number_bytes_limit().cloned() {

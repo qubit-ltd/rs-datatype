@@ -65,21 +65,15 @@ impl ConversionBudget {
             .build();
         Self {
             items: ResourceBudget::from_limit(*operation.items_limit()),
-            input_bytes: ResourceBudget::from_limit(
-                *operation.input_bytes_limit(),
-            ),
-            output_bytes: ResourceBudget::from_limit(
-                *operation.output_bytes_limit(),
-            ),
+            input_bytes: ResourceBudget::from_limit(*operation.input_bytes_limit()),
+            output_bytes: ResourceBudget::from_limit(*operation.output_bytes_limit()),
             structured: JsonValueBudget::new(value_limits),
         }
     }
 
     /// Consumes one converted item.
     #[inline]
-    pub(crate) fn consume_item(
-        &mut self,
-    ) -> Result<(), BudgetError<ConversionResource, u64>> {
+    pub(crate) fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.items.try_consume(1).map_err(Into::into)
     }
 
@@ -147,9 +141,7 @@ impl ConversionBudget {
     ) -> Result<String, BudgetedStringError<ConversionResource, E>>
     where
         E: std::fmt::Debug + std::fmt::Display,
-        F: FnOnce(
-            &mut BudgetedStringWriter<'_, ConversionResource>,
-        ) -> Result<(), E>,
+        F: FnOnce(&mut BudgetedStringWriter<'_, ConversionResource>) -> Result<(), E>,
     {
         self.output_bytes.try_write_string(render)
     }
@@ -199,9 +191,7 @@ impl ConversionBudget {
     /// Returns shared structured accounting for JSON sessions.
     #[cfg(feature = "json")]
     #[inline(always)]
-    pub(crate) fn structured_mut(
-        &mut self,
-    ) -> &mut JsonValueBudget<ConversionResource, u64> {
+    pub(crate) fn structured_mut(&mut self) -> &mut JsonValueBudget<ConversionResource, u64> {
         &mut self.structured
     }
 

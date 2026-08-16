@@ -127,9 +127,7 @@ impl<'a> ScalarStringDataConverters<'a> {
             .scalar_items(limits.collection(), self.source);
         let mut converted = Vec::new();
         for item in items {
-            let item = item.map_err(|error| {
-                error.into_list_conversion_error(T::DATA_TYPE)
-            })?;
+            let item = item.map_err(|error| error.into_list_conversion_error(T::DATA_TYPE))?;
             let _admitted = match session.admit_scalar_item(item) {
                 Ok(admitted) => admitted,
                 Err(error) => {
@@ -148,10 +146,7 @@ impl<'a> ScalarStringDataConverters<'a> {
             let value = match session.delegate::<T>(&source) {
                 Ok(value) => value,
                 Err(error) => {
-                    return Err(DataListConversionError::new(
-                        item.source_index,
-                        error,
-                    ));
+                    return Err(DataListConversionError::new(item.source_index, error));
                 }
             };
             converted.push(value);
@@ -242,11 +237,7 @@ impl<'a> ScalarStringDataConverters<'a> {
             .map_err(|error| error.into_data_conversion_error(T::DATA_TYPE))?;
         let source = DataConverter::from(first.value);
         let _admitted = session.admit_scalar_item(first).map_err(|error| {
-            DataConversionError::limit_exceeded(
-                source.data_type(),
-                T::DATA_TYPE,
-                error,
-            )
+            DataConversionError::limit_exceeded(source.data_type(), T::DATA_TYPE, error)
         })?;
         session.delegate::<T>(&source)
     }
@@ -260,9 +251,7 @@ impl<'a> ScalarStringDataConverters<'a> {
         let target = DataType::String;
         session
             .admit_scalar_source_bytes_usize(self.source.len())
-            .map_err(|error| {
-                DataConversionError::measured_limit(target, target, error)
-            })
+            .map_err(|error| DataConversionError::measured_limit(target, target, error))
     }
 }
 
