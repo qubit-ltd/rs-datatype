@@ -103,8 +103,9 @@ fn test_data_converter_duration_string_conversion() {
 
     assert!(DataConverter::from("10").to::<Duration>().is_err());
 
-    let env_friendly =
-        ConversionPolicy::default().with_duration_policy(DurationConversionPolicy::env_friendly());
+    let env_friendly = ConversionPolicy::builder()
+        .duration_policy(DurationConversionPolicy::env_friendly())
+        .build();
     for source in ["10", "10us", "10μs", "10m"] {
         let parsed: Duration = DataConverter::from(source)
             .to_with(&env_friendly, ConversionLimits::default_ref())
@@ -119,19 +120,24 @@ fn test_data_converter_duration_string_conversion() {
         assert_eq!(parsed, expected);
     }
 
-    let options = ConversionPolicy::default().with_duration_policy(
-        DurationConversionPolicy::default()
-            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(DurationUnit::Seconds)),
-    );
+    let options = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder().suffixless_string_policy(
+                SuffixlessDurationPolicy::Assume(DurationUnit::Seconds),
+            ),
+        )
+        .build();
     let bare_seconds: Duration = DataConverter::from("10")
         .to_with(&options, ConversionLimits::default_ref())
         .expect("bare duration string should use configured seconds");
     assert_eq!(bare_seconds, Duration::from_secs(10));
 
-    let reject_bare = ConversionPolicy::default().with_duration_policy(
-        DurationConversionPolicy::default()
-            .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject),
-    );
+    let reject_bare = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .suffixless_string_policy(SuffixlessDurationPolicy::Reject),
+        )
+        .build();
     let error = DataConverter::from("10")
         .to_with::<Duration>(&reject_bare, ConversionLimits::default_ref())
         .expect_err("suffixless input should be rejected");
@@ -142,12 +148,14 @@ fn test_data_converter_duration_string_conversion() {
         }),
     );
 
-    let no_suffix = ConversionPolicy::lossy().with_duration_policy(
-        DurationConversionPolicy::default()
-            .with_output_unit(DurationUnit::Seconds)
-            .with_append_unit_suffix(false)
-            .with_rounding_policy(DurationRoundingPolicy::HalfUp),
-    );
+    let no_suffix = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .output_unit(DurationUnit::Seconds)
+                .append_unit_suffix(false)
+                .rounding_policy(DurationRoundingPolicy::HalfUp),
+        )
+        .build();
     let text: String = DataConverter::from(Duration::from_millis(1500))
         .to_with(&no_suffix, ConversionLimits::default_ref())
         .expect("Duration should convert to suffixless rounded seconds");
@@ -165,7 +173,8 @@ fn test_data_converter_duration_string_conversion() {
         DataConverter::from("10fortnights").to::<Duration>(),
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::UnsupportedDurationUnit)
     )));
-    let overflowing_duration = format!("{}ns", (u64::MAX as u128 + 1) * 1_000_000_000);
+    let overflowing_duration =
+        format!("{}ns", (u64::MAX as u128 + 1) * 1_000_000_000);
     assert!(matches!(
         DataConverter::from(overflowing_duration).to::<Duration>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
@@ -189,8 +198,9 @@ fn test_data_converter_duration_string_conversion() {
 #[test]
 fn test_data_converter_duration_enforces_text_limit() {
     let options = ConversionPolicy::default();
-    let limits = ConversionLimits::default()
-        .with_duration_limits(DurationConversionLimits::default().with_max_text_bytes(3));
+    let limits = ConversionLimits::builder()
+        .duration_limits(DurationConversionLimits::builder().max_text_bytes(3))
+        .build();
 
     assert_eq!(
         DataConverter::from("2ms").to_with::<Duration>(&options, &limits),
@@ -214,19 +224,25 @@ fn test_data_converter_duration_enforces_text_limit() {
 /// Duration units.
 #[test]
 fn test_data_converter_duration_uses_independent_unit_policies() {
-    let options = ConversionPolicy::strict().with_duration_policy(
-        DurationConversionPolicy::default()
-            .with_numeric_input_unit(DurationUnit::Seconds)
-            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(DurationUnit::Minutes))
-            .with_output_unit(DurationUnit::Hours),
-    );
+    let options = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .numeric_input_unit(DurationUnit::Seconds)
+                .suffixless_string_policy(SuffixlessDurationPolicy::Assume(
+                    DurationUnit::Minutes,
+                ))
+                .output_unit(DurationUnit::Hours),
+        )
+        .build();
 
     assert_eq!(
-        DataConverter::from(2u64).to_with::<Duration>(&options, ConversionLimits::default_ref()),
+        DataConverter::from(2u64)
+            .to_with::<Duration>(&options, ConversionLimits::default_ref()),
         Ok(Duration::from_secs(2)),
     );
     assert_eq!(
-        DataConverter::from("2").to_with::<Duration>(&options, ConversionLimits::default_ref()),
+        DataConverter::from("2")
+            .to_with::<Duration>(&options, ConversionLimits::default_ref()),
         Ok(Duration::from_secs(120)),
     );
     assert_eq!(
@@ -244,11 +260,13 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
         .expect("integer duration should use default milliseconds");
     assert_eq!(duration, Duration::from_millis(1500));
 
-    let options = ConversionPolicy::default().with_duration_policy(
-        DurationConversionPolicy::default()
-            .with_numeric_input_unit(DurationUnit::Seconds)
-            .with_output_unit(DurationUnit::Seconds),
-    );
+    let options = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .numeric_input_unit(DurationUnit::Seconds)
+                .output_unit(DurationUnit::Seconds),
+        )
+        .build();
     let duration: Duration = DataConverter::from(2u64)
         .to_with(&options, ConversionLimits::default_ref())
         .expect("integer duration should use configured seconds");
@@ -271,12 +289,14 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
         assert_eq!(duration, Duration::from_secs(1));
     }
 
-    let lossy_options = options.clone().with_duration_policy(
-        options
-            .duration()
-            .clone()
-            .with_rounding_policy(DurationRoundingPolicy::HalfUp),
-    );
+    let lossy_options = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .numeric_input_unit(DurationUnit::Seconds)
+                .output_unit(DurationUnit::Seconds)
+                .rounding_policy(DurationRoundingPolicy::HalfUp),
+        )
+        .build();
     let units: u64 = DataConverter::from(Duration::from_millis(1499))
         .to_with(&lossy_options, ConversionLimits::default_ref())
         .expect("Duration should round to configured integer unit");
@@ -302,9 +322,12 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
             .is_ok()
     );
 
-    let overflowing_options = ConversionPolicy::default().with_duration_policy(
-        DurationConversionPolicy::default().with_numeric_input_unit(DurationUnit::Days),
-    );
+    let overflowing_options = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .numeric_input_unit(DurationUnit::Days),
+        )
+        .build();
     assert!(matches!(
         DataConverter::from(u64::MAX).to_with::<Duration>(&overflowing_options, ConversionLimits::default_ref()),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
@@ -320,9 +343,12 @@ fn test_data_converter_duration_integer_conversion_uses_configured_unit() {
 #[cfg(feature = "big-integer")]
 #[test]
 fn test_data_converter_duration_big_integer_conversion_uses_configured_unit() {
-    let options = ConversionPolicy::default().with_duration_policy(
-        DurationConversionPolicy::default().with_numeric_input_unit(DurationUnit::Seconds),
-    );
+    let options = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .numeric_input_unit(DurationUnit::Seconds),
+        )
+        .build();
     let big_integer = BigInt::from(3u8);
     assert_eq!(
         DataConverter::from(&big_integer)
@@ -335,12 +361,18 @@ fn test_data_converter_duration_big_integer_conversion_uses_configured_unit() {
             Err(error) if matches!(error.reason(), Some(InvalidValueReason::NegativeDuration)),
         ));
     }
-    let overflowing_options = ConversionPolicy::default().with_duration_policy(
-        DurationConversionPolicy::default().with_numeric_input_unit(DurationUnit::Days),
-    );
+    let overflowing_options = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .numeric_input_unit(DurationUnit::Days),
+        )
+        .build();
     assert!(
         DataConverter::from(&BigInt::from(u64::MAX))
-            .to_with::<Duration>(&overflowing_options, ConversionLimits::default_ref())
+            .to_with::<Duration>(
+                &overflowing_options,
+                ConversionLimits::default_ref()
+            )
             .is_err(),
     );
 }
@@ -370,9 +402,12 @@ fn test_data_converter_duration_text() {
 /// Test duration formatting and integer conversion honor Duration rounding.
 #[test]
 fn test_data_converter_duration_targets_honor_rounding_policy() {
-    let exact = ConversionPolicy::default().with_duration_policy(
-        DurationConversionPolicy::default().with_output_unit(DurationUnit::Seconds),
-    );
+    let exact = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .output_unit(DurationUnit::Seconds),
+        )
+        .build();
     let duration = Duration::from_millis(1_500);
     assert!(matches!(
         DataConverter::from(duration).to_with::<String>(&exact, ConversionLimits::default_ref()),
@@ -383,18 +418,21 @@ fn test_data_converter_duration_targets_honor_rounding_policy() {
         Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::PrecisionLoss)),
     ));
 
-    let lossy = exact.clone().with_duration_policy(
-        exact
-            .duration()
-            .clone()
-            .with_rounding_policy(DurationRoundingPolicy::HalfUp),
-    );
+    let lossy = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .output_unit(DurationUnit::Seconds)
+                .rounding_policy(DurationRoundingPolicy::HalfUp),
+        )
+        .build();
     assert_eq!(
-        DataConverter::from(duration).to_with::<String>(&lossy, ConversionLimits::default_ref()),
+        DataConverter::from(duration)
+            .to_with::<String>(&lossy, ConversionLimits::default_ref()),
         Ok("2s".to_string()),
     );
     assert_eq!(
-        DataConverter::from(duration).to_with::<u64>(&lossy, ConversionLimits::default_ref()),
+        DataConverter::from(duration)
+            .to_with::<u64>(&lossy, ConversionLimits::default_ref()),
         Ok(2)
     );
 }
@@ -403,22 +441,26 @@ fn test_data_converter_duration_targets_honor_rounding_policy() {
 #[test]
 fn test_data_converter_duration_rounding_is_independent() {
     let duration = Duration::from_millis(1_500);
-    let numeric_lossy = ConversionPolicy::strict()
-        .with_numeric_policy(NumericConversionPolicy::lossy())
-        .with_duration_policy(
-            DurationConversionPolicy::default().with_output_unit(DurationUnit::Seconds),
-        );
+    let numeric_lossy = ConversionPolicy::builder()
+        .numeric_policy(NumericConversionPolicy::lossy())
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .output_unit(DurationUnit::Seconds),
+        )
+        .build();
     assert!(
         DataConverter::from(duration)
             .to_with::<u64>(&numeric_lossy, ConversionLimits::default_ref())
             .is_err()
     );
 
-    let duration_lossy = ConversionPolicy::strict().with_duration_policy(
-        DurationConversionPolicy::default()
-            .with_output_unit(DurationUnit::Seconds)
-            .with_rounding_policy(DurationRoundingPolicy::HalfUp),
-    );
+    let duration_lossy = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .output_unit(DurationUnit::Seconds)
+                .rounding_policy(DurationRoundingPolicy::HalfUp),
+        )
+        .build();
     assert_eq!(
         DataConverter::from(duration)
             .to_with::<u64>(&duration_lossy, ConversionLimits::default_ref()),
@@ -434,9 +476,12 @@ fn test_data_converter_duration_rounding_is_independent() {
 /// Test Duration text honors the configured explicit unit parse mode.
 #[test]
 fn test_data_converter_duration_text_honors_unit_parse_mode() {
-    let strict = ConversionPolicy::strict().with_duration_policy(
-        DurationConversionPolicy::default().with_unit_parse_mode(DurationUnitParseMode::Strict),
-    );
+    let strict = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .unit_parse_mode(DurationUnitParseMode::Strict),
+        )
+        .build();
     for source in ["2us", "2µs", "2μs"] {
         assert_eq!(
             DataConverter::from(source)
@@ -454,13 +499,18 @@ fn test_data_converter_duration_text_honors_unit_parse_mode() {
         }),
     );
 
-    let reject_suffixless_strict = ConversionPolicy::strict().with_duration_policy(
-        DurationConversionPolicy::default()
-            .with_suffixless_string_policy(SuffixlessDurationPolicy::Reject)
-            .with_unit_parse_mode(DurationUnitParseMode::Strict),
-    );
+    let reject_suffixless_strict = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .suffixless_string_policy(SuffixlessDurationPolicy::Reject)
+                .unit_parse_mode(DurationUnitParseMode::Strict),
+        )
+        .build();
     let error = DataConverter::from("2")
-        .to_with::<Duration>(&reject_suffixless_strict, ConversionLimits::default_ref())
+        .to_with::<Duration>(
+            &reject_suffixless_strict,
+            ConversionLimits::default_ref(),
+        )
         .expect_err("suffixless strict input should be rejected");
     assert_eq!(
         error.reason(),
@@ -491,9 +541,11 @@ fn test_data_converter_duration_accepts_large_representable_unit_counts() {
             Duration::new(u64::MAX / 1_000, 616_000_000),
         ),
     ] {
-        let options = ConversionPolicy::default().with_duration_policy(
-            DurationConversionPolicy::default().with_numeric_input_unit(unit),
-        );
+        let options = ConversionPolicy::builder()
+            .duration_policy(
+                DurationConversionPolicy::builder().numeric_input_unit(unit),
+            )
+            .build();
         assert_eq!(
             DataConverter::from(count)
                 .to_with::<Duration>(&options, ConversionLimits::default_ref()),
@@ -509,11 +561,15 @@ fn test_data_converter_duration_accepts_large_representable_unit_counts() {
 /// Test every duration overflow boundary is classified as out of range.
 #[test]
 fn test_data_converter_duration_rejects_unrepresentable_counts() {
-    let seconds = ConversionPolicy::default().with_duration_policy(
-        DurationConversionPolicy::default()
-            .with_numeric_input_unit(DurationUnit::Seconds)
-            .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(DurationUnit::Seconds)),
-    );
+    let seconds = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .numeric_input_unit(DurationUnit::Seconds)
+                .suffixless_string_policy(SuffixlessDurationPolicy::Assume(
+                    DurationUnit::Seconds,
+                )),
+        )
+        .build();
     for result in [
         DataConverter::from(u128::MAX)
             .to_with::<Duration>(&seconds, ConversionLimits::default_ref()),
@@ -533,9 +589,12 @@ fn test_data_converter_duration_rejects_unrepresentable_counts() {
 #[cfg(feature = "big-integer")]
 #[test]
 fn test_data_converter_duration_rejects_unrepresentable_big_integer_counts() {
-    let seconds = ConversionPolicy::default().with_duration_policy(
-        DurationConversionPolicy::default().with_numeric_input_unit(DurationUnit::Seconds),
-    );
+    let seconds = ConversionPolicy::builder()
+        .duration_policy(
+            DurationConversionPolicy::builder()
+                .numeric_input_unit(DurationUnit::Seconds),
+        )
+        .build();
     let above_u128 = BigInt::from(u128::MAX) + BigInt::from(1u8);
     assert!(matches!(
         DataConverter::from(&above_u128).to_with::<Duration>(&seconds, ConversionLimits::default_ref()),
@@ -563,14 +622,14 @@ proptest! {
         unit in duration_unit_strategy(),
         value in 0u64..=1_000_000,
     ) {
-        let options = ConversionPolicy::strict().with_duration_policy(
-            DurationConversionPolicy::default()
-                .with_numeric_input_unit(unit)
-                .with_suffixless_string_policy(
+        let options = ConversionPolicy::builder().duration_policy(
+            DurationConversionPolicy::builder()
+                .numeric_input_unit(unit)
+                .suffixless_string_policy(
                     SuffixlessDurationPolicy::Assume(unit),
                 )
-                .with_output_unit(unit),
-        );
+                .output_unit(unit),
+        ).build();
         let duration = DataConverter::from(value)
             .to_with::<Duration>(&options, ConversionLimits::default_ref())
             .expect("bounded unit count should fit Duration");

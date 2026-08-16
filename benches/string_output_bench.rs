@@ -29,10 +29,12 @@ fn benchmark_scalar_string_output(c: &mut Criterion) {
     for size in TEXT_SIZES {
         let source = "7".repeat(size);
         let policy = ConversionPolicy::strict();
-        let limits = ConversionLimits::default().with_operation_limits(
-            ConversionOperationLimits::default()
-                .with_max_output_bytes(u64::try_from(source.len()).unwrap()),
-        );
+        let limits = ConversionLimits::builder()
+            .operation_limits(
+                ConversionOperationLimits::builder()
+                    .max_output_bytes(u64::try_from(source.len()).unwrap()),
+            )
+            .build();
         group.bench_with_input(
             BenchmarkId::new("borrowed_identity", size),
             &source,
@@ -53,7 +55,8 @@ fn benchmark_scalar_string_output(c: &mut Criterion) {
                 bench.iter_batched(
                     || source.clone(),
                     |source| {
-                        let mut session = ConversionSession::new(&policy, &limits);
+                        let mut session =
+                            ConversionSession::new(&policy, &limits);
                         black_box(
                             DataConverter::from(black_box(source))
                                 .into_target_in::<String>(&mut session),
@@ -76,12 +79,18 @@ fn benchmark_string_map_output(c: &mut Criterion) {
         ("c".to_owned(), "3".to_owned()),
     ]);
     let policy = ConversionPolicy::strict();
-    let limits = ConversionLimits::default()
-        .with_operation_limits(ConversionOperationLimits::default().with_max_output_bytes(32));
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder().max_output_bytes(32),
+        )
+        .build();
     group.bench_function("borrowed", |bench| {
         bench.iter(|| {
             let mut session = ConversionSession::new(&policy, &limits);
-            black_box(DataConverter::from(black_box(&map)).to_in::<String>(&mut session))
+            black_box(
+                DataConverter::from(black_box(&map))
+                    .to_in::<String>(&mut session),
+            )
         });
     });
     group.bench_function("owned", |bench| {
@@ -90,7 +99,8 @@ fn benchmark_string_map_output(c: &mut Criterion) {
             |map| {
                 let mut session = ConversionSession::new(&policy, &limits);
                 black_box(
-                    DataConverter::from(black_box(map)).into_target_in::<String>(&mut session),
+                    DataConverter::from(black_box(map))
+                        .into_target_in::<String>(&mut session),
                 )
             },
             BatchSize::SmallInput,

@@ -6,6 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Value and operation limits applied by data conversion.
+// qubit-style: allow multiple-public-types
 
 use std::sync::LazyLock;
 
@@ -13,10 +14,15 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use super::CollectionConversionLimits;
+use super::CollectionConversionLimitsBuilder;
 use super::ConversionOperationLimits;
+use super::ConversionOperationLimitsBuilder;
 use super::DurationConversionLimits;
+use super::DurationConversionLimitsBuilder;
 use super::NumericConversionLimits;
+use super::NumericConversionLimitsBuilder;
 use super::StructuredConversionLimits;
+use super::StructuredConversionLimitsBuilder;
 
 /// Aggregates immutable value limits and cumulative operation limits.
 #[must_use]
@@ -40,6 +46,13 @@ pub struct ConversionLimits {
 }
 
 impl ConversionLimits {
+    /// Creates a builder initialized with the default conversion limits.
+    #[inline]
+    #[must_use]
+    pub fn builder() -> ConversionLimitsBuilder {
+        ConversionLimitsBuilder::new()
+    }
+
     /// Returns a shared reference to the default limits.
     ///
     /// # Returns
@@ -48,7 +61,8 @@ impl ConversionLimits {
     #[must_use = "the default conversion limits should be inspected"]
     #[inline(always)]
     pub fn default_ref() -> &'static Self {
-        static DEFAULT: LazyLock<ConversionLimits> = LazyLock::new(ConversionLimits::default);
+        static DEFAULT: LazyLock<ConversionLimits> =
+            LazyLock::new(ConversionLimits::default);
         &DEFAULT
     }
 
@@ -59,25 +73,11 @@ impl ConversionLimits {
         &self.numeric
     }
 
-    /// Returns a copy with different numeric value limits.
-    #[inline(always)]
-    pub fn with_numeric_limits(mut self, numeric: NumericConversionLimits) -> Self {
-        self.numeric = numeric;
-        self
-    }
-
     /// Returns the scalar collection value limits.
     #[must_use = "collection conversion limits should be inspected"]
     #[inline(always)]
     pub const fn collection(&self) -> &CollectionConversionLimits {
         &self.collection
-    }
-
-    /// Returns a copy with different scalar collection value limits.
-    #[inline(always)]
-    pub fn with_collection_limits(mut self, collection: CollectionConversionLimits) -> Self {
-        self.collection = collection;
-        self
     }
 
     /// Returns the duration value limits.
@@ -87,25 +87,11 @@ impl ConversionLimits {
         &self.duration
     }
 
-    /// Returns a copy with different duration value limits.
-    #[inline(always)]
-    pub fn with_duration_limits(mut self, duration: DurationConversionLimits) -> Self {
-        self.duration = duration;
-        self
-    }
-
     /// Returns the structured value limits.
     #[must_use = "structured conversion limits should be inspected"]
     #[inline(always)]
     pub const fn structured(&self) -> &StructuredConversionLimits {
         &self.structured
-    }
-
-    /// Returns a copy with different structured value limits.
-    #[inline(always)]
-    pub fn with_structured_limits(mut self, structured: StructuredConversionLimits) -> Self {
-        self.structured = structured;
-        self
     }
 
     /// Returns the cumulative operation limits.
@@ -114,12 +100,114 @@ impl ConversionLimits {
     pub const fn operation(&self) -> &ConversionOperationLimits {
         &self.operation
     }
+}
 
-    /// Returns a copy with different cumulative operation limits.
+/// Builder for [`ConversionLimits`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConversionLimitsBuilder {
+    limits: ConversionLimits,
+}
+
+impl From<NumericConversionLimitsBuilder> for NumericConversionLimits {
+    fn from(builder: NumericConversionLimitsBuilder) -> Self {
+        builder.build()
+    }
+}
+
+impl From<CollectionConversionLimitsBuilder> for CollectionConversionLimits {
+    fn from(builder: CollectionConversionLimitsBuilder) -> Self {
+        builder.build()
+    }
+}
+
+impl From<DurationConversionLimitsBuilder> for DurationConversionLimits {
+    fn from(builder: DurationConversionLimitsBuilder) -> Self {
+        builder.build()
+    }
+}
+
+impl From<StructuredConversionLimitsBuilder> for StructuredConversionLimits {
+    fn from(builder: StructuredConversionLimitsBuilder) -> Self {
+        builder.build()
+    }
+}
+
+impl From<ConversionOperationLimitsBuilder> for ConversionOperationLimits {
+    fn from(builder: ConversionOperationLimitsBuilder) -> Self {
+        builder.build()
+    }
+}
+
+impl ConversionLimitsBuilder {
+    /// Creates a builder initialized with the documented defaults.
+    #[inline]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            limits: ConversionLimits::default(),
+        }
+    }
+
+    /// Configures numeric value limits.
     #[inline(always)]
-    pub fn with_operation_limits(mut self, operation: ConversionOperationLimits) -> Self {
-        self.operation = operation;
+    #[must_use]
+    pub fn numeric_limits<T>(mut self, limits: T) -> Self
+    where
+        T: Into<NumericConversionLimits>,
+    {
+        self.limits.numeric = limits.into();
         self
+    }
+
+    /// Configures scalar collection value limits.
+    #[inline(always)]
+    #[must_use]
+    pub fn collection_limits(
+        mut self,
+        limits: impl Into<CollectionConversionLimits>,
+    ) -> Self {
+        self.limits.collection = limits.into();
+        self
+    }
+
+    /// Configures duration value limits.
+    #[inline(always)]
+    #[must_use]
+    pub fn duration_limits(
+        mut self,
+        limits: impl Into<DurationConversionLimits>,
+    ) -> Self {
+        self.limits.duration = limits.into();
+        self
+    }
+
+    /// Configures structured value limits.
+    #[inline(always)]
+    #[must_use]
+    pub fn structured_limits(
+        mut self,
+        limits: impl Into<StructuredConversionLimits>,
+    ) -> Self {
+        self.limits.structured = limits.into();
+        self
+    }
+
+    /// Configures cumulative operation limits.
+    #[inline(always)]
+    #[must_use]
+    pub fn operation_limits(
+        mut self,
+        limits: impl Into<ConversionOperationLimits>,
+    ) -> Self {
+        self.limits.operation = limits.into();
+        self
+    }
+
+    /// Builds the configured conversion limits.
+    #[inline]
+    #[must_use]
+    pub fn build(self) -> ConversionLimits {
+        self.limits
     }
 }
 

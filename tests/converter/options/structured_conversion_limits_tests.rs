@@ -21,7 +21,13 @@ fn test_structured_conversion_limits_defaults_and_customization() {
         defaults.max_text_bytes(),
         StructuredConversionLimits::DEFAULT_MAX_TEXT_BYTES,
     );
-    assert_eq!(defaults.with_max_text_bytes(16).max_text_bytes(), 16);
+    assert_eq!(
+        StructuredConversionLimits::builder()
+            .max_text_bytes(16)
+            .build()
+            .max_text_bytes(),
+        16
+    );
     assert_eq!(
         defaults.max_depth(),
         StructuredConversionLimits::DEFAULT_MAX_DEPTH
@@ -59,10 +65,11 @@ fn test_structured_conversion_limits_defaults_and_customization() {
         defaults.max_map_entries_limit().maximum(),
         defaults.max_map_entries()
     );
-    let customized = defaults
-        .with_max_depth(4)
-        .with_max_sequence_items(5)
-        .with_max_map_entries(6);
+    let customized = StructuredConversionLimits::builder()
+        .max_depth(4)
+        .max_sequence_items(5)
+        .max_map_entries(6)
+        .build();
     assert_eq!(customized.max_depth(), 4);
     assert_eq!(customized.max_sequence_items(), 5);
     assert_eq!(customized.max_map_entries(), 6);

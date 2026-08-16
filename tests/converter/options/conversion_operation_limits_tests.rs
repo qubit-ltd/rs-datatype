@@ -35,12 +35,13 @@ fn test_conversion_operation_limits_resource_fields_have_non_max_names() {
 
 #[test]
 fn test_conversion_operation_limits_bind_resources_and_defaults() {
-    let limits = ConversionOperationLimits::default()
-        .with_max_items(3)
-        .with_max_input_bytes(5)
-        .with_max_output_bytes(7)
-        .with_max_structured_nodes(11)
-        .with_max_structured_payload_bytes(13);
+    let limits = ConversionOperationLimits::builder()
+        .max_items(3)
+        .max_input_bytes(5)
+        .max_output_bytes(7)
+        .max_structured_nodes(11)
+        .max_structured_payload_bytes(13)
+        .build();
 
     assert_eq!(limits.items_limit().resource(), &ConversionResource::Items);
     assert_eq!(

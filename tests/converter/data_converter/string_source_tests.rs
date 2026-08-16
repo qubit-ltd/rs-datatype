@@ -19,23 +19,30 @@ use qubit_datatype::StringConversionPolicy;
 /// Test that blank-string policy outcomes retain the requested target context.
 #[test]
 fn test_string_source_normalization_maps_policy_errors() {
-    let missing_options = ConversionPolicy::default().with_string_policy(
-        StringConversionPolicy::default()
-            .with_blank_string_policy(BlankStringPolicy::TreatAsMissing),
-    );
+    let missing_options = ConversionPolicy::builder()
+        .string_policy(
+            StringConversionPolicy::builder()
+                .blank_string_policy(BlankStringPolicy::TreatAsMissing),
+        )
+        .build();
     assert_eq!(
-        DataConverter::from(" ").to_with::<u32>(&missing_options, ConversionLimits::default_ref()),
+        DataConverter::from(" ")
+            .to_with::<u32>(&missing_options, ConversionLimits::default_ref()),
         Err(DataConversionError::missing(
             DataType::String,
             DataType::UInt32
         )),
     );
 
-    let reject_options = ConversionPolicy::default().with_string_policy(
-        StringConversionPolicy::default().with_blank_string_policy(BlankStringPolicy::Reject),
-    );
+    let reject_options = ConversionPolicy::builder()
+        .string_policy(
+            StringConversionPolicy::builder()
+                .blank_string_policy(BlankStringPolicy::Reject),
+        )
+        .build();
     assert_eq!(
-        DataConverter::from(" ").to_with::<bool>(&reject_options, ConversionLimits::default_ref()),
+        DataConverter::from(" ")
+            .to_with::<bool>(&reject_options, ConversionLimits::default_ref()),
         Err(DataConversionError::invalid(
             DataType::String,
             DataType::Bool,

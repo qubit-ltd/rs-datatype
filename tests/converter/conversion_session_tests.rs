@@ -27,8 +27,13 @@ use serde::de::DeserializeSeed;
 #[test]
 fn test_one_session_accumulates_multiple_conversions() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default()
-        .with_operation_limits(ConversionOperationLimits::default().with_max_input_bytes(3));
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder()
+                .max_input_bytes(3)
+                .build(),
+        )
+        .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
     DataConverter::from("12")
@@ -47,8 +52,13 @@ fn test_one_session_accumulates_multiple_conversions() {
 #[test]
 fn test_independent_sessions_reset_operation_usage() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default()
-        .with_operation_limits(ConversionOperationLimits::default().with_max_input_bytes(2));
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder()
+                .max_input_bytes(2)
+                .build(),
+        )
+        .build();
 
     for _ in 0..2 {
         DataConverter::from("12")
@@ -59,10 +69,14 @@ fn test_independent_sessions_reset_operation_usage() {
 
 #[test]
 fn test_trimmed_text_is_charged_by_raw_input_length() {
-    let policy = ConversionPolicy::default()
-        .with_string_policy(StringConversionPolicy::default().with_trim(true));
-    let limits = ConversionLimits::default()
-        .with_operation_limits(ConversionOperationLimits::default().with_max_input_bytes(2));
+    let policy = ConversionPolicy::builder()
+        .string_policy(StringConversionPolicy::builder().trim(true).build())
+        .build();
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder().max_input_bytes(2),
+        )
+        .build();
 
     let error = DataConverter::from(" 12 ")
         .to_with::<u16>(&policy, &limits)
@@ -77,11 +91,13 @@ fn test_trimmed_text_is_charged_by_raw_input_length() {
 #[test]
 fn test_failed_conversion_keeps_attempted_item_and_input_accounting() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default()
-            .with_max_items(2)
-            .with_max_input_bytes(5),
-    );
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder()
+                .max_items(2)
+                .max_input_bytes(5),
+        )
+        .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
     let _ = DataConverter::from("bad")
@@ -104,8 +120,13 @@ fn test_failed_conversion_keeps_attempted_item_and_input_accounting() {
 #[test]
 fn test_native_length_output_accounting_uses_shared_budget() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default()
-        .with_operation_limits(ConversionOperationLimits::default().with_max_output_bytes(2));
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder()
+                .max_output_bytes(2)
+                .build(),
+        )
+        .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
     session
@@ -128,11 +149,13 @@ fn test_native_length_output_accounting_uses_shared_budget() {
 #[test]
 fn test_scalar_admission_charges_source_and_items_once() {
     let policy = ConversionPolicy::default();
-    let limits = ConversionLimits::default().with_operation_limits(
-        ConversionOperationLimits::default()
-            .with_max_items(1)
-            .with_max_input_bytes(3),
-    );
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder()
+                .max_items(1)
+                .max_input_bytes(3),
+        )
+        .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
     session

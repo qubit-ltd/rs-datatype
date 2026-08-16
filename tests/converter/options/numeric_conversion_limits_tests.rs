@@ -29,9 +29,10 @@ fn test_numeric_conversion_limits_contract() {
         defaults.max_big_integer_digits()
     );
 
-    let limits = defaults
-        .with_max_text_bytes(32)
-        .with_max_big_integer_digits(8);
+    let limits = NumericConversionLimits::builder()
+        .max_text_bytes(32)
+        .max_big_integer_digits(8)
+        .build();
     assert_eq!(limits.max_text_bytes(), 32);
     assert_eq!(limits.max_big_integer_digits(), 8);
 

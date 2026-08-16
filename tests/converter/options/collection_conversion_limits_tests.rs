@@ -21,7 +21,10 @@ fn test_collection_conversion_limits_defaults_builders_and_wire() {
         CollectionConversionLimits::DEFAULT_MAX_ITEMS
     );
 
-    let limits = defaults.with_max_source_bytes(128).with_max_items(3);
+    let limits = CollectionConversionLimits::builder()
+        .max_source_bytes(128)
+        .max_items(3)
+        .build();
     assert_eq!(
         serde_json::to_string(&limits).expect("collection limits should serialize"),
         r#"{"max_source_bytes":128,"max_items":3}"#

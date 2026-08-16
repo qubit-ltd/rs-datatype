@@ -54,17 +54,20 @@ fuzz_target!(|data: &[u8]| {
         ),
         (
             ConversionPolicy::strict(),
-            ConversionLimits::default()
-                .with_structured_limits(
-                    StructuredConversionLimits::default()
-                        .with_max_depth(2)
-                        .with_max_sequence_items(2)
-                        .with_max_map_entries(2),
+            ConversionLimits::builder()
+                .structured_limits(
+                    StructuredConversionLimits::builder()
+                        .max_depth(2)
+                        .max_sequence_items(2)
+                        .max_map_entries(2)
+                        .build(),
                 )
-                .with_operation_limits(
-                    ConversionOperationLimits::default()
-                        .with_max_structured_nodes(4),
-                ),
+                .operation_limits(
+                    ConversionOperationLimits::builder()
+                        .max_structured_nodes(4)
+                        .build(),
+                )
+                .build(),
         ),
     ];
 

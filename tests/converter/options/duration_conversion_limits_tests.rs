@@ -18,7 +18,9 @@ fn test_duration_conversion_limits_defaults_builder_and_wire() {
         DurationTextOptions::DEFAULT_MAX_TEXT_BYTES
     );
 
-    let limits = defaults.with_max_text_bytes(4_096);
+    let limits = DurationConversionLimits::builder()
+        .max_text_bytes(4_096)
+        .build();
     assert_eq!(
         serde_json::to_string(&limits).expect("duration limits should serialize"),
         r#"{"max_text_bytes":4096}"#

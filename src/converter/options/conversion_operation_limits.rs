@@ -6,6 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Cumulative limits applied to one conversion operation.
+// qubit-style: allow multiple-public-types
 
 use qubit_budget::ResourceLimit;
 use serde::Deserialize;
@@ -48,6 +49,13 @@ impl ConversionOperationLimits {
     /// Default cumulative structured payload byte budget.
     pub const DEFAULT_MAX_STRUCTURED_PAYLOAD_BYTES: u64 = 64 * 1024 * 1024;
 
+    /// Creates a builder initialized with the default operation limits.
+    #[inline]
+    #[must_use]
+    pub const fn builder() -> ConversionOperationLimitsBuilder {
+        ConversionOperationLimitsBuilder::new()
+    }
+
     /// Returns the configured item maximum.
     #[inline(always)]
     #[must_use]
@@ -61,13 +69,6 @@ impl ConversionOperationLimits {
         &self.items
     }
 
-    /// Returns a copy with a different item maximum.
-    #[inline(always)]
-    pub const fn with_max_items(mut self, maximum: u64) -> Self {
-        self.items = ResourceLimit::new(ConversionResource::Items, maximum);
-        self
-    }
-
     /// Returns the configured cumulative input byte maximum.
     #[inline(always)]
     #[must_use]
@@ -77,15 +78,10 @@ impl ConversionOperationLimits {
 
     /// Returns the input byte resource limit.
     #[inline(always)]
-    pub const fn input_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
+    pub const fn input_bytes_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, u64> {
         &self.input_bytes
-    }
-
-    /// Returns a copy with a different cumulative input byte maximum.
-    #[inline(always)]
-    pub const fn with_max_input_bytes(mut self, maximum: u64) -> Self {
-        self.input_bytes = ResourceLimit::new(ConversionResource::InputBytes, maximum);
-        self
     }
 
     /// Returns the configured cumulative output byte maximum.
@@ -97,15 +93,10 @@ impl ConversionOperationLimits {
 
     /// Returns the output byte resource limit.
     #[inline(always)]
-    pub const fn output_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
+    pub const fn output_bytes_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, u64> {
         &self.output_bytes
-    }
-
-    /// Returns a copy with a different cumulative output byte maximum.
-    #[inline(always)]
-    pub const fn with_max_output_bytes(mut self, maximum: u64) -> Self {
-        self.output_bytes = ResourceLimit::new(ConversionResource::OutputBytes, maximum);
-        self
     }
 
     /// Returns the configured cumulative structured node maximum.
@@ -117,15 +108,10 @@ impl ConversionOperationLimits {
 
     /// Returns the structured node resource limit.
     #[inline(always)]
-    pub const fn structured_nodes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
+    pub const fn structured_nodes_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, u64> {
         &self.structured_nodes
-    }
-
-    /// Returns a copy with a different cumulative structured node maximum.
-    #[inline(always)]
-    pub const fn with_max_structured_nodes(mut self, maximum: u64) -> Self {
-        self.structured_nodes = ResourceLimit::new(ConversionResource::StructuredNodes, maximum);
-        self
     }
 
     /// Returns the configured cumulative structured payload byte maximum.
@@ -137,16 +123,102 @@ impl ConversionOperationLimits {
 
     /// Returns the structured payload byte resource limit.
     #[inline(always)]
-    pub const fn structured_payload_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
+    pub const fn structured_payload_bytes_limit(
+        &self,
+    ) -> &ResourceLimit<ConversionResource, u64> {
         &self.structured_payload_bytes
     }
+}
 
-    /// Returns a copy with a different cumulative structured payload maximum.
+/// Builder for [`ConversionOperationLimits`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ConversionOperationLimitsBuilder {
+    limits: ConversionOperationLimits,
+}
+
+impl ConversionOperationLimitsBuilder {
+    /// Creates a builder initialized with the documented defaults.
+    #[inline]
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            limits: ConversionOperationLimits {
+                items: ResourceLimit::new(
+                    ConversionResource::Items,
+                    ConversionOperationLimits::DEFAULT_MAX_ITEMS,
+                ),
+                input_bytes: ResourceLimit::new(
+                    ConversionResource::InputBytes,
+                    ConversionOperationLimits::DEFAULT_MAX_INPUT_BYTES,
+                ),
+                output_bytes: ResourceLimit::new(
+                    ConversionResource::OutputBytes,
+                    ConversionOperationLimits::DEFAULT_MAX_OUTPUT_BYTES,
+                ),
+                structured_nodes: ResourceLimit::new(
+                    ConversionResource::StructuredNodes,
+                    ConversionOperationLimits::DEFAULT_MAX_STRUCTURED_NODES,
+                ),
+                structured_payload_bytes: ResourceLimit::new(
+                    ConversionResource::StructuredPayloadBytes,
+                    ConversionOperationLimits::DEFAULT_MAX_STRUCTURED_PAYLOAD_BYTES,
+                ),
+            },
+        }
+    }
+
+    /// Configures the item maximum.
     #[inline(always)]
-    pub const fn with_max_structured_payload_bytes(mut self, maximum: u64) -> Self {
-        self.structured_payload_bytes =
-            ResourceLimit::new(ConversionResource::StructuredPayloadBytes, maximum);
+    #[must_use]
+    pub const fn max_items(mut self, maximum: u64) -> Self {
+        self.limits.items =
+            ResourceLimit::new(ConversionResource::Items, maximum);
         self
+    }
+
+    /// Configures the cumulative input byte maximum.
+    #[inline(always)]
+    #[must_use]
+    pub const fn max_input_bytes(mut self, maximum: u64) -> Self {
+        self.limits.input_bytes =
+            ResourceLimit::new(ConversionResource::InputBytes, maximum);
+        self
+    }
+
+    /// Configures the cumulative output byte maximum.
+    #[inline(always)]
+    #[must_use]
+    pub const fn max_output_bytes(mut self, maximum: u64) -> Self {
+        self.limits.output_bytes =
+            ResourceLimit::new(ConversionResource::OutputBytes, maximum);
+        self
+    }
+
+    /// Configures the cumulative structured node maximum.
+    #[inline(always)]
+    #[must_use]
+    pub const fn max_structured_nodes(mut self, maximum: u64) -> Self {
+        self.limits.structured_nodes =
+            ResourceLimit::new(ConversionResource::StructuredNodes, maximum);
+        self
+    }
+
+    /// Configures the cumulative structured payload maximum.
+    #[inline(always)]
+    #[must_use]
+    pub const fn max_structured_payload_bytes(mut self, maximum: u64) -> Self {
+        self.limits.structured_payload_bytes = ResourceLimit::new(
+            ConversionResource::StructuredPayloadBytes,
+            maximum,
+        );
+        self
+    }
+
+    /// Builds the configured operation limits.
+    #[inline]
+    #[must_use]
+    pub const fn build(self) -> ConversionOperationLimits {
+        self.limits
     }
 }
 
@@ -155,7 +227,10 @@ impl Default for ConversionOperationLimits {
     #[inline]
     fn default() -> Self {
         Self {
-            items: ResourceLimit::new(ConversionResource::Items, Self::DEFAULT_MAX_ITEMS),
+            items: ResourceLimit::new(
+                ConversionResource::Items,
+                Self::DEFAULT_MAX_ITEMS,
+            ),
             input_bytes: ResourceLimit::new(
                 ConversionResource::InputBytes,
                 Self::DEFAULT_MAX_INPUT_BYTES,
@@ -198,11 +273,12 @@ impl<'de> Deserialize<'de> for ConversionOperationLimits {
         D: Deserializer<'de>,
     {
         let wire = ConversionOperationLimitsWire::deserialize(deserializer)?;
-        Ok(Self::default()
-            .with_max_items(wire.items)
-            .with_max_input_bytes(wire.input_bytes)
-            .with_max_output_bytes(wire.output_bytes)
-            .with_max_structured_nodes(wire.structured_nodes)
-            .with_max_structured_payload_bytes(wire.structured_payload_bytes))
+        Ok(Self::builder()
+            .max_items(wire.items)
+            .max_input_bytes(wire.input_bytes)
+            .max_output_bytes(wire.output_bytes)
+            .max_structured_nodes(wire.structured_nodes)
+            .max_structured_payload_bytes(wire.structured_payload_bytes)
+            .build())
     }
 }
