@@ -12,9 +12,9 @@ use std::collections::HashMap;
 use qubit_budget::MeasuredBudgetError;
 use qubit_budget::json::JsonMeasurement;
 #[cfg(feature = "json")]
-use qubit_json::text::JsonDecodeError;
+use qubit_json::decode::JsonDecodeError;
 #[cfg(feature = "json")]
-use qubit_json::tree::JsonTreeProcessError;
+use qubit_json::value::traverse::JsonTreeProcessError;
 #[cfg(feature = "json")]
 use serde_json::Value;
 
