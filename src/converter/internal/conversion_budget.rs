@@ -12,7 +12,9 @@ use qubit_budget::BudgetedStringError;
 use qubit_budget::BudgetedStringWriter;
 use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceBudget;
+use qubit_budget::StructureLimits;
 use qubit_budget::json::JsonValueBudget;
+use qubit_budget::json::JsonValueLimits;
 use qubit_budget::json::JsonValueTransaction;
 
 use super::super::conversion_resource::ConversionResource;
@@ -40,15 +42,27 @@ impl ConversionBudget {
     pub(crate) fn new(limits: &ConversionLimits) -> Self {
         let structured = limits.structured();
         let operation = limits.operation();
-        let structure_limits = structured
-            .value()
-            .structure_limits()
-            .with_nodes_limit(*operation.structured_nodes_limit());
-        let value_limits = (*structured.value())
-            .with_structure_limits(structure_limits)
-            .with_payload_bytes_limit(
-                *operation.structured_payload_bytes_limit(),
-            );
+        let source_structure = structured.value().structure_limits();
+        let mut structure_builder = StructureLimits::builder();
+        if let Some(limit) = source_structure.depth_limit() {
+            structure_builder = structure_builder.depth_limit(*limit);
+        }
+        if let Some(limit) = source_structure.sequence_items_limit() {
+            structure_builder = structure_builder.sequence_items_limit(*limit);
+        }
+        if let Some(limit) = source_structure.map_entries_limit() {
+            structure_builder = structure_builder.map_entries_limit(*limit);
+        }
+        if let Some(limit) = source_structure.key_bytes_limit() {
+            structure_builder = structure_builder.key_bytes_limit(*limit);
+        }
+        let structure_limits = structure_builder
+            .nodes_limit(*operation.structured_nodes_limit())
+            .build();
+        let value_limits = JsonValueLimits::builder()
+            .structure_limits(structure_limits)
+            .payload_bytes_limit(*operation.structured_payload_bytes_limit())
+            .build();
         Self {
             items: ResourceBudget::from_limit(*operation.items_limit()),
             input_bytes: ResourceBudget::from_limit(
