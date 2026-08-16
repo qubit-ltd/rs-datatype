@@ -6,6 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! # Boolean Conversion Policy
+// qubit-style: allow multiple-public-types
 //!
 //! Defines policy that controls string-to-boolean conversion.
 
@@ -81,10 +82,11 @@ fn ascii_case_insensitive_literals_overlap(
 /// ```
 /// use qubit_datatype::{BooleanConversionPolicy, BooleanNumericPolicy};
 ///
-/// let options = BooleanConversionPolicy::strict()
-///     .with_true_literal("enabled")
-///     .expect("literal sets are disjoint")
-///     .with_numeric_policy(BooleanNumericPolicy::Reject);
+/// let options = BooleanConversionPolicy::builder()
+///     .true_literal("enabled")
+///     .numeric_policy(BooleanNumericPolicy::Reject)
+///     .build()
+///     .expect("literal sets are disjoint");
 /// assert_eq!(options.parse("ENABLED"), Some(true));
 /// assert_eq!(options.parse("unknown"), None);
 /// ```
@@ -102,6 +104,12 @@ pub struct BooleanConversionPolicy {
 }
 
 impl BooleanConversionPolicy {
+    /// Creates a builder initialized with the strict boolean policy.
+    #[inline]
+    #[must_use]
+    pub fn builder() -> BooleanConversionPolicyBuilder {
+        BooleanConversionPolicyBuilder::new()
+    }
     /// Text literals accepted as `true` by the strict/default profile.
     pub const DEFAULT_TRUE_LITERALS: &'static [&'static str] = &["true"];
 
@@ -212,7 +220,7 @@ impl BooleanConversionPolicy {
     /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
     /// false literal under the configured case-sensitivity rule.
     #[inline]
-    pub fn with_true_literal(
+    pub(crate) fn with_true_literal(
         mut self,
         literal: &str,
     ) -> Result<Self, BooleanLiteralConflictError> {
@@ -247,7 +255,7 @@ impl BooleanConversionPolicy {
     /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
     /// true literal under the configured case-sensitivity rule.
     #[inline]
-    pub fn with_false_literal(
+    pub(crate) fn with_false_literal(
         mut self,
         literal: &str,
     ) -> Result<Self, BooleanLiteralConflictError> {
@@ -282,7 +290,7 @@ impl BooleanConversionPolicy {
     /// Returns [`BooleanLiteralConflictError`] when changing the matching rule
     /// makes a true literal equal to a false literal.
     #[inline]
-    pub fn with_case_sensitive(
+    pub(crate) fn with_case_sensitive(
         mut self,
         case_sensitive: bool,
     ) -> Result<Self, BooleanLiteralConflictError> {
@@ -311,7 +319,7 @@ impl BooleanConversionPolicy {
     ///
     /// Returns the updated options value.
     #[inline(always)]
-    pub fn with_numeric_policy(
+    pub(crate) fn with_numeric_policy(
         mut self,
         numeric_policy: BooleanNumericPolicy,
     ) -> Self {
@@ -385,6 +393,67 @@ impl BooleanConversionPolicy {
         } else {
             Ok(())
         }
+    }
+}
+
+/// Builder for [`BooleanConversionPolicy`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BooleanConversionPolicyBuilder {
+    policy: Result<BooleanConversionPolicy, BooleanLiteralConflictError>,
+}
+
+impl BooleanConversionPolicyBuilder {
+    /// Creates a builder initialized with the strict boolean policy.
+    #[inline]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            policy: Ok(BooleanConversionPolicy::strict()),
+        }
+    }
+    /// Adds a literal recognized as `true`.
+    #[inline]
+    #[must_use]
+    pub fn true_literal(mut self, literal: &str) -> Self {
+        self.policy = self
+            .policy
+            .and_then(|policy| policy.with_true_literal(literal));
+        self
+    }
+    /// Adds a literal recognized as `false`.
+    #[inline]
+    #[must_use]
+    pub fn false_literal(mut self, literal: &str) -> Self {
+        self.policy = self
+            .policy
+            .and_then(|policy| policy.with_false_literal(literal));
+        self
+    }
+    /// Configures case sensitivity.
+    #[inline]
+    #[must_use]
+    pub fn case_sensitive(mut self, enabled: bool) -> Self {
+        self.policy = self
+            .policy
+            .and_then(|policy| policy.with_case_sensitive(enabled));
+        self
+    }
+    /// Configures integer-to-boolean conversion.
+    #[inline(always)]
+    #[must_use]
+    pub fn numeric_policy(mut self, policy: BooleanNumericPolicy) -> Self {
+        self.policy = self
+            .policy
+            .map(|options| options.with_numeric_policy(policy));
+        self
+    }
+    /// Builds the configured policy and validates literal conflicts.
+    #[inline]
+    #[must_use]
+    pub fn build(
+        self,
+    ) -> Result<BooleanConversionPolicy, BooleanLiteralConflictError> {
+        self.policy
     }
 }
 

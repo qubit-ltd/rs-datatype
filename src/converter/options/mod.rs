@@ -7,6 +7,8 @@
 // =============================================================================
 //! Policies and option groups used by data conversions.
 
+#![allow(clippy::double_must_use, clippy::new_without_default)]
+
 mod blank_string_policy;
 mod boolean_conversion_policy;
 mod boolean_numeric_policy;
@@ -29,22 +31,34 @@ mod structured_conversion_limits;
 
 pub use blank_string_policy::BlankStringPolicy;
 pub use boolean_conversion_policy::BooleanConversionPolicy;
+pub use boolean_conversion_policy::BooleanConversionPolicyBuilder;
 pub use boolean_numeric_policy::BooleanNumericPolicy;
 pub use collection_conversion_limits::CollectionConversionLimits;
+pub use collection_conversion_limits::CollectionConversionLimitsBuilder;
 pub use collection_conversion_policy::CollectionConversionPolicy;
+pub use collection_conversion_policy::CollectionConversionPolicyBuilder;
 pub use conversion_limits::ConversionLimits;
+pub use conversion_limits::ConversionLimitsBuilder;
 pub use conversion_operation_limits::ConversionOperationLimits;
+pub use conversion_operation_limits::ConversionOperationLimitsBuilder;
 pub use conversion_policy::ConversionPolicy;
+pub use conversion_policy::ConversionPolicyBuilder;
 pub use duration_conversion_limits::DurationConversionLimits;
+pub use duration_conversion_limits::DurationConversionLimitsBuilder;
 pub use duration_conversion_policy::DurationConversionPolicy;
+pub use duration_conversion_policy::DurationConversionPolicyBuilder;
 pub use duration_rounding_policy::DurationRoundingPolicy;
 pub use empty_item_policy::EmptyItemPolicy;
 pub use float_rounding_policy::FloatRoundingPolicy;
 pub use fractional_to_integer_policy::FractionalToIntegerPolicy;
 pub use numeric_conversion_limits::NumericConversionLimits;
+pub use numeric_conversion_limits::NumericConversionLimitsBuilder;
 pub use numeric_conversion_policy::NumericConversionPolicy;
+pub use numeric_conversion_policy::NumericConversionPolicyBuilder;
 pub use string_conversion_policy::StringConversionPolicy;
+pub use string_conversion_policy::StringConversionPolicyBuilder;
 pub use structured_conversion_limits::StructuredConversionLimits;
+pub use structured_conversion_limits::StructuredConversionLimitsBuilder;
 
 pub use crate::duration::DurationUnit;
 pub use crate::duration::SuffixlessDurationPolicy;
