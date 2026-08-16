@@ -174,10 +174,7 @@ where
     {
         let sources = self.sources;
         let capacity = self.trusted_capacity.map_or(0, |capacity| {
-            capacity.min(
-                usize::try_from(session.remaining_items())
-                    .unwrap_or(usize::MAX),
-            )
+            capacity.min(usize::try_from(session.remaining_items()).unwrap_or(usize::MAX))
         });
         let mut converted = Vec::with_capacity(capacity);
         for (index, source) in sources.enumerate() {

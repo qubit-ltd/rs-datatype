@@ -20,10 +20,8 @@ fn test_scalar_items_lazily_retains_original_indices() {
         .with_delimiters([',', '、'])
         .with_trim_items(true)
         .with_empty_item_policy(EmptyItemPolicy::Skip);
-    let mut items: ScalarItems<'_> = options.scalar_items(
-        &CollectionConversionLimits::default(),
-        " alpha,  、beta ",
-    );
+    let mut items: ScalarItems<'_> =
+        options.scalar_items(&CollectionConversionLimits::default(), " alpha,  、beta ");
 
     let first = items
         .next()
@@ -46,8 +44,7 @@ fn test_scalar_items_reports_rejection_when_reached() {
         .with_split_scalar_strings(true)
         .with_trim_items(true)
         .with_empty_item_policy(EmptyItemPolicy::Reject);
-    let mut items = options
-        .scalar_items(&CollectionConversionLimits::default(), "first, ,third");
+    let mut items = options.scalar_items(&CollectionConversionLimits::default(), "first, ,third");
 
     assert_eq!(
         items
@@ -128,8 +125,7 @@ fn test_scalar_items_rejection_precedes_item_limit() {
 /// Test zero permits only an empty retained result.
 #[test]
 fn test_scalar_items_zero_limit_allows_only_empty_result() {
-    let retained =
-        CollectionConversionPolicy::default().with_split_scalar_strings(true);
+    let retained = CollectionConversionPolicy::default().with_split_scalar_strings(true);
     let zero = CollectionConversionLimits::default().with_max_items(0);
     let error = retained
         .scalar_items(&zero, "a")
@@ -148,8 +144,7 @@ fn test_scalar_items_zero_limit_allows_only_empty_result() {
 /// Test a large delimiter set preserves Unicode splitting semantics.
 #[test]
 fn test_scalar_items_supports_large_delimiter_sets() {
-    let delimiters =
-        std::iter::once(',').chain((0x100..0x140).filter_map(char::from_u32));
+    let delimiters = std::iter::once(',').chain((0x100..0x140).filter_map(char::from_u32));
     let options = CollectionConversionPolicy::default()
         .with_split_scalar_strings(true)
         .with_delimiters(delimiters);
@@ -166,10 +161,8 @@ fn test_scalar_items_supports_large_delimiter_sets() {
 
 #[test]
 fn test_scalar_items_can_be_cloned_before_iteration() {
-    let options =
-        CollectionConversionPolicy::default().with_split_scalar_strings(true);
-    let items = options
-        .scalar_items(&CollectionConversionLimits::default(), "alpha,beta");
+    let options = CollectionConversionPolicy::default().with_split_scalar_strings(true);
+    let items = options.scalar_items(&CollectionConversionLimits::default(), "alpha,beta");
     let mut cloned = items.clone();
 
     assert_eq!(

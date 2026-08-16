@@ -79,9 +79,7 @@ impl NumericConversionLimits {
 
     /// Returns the numeric text resource limit.
     #[inline(always)]
-    pub fn max_text_bytes_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, u64> {
+    pub fn max_text_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         self.text
             .utf8_bytes_limit()
             .expect("numeric text limit is configured")
@@ -136,9 +134,7 @@ impl NumericConversionLimits {
 
     /// Returns the BigInteger digit resource limit.
     #[inline(always)]
-    pub fn max_big_integer_digits_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, u64> {
+    pub fn max_big_integer_digits_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         #[cfg(feature = "big-integer")]
         {
             self.big_integer
@@ -173,10 +169,8 @@ impl NumericConversionLimits {
         }
         #[cfg(not(feature = "big-integer"))]
         {
-            self.max_big_integer_digits = ResourceLimit::new(
-                ConversionResource::BigIntegerDigits,
-                maximum,
-            );
+            self.max_big_integer_digits =
+                ResourceLimit::new(ConversionResource::BigIntegerDigits, maximum);
         }
         self
     }
@@ -200,10 +194,7 @@ impl NumericConversionLimits {
 
     /// Returns a copy with a different BigDecimal coefficient digit maximum.
     #[inline(always)]
-    pub fn with_max_big_decimal_coefficient_digits(
-        mut self,
-        maximum: u64,
-    ) -> Self {
+    pub fn with_max_big_decimal_coefficient_digits(mut self, maximum: u64) -> Self {
         #[cfg(feature = "big-decimal")]
         {
             self.big_decimal = BigDecimalLimits::builder()
@@ -225,10 +216,8 @@ impl NumericConversionLimits {
         }
         #[cfg(not(feature = "big-decimal"))]
         {
-            self.max_big_decimal_coefficient_digits = ResourceLimit::new(
-                ConversionResource::BigDecimalCoefficientDigits,
-                maximum,
-            );
+            self.max_big_decimal_coefficient_digits =
+                ResourceLimit::new(ConversionResource::BigDecimalCoefficientDigits, maximum);
         }
         self
     }
@@ -258,10 +247,7 @@ impl NumericConversionLimits {
 
     /// Returns a copy with a different absolute BigDecimal scale maximum.
     #[inline(always)]
-    pub fn with_max_big_decimal_scale_magnitude(
-        mut self,
-        maximum: u64,
-    ) -> Self {
+    pub fn with_max_big_decimal_scale_magnitude(mut self, maximum: u64) -> Self {
         #[cfg(feature = "big-decimal")]
         {
             self.big_decimal = BigDecimalLimits::builder()
@@ -274,10 +260,8 @@ impl NumericConversionLimits {
         }
         #[cfg(not(feature = "big-decimal"))]
         {
-            self.max_big_decimal_scale_magnitude = ResourceLimit::new(
-                ConversionResource::BigDecimalScaleMagnitude,
-                maximum,
-            );
+            self.max_big_decimal_scale_magnitude =
+                ResourceLimit::new(ConversionResource::BigDecimalScaleMagnitude, maximum);
         }
         self
     }
@@ -347,10 +331,8 @@ impl Serialize for NumericConversionLimits {
         NumericConversionLimitsWire {
             max_text_bytes: self.max_text_bytes(),
             max_big_integer_digits: self.max_big_integer_digits(),
-            max_big_decimal_coefficient_digits: self
-                .max_big_decimal_coefficient_digits(),
-            max_big_decimal_scale_magnitude: self
-                .max_big_decimal_scale_magnitude(),
+            max_big_decimal_coefficient_digits: self.max_big_decimal_coefficient_digits(),
+            max_big_decimal_scale_magnitude: self.max_big_decimal_scale_magnitude(),
         }
         .serialize(serializer)
     }
@@ -365,11 +347,7 @@ impl<'de> Deserialize<'de> for NumericConversionLimits {
         Ok(Self::default()
             .with_max_text_bytes(wire.max_text_bytes)
             .with_max_big_integer_digits(wire.max_big_integer_digits)
-            .with_max_big_decimal_coefficient_digits(
-                wire.max_big_decimal_coefficient_digits,
-            )
-            .with_max_big_decimal_scale_magnitude(
-                wire.max_big_decimal_scale_magnitude,
-            ))
+            .with_max_big_decimal_coefficient_digits(wire.max_big_decimal_coefficient_digits)
+            .with_max_big_decimal_scale_magnitude(wire.max_big_decimal_scale_magnitude))
     }
 }
