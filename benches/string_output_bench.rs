@@ -32,7 +32,7 @@ fn benchmark_scalar_string_output(c: &mut Criterion) {
         let limits = ConversionLimits::builder()
             .operation_limits(
                 ConversionOperationLimits::builder()
-                    .max_output_bytes(u64::try_from(source.len()).unwrap()),
+                    .max_output_bytes(u64::try_from(source.len()).unwrap()).build(),
             )
             .build();
         group.bench_with_input(
@@ -81,7 +81,7 @@ fn benchmark_string_map_output(c: &mut Criterion) {
     let policy = ConversionPolicy::strict();
     let limits = ConversionLimits::builder()
         .operation_limits(
-            ConversionOperationLimits::builder().max_output_bytes(32),
+            ConversionOperationLimits::builder().max_output_bytes(32).build(),
         )
         .build();
     group.bench_function("borrowed", |bench| {
