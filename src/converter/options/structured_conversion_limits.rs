@@ -343,7 +343,7 @@ fn rebuild_structure(
     map_entries: Option<ResourceLimit<ConversionResource, u64>>,
     key_bytes: Option<ResourceLimit<ConversionResource, u64>>,
 ) -> StructureLimits<ConversionResource, u64> {
-    let mut builder = StructureLimits::builder();
+    let mut builder = source.clone().into_builder();
     if let Some(limit) = depth.or_else(|| source.depth_limit().cloned()) {
         builder = builder.depth_limit(limit);
     }
@@ -369,7 +369,7 @@ fn rebuild_value(
     structure: StructureLimits<ConversionResource, u64>,
     string_bytes: Option<ResourceLimit<ConversionResource, u64>>,
 ) -> JsonValueLimits<ConversionResource, u64> {
-    let mut builder = JsonValueLimits::builder().structure_limits(structure);
+    let mut builder = source.clone().into_builder().structure_limits(structure);
     if let Some(limit) =
         string_bytes.or_else(|| source.string_bytes_limit().cloned())
     {
