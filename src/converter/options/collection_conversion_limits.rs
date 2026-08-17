@@ -37,6 +37,13 @@ impl CollectionConversionLimits {
         CollectionConversionLimitsBuilder::new()
     }
 
+    /// Converts these limits into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub const fn into_builder(self) -> CollectionConversionLimitsBuilder {
+        CollectionConversionLimitsBuilder { limits: self }
+    }
+
     /// Returns the source text byte maximum.
     ///
     /// # Returns

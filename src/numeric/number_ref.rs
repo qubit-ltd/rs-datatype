@@ -220,7 +220,7 @@ impl<'a> NumberRef<'a> {
     ///
     /// # Returns
     ///
-    /// `true` for fixed-width integers and `BigInt` values.
+    /// `true` for fixed-width integer values.
     #[must_use]
     pub fn is_integer(self) -> bool {
         match self.inner {
@@ -234,8 +234,6 @@ impl<'a> NumberRef<'a> {
             | NumberRepr::UInt32(_)
             | NumberRepr::UInt64(_)
             | NumberRepr::UInt128(_) => true,
-            #[cfg(feature = "big-integer")]
-            NumberRepr::BigInteger(_) => true,
             _ => false,
         }
     }

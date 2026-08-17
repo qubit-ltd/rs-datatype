@@ -17,17 +17,12 @@ use serde::Serialize;
 
 use super::blank_string_policy::BlankStringPolicy;
 use super::boolean_conversion_policy::BooleanConversionPolicy;
-use super::boolean_conversion_policy::BooleanConversionPolicyBuilder;
 use super::collection_conversion_policy::CollectionConversionPolicy;
-use super::collection_conversion_policy::CollectionConversionPolicyBuilder;
 use super::duration_conversion_policy::DurationConversionPolicy;
-use super::duration_conversion_policy::DurationConversionPolicyBuilder;
 use super::duration_rounding_policy::DurationRoundingPolicy;
 use super::empty_item_policy::EmptyItemPolicy;
 use super::numeric_conversion_policy::NumericConversionPolicy;
-use super::numeric_conversion_policy::NumericConversionPolicyBuilder;
 use super::string_conversion_policy::StringConversionPolicy;
-use super::string_conversion_policy::StringConversionPolicyBuilder;
 
 /// Aggregates all policies used by the conversion engine.
 ///
@@ -71,6 +66,13 @@ impl ConversionPolicy {
     #[must_use]
     pub fn builder() -> ConversionPolicyBuilder {
         ConversionPolicyBuilder::new()
+    }
+
+    /// Converts this policy into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub fn into_builder(self) -> ConversionPolicyBuilder {
+        ConversionPolicyBuilder { policy: self }
     }
     /// Creates the strict conversion profile used by [`Default`].
     ///
@@ -368,38 +370,6 @@ pub struct ConversionPolicyBuilder {
     policy: ConversionPolicy,
 }
 
-impl From<NumericConversionPolicyBuilder> for NumericConversionPolicy {
-    fn from(builder: NumericConversionPolicyBuilder) -> Self {
-        builder.build()
-    }
-}
-
-impl From<StringConversionPolicyBuilder> for StringConversionPolicy {
-    fn from(builder: StringConversionPolicyBuilder) -> Self {
-        builder.build()
-    }
-}
-
-impl From<CollectionConversionPolicyBuilder> for CollectionConversionPolicy {
-    fn from(builder: CollectionConversionPolicyBuilder) -> Self {
-        builder.build()
-    }
-}
-
-impl From<DurationConversionPolicyBuilder> for DurationConversionPolicy {
-    fn from(builder: DurationConversionPolicyBuilder) -> Self {
-        builder.build()
-    }
-}
-
-impl From<BooleanConversionPolicyBuilder> for BooleanConversionPolicy {
-    fn from(builder: BooleanConversionPolicyBuilder) -> Self {
-        builder
-            .build()
-            .expect("builder must preserve literal invariants")
-    }
-}
-
 impl ConversionPolicyBuilder {
     /// Creates a builder initialized with the documented defaults.
     #[inline]
@@ -414,10 +384,10 @@ impl ConversionPolicyBuilder {
     #[must_use]
     pub fn numeric_policy(
         self,
-        policy: impl Into<NumericConversionPolicy>,
+        policy: NumericConversionPolicy,
     ) -> Self {
         Self {
-            policy: self.policy.with_numeric_policy(policy.into()),
+            policy: self.policy.with_numeric_policy(policy),
         }
     }
     /// Configures string conversion policy.
@@ -425,10 +395,10 @@ impl ConversionPolicyBuilder {
     #[must_use]
     pub fn string_policy(
         self,
-        policy: impl Into<StringConversionPolicy>,
+        policy: StringConversionPolicy,
     ) -> Self {
         Self {
-            policy: self.policy.with_string_policy(policy.into()),
+            policy: self.policy.with_string_policy(policy),
         }
     }
     /// Configures blank string handling.
@@ -444,10 +414,10 @@ impl ConversionPolicyBuilder {
     #[must_use]
     pub fn boolean_policy(
         self,
-        policy: impl Into<BooleanConversionPolicy>,
+        policy: BooleanConversionPolicy,
     ) -> Self {
         Self {
-            policy: self.policy.with_boolean_policy(policy.into()),
+            policy: self.policy.with_boolean_policy(policy),
         }
     }
     /// Configures collection conversion policy.
@@ -455,10 +425,10 @@ impl ConversionPolicyBuilder {
     #[must_use]
     pub fn collection_policy(
         self,
-        policy: impl Into<CollectionConversionPolicy>,
+        policy: CollectionConversionPolicy,
     ) -> Self {
         Self {
-            policy: self.policy.with_collection_policy(policy.into()),
+            policy: self.policy.with_collection_policy(policy),
         }
     }
     /// Configures empty collection item handling.
@@ -474,10 +444,10 @@ impl ConversionPolicyBuilder {
     #[must_use]
     pub fn duration_policy(
         self,
-        policy: impl Into<DurationConversionPolicy>,
+        policy: DurationConversionPolicy,
     ) -> Self {
         Self {
-            policy: self.policy.with_duration_policy(policy.into()),
+            policy: self.policy.with_duration_policy(policy),
         }
     }
     /// Builds the configured conversion policy.

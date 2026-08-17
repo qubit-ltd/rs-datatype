@@ -84,6 +84,13 @@ impl DurationConversionPolicy {
     pub fn builder() -> DurationConversionPolicyBuilder {
         DurationConversionPolicyBuilder::new()
     }
+
+    /// Converts this policy into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub fn into_builder(self) -> DurationConversionPolicyBuilder {
+        DurationConversionPolicyBuilder { policy: self }
+    }
     /// Creates duration options for environment-variable input.
     ///
     /// The profile interprets suffixless integers as milliseconds and accepts

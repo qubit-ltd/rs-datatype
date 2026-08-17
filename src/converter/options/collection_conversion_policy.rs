@@ -82,6 +82,13 @@ impl CollectionConversionPolicy {
     pub fn builder() -> CollectionConversionPolicyBuilder {
         CollectionConversionPolicyBuilder::new()
     }
+
+    /// Converts this policy into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub fn into_builder(self) -> CollectionConversionPolicyBuilder {
+        CollectionConversionPolicyBuilder { policy: self }
+    }
     /// Creates options suitable for environment-variable lists.
     ///
     /// The profile splits comma-separated scalar strings, trims each item,

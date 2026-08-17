@@ -55,6 +55,13 @@ impl NumericConversionLimits {
     pub fn builder() -> NumericConversionLimitsBuilder {
         NumericConversionLimitsBuilder::new()
     }
+
+    /// Converts these limits into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub fn into_builder(self) -> NumericConversionLimitsBuilder {
+        NumericConversionLimitsBuilder { limits: self }
+    }
     /// Default maximum normalized numeric text length in bytes.
     pub const DEFAULT_MAX_TEXT_BYTES: u64 = 16_384;
 

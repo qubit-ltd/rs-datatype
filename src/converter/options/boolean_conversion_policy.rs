@@ -110,6 +110,13 @@ impl BooleanConversionPolicy {
     pub fn builder() -> BooleanConversionPolicyBuilder {
         BooleanConversionPolicyBuilder::new()
     }
+
+    /// Converts this policy into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub fn into_builder(self) -> BooleanConversionPolicyBuilder {
+        BooleanConversionPolicyBuilder { policy: Ok(self) }
+    }
     /// Text literals accepted as `true` by the strict/default profile.
     pub const DEFAULT_TRUE_LITERALS: &'static [&'static str] = &["true"];
 

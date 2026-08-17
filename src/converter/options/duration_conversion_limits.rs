@@ -34,6 +34,13 @@ impl DurationConversionLimits {
         DurationConversionLimitsBuilder::new()
     }
 
+    /// Converts these limits into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub const fn into_builder(self) -> DurationConversionLimitsBuilder {
+        DurationConversionLimitsBuilder { limits: self }
+    }
+
     /// Returns the duration source text byte maximum.
     ///
     /// # Returns

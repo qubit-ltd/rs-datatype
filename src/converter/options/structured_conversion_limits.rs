@@ -40,6 +40,13 @@ impl StructuredConversionLimits {
     pub fn builder() -> StructuredConversionLimitsBuilder {
         StructuredConversionLimitsBuilder::new()
     }
+
+    /// Converts these limits into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub fn into_builder(self) -> StructuredConversionLimitsBuilder {
+        StructuredConversionLimitsBuilder { limits: self }
+    }
     /// Default maximum normalized structured text length in bytes.
     pub const DEFAULT_MAX_TEXT_BYTES: u64 = 1_048_576;
     /// Default maximum root-inclusive depth.

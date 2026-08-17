@@ -56,6 +56,13 @@ impl ConversionOperationLimits {
         ConversionOperationLimitsBuilder::new()
     }
 
+    /// Converts these limits into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub const fn into_builder(self) -> ConversionOperationLimitsBuilder {
+        ConversionOperationLimitsBuilder { limits: self }
+    }
+
     /// Returns the configured item maximum.
     #[inline(always)]
     #[must_use]
