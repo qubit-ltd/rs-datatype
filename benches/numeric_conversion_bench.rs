@@ -131,7 +131,7 @@ fn benchmark_big_integer_text(c: &mut Criterion) {
                 .numeric_limits(
                     NumericConversionLimits::builder()
                         .max_text_bytes(u64::try_from(digits).unwrap())
-                        .max_big_integer_digits(u64::try_from(digits).unwrap()),
+                        .max_big_integer_digits(u64::try_from(digits).unwrap()).build(),
                 )
                 .build();
             DataConverter::from(source.as_str())
@@ -171,7 +171,7 @@ fn benchmark_big_decimal_text(c: &mut Criterion) {
                 .numeric_limits(
                     NumericConversionLimits::builder()
                         .max_text_bytes(u64::try_from(digits).unwrap())
-                        .max_big_integer_digits(u64::try_from(digits).unwrap()),
+                        .max_big_integer_digits(u64::try_from(digits).unwrap()).build(),
                 )
                 .build();
             DataConverter::from(source.as_str())
