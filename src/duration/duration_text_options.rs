@@ -34,6 +34,13 @@ impl DurationTextOptions {
     pub fn builder() -> DurationTextOptionsBuilder {
         DurationTextOptionsBuilder::new()
     }
+
+    /// Converts these options into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub fn into_builder(self) -> DurationTextOptionsBuilder {
+        DurationTextOptionsBuilder { options: self }
+    }
     /// Default maximum accepted Duration source text length in bytes.
     pub const DEFAULT_MAX_TEXT_BYTES: usize = 256;
 

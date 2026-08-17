@@ -64,6 +64,13 @@ impl StringConversionPolicy {
     pub fn builder() -> StringConversionPolicyBuilder {
         StringConversionPolicyBuilder::new()
     }
+
+    /// Converts this policy into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub fn into_builder(self) -> StringConversionPolicyBuilder {
+        StringConversionPolicyBuilder { policy: self }
+    }
     /// Creates options suitable for environment-variable input.
     ///
     /// The profile trims surrounding whitespace and treats a blank value as
