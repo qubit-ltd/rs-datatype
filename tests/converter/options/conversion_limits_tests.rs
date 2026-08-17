@@ -73,3 +73,19 @@ fn test_conversion_limits_default_ref_is_stable() {
         &ConversionLimits::default()
     );
 }
+
+/// Verifies that existing limits can be customized through their builder.
+#[test]
+fn test_conversion_limits_into_builder() {
+    let limits = ConversionLimits::default()
+        .into_builder()
+        .operation_limits(
+            ConversionOperationLimits::default()
+                .into_builder()
+                .max_items(3)
+                .build(),
+        )
+        .build();
+
+    assert_eq!(limits.operation().max_items(), 3);
+}

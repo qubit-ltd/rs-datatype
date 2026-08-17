@@ -223,7 +223,8 @@ impl<'a> NumberRef<'a> {
     /// `true` for fixed-width integer values.
     #[must_use]
     pub fn is_integer(self) -> bool {
-        match self.inner {
+        matches!(
+            self.inner,
             NumberRepr::Int8(_)
             | NumberRepr::Int16(_)
             | NumberRepr::Int32(_)
@@ -233,9 +234,8 @@ impl<'a> NumberRef<'a> {
             | NumberRepr::UInt16(_)
             | NumberRepr::UInt32(_)
             | NumberRepr::UInt64(_)
-            | NumberRepr::UInt128(_) => true,
-            _ => false,
-        }
+            | NumberRepr::UInt128(_)
+        )
     }
 
     /// Reports whether this value is a primitive floating-point value.

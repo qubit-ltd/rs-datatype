@@ -95,3 +95,19 @@ fn test_conversion_policy_builders_replace_each_policy_group() {
     );
     assert_eq!(policy.duration(), &DurationConversionPolicy::default());
 }
+
+/// Verifies that an existing profile can be customized through its builder.
+#[test]
+fn test_conversion_policy_profile_into_builder() {
+    let policy = ConversionPolicy::env_friendly()
+        .into_builder()
+        .collection_policy(
+            CollectionConversionPolicy::env_friendly()
+                .into_builder()
+                .delimiters([';', ','])
+                .build(),
+        )
+        .build();
+
+    assert_eq!(policy.collection().delimiters(), &[';', ',']);
+}
