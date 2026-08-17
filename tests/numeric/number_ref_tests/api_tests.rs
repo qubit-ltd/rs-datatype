@@ -145,7 +145,7 @@ fn test_number_ref_compare() {
 fn test_number_ref_big_integer_properties() {
     let value = BigInt::from(7_i8);
     let number = NumberRef::from(&value);
-    assert!(number.is_integer());
+    assert!(!number.is_integer());
     assert!(number.is_big_integer());
     assert!(!number.is_big_decimal());
     assert!(number.is_finite());

@@ -18,7 +18,7 @@ fn test_output_budget_precheck_preserves_remaining_capacity() {
     let policy = ConversionPolicy::default();
     let limits = ConversionLimits::builder()
         .operation_limits(
-            ConversionOperationLimits::builder().max_output_bytes(2),
+            ConversionOperationLimits::builder().max_output_bytes(2).build(),
         )
         .build();
     let mut session = ConversionSession::new(&policy, &limits);

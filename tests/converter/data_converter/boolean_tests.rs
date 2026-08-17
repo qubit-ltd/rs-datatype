@@ -115,7 +115,7 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
 fn test_data_converter_bool_numeric_text_limit() {
     let options = ConversionPolicy::strict();
     let limits = ConversionLimits::builder()
-        .numeric_limits(NumericConversionLimits::builder().max_text_bytes(1))
+        .numeric_limits(NumericConversionLimits::builder().max_text_bytes(1).build())
         .build();
 
     assert_eq!(

@@ -178,7 +178,7 @@ fn test_data_converter_rejects_oversize_structured_text() {
     let policy = ConversionPolicy::default();
     let limits = ConversionLimits::builder()
         .structured_limits(
-            StructuredConversionLimits::builder().max_text_bytes(2),
+            StructuredConversionLimits::builder().max_text_bytes(2).build(),
         )
         .build();
 
@@ -306,7 +306,7 @@ fn test_data_converter_json_text_accumulates_structured_nodes_in_session() {
     let policy = ConversionPolicy::default();
     let limits = ConversionLimits::builder()
         .operation_limits(
-            ConversionOperationLimits::builder().max_structured_nodes(2),
+            ConversionOperationLimits::builder().max_structured_nodes(2).build(),
         )
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
@@ -328,7 +328,7 @@ fn test_failed_json_conversion_keeps_input_and_rolls_back_structure() {
     let policy = ConversionPolicy::default();
     let limits = ConversionLimits::builder()
         .operation_limits(
-            ConversionOperationLimits::builder().max_structured_nodes(2),
+            ConversionOperationLimits::builder().max_structured_nodes(2).build(),
         )
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
@@ -355,7 +355,7 @@ fn test_data_converter_structured_budget_is_content_invariant() {
     let policy = ConversionPolicy::default();
     let json_limits = ConversionLimits::builder()
         .operation_limits(
-            ConversionOperationLimits::builder().max_structured_nodes(1),
+            ConversionOperationLimits::builder().max_structured_nodes(1).build(),
         )
         .build();
     let json = serde_json::json!(["value"]);
@@ -372,7 +372,7 @@ fn test_data_converter_structured_budget_is_content_invariant() {
 
     let map_limits = ConversionLimits::builder()
         .operation_limits(
-            ConversionOperationLimits::builder().max_structured_nodes(1),
+            ConversionOperationLimits::builder().max_structured_nodes(1).build(),
         )
         .build();
     let map = HashMap::from([("key".to_owned(), "value".to_owned())]);
@@ -389,7 +389,7 @@ fn test_data_converter_structured_budget_is_content_invariant() {
 
     let string_limits = ConversionLimits::builder()
         .operation_limits(
-            ConversionOperationLimits::builder().max_structured_nodes(1),
+            ConversionOperationLimits::builder().max_structured_nodes(1).build(),
         )
         .build();
     let json = serde_json::json!(["value"]);
@@ -407,7 +407,7 @@ fn test_data_converter_rejects_oversize_url_text() {
     let policy = ConversionPolicy::default();
     let limits = ConversionLimits::builder()
         .structured_limits(
-            StructuredConversionLimits::builder().max_text_bytes(14),
+            StructuredConversionLimits::builder().max_text_bytes(14).build(),
         )
         .build();
 
