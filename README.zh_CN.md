@@ -183,13 +183,17 @@ use qubit_datatype::ConversionPolicy;
 use qubit_datatype::NumericConversionLimits;
 use qubit_datatype::NumericConversionPolicy;
 
-let policy = ConversionPolicy::strict()
-    .with_numeric_policy(NumericConversionPolicy::strict());
-let limits = ConversionLimits::default().with_numeric_limits(
-    NumericConversionLimits::default()
-        .with_max_text_bytes(4096)
-        .with_max_big_integer_digits(10_000),
-);
+let policy = ConversionPolicy::builder()
+    .numeric_policy(NumericConversionPolicy::strict())
+    .build();
+let limits = ConversionLimits::builder()
+    .numeric_limits(
+        NumericConversionLimits::builder()
+            .max_text_bytes(4096)
+            .max_big_integer_digits(10_000)
+            .build(),
+    )
+    .build();
 ```
 
 结构化文本限制在字符串规范化之后、URL、JSON 或 StringMap 解析之前检查：
@@ -198,9 +202,13 @@ let limits = ConversionLimits::default().with_numeric_limits(
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::StructuredConversionLimits;
 
-let limits = ConversionLimits::default().with_structured_limits(
-    StructuredConversionLimits::default().with_max_text_bytes(64 * 1024),
-);
+let limits = ConversionLimits::builder()
+    .structured_limits(
+        StructuredConversionLimits::builder()
+            .max_text_bytes(64 * 1024)
+            .build(),
+    )
+    .build();
 ```
 
 每次 `to_with`、`into_target_with` 或批量 `*_with` 调用都会创建相互独立的会话。
@@ -217,8 +225,10 @@ use qubit_datatype::DataConverter;
 
 # fn main() -> Result<(), Box<dyn std::error::Error>> {
 let policy = ConversionPolicy::strict();
-let operation = ConversionOperationLimits::default().with_max_items(2);
-let limits = ConversionLimits::default().with_operation_limits(operation);
+let operation = ConversionOperationLimits::builder().max_items(2).build();
+let limits = ConversionLimits::builder()
+    .operation_limits(operation)
+    .build();
 let mut session = ConversionSession::new(&policy, &limits);
 
 assert_eq!(DataConverter::from("1").to_in::<u16>(&mut session)?, 1);
