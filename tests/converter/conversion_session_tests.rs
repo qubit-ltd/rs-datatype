@@ -74,7 +74,7 @@ fn test_trimmed_text_is_charged_by_raw_input_length() {
         .build();
     let limits = ConversionLimits::builder()
         .operation_limits(
-            ConversionOperationLimits::builder().max_input_bytes(2),
+            ConversionOperationLimits::builder().max_input_bytes(2).build(),
         )
         .build();
 
@@ -95,7 +95,7 @@ fn test_failed_conversion_keeps_attempted_item_and_input_accounting() {
         .operation_limits(
             ConversionOperationLimits::builder()
                 .max_items(2)
-                .max_input_bytes(5),
+                .max_input_bytes(5).build(),
         )
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
@@ -153,7 +153,7 @@ fn test_scalar_admission_charges_source_and_items_once() {
         .operation_limits(
             ConversionOperationLimits::builder()
                 .max_items(1)
-                .max_input_bytes(3),
+                .max_input_bytes(3).build(),
         )
         .build();
     let mut session = ConversionSession::new(&policy, &limits);

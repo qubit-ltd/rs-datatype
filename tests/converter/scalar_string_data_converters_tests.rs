@@ -49,13 +49,13 @@ fn test_scalar_string_data_converters_to_first_converts_unsplit_scalar() {
 #[test]
 fn test_scalar_string_data_converters_to_vec_with_splits_items() {
     let options = ConversionPolicy::builder()
-        .string_policy(StringConversionPolicy::builder().trim(true))
+        .string_policy(StringConversionPolicy::builder().trim(true).build())
         .collection_policy(
             CollectionConversionPolicy::builder()
                 .split_scalar_strings(true)
                 .delimiters([',', ';'])
                 .trim_items(true)
-                .empty_item_policy(EmptyItemPolicy::Skip),
+                .empty_item_policy(EmptyItemPolicy::Skip).build(),
         )
         .build();
 
@@ -86,7 +86,7 @@ fn test_scalar_string_data_converters_to_vec_with_reports_missing_scalar() {
         .string_policy(
             StringConversionPolicy::builder()
                 .trim(true)
-                .blank_string_policy(BlankStringPolicy::TreatAsMissing),
+                .blank_string_policy(BlankStringPolicy::TreatAsMissing).build(),
         )
         .build();
 
@@ -108,7 +108,7 @@ fn test_scalar_string_data_converters_to_first_with_reports_missing_scalar() {
         .string_policy(
             StringConversionPolicy::builder()
                 .trim(true)
-                .blank_string_policy(BlankStringPolicy::TreatAsMissing),
+                .blank_string_policy(BlankStringPolicy::TreatAsMissing).build(),
         )
         .build();
 
@@ -129,7 +129,7 @@ fn test_scalar_string_data_converters_to_vec_with_rejects_empty_item() {
         .collection_policy(
             CollectionConversionPolicy::builder()
                 .split_scalar_strings(true)
-                .empty_item_policy(EmptyItemPolicy::Reject),
+                .empty_item_policy(EmptyItemPolicy::Reject).build(),
         )
         .build();
 
@@ -155,11 +155,11 @@ fn test_scalar_string_data_converters_to_vec_with_enforces_item_limit() {
         .collection_policy(
             CollectionConversionPolicy::builder()
                 .split_scalar_strings(true)
-                .empty_item_policy(EmptyItemPolicy::Skip),
+                .empty_item_policy(EmptyItemPolicy::Skip).build(),
         )
         .build();
     let limits = ConversionLimits::builder()
-        .collection_limits(CollectionConversionLimits::builder().max_items(2))
+        .collection_limits(CollectionConversionLimits::builder().max_items(2).build())
         .build();
     let error = ScalarStringDataConverters::from("1,,2,3")
         .to_vec_with::<u16>(&options, &limits)
@@ -187,11 +187,11 @@ fn test_scalar_string_data_converters_to_vec_with_enforces_item_limit() {
 fn test_scalar_string_data_converters_to_first_with_item_limit() {
     let one = ConversionPolicy::builder()
         .collection_policy(
-            CollectionConversionPolicy::builder().split_scalar_strings(true),
+            CollectionConversionPolicy::builder().split_scalar_strings(true).build(),
         )
         .build();
     let one_limit = ConversionLimits::builder()
-        .collection_limits(CollectionConversionLimits::builder().max_items(1))
+        .collection_limits(CollectionConversionLimits::builder().max_items(1).build())
         .build();
     assert_eq!(
         ScalarStringDataConverters::from("1,2,3")
@@ -201,11 +201,11 @@ fn test_scalar_string_data_converters_to_first_with_item_limit() {
 
     let zero = ConversionPolicy::builder()
         .collection_policy(
-            CollectionConversionPolicy::builder().split_scalar_strings(true),
+            CollectionConversionPolicy::builder().split_scalar_strings(true).build(),
         )
         .build();
     let zero_limit = ConversionLimits::builder()
-        .collection_limits(CollectionConversionLimits::builder().max_items(0))
+        .collection_limits(CollectionConversionLimits::builder().max_items(0).build())
         .build();
     let error = ScalarStringDataConverters::from("1,2,3")
         .to_first_with::<u16>(&zero, &zero_limit)
@@ -228,7 +228,7 @@ fn test_scalar_string_data_converters_to_first_with_rejects_empty_item() {
         .collection_policy(
             CollectionConversionPolicy::builder()
                 .split_scalar_strings(true)
-                .empty_item_policy(EmptyItemPolicy::Reject),
+                .empty_item_policy(EmptyItemPolicy::Reject).build(),
         )
         .build();
 
@@ -250,7 +250,7 @@ fn test_scalar_string_data_converters_to_first_with_reports_empty_after_skip() {
         .collection_policy(
             CollectionConversionPolicy::builder()
                 .split_scalar_strings(true)
-                .empty_item_policy(EmptyItemPolicy::Skip),
+                .empty_item_policy(EmptyItemPolicy::Skip).build(),
         )
         .build();
 
@@ -268,7 +268,7 @@ fn test_scalar_string_data_converters_preserves_original_source_index() {
         .collection_policy(
             CollectionConversionPolicy::builder()
                 .split_scalar_strings(true)
-                .empty_item_policy(EmptyItemPolicy::Skip),
+                .empty_item_policy(EmptyItemPolicy::Skip).build(),
         )
         .build();
 
@@ -286,7 +286,7 @@ fn test_scalar_string_data_converters_to_first_short_circuits_tail() {
         .collection_policy(
             CollectionConversionPolicy::builder()
                 .split_scalar_strings(true)
-                .empty_item_policy(EmptyItemPolicy::Reject),
+                .empty_item_policy(EmptyItemPolicy::Reject).build(),
         )
         .build();
 
@@ -304,7 +304,7 @@ fn test_scalar_string_data_converters_rejects_blank_scalar() {
         .string_policy(
             StringConversionPolicy::builder()
                 .trim(true)
-                .blank_string_policy(BlankStringPolicy::Reject),
+                .blank_string_policy(BlankStringPolicy::Reject).build(),
         )
         .build();
 
@@ -347,7 +347,7 @@ fn test_scalar_string_data_converters_checks_delimiter_only_source_before_scan()
     let policy = ConversionPolicy::env_friendly();
     let limits = ConversionLimits::builder()
         .collection_limits(
-            CollectionConversionLimits::builder().max_source_bytes(3),
+            CollectionConversionLimits::builder().max_source_bytes(3).build(),
         )
         .build();
 
@@ -371,7 +371,7 @@ fn test_scalar_string_data_converters_to_first_checks_complete_source() {
     let policy = ConversionPolicy::env_friendly();
     let limits = ConversionLimits::builder()
         .collection_limits(
-            CollectionConversionLimits::builder().max_source_bytes(3),
+            CollectionConversionLimits::builder().max_source_bytes(3).build(),
         )
         .build();
 

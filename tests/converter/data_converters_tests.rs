@@ -155,7 +155,7 @@ fn test_data_converters_to_vec_with_applies_options() {
         .string_policy(
             StringConversionPolicy::builder()
                 .trim(true)
-                .blank_string_policy(BlankStringPolicy::Reject),
+                .blank_string_policy(BlankStringPolicy::Reject).build(),
         )
         .build();
 
@@ -171,7 +171,7 @@ fn test_data_converters_to_vec_with_applies_options() {
 fn test_data_converters_to_vec_in_enforces_session_item_budget() {
     let policy = ConversionPolicy::default();
     let limits = ConversionLimits::builder()
-        .operation_limits(ConversionOperationLimits::builder().max_items(2))
+        .operation_limits(ConversionOperationLimits::builder().max_items(2).build())
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
     let error = DataConverters::from_iterator(["1", "2", "3"].into_iter())
