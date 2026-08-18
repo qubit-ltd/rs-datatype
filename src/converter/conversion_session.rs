@@ -145,7 +145,7 @@ impl<'a> ConversionSession<'a> {
     where
         T: Deserialize<'de>,
     {
-        let mut decode =
+        let decode =
             JsonDecodeSession::borrowing_value(self.budget.structured_mut());
         JsonDecoder::new(decode).decode_utf8(input)
     }
@@ -163,7 +163,7 @@ impl<'a> ConversionSession<'a> {
     where
         S: DeserializeSeed<'de>,
     {
-        let mut decode =
+        let decode =
             JsonDecodeSession::borrowing_value(self.budget.structured_mut());
         JsonDecoder::new(decode).decode_seed_utf8(seed, input)
     }
@@ -210,7 +210,7 @@ impl<'a> ConversionSession<'a> {
         T: Serialize + ?Sized,
     {
         let (output, structured) = self.budget.split_json_mut();
-        let mut encode =
+        let encode =
             JsonEncodeSession::borrowing_output(output, structured);
         JsonEncoder::new(encode).to_vec(value)
     }
