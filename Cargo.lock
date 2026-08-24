@@ -637,7 +637,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "zmij",
 ]
 
 [[package]]
