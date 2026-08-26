@@ -928,7 +928,9 @@ fn test_numeric_text_limit_applies_before_float_parsing() {
         .numeric_policy(NumericConversionPolicy::env_friendly())
         .build();
     let limits = ConversionLimits::builder()
-        .numeric_limits(NumericConversionLimits::builder().max_text_bytes(3).build())
+        .numeric_limits(
+            NumericConversionLimits::builder().max_text_bytes(3).build(),
+        )
         .build();
 
     assert_eq!(
@@ -998,7 +1000,8 @@ fn test_big_integer_digit_limit_text_boundaries() {
             &ConversionLimits::builder()
                 .numeric_limits(
                     NumericConversionLimits::builder()
-                        .max_big_integer_digits(1).build(),
+                        .max_big_integer_digits(1)
+                        .build(),
                 )
                 .build(),
         ),

@@ -19,7 +19,8 @@ fn limits_with_output_limit(maximum: usize) -> ConversionLimits {
     ConversionLimits::builder()
         .operation_limits(
             ConversionOperationLimits::builder()
-                .max_output_bytes(u64::try_from(maximum).unwrap()).build(),
+                .max_output_bytes(u64::try_from(maximum).unwrap())
+                .build(),
         )
         .build()
 }

@@ -207,7 +207,7 @@ impl BooleanConversionPolicy {
     ///
     /// A slice of accepted true literals.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub fn true_literals(&self) -> &[String] {
         &self.true_literals
     }
@@ -470,7 +470,7 @@ impl Default for BooleanConversionPolicy {
     /// # Returns
     ///
     /// The validated strict Boolean conversion profile.
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self::strict()
     }

@@ -22,7 +22,8 @@ fn test_string_source_normalization_maps_policy_errors() {
     let missing_options = ConversionPolicy::builder()
         .string_policy(
             StringConversionPolicy::builder()
-                .blank_string_policy(BlankStringPolicy::TreatAsMissing).build(),
+                .blank_string_policy(BlankStringPolicy::TreatAsMissing)
+                .build(),
         )
         .build();
     assert_eq!(
@@ -37,7 +38,8 @@ fn test_string_source_normalization_maps_policy_errors() {
     let reject_options = ConversionPolicy::builder()
         .string_policy(
             StringConversionPolicy::builder()
-                .blank_string_policy(BlankStringPolicy::Reject).build(),
+                .blank_string_policy(BlankStringPolicy::Reject)
+                .build(),
         )
         .build();
     assert_eq!(

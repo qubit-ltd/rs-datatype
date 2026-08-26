@@ -210,8 +210,7 @@ impl<'a> ConversionSession<'a> {
         T: Serialize + ?Sized,
     {
         let (output, structured) = self.budget.split_json_mut();
-        let encode =
-            JsonEncodeSession::borrowing_output(output, structured);
+        let encode = JsonEncodeSession::borrowing_output(output, structured);
         JsonEncoder::new(encode).to_vec(value)
     }
 

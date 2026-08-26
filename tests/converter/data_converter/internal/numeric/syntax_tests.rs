@@ -33,7 +33,9 @@ fn test_numeric_text_rejects_duplicate_signs() {
 fn test_numeric_text_limit_preserves_conversion_limit_fact() {
     let options = ConversionPolicy::default();
     let limits = ConversionLimits::builder()
-        .numeric_limits(NumericConversionLimits::builder().max_text_bytes(3).build())
+        .numeric_limits(
+            NumericConversionLimits::builder().max_text_bytes(3).build(),
+        )
         .build();
 
     assert_eq!(

@@ -59,7 +59,8 @@ fn test_text_to_float_rounding_is_independent() {
     let options = ConversionPolicy::builder()
         .numeric_policy(
             NumericConversionPolicy::builder()
-                .text_to_float(FloatRoundingPolicy::NearestEven).build(),
+                .text_to_float(FloatRoundingPolicy::NearestEven)
+                .build(),
         )
         .build();
 
