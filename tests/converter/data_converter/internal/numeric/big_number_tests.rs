@@ -46,7 +46,8 @@ fn limits_with_big_integer_digit_limit(maximum: usize) -> ConversionLimits {
     ConversionLimits::builder()
         .numeric_limits(
             NumericConversionLimits::builder()
-                .max_big_integer_digits(u64::try_from(maximum).unwrap()).build(),
+                .max_big_integer_digits(u64::try_from(maximum).unwrap())
+                .build(),
         )
         .build()
 }

@@ -142,10 +142,7 @@ impl ConversionLimitsBuilder {
     /// Configures duration value limits.
     #[inline(always)]
     #[must_use]
-    pub fn duration_limits(
-        mut self,
-        limits: DurationConversionLimits,
-    ) -> Self {
+    pub fn duration_limits(mut self, limits: DurationConversionLimits) -> Self {
         self.limits.duration = limits;
         self
     }

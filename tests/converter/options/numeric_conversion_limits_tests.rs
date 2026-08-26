@@ -32,15 +32,19 @@ fn test_numeric_conversion_limits_contract() {
     let limits = NumericConversionLimits::builder()
         .max_text_bytes(32)
         .max_big_integer_digits(8)
+        .max_big_decimal_coefficient_digits(7)
+        .max_big_decimal_scale_magnitude(6)
         .build();
     assert_eq!(limits.max_text_bytes(), 32);
     assert_eq!(limits.max_big_integer_digits(), 8);
+    assert_eq!(limits.max_big_decimal_coefficient_digits(), 7);
+    assert_eq!(limits.max_big_decimal_scale_magnitude(), 6);
 
     let wire = serde_json::to_string(&limits)
         .expect("numeric limits should serialize");
     assert_eq!(
         wire,
-        r#"{"max_text_bytes":32,"max_big_integer_digits":8,"max_big_decimal_coefficient_digits":16384,"max_big_decimal_scale_magnitude":150000}"#,
+        r#"{"max_text_bytes":32,"max_big_integer_digits":8,"max_big_decimal_coefficient_digits":7,"max_big_decimal_scale_magnitude":6}"#,
     );
     assert_eq!(
         serde_json::from_str::<NumericConversionLimits>(&wire)

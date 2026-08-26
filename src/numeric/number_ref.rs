@@ -226,15 +226,15 @@ impl<'a> NumberRef<'a> {
         matches!(
             self.inner,
             NumberRepr::Int8(_)
-            | NumberRepr::Int16(_)
-            | NumberRepr::Int32(_)
-            | NumberRepr::Int64(_)
-            | NumberRepr::Int128(_)
-            | NumberRepr::UInt8(_)
-            | NumberRepr::UInt16(_)
-            | NumberRepr::UInt32(_)
-            | NumberRepr::UInt64(_)
-            | NumberRepr::UInt128(_)
+                | NumberRepr::Int16(_)
+                | NumberRepr::Int32(_)
+                | NumberRepr::Int64(_)
+                | NumberRepr::Int128(_)
+                | NumberRepr::UInt8(_)
+                | NumberRepr::UInt16(_)
+                | NumberRepr::UInt32(_)
+                | NumberRepr::UInt64(_)
+                | NumberRepr::UInt128(_)
         )
     }
 

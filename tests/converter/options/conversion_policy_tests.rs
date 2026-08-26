@@ -111,3 +111,29 @@ fn test_conversion_policy_profile_into_builder() {
 
     assert_eq!(policy.collection().delimiters(), &[';', ',']);
 }
+
+/// Verifies that each aggregate builder override is independently observable.
+#[test]
+fn test_conversion_policy_individual_builder_overrides() {
+    let boolean = std::hint::black_box(BooleanConversionPolicy::env_friendly());
+    let policy = ConversionPolicy::builder()
+        .boolean_policy(boolean.clone())
+        .build();
+    assert_eq!(policy.boolean(), &boolean);
+
+    let policy = ConversionPolicy::builder()
+        .blank_string_policy(BlankStringPolicy::TreatAsMissing)
+        .build();
+    assert_eq!(
+        policy.string().blank_string_policy(),
+        BlankStringPolicy::TreatAsMissing
+    );
+
+    let policy = ConversionPolicy::builder()
+        .empty_item_policy(EmptyItemPolicy::Skip)
+        .build();
+    assert_eq!(
+        policy.collection().empty_item_policy(),
+        EmptyItemPolicy::Skip
+    );
+}

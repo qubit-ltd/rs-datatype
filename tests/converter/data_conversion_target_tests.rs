@@ -41,7 +41,8 @@ fn test_delegate_does_not_double_charge_item_or_input_budgets() {
         .operation_limits(
             ConversionOperationLimits::builder()
                 .max_items(1)
-                .max_input_bytes(2).build(),
+                .max_input_bytes(2)
+                .build(),
         )
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
@@ -64,7 +65,9 @@ fn test_delegate_preserves_output_budget() {
     let policy = ConversionPolicy::strict();
     let limits = ConversionLimits::builder()
         .operation_limits(
-            ConversionOperationLimits::builder().max_output_bytes(1).build(),
+            ConversionOperationLimits::builder()
+                .max_output_bytes(1)
+                .build(),
         )
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
@@ -80,7 +83,9 @@ fn test_delegate_owned_preserves_output_budget() {
     let policy = ConversionPolicy::strict();
     let limits = ConversionLimits::builder()
         .operation_limits(
-            ConversionOperationLimits::builder().max_output_bytes(1).build(),
+            ConversionOperationLimits::builder()
+                .max_output_bytes(1)
+                .build(),
         )
         .build();
     let mut session = ConversionSession::new(&policy, &limits);

@@ -92,7 +92,7 @@ impl NumericConversionLimits {
     }
 
     /// Returns the numeric text resource limit.
-    #[inline(always)]
+    #[inline]
     pub fn max_text_bytes_limit(
         &self,
     ) -> &ResourceLimit<ConversionResource, u64> {
@@ -149,7 +149,7 @@ impl NumericConversionLimits {
     }
 
     /// Returns the BigInteger digit resource limit.
-    #[inline(always)]
+    #[inline]
     pub fn max_big_integer_digits_limit(
         &self,
     ) -> &ResourceLimit<ConversionResource, u64> {
@@ -213,7 +213,7 @@ impl NumericConversionLimits {
     }
 
     /// Returns a copy with a different BigDecimal coefficient digit maximum.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_max_big_decimal_coefficient_digits(
         mut self,
         maximum: u64,
@@ -271,7 +271,7 @@ impl NumericConversionLimits {
     }
 
     /// Returns a copy with a different absolute BigDecimal scale maximum.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_max_big_decimal_scale_magnitude(
         mut self,
         maximum: u64,
@@ -329,7 +329,7 @@ impl NumericConversionLimitsBuilder {
         }
     }
     /// Configures the BigDecimal coefficient digit maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_big_decimal_coefficient_digits(self, maximum: u64) -> Self {
         Self {
@@ -339,7 +339,7 @@ impl NumericConversionLimitsBuilder {
         }
     }
     /// Configures the BigDecimal scale magnitude maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_big_decimal_scale_magnitude(self, maximum: u64) -> Self {
         Self {

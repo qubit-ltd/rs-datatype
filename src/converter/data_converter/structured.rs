@@ -246,8 +246,8 @@ pub(super) fn map_json_decode_error_from_type(
     target: DataType,
     error: JsonDecodeError<ConversionResource, u64>,
 ) -> DataConversionError {
-    match error {
-        JsonDecodeError::Budget(error) => match error {
+    match error.budget_error().cloned() {
+        Some(error) => match error {
             MeasuredBudgetError::Budget(error) => {
                 DataConversionError::limit_exceeded(source, target, error)
             }
@@ -256,15 +256,13 @@ pub(super) fn map_json_decode_error_from_type(
                 source: error,
             } => DataConversionError::quantity(source, target, resource, error),
         },
-        JsonDecodeError::Syntax(_) | JsonDecodeError::Deserialize { .. } => {
-            DataConversionError::invalid(
-                source,
-                target,
-                InvalidValueReason::Deserialization {
-                    format: DataFormat::Json,
-                },
-            )
-        }
+        None => DataConversionError::invalid(
+            source,
+            target,
+            InvalidValueReason::Deserialization {
+                format: DataFormat::Json,
+            },
+        ),
     }
 }
 
