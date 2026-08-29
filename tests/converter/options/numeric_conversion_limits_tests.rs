@@ -14,16 +14,10 @@ use qubit_datatype::converter::NumericConversionLimits;
 fn test_numeric_conversion_limits_contract() {
     let defaults = NumericConversionLimits::default();
     assert_eq!(NumericConversionLimits::DEFAULT_MAX_TEXT_BYTES, 16_384);
-    assert_eq!(
-        NumericConversionLimits::DEFAULT_MAX_BIG_INTEGER_DIGITS,
-        16_384,
-    );
+    assert_eq!(NumericConversionLimits::DEFAULT_MAX_BIG_INTEGER_DIGITS, 16_384,);
     assert_eq!(defaults.max_text_bytes(), 16_384);
     assert_eq!(defaults.max_big_integer_digits(), 16_384);
-    assert_eq!(
-        defaults.max_text_bytes_limit().maximum(),
-        defaults.max_text_bytes()
-    );
+    assert_eq!(defaults.max_text_bytes_limit().maximum(), defaults.max_text_bytes());
     assert_eq!(
         defaults.max_big_integer_digits_limit().maximum(),
         defaults.max_big_integer_digits()
@@ -40,15 +34,13 @@ fn test_numeric_conversion_limits_contract() {
     assert_eq!(limits.max_big_decimal_coefficient_digits(), 7);
     assert_eq!(limits.max_big_decimal_scale_magnitude(), 6);
 
-    let wire = serde_json::to_string(&limits)
-        .expect("numeric limits should serialize");
+    let wire = serde_json::to_string(&limits).expect("numeric limits should serialize");
     assert_eq!(
         wire,
         r#"{"max_text_bytes":32,"max_big_integer_digits":8,"max_big_decimal_coefficient_digits":7,"max_big_decimal_scale_magnitude":6}"#,
     );
     assert_eq!(
-        serde_json::from_str::<NumericConversionLimits>(&wire)
-            .expect("numeric limits should deserialize"),
+        serde_json::from_str::<NumericConversionLimits>(&wire).expect("numeric limits should deserialize"),
         limits,
     );
 }
@@ -56,10 +48,8 @@ fn test_numeric_conversion_limits_contract() {
 /// Tests that unknown resource-limit fields are rejected.
 #[test]
 fn test_numeric_conversion_limits_reject_unknown_fields() {
-    let error = serde_json::from_str::<NumericConversionLimits>(
-        r#"{"max_text_bytes":32,"unexpected":1}"#,
-    )
-    .expect_err("unknown numeric limit fields must be rejected");
+    let error = serde_json::from_str::<NumericConversionLimits>(r#"{"max_text_bytes":32,"unexpected":1}"#)
+        .expect_err("unknown numeric limit fields must be rejected");
 
     assert!(error.to_string().contains("unknown field `unexpected`"));
 }

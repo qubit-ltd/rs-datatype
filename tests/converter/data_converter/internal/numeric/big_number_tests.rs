@@ -67,10 +67,7 @@ fn test_integer_to_bigint_preserves_value() {
 #[test]
 fn test_text_to_big_decimal_preserves_value() {
     let expected = BigDecimal::from_str("123.50").expect("valid test decimal");
-    assert_eq!(
-        DataConverter::from("123.50").to::<BigDecimal>(),
-        Ok(expected),
-    );
+    assert_eq!(DataConverter::from("123.50").to::<BigDecimal>(), Ok(expected),);
 }
 
 /// Verifies primitive sources honor the BigInteger result digit limit.

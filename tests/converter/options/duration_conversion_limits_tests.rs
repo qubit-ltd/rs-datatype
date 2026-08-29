@@ -13,24 +13,16 @@ use qubit_datatype::converter::DurationConversionLimits;
 #[test]
 fn test_duration_conversion_limits_defaults_builder_and_wire() {
     let defaults = DurationConversionLimits::default();
-    assert_eq!(
-        defaults.max_text_bytes(),
-        DurationTextOptions::DEFAULT_MAX_TEXT_BYTES
-    );
+    assert_eq!(defaults.max_text_bytes(), DurationTextOptions::DEFAULT_MAX_TEXT_BYTES);
 
-    let limits = DurationConversionLimits::builder()
-        .max_text_bytes(4_096)
-        .build();
+    let limits = DurationConversionLimits::builder().max_text_bytes(4_096).build();
     assert_eq!(
-        serde_json::to_string(&limits)
-            .expect("duration limits should serialize"),
+        serde_json::to_string(&limits).expect("duration limits should serialize"),
         r#"{"max_text_bytes":4096}"#
     );
     assert_eq!(
-        serde_json::from_str::<DurationConversionLimits>(
-            r#"{"max_text_bytes":4096}"#
-        )
-        .expect("duration limits should deserialize"),
+        serde_json::from_str::<DurationConversionLimits>(r#"{"max_text_bytes":4096}"#)
+            .expect("duration limits should deserialize"),
         limits
     );
 }

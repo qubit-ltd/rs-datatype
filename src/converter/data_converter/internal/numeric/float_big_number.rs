@@ -50,15 +50,9 @@ pub(super) fn bigint_to_f64(
 ) -> Result<f64, DataConversionError> {
     let converted = value.to_f64().unwrap_or(f64::INFINITY);
     if !converted.is_finite() {
-        return Err(DataConversionError::invalid(
-            from,
-            to,
-            InvalidValueReason::OutOfRange,
-        ));
+        return Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange));
     }
-    if policy == FloatRoundingPolicy::Exact
-        && BigInt::from_f64(converted).as_ref() != Some(value)
-    {
+    if policy == FloatRoundingPolicy::Exact && BigInt::from_f64(converted).as_ref() != Some(value) {
         Err(DataConversionError::invalid(
             from,
             to,
@@ -95,15 +89,9 @@ pub(super) fn bigint_to_f32(
 ) -> Result<f32, DataConversionError> {
     let converted = value.to_f32().unwrap_or(f32::INFINITY);
     if !converted.is_finite() {
-        return Err(DataConversionError::invalid(
-            from,
-            to,
-            InvalidValueReason::OutOfRange,
-        ));
+        return Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange));
     }
-    if policy == FloatRoundingPolicy::Exact
-        && BigInt::from_f32(converted).as_ref() != Some(value)
-    {
+    if policy == FloatRoundingPolicy::Exact && BigInt::from_f32(converted).as_ref() != Some(value) {
         Err(DataConversionError::invalid(
             from,
             to,
@@ -145,15 +133,9 @@ pub(super) fn decimal_to_f64(
 ) -> Result<f64, DataConversionError> {
     let converted = value.to_f64().unwrap_or(f64::INFINITY);
     if !converted.is_finite() {
-        return Err(DataConversionError::invalid(
-            from,
-            to,
-            InvalidValueReason::OutOfRange,
-        ));
+        return Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange));
     }
-    if policy == FloatRoundingPolicy::Exact
-        && BigDecimal::from_f64(converted).as_ref() != Some(value)
-    {
+    if policy == FloatRoundingPolicy::Exact && BigDecimal::from_f64(converted).as_ref() != Some(value) {
         Err(DataConversionError::invalid(
             from,
             to,
@@ -190,15 +172,9 @@ pub(super) fn decimal_to_f32(
 ) -> Result<f32, DataConversionError> {
     let converted = value.to_f32().unwrap_or(f32::INFINITY);
     if !converted.is_finite() {
-        return Err(DataConversionError::invalid(
-            from,
-            to,
-            InvalidValueReason::OutOfRange,
-        ));
+        return Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange));
     }
-    if policy == FloatRoundingPolicy::Exact
-        && BigDecimal::from_f32(converted).as_ref() != Some(value)
-    {
+    if policy == FloatRoundingPolicy::Exact && BigDecimal::from_f32(converted).as_ref() != Some(value) {
         Err(DataConversionError::invalid(
             from,
             to,

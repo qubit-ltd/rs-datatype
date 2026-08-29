@@ -50,9 +50,7 @@ impl<'de> Deserializer<'de> for BorrowedStrOnlyDeserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        Err(<ValueError as DeError>::custom(
-            "only deserialize_str is supported",
-        ))
+        Err(<ValueError as DeError>::custom("only deserialize_str is supported"))
     }
 
     /// Supplies the borrowed string directly to the visitor.

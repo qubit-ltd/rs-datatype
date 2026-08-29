@@ -13,10 +13,7 @@ use qubit_datatype::StructuredConversionLimits;
 #[test]
 fn test_structured_conversion_limits_defaults_and_customization() {
     let defaults = StructuredConversionLimits::default();
-    assert_eq!(
-        StructuredConversionLimits::DEFAULT_MAX_TEXT_BYTES,
-        1_048_576
-    );
+    assert_eq!(StructuredConversionLimits::DEFAULT_MAX_TEXT_BYTES, 1_048_576);
     assert_eq!(
         defaults.max_text_bytes(),
         StructuredConversionLimits::DEFAULT_MAX_TEXT_BYTES,
@@ -28,10 +25,7 @@ fn test_structured_conversion_limits_defaults_and_customization() {
             .max_text_bytes(),
         16
     );
-    assert_eq!(
-        defaults.max_depth(),
-        StructuredConversionLimits::DEFAULT_MAX_DEPTH
-    );
+    assert_eq!(defaults.max_depth(), StructuredConversionLimits::DEFAULT_MAX_DEPTH);
     assert_eq!(
         defaults.max_sequence_items(),
         StructuredConversionLimits::DEFAULT_MAX_SEQUENCE_ITEMS
@@ -41,30 +35,17 @@ fn test_structured_conversion_limits_defaults_and_customization() {
         StructuredConversionLimits::DEFAULT_MAX_MAP_ENTRIES
     );
     assert_eq!(
-        defaults
-            .text()
-            .utf8_bytes_limit()
-            .expect("text limit")
-            .maximum(),
+        defaults.text().utf8_bytes_limit().expect("text limit").maximum(),
         defaults.max_text_bytes()
     );
-    assert_eq!(
-        defaults.max_text_bytes_limit().maximum(),
-        defaults.max_text_bytes()
-    );
-    assert_eq!(
-        defaults.value().max_depth().expect("depth limit"),
-        defaults.max_depth()
-    );
+    assert_eq!(defaults.max_text_bytes_limit().maximum(), defaults.max_text_bytes());
+    assert_eq!(defaults.value().max_depth().expect("depth limit"), defaults.max_depth());
     assert_eq!(defaults.max_depth_limit().maximum(), defaults.max_depth());
     assert_eq!(
         defaults.max_sequence_items_limit().maximum(),
         defaults.max_sequence_items()
     );
-    assert_eq!(
-        defaults.max_map_entries_limit().maximum(),
-        defaults.max_map_entries()
-    );
+    assert_eq!(defaults.max_map_entries_limit().maximum(), defaults.max_map_entries());
     let customized = StructuredConversionLimits::builder()
         .max_depth(4)
         .max_sequence_items(5)
@@ -79,16 +60,13 @@ fn test_structured_conversion_limits_defaults_and_customization() {
 #[test]
 fn test_structured_conversion_limits_serde_contract() {
     assert_eq!(
-        serde_json::from_str::<StructuredConversionLimits>("{}")
-            .expect("empty structured limits should use defaults"),
+        serde_json::from_str::<StructuredConversionLimits>("{}").expect("empty structured limits should use defaults"),
         StructuredConversionLimits::default(),
     );
     assert!(
-        serde_json::from_str::<StructuredConversionLimits>(
-            r#"{"max_text_bytes":32,"unexpected":true}"#,
-        )
-        .expect_err("unknown structured limit fields must be rejected")
-        .to_string()
-        .contains("unknown field `unexpected`")
+        serde_json::from_str::<StructuredConversionLimits>(r#"{"max_text_bytes":32,"unexpected":true}"#,)
+            .expect_err("unknown structured limit fields must be rejected")
+            .to_string()
+            .contains("unknown field `unexpected`")
     );
 }

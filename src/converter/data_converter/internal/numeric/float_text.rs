@@ -108,8 +108,7 @@ fn exact_float_decimal(value: f64) -> (Vec<u8>, usize, i128) {
         multiply_decimal_digits(&mut digits, factor);
     }
     let trailing_zeros = digits.iter().take_while(|digit| **digit == 0).count();
-    scale -= i128::try_from(trailing_zeros)
-        .expect("a finite float expansion fits in i128");
+    scale -= i128::try_from(trailing_zeros).expect("a finite float expansion fits in i128");
     (digits, trailing_zeros, scale)
 }
 
@@ -126,9 +125,7 @@ fn exact_float_decimal(value: f64) -> (Vec<u8>, usize, i128) {
 #[must_use]
 fn text_is_exact_float(value: &str, converted: f64) -> bool {
     let unsigned = value.strip_prefix(['+', '-']).unwrap_or(value);
-    let exponent_index = unsigned
-        .bytes()
-        .position(|byte| matches!(byte, b'e' | b'E'));
+    let exponent_index = unsigned.bytes().position(|byte| matches!(byte, b'e' | b'E'));
     let (mantissa, exponent_text) = if let Some(index) = exponent_index {
         (&unsigned[..index], Some(&unsigned[index + 1..]))
     } else {
@@ -152,8 +149,7 @@ fn text_is_exact_float(value: &str, converted: f64) -> bool {
                         non_zero_seen = true;
                     }
                 }
-                trailing_zeros =
-                    if byte == b'0' { trailing_zeros + 1 } else { 0 };
+                trailing_zeros = if byte == b'0' { trailing_zeros + 1 } else { 0 };
                 if decimal_seen {
                     fractional_digits += 1;
                 }
@@ -181,14 +177,9 @@ fn text_is_exact_float(value: &str, converted: f64) -> bool {
     } else {
         0
     };
-    let scale = fractional_digits
-        - i128::from(exponent)
-        - i128::try_from(trailing_zeros).unwrap_or(i128::MAX);
-    let (float_digits, float_trailing_zeros, float_scale) =
-        exact_float_decimal(converted);
-    if scale != float_scale
-        || significant_digit_count != float_digits.len() - float_trailing_zeros
-    {
+    let scale = fractional_digits - i128::from(exponent) - i128::try_from(trailing_zeros).unwrap_or(i128::MAX);
+    let (float_digits, float_trailing_zeros, float_scale) = exact_float_decimal(converted);
+    if scale != float_scale || significant_digit_count != float_digits.len() - float_trailing_zeros {
         return false;
     }
     mantissa
@@ -252,15 +243,9 @@ pub(super) fn parse_text_f64(
     let converted = if explicit_nan {
         f64::NAN
     } else if let Some(negative) = explicit_infinity {
-        if negative {
-            f64::NEG_INFINITY
-        } else {
-            f64::INFINITY
-        }
+        if negative { f64::NEG_INFINITY } else { f64::INFINITY }
     } else {
-        value
-            .parse::<f64>()
-            .map_err(|_| invalid_numeric_syntax(to))?
+        value.parse::<f64>().map_err(|_| invalid_numeric_syntax(to))?
     };
     if !explicit_nan && explicit_infinity.is_none() && !converted.is_finite() {
         return Err(DataConversionError::invalid(
@@ -309,15 +294,9 @@ pub(super) fn parse_text_f32(
     let converted = if explicit_nan {
         f32::NAN
     } else if let Some(negative) = explicit_infinity {
-        if negative {
-            f32::NEG_INFINITY
-        } else {
-            f32::INFINITY
-        }
+        if negative { f32::NEG_INFINITY } else { f32::INFINITY }
     } else {
-        value
-            .parse::<f32>()
-            .map_err(|_| invalid_numeric_syntax(to))?
+        value.parse::<f32>().map_err(|_| invalid_numeric_syntax(to))?
     };
     if !explicit_nan && explicit_infinity.is_none() && !converted.is_finite() {
         return Err(DataConversionError::invalid(

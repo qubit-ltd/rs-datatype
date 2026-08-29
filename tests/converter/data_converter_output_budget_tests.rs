@@ -37,8 +37,7 @@ fn test_string_output_budget_counts_borrowed_and_owned_payloads_equally() {
         Ok("42".to_owned()),
     );
     assert_eq!(
-        DataConverter::from(42_i32)
-            .into_target_in::<String>(&mut owned_session),
+        DataConverter::from(42_i32).into_target_in::<String>(&mut owned_session),
         Ok("42".to_owned()),
     );
 }

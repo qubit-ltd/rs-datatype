@@ -37,10 +37,7 @@ fn test_duration_parse_error_does_not_own_source_text() {
 /// Verifies that invalid syntax uses an accurate format-neutral diagnostic.
 #[test]
 fn test_duration_parse_error_invalid_syntax_display() {
-    assert_eq!(
-        DurationParseError::InvalidSyntax.to_string(),
-        "invalid duration syntax",
-    );
+    assert_eq!(DurationParseError::InvalidSyntax.to_string(), "invalid duration syntax",);
 }
 
 /// Verifies that resource-limit errors do not include the source value.

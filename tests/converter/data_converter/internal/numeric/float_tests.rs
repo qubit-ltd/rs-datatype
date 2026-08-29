@@ -18,10 +18,7 @@ fn test_non_finite_f64_to_f32_preserves_class() {
             .expect("NaN should convert")
             .is_nan()
     );
-    assert_eq!(
-        DataConverter::from(f64::INFINITY).to::<f32>(),
-        Ok(f32::INFINITY),
-    );
+    assert_eq!(DataConverter::from(f64::INFINITY).to::<f32>(), Ok(f32::INFINITY),);
     assert_eq!(
         DataConverter::from(f64::NEG_INFINITY).to::<f32>(),
         Ok(f32::NEG_INFINITY),

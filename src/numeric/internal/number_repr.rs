@@ -99,10 +99,7 @@ pub(in crate::numeric) enum NumberRepr<'a> {
     /// Uninhabited branch retaining the borrowing lifetime without big-number
     /// support.
     #[cfg(not(any(feature = "big-integer", feature = "big-decimal")))]
-    #[expect(
-        dead_code,
-        reason = "the Infallible payload makes this lifetime branch uninhabited"
-    )]
+    #[expect(dead_code, reason = "the Infallible payload makes this lifetime branch uninhabited")]
     Lifetime(
         /// Marker retaining the borrow lifetime without big-number support.
         PhantomData<&'a ()>,

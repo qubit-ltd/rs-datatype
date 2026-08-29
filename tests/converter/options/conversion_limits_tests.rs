@@ -17,25 +17,11 @@ use qubit_datatype::converter::StructuredConversionLimits;
 #[test]
 fn test_conversion_limits_aggregate_exact_limit_groups() {
     let limits = ConversionLimits::builder()
-        .numeric_limits(
-            NumericConversionLimits::builder()
-                .max_text_bytes(11)
-                .build(),
-        )
-        .collection_limits(
-            CollectionConversionLimits::builder().max_items(13).build(),
-        )
-        .duration_limits(
-            DurationConversionLimits::builder()
-                .max_text_bytes(17)
-                .build(),
-        )
-        .structured_limits(
-            StructuredConversionLimits::builder().max_depth(19).build(),
-        )
-        .operation_limits(
-            ConversionOperationLimits::builder().max_items(23).build(),
-        )
+        .numeric_limits(NumericConversionLimits::builder().max_text_bytes(11).build())
+        .collection_limits(CollectionConversionLimits::builder().max_items(13).build())
+        .duration_limits(DurationConversionLimits::builder().max_text_bytes(17).build())
+        .structured_limits(StructuredConversionLimits::builder().max_depth(19).build())
+        .operation_limits(ConversionOperationLimits::builder().max_items(23).build())
         .build();
 
     assert_eq!(limits.numeric().max_text_bytes(), 11);
@@ -43,8 +29,7 @@ fn test_conversion_limits_aggregate_exact_limit_groups() {
     assert_eq!(limits.duration().max_text_bytes(), 17);
     assert_eq!(limits.structured().max_depth(), 19);
     assert_eq!(limits.operation().max_items(), 23);
-    let value = serde_json::to_value(&limits)
-        .expect("aggregate limits should serialize");
+    let value = serde_json::to_value(&limits).expect("aggregate limits should serialize");
     assert_eq!(
         value
             .as_object()
@@ -52,13 +37,7 @@ fn test_conversion_limits_aggregate_exact_limit_groups() {
             .keys()
             .map(String::as_str)
             .collect::<Vec<_>>(),
-        [
-            "numeric",
-            "collection",
-            "duration",
-            "structured",
-            "operation"
-        ]
+        ["numeric", "collection", "duration", "structured", "operation"]
     );
 }
 
@@ -68,10 +47,7 @@ fn test_conversion_limits_default_ref_is_stable() {
         ConversionLimits::default_ref(),
         ConversionLimits::default_ref()
     ));
-    assert_eq!(
-        ConversionLimits::default_ref(),
-        &ConversionLimits::default()
-    );
+    assert_eq!(ConversionLimits::default_ref(), &ConversionLimits::default());
 }
 
 /// Verifies that existing limits can be customized through their builder.
@@ -79,12 +55,7 @@ fn test_conversion_limits_default_ref_is_stable() {
 fn test_conversion_limits_into_builder() {
     let limits = ConversionLimits::default()
         .into_builder()
-        .operation_limits(
-            ConversionOperationLimits::default()
-                .into_builder()
-                .max_items(3)
-                .build(),
-        )
+        .operation_limits(ConversionOperationLimits::default().into_builder().max_items(3).build())
         .build();
 
     assert_eq!(limits.operation().max_items(), 3);

@@ -25,19 +25,13 @@ fn test_parse_duration_text_respects_parse_mode() {
         .build();
 
     for text in ["2us", "2µs", "2μs"] {
-        assert_eq!(
-            parse_duration_text(text, &strict),
-            Ok(Duration::from_micros(2)),
-        );
+        assert_eq!(parse_duration_text(text, &strict), Ok(Duration::from_micros(2)),);
     }
     assert_eq!(
         parse_duration_text("2m", &strict),
         Err(DurationParseError::NonCanonicalUnit { canonical: "min" }),
     );
-    assert_eq!(
-        parse_duration_text("2m", &lenient),
-        Ok(Duration::from_secs(120)),
-    );
+    assert_eq!(parse_duration_text("2m", &lenient), Ok(Duration::from_secs(120)),);
 }
 
 /// Tests rejection and assignment policies for suffixless text.
@@ -45,19 +39,14 @@ fn test_parse_duration_text_respects_parse_mode() {
 fn test_parse_duration_text_respects_suffixless_policy() {
     let reject = DurationTextOptions::default();
     let seconds = DurationTextOptions::builder()
-        .suffixless_policy(SuffixlessDurationPolicy::Assume(
-            DurationUnit::Seconds,
-        ))
+        .suffixless_policy(SuffixlessDurationPolicy::Assume(DurationUnit::Seconds))
         .build();
 
     assert_eq!(
         parse_duration_text("2", &reject),
         Err(DurationParseError::InvalidSyntax),
     );
-    assert_eq!(
-        parse_duration_text("2", &seconds),
-        Ok(Duration::from_secs(2)),
-    );
+    assert_eq!(parse_duration_text("2", &seconds), Ok(Duration::from_secs(2)),);
 }
 
 /// Tests structured syntax, unsupported-unit, and range errors.
@@ -74,10 +63,7 @@ fn test_parse_duration_text_classifies_errors() {
         Err(DurationParseError::UnsupportedUnit),
     );
     assert_eq!(
-        parse_duration_text(
-            "340282366920938463463374607431768211456ns",
-            &options,
-        ),
+        parse_duration_text("340282366920938463463374607431768211456ns", &options,),
         Err(DurationParseError::OutOfRange),
     );
     assert_eq!(
@@ -91,14 +77,8 @@ fn test_parse_duration_text_classifies_errors() {
 fn test_parse_duration_text_enforces_byte_limit() {
     let options = DurationTextOptions::builder().max_text_bytes(3).build();
 
-    assert_eq!(
-        parse_duration_text("2ms", &options),
-        Ok(Duration::from_millis(2)),
-    );
-    assert_eq!(
-        parse_duration_text("2us", &options),
-        Ok(Duration::from_micros(2)),
-    );
+    assert_eq!(parse_duration_text("2ms", &options), Ok(Duration::from_millis(2)),);
+    assert_eq!(parse_duration_text("2us", &options), Ok(Duration::from_micros(2)),);
     assert_eq!(
         parse_duration_text("20ms", &options),
         Err(DurationParseError::LimitExceeded { maximum: 3 }),

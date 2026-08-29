@@ -60,10 +60,9 @@ fn test_scalar_string_data_converters_to_vec_with_splits_items() {
         )
         .build();
 
-    let ports: Vec<u16> =
-        ScalarStringDataConverters::from(" 8080, 8081;; 8082 ")
-            .to_vec_with(&options, ConversionLimits::default_ref())
-            .expect("scalar string should split and parse into ports");
+    let ports: Vec<u16> = ScalarStringDataConverters::from(" 8080, 8081;; 8082 ")
+        .to_vec_with(&options, ConversionLimits::default_ref())
+        .expect("scalar string should split and parse into ports");
 
     assert_eq!(ports, vec![8080, 8081, 8082]);
 }
@@ -116,12 +115,8 @@ fn test_scalar_string_data_converters_to_first_with_reports_missing_scalar() {
         .build();
 
     assert_eq!(
-        ScalarStringDataConverters::from("   ")
-            .to_first_with::<u16>(&options, ConversionLimits::default_ref()),
-        Err(DataConversionError::missing(
-            DataType::String,
-            DataType::UInt16
-        )),
+        ScalarStringDataConverters::from("   ").to_first_with::<u16>(&options, ConversionLimits::default_ref()),
+        Err(DataConversionError::missing(DataType::String, DataType::UInt16)),
     );
 }
 
@@ -144,11 +139,7 @@ fn test_scalar_string_data_converters_to_vec_with_rejects_empty_item() {
     assert_eq!(error.source_index(), 1);
     assert_eq!(
         error.conversion_error(),
-        &DataConversionError::invalid(
-            DataType::String,
-            DataType::UInt16,
-            InvalidValueReason::BlankRejected,
-        ),
+        &DataConversionError::invalid(DataType::String, DataType::UInt16, InvalidValueReason::BlankRejected,),
     );
 }
 
@@ -164,19 +155,14 @@ fn test_scalar_string_data_converters_to_vec_with_enforces_item_limit() {
         )
         .build();
     let limits = ConversionLimits::builder()
-        .collection_limits(
-            CollectionConversionLimits::builder().max_items(2).build(),
-        )
+        .collection_limits(CollectionConversionLimits::builder().max_items(2).build())
         .build();
     let error = ScalarStringDataConverters::from("1,,2,3")
         .to_vec_with::<u16>(&options, &limits)
         .expect_err("third retained item must exceed the limit");
 
     assert_eq!(error.source_index(), 3);
-    assert_eq!(
-        error.conversion_error().kind(),
-        DataConversionErrorKind::LimitExceeded,
-    );
+    assert_eq!(error.conversion_error().kind(), DataConversionErrorKind::LimitExceeded,);
     assert_eq!(error.conversion_error().from_type(), Some(DataType::String));
     assert_eq!(error.conversion_error().to_type(), DataType::UInt16);
     assert_eq!(
@@ -193,34 +179,21 @@ fn test_scalar_string_data_converters_to_vec_with_enforces_item_limit() {
 #[test]
 fn test_scalar_string_data_converters_to_first_with_item_limit() {
     let one = ConversionPolicy::builder()
-        .collection_policy(
-            CollectionConversionPolicy::builder()
-                .split_scalar_strings(true)
-                .build(),
-        )
+        .collection_policy(CollectionConversionPolicy::builder().split_scalar_strings(true).build())
         .build();
     let one_limit = ConversionLimits::builder()
-        .collection_limits(
-            CollectionConversionLimits::builder().max_items(1).build(),
-        )
+        .collection_limits(CollectionConversionLimits::builder().max_items(1).build())
         .build();
     assert_eq!(
-        ScalarStringDataConverters::from("1,2,3")
-            .to_first_with::<u16>(&one, &one_limit),
+        ScalarStringDataConverters::from("1,2,3").to_first_with::<u16>(&one, &one_limit),
         Ok(1),
     );
 
     let zero = ConversionPolicy::builder()
-        .collection_policy(
-            CollectionConversionPolicy::builder()
-                .split_scalar_strings(true)
-                .build(),
-        )
+        .collection_policy(CollectionConversionPolicy::builder().split_scalar_strings(true).build())
         .build();
     let zero_limit = ConversionLimits::builder()
-        .collection_limits(
-            CollectionConversionLimits::builder().max_items(0).build(),
-        )
+        .collection_limits(CollectionConversionLimits::builder().max_items(0).build())
         .build();
     let error = ScalarStringDataConverters::from("1,2,3")
         .to_first_with::<u16>(&zero, &zero_limit)
@@ -249,8 +222,7 @@ fn test_scalar_string_data_converters_to_first_with_rejects_empty_item() {
         .build();
 
     assert_eq!(
-        ScalarStringDataConverters::from(",1,2")
-            .to_first_with::<u16>(&options, ConversionLimits::default_ref()),
+        ScalarStringDataConverters::from(",1,2").to_first_with::<u16>(&options, ConversionLimits::default_ref()),
         Err(DataConversionError::invalid(
             DataType::String,
             DataType::UInt16,
@@ -272,8 +244,7 @@ fn test_scalar_string_data_converters_to_first_with_reports_empty_after_skip() {
         .build();
 
     assert_eq!(
-        ScalarStringDataConverters::from(",,")
-            .to_first_with::<u16>(&options, ConversionLimits::default_ref()),
+        ScalarStringDataConverters::from(",,").to_first_with::<u16>(&options, ConversionLimits::default_ref()),
         Err(DataConversionError::empty_collection(DataType::UInt16)),
     );
 }
@@ -344,33 +315,25 @@ fn test_scalar_string_data_converters_env_blank_list_is_empty() {
     let options = ConversionPolicy::env_friendly();
 
     assert_eq!(
-        ScalarStringDataConverters::from("   ")
-            .to_vec_with::<u16>(&options, ConversionLimits::default_ref()),
+        ScalarStringDataConverters::from("   ").to_vec_with::<u16>(&options, ConversionLimits::default_ref()),
         Ok(Vec::new()),
     );
     assert_eq!(
-        ScalarStringDataConverters::from(" , \t,")
-            .to_vec_with::<u16>(&options, ConversionLimits::default_ref()),
+        ScalarStringDataConverters::from(" , \t,").to_vec_with::<u16>(&options, ConversionLimits::default_ref()),
         Ok(Vec::new()),
     );
     assert_eq!(
-        ScalarStringDataConverters::from("   ")
-            .to_first_with::<u16>(&options, ConversionLimits::default_ref()),
+        ScalarStringDataConverters::from("   ").to_first_with::<u16>(&options, ConversionLimits::default_ref()),
         Err(DataConversionError::empty_collection(DataType::UInt16)),
     );
 }
 
 /// Test the complete scalar source is checked before delimiter scanning.
 #[test]
-fn test_scalar_string_data_converters_checks_delimiter_only_source_before_scan()
-{
+fn test_scalar_string_data_converters_checks_delimiter_only_source_before_scan() {
     let policy = ConversionPolicy::env_friendly();
     let limits = ConversionLimits::builder()
-        .collection_limits(
-            CollectionConversionLimits::builder()
-                .max_source_bytes(3)
-                .build(),
-        )
+        .collection_limits(CollectionConversionLimits::builder().max_source_bytes(3).build())
         .build();
 
     let error = ScalarStringDataConverters::from(",,,,")
@@ -378,10 +341,7 @@ fn test_scalar_string_data_converters_checks_delimiter_only_source_before_scan()
         .expect_err("the complete source should be checked before empty items are skipped");
 
     assert_eq!(
-        error
-            .conversion_error()
-            .budget_error()
-            .map(|error| *error.resource()),
+        error.conversion_error().budget_error().map(|error| *error.resource()),
         Some(ConversionResource::CollectionSourceBytes),
     );
 }
@@ -392,11 +352,7 @@ fn test_scalar_string_data_converters_checks_delimiter_only_source_before_scan()
 fn test_scalar_string_data_converters_to_first_checks_complete_source() {
     let policy = ConversionPolicy::env_friendly();
     let limits = ConversionLimits::builder()
-        .collection_limits(
-            CollectionConversionLimits::builder()
-                .max_source_bytes(3)
-                .build(),
-        )
+        .collection_limits(CollectionConversionLimits::builder().max_source_bytes(3).build())
         .build();
 
     let error = ScalarStringDataConverters::from("1,long-tail")

@@ -12,8 +12,5 @@ use qubit_datatype::NumericConversionLimits;
 #[test]
 fn test_numeric_wire_is_covered_by_public_options_contract() {
     let limits = NumericConversionLimits::default();
-    assert_eq!(
-        limits.max_text_bytes(),
-        NumericConversionLimits::DEFAULT_MAX_TEXT_BYTES
-    );
+    assert_eq!(limits.max_text_bytes(), NumericConversionLimits::DEFAULT_MAX_TEXT_BYTES);
 }

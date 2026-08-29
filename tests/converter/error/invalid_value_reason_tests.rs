@@ -17,9 +17,7 @@ fn test_invalid_value_reason_display_is_value_free() {
     let cases = [
         (InvalidValueReason::BlankRejected, "blank string rejected"),
         (
-            InvalidValueReason::InvalidSyntax {
-                expected: "integer",
-            },
+            InvalidValueReason::InvalidSyntax { expected: "integer" },
             "invalid syntax; expected integer",
         ),
         (InvalidValueReason::OutOfRange, "value out of range"),
@@ -33,10 +31,7 @@ fn test_invalid_value_reason_display_is_value_free() {
             },
             "non-canonical duration unit; use min",
         ),
-        (
-            InvalidValueReason::UnsupportedDurationUnit,
-            "unsupported duration unit",
-        ),
+        (InvalidValueReason::UnsupportedDurationUnit, "unsupported duration unit"),
         (
             InvalidValueReason::Serialization {
                 format: DataFormat::Json,

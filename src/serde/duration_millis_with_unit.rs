@@ -97,9 +97,7 @@ pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
     if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
         return Err(DurationParseError::InvalidSyntax);
     }
-    let millis = digits
-        .parse::<u128>()
-        .map_err(|_| DurationParseError::OutOfRange)?;
+    let millis = digits.parse::<u128>().map_err(|_| DurationParseError::OutOfRange)?;
     DurationUnit::Milliseconds
         .duration_from_u128(millis)
         .map_err(|_| DurationParseError::OutOfRange)
@@ -125,10 +123,7 @@ pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
 ///
 /// Returns the serializer error if writing the string value fails.
 #[inline(always)]
-pub fn serialize<S>(
-    duration: &Duration,
-    serializer: S,
-) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {

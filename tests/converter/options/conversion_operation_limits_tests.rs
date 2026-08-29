@@ -13,8 +13,8 @@ use qubit_datatype::converter::ConversionResource;
 /// Verifies operation resources use non-`max_` wire field names.
 #[test]
 fn test_conversion_operation_limits_resource_fields_have_non_max_names() {
-    let value = serde_json::to_value(ConversionOperationLimits::default())
-        .expect("default operation limits should serialize");
+    let value =
+        serde_json::to_value(ConversionOperationLimits::default()).expect("default operation limits should serialize");
     let object = value
         .as_object()
         .expect("operation limits should serialize as an object");
@@ -44,14 +44,8 @@ fn test_conversion_operation_limits_bind_resources_and_defaults() {
         .build();
 
     assert_eq!(limits.items_limit().resource(), &ConversionResource::Items);
-    assert_eq!(
-        limits.input_bytes_limit().resource(),
-        &ConversionResource::InputBytes
-    );
-    assert_eq!(
-        limits.output_bytes_limit().resource(),
-        &ConversionResource::OutputBytes
-    );
+    assert_eq!(limits.input_bytes_limit().resource(), &ConversionResource::InputBytes);
+    assert_eq!(limits.output_bytes_limit().resource(), &ConversionResource::OutputBytes);
     assert_eq!(
         limits.structured_nodes_limit().resource(),
         &ConversionResource::StructuredNodes

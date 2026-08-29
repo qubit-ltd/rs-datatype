@@ -63,10 +63,7 @@ use crate::datatype::DataType;
 /// greater than 9999.
 #[cfg(feature = "chrono")]
 #[inline]
-fn validate_canonical_temporal_year(
-    source: &DataConverter<'_>,
-    year: i32,
-) -> Result<(), DataConversionError> {
+fn validate_canonical_temporal_year(source: &DataConverter<'_>, year: i32) -> Result<(), DataConversionError> {
     if (0..=9_999).contains(&year) {
         Ok(())
     } else {
@@ -87,10 +84,7 @@ fn validate_canonical_temporal_year(
 /// # Returns
 ///
 /// The formatted value for a directly displayable source, otherwise `None`.
-fn format_display_source<W>(
-    source: &DataConverter<'_>,
-    writer: &mut W,
-) -> Result<bool, fmt::Error>
+fn format_display_source<W>(source: &DataConverter<'_>, writer: &mut W) -> Result<bool, fmt::Error>
 where
     W: fmt::Write,
 {
@@ -101,36 +95,18 @@ where
         DataConverter::Int16(value) => write!(writer, "{value}").map(|()| true),
         DataConverter::Int32(value) => write!(writer, "{value}").map(|()| true),
         DataConverter::Int64(value) => write!(writer, "{value}").map(|()| true),
-        DataConverter::Int128(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
+        DataConverter::Int128(value) => write!(writer, "{value}").map(|()| true),
         DataConverter::UInt8(value) => write!(writer, "{value}").map(|()| true),
-        DataConverter::UInt16(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
-        DataConverter::UInt32(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
-        DataConverter::UInt64(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
-        DataConverter::UInt128(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
-        DataConverter::Float32(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
-        DataConverter::Float64(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
+        DataConverter::UInt16(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::UInt32(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::UInt64(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::UInt128(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::Float32(value) => write!(writer, "{value}").map(|()| true),
+        DataConverter::Float64(value) => write!(writer, "{value}").map(|()| true),
         #[cfg(feature = "big-integer")]
-        DataConverter::BigInteger(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
+        DataConverter::BigInteger(value) => write!(writer, "{value}").map(|()| true),
         #[cfg(feature = "big-decimal")]
-        DataConverter::BigDecimal(value) => {
-            write!(writer, "{value}").map(|()| true)
-        }
+        DataConverter::BigDecimal(value) => write!(writer, "{value}").map(|()| true),
         #[cfg(feature = "chrono")]
         DataConverter::Time(value) => write!(writer, "{value}").map(|()| true),
         #[cfg(feature = "url")]
@@ -183,72 +159,42 @@ fn map_fmt_output_error_from_type(
     error: BudgetedStringError<ConversionResource, fmt::Error>,
 ) -> DataConversionError {
     match error {
-        BudgetedStringError::Budget(error) => {
-            DataConversionError::limit_exceeded(
-                from,
-                DataType::String,
-                error.into(),
-            )
-        }
+        BudgetedStringError::Budget(error) => DataConversionError::limit_exceeded(from, DataType::String, error.into()),
         BudgetedStringError::Quantity { resource, source } => {
-            DataConversionError::quantity(
-                from,
-                DataType::String,
-                resource,
-                source,
-            )
+            DataConversionError::quantity(from, DataType::String, resource, source)
         }
         BudgetedStringError::Render(_)
         | BudgetedStringError::InvalidUtf8(_)
         | BudgetedStringError::LengthOverflow
-        | BudgetedStringError::Allocation(_) => DataConversionError::invalid(
-            from,
-            DataType::String,
-            InvalidValueReason::OutOfRange,
-        ),
+        | BudgetedStringError::Allocation(_) => {
+            DataConversionError::invalid(from, DataType::String, InvalidValueReason::OutOfRange)
+        }
     }
 }
 
 #[cfg(feature = "json")]
-fn map_json_encode_error(
-    from: DataType,
-    error: JsonEncodeError<ConversionResource, u64>,
-) -> DataConversionError {
+fn map_json_encode_error(from: DataType, error: JsonEncodeError<ConversionResource, u64>) -> DataConversionError {
     match error {
         JsonEncodeError::Budget(error) => match error {
-            MeasuredBudgetError::Budget(error) => {
-                DataConversionError::limit_exceeded(
-                    from,
-                    DataType::String,
-                    error,
-                )
-            }
+            MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(from, DataType::String, error),
             MeasuredBudgetError::Quantity { resource, source } => {
-                DataConversionError::quantity(
-                    from,
-                    DataType::String,
-                    resource,
-                    source,
-                )
+                DataConversionError::quantity(from, DataType::String, resource, source)
             }
         },
-        JsonEncodeError::InvalidRawJson(_)
-        | JsonEncodeError::Serialize(_)
-        | JsonEncodeError::Write(_) => DataConversionError::invalid(
-            from,
-            DataType::String,
-            InvalidValueReason::Serialization {
-                format: DataFormat::Json,
-            },
-        ),
+        JsonEncodeError::InvalidRawJson(_) | JsonEncodeError::Serialize(_) | JsonEncodeError::Write(_) => {
+            DataConversionError::invalid(
+                from,
+                DataType::String,
+                InvalidValueReason::Serialization {
+                    format: DataFormat::Json,
+                },
+            )
+        }
     }
 }
 
 #[cfg(feature = "json")]
-fn json_bytes_to_string(
-    from: DataType,
-    bytes: Vec<u8>,
-) -> Result<String, DataConversionError> {
+fn json_bytes_to_string(from: DataType, bytes: Vec<u8>) -> Result<String, DataConversionError> {
     String::from_utf8(bytes).map_err(|_| {
         DataConversionError::invalid(
             from,
@@ -326,12 +272,8 @@ impl DataConversionTarget for String {
         if let DataConverter::Json(value) = source {
             return session
                 .encode_json(value.as_ref())
-                .map_err(|error| {
-                    map_json_encode_error(source.data_type(), error)
-                })
-                .and_then(|bytes| {
-                    json_bytes_to_string(source.data_type(), bytes)
-                });
+                .map_err(|error| map_json_encode_error(source.data_type(), error))
+                .and_then(|bytes| json_bytes_to_string(source.data_type(), bytes));
         }
         if let DataConverter::String(value) = source {
             let normalized = normalize(value, options, DataType::String)?;
@@ -368,11 +310,7 @@ impl DataConversionTarget for String {
                 session
                     .try_write_string(|writer| {
                         let mut output = writer.as_fmt();
-                        write!(
-                            output,
-                            "{}",
-                            value.format("%Y-%m-%dT%H:%M:%S%.f")
-                        )
+                        write!(output, "{}", value.format("%Y-%m-%dT%H:%M:%S%.f"))
                     })
                     .map_err(|error| map_fmt_output_error(source, error))
             }
@@ -401,16 +339,10 @@ impl DataConversionTarget for String {
             #[cfg(feature = "json")]
             DataConverter::StringMap(value) => session
                 .encode_json(&CanonicalStringMap { value })
-                .map_err(|error| {
-                    map_json_encode_error(source.data_type(), error)
-                })
-                .and_then(|bytes| {
-                    json_bytes_to_string(source.data_type(), bytes)
-                }),
+                .map_err(|error| map_json_encode_error(source.data_type(), error))
+                .and_then(|bytes| json_bytes_to_string(source.data_type(), bytes)),
             #[cfg(not(feature = "json"))]
-            DataConverter::StringMap(_) => {
-                Err(source.unsupported(DataType::String))
-            }
+            DataConverter::StringMap(_) => Err(source.unsupported(DataType::String)),
             _ => Err(source.unsupported(DataType::String)),
         }
     }
@@ -422,28 +354,15 @@ impl DataConversionTarget for String {
     ) -> Result<Self, DataConversionError> {
         let from = source.data_type();
         if let DataConverter::String(value) = source {
-            let normalized =
-                normalize(value.as_ref(), session.policy(), DataType::String)?;
+            let normalized = normalize(value.as_ref(), session.policy(), DataType::String)?;
             if normalized.len() == value.len() {
-                session.check_output_bytes_usize(normalized.len()).map_err(
-                    |error| {
-                        DataConversionError::measured_limit(
-                            from,
-                            DataType::String,
-                            error,
-                        )
-                    },
-                )?;
+                session
+                    .check_output_bytes_usize(normalized.len())
+                    .map_err(|error| DataConversionError::measured_limit(from, DataType::String, error))?;
                 let result = value.into_owned();
-                session.consume_output_bytes_usize(result.len()).map_err(
-                    |error| {
-                        DataConversionError::measured_limit(
-                            from,
-                            DataType::String,
-                            error,
-                        )
-                    },
-                )?;
+                session
+                    .consume_output_bytes_usize(result.len())
+                    .map_err(|error| DataConversionError::measured_limit(from, DataType::String, error))?;
                 return Ok(result);
             }
             return session
@@ -456,24 +375,12 @@ impl DataConversionTarget for String {
         #[cfg(feature = "url")]
         if let DataConverter::Url(value) = source {
             let result: String = value.into_owned().into();
-            session.check_output_bytes_usize(result.len()).map_err(
-                |error| {
-                    DataConversionError::measured_limit(
-                        from,
-                        DataType::String,
-                        error,
-                    )
-                },
-            )?;
-            session.consume_output_bytes_usize(result.len()).map_err(
-                |error| {
-                    DataConversionError::measured_limit(
-                        from,
-                        DataType::String,
-                        error,
-                    )
-                },
-            )?;
+            session
+                .check_output_bytes_usize(result.len())
+                .map_err(|error| DataConversionError::measured_limit(from, DataType::String, error))?;
+            session
+                .consume_output_bytes_usize(result.len())
+                .map_err(|error| DataConversionError::measured_limit(from, DataType::String, error))?;
             return Ok(result);
         }
         Self::convert_from(&source, session)
@@ -514,9 +421,7 @@ macro_rules! impl_text_or_copy_target {
                             Some(value) => Ok(value),
                             None => Err(source.invalid(
                                 $data_type,
-                                InvalidValueReason::InvalidSyntax {
-                                    expected: $format,
-                                },
+                                InvalidValueReason::InvalidSyntax { expected: $format },
                             )),
                         }
                     }
@@ -611,9 +516,7 @@ fn parse_time(value: &str) -> Option<NaiveTime> {
         .map_or((value, None), |(whole, fraction)| (whole, Some(fraction)));
     if !has_canonical_time_shape(whole)
         || fraction.is_some_and(|fraction| {
-            fraction.is_empty()
-                || fraction.len() > 9
-                || !fraction.bytes().all(|byte| byte.is_ascii_digit())
+            fraction.is_empty() || fraction.len() > 9 || !fraction.bytes().all(|byte| byte.is_ascii_digit())
         })
     {
         return None;
@@ -639,21 +542,9 @@ fn parse_datetime(value: &str) -> Option<NaiveDateTime> {
 }
 
 #[cfg(feature = "chrono")]
-impl_text_or_copy_target!(
-    NaiveDate,
-    Date,
-    DataType::Date,
-    "YYYY-MM-DD",
-    parse_date
-);
+impl_text_or_copy_target!(NaiveDate, Date, DataType::Date, "YYYY-MM-DD", parse_date);
 #[cfg(feature = "chrono")]
-impl_text_or_copy_target!(
-    NaiveTime,
-    Time,
-    DataType::Time,
-    "HH:MM:SS[.fraction]",
-    parse_time
-);
+impl_text_or_copy_target!(NaiveTime, Time, DataType::Time, "HH:MM:SS[.fraction]", parse_time);
 #[cfg(feature = "chrono")]
 impl_text_or_copy_target!(
     NaiveDateTime,
@@ -731,12 +622,7 @@ impl DataConversionTarget for Url {
             DataConverter::Url(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Url)?;
-                check_structured_text_limit(
-                    value,
-                    DataType::String,
-                    DataType::Url,
-                    limits.structured(),
-                )?;
+                check_structured_text_limit(value, DataType::String, DataType::Url, limits.structured())?;
                 match Url::parse(value) {
                     Ok(value) => Ok(value),
                     Err(_) => Err(source.invalid(

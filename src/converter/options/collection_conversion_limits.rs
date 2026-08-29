@@ -80,8 +80,7 @@ impl CollectionConversionLimitsBuilder {
     pub const fn new() -> Self {
         Self {
             limits: CollectionConversionLimits {
-                max_source_bytes:
-                    CollectionConversionLimits::DEFAULT_MAX_SOURCE_BYTES,
+                max_source_bytes: CollectionConversionLimits::DEFAULT_MAX_SOURCE_BYTES,
                 max_items: CollectionConversionLimits::DEFAULT_MAX_ITEMS,
             },
         }

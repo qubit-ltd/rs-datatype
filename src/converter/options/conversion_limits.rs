@@ -63,8 +63,7 @@ impl ConversionLimits {
     #[must_use = "the default conversion limits should be inspected"]
     #[inline(always)]
     pub fn default_ref() -> &'static Self {
-        static DEFAULT: LazyLock<ConversionLimits> =
-            LazyLock::new(ConversionLimits::default);
+        static DEFAULT: LazyLock<ConversionLimits> = LazyLock::new(ConversionLimits::default);
         &DEFAULT
     }
 
@@ -131,10 +130,7 @@ impl ConversionLimitsBuilder {
     /// Configures scalar collection value limits.
     #[inline(always)]
     #[must_use]
-    pub fn collection_limits(
-        mut self,
-        limits: CollectionConversionLimits,
-    ) -> Self {
+    pub fn collection_limits(mut self, limits: CollectionConversionLimits) -> Self {
         self.limits.collection = limits;
         self
     }
@@ -150,10 +146,7 @@ impl ConversionLimitsBuilder {
     /// Configures structured value limits.
     #[inline(always)]
     #[must_use]
-    pub fn structured_limits(
-        mut self,
-        limits: StructuredConversionLimits,
-    ) -> Self {
+    pub fn structured_limits(mut self, limits: StructuredConversionLimits) -> Self {
         self.limits.structured = limits;
         self
     }
@@ -161,10 +154,7 @@ impl ConversionLimitsBuilder {
     /// Configures cumulative operation limits.
     #[inline(always)]
     #[must_use]
-    pub fn operation_limits(
-        mut self,
-        limits: ConversionOperationLimits,
-    ) -> Self {
+    pub fn operation_limits(mut self, limits: ConversionOperationLimits) -> Self {
         self.limits.operation = limits;
         self
     }

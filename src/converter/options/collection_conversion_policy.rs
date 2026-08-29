@@ -129,10 +129,7 @@ impl CollectionConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub(crate) fn with_split_scalar_strings(
-        mut self,
-        split_scalar_strings: bool,
-    ) -> Self {
+    pub(crate) fn with_split_scalar_strings(mut self, split_scalar_strings: bool) -> Self {
         self.split_scalar_strings = split_scalar_strings;
         self
     }
@@ -167,10 +164,7 @@ impl CollectionConversionPolicy {
     ///
     /// Updated options.
     #[inline]
-    pub(crate) fn with_delimiters(
-        mut self,
-        delimiters: impl IntoIterator<Item = char>,
-    ) -> Self {
+    pub(crate) fn with_delimiters(mut self, delimiters: impl IntoIterator<Item = char>) -> Self {
         self.delimiters = delimiters.into_iter().collect();
         self
     }
@@ -221,10 +215,7 @@ impl CollectionConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub(crate) fn with_empty_item_policy(
-        mut self,
-        policy: EmptyItemPolicy,
-    ) -> Self {
+    pub(crate) fn with_empty_item_policy(mut self, policy: EmptyItemPolicy) -> Self {
         self.empty_item_policy = policy;
         self
     }
@@ -240,11 +231,7 @@ impl CollectionConversionPolicy {
     ///
     /// A lazy iterator borrowing the policy and source text.
     #[inline(always)]
-    pub fn scalar_items<'a>(
-        &'a self,
-        limits: &CollectionConversionLimits,
-        value: &'a str,
-    ) -> ScalarItems<'a> {
+    pub fn scalar_items<'a>(&'a self, limits: &CollectionConversionLimits, value: &'a str) -> ScalarItems<'a> {
         ScalarItems::new(self, limits.max_items(), value)
     }
 }
@@ -275,10 +262,7 @@ impl CollectionConversionPolicyBuilder {
     /// Configures scalar string delimiters.
     #[inline(always)]
     #[must_use]
-    pub fn delimiters(
-        self,
-        delimiters: impl IntoIterator<Item = char>,
-    ) -> Self {
+    pub fn delimiters(self, delimiters: impl IntoIterator<Item = char>) -> Self {
         Self {
             policy: self.policy.with_delimiters(delimiters),
         }

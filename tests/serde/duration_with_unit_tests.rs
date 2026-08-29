@@ -21,8 +21,7 @@ fn test_duration_with_unit_serialize_as_exact_string() {
         duration: Duration::from_millis(1500),
     };
 
-    let json =
-        serde_json::to_string(&holder).expect("duration should serialize");
+    let json = serde_json::to_string(&holder).expect("duration should serialize");
 
     assert_eq!(json, r#"{"duration":"1500ms"}"#);
 }
@@ -44,8 +43,7 @@ fn test_duration_with_unit_deserialize_from_supported_units() {
 
     for (text, expected) in cases {
         let json = format!(r#"{{"duration":"{text}"}}"#);
-        let holder: DurationWithUnitHolder =
-            serde_json::from_str(&json).expect("duration should deserialize");
+        let holder: DurationWithUnitHolder = serde_json::from_str(&json).expect("duration should deserialize");
         assert_eq!(holder.duration, expected);
     }
 
@@ -59,10 +57,7 @@ fn test_duration_with_unit_deserialize_from_supported_units() {
 /// Verifies the exact adapter rejects integer input.
 #[test]
 fn test_duration_with_unit_deserialize_from_integer_millis() {
-    assert!(
-        serde_json::from_str::<DurationWithUnitHolder>(r#"{"duration":250}"#)
-            .is_err()
-    );
+    assert!(serde_json::from_str::<DurationWithUnitHolder>(r#"{"duration":250}"#).is_err());
 }
 
 /// Verifies the exact adapter rejects non-string scalar input.
@@ -80,9 +75,7 @@ fn test_duration_with_unit_deserialize_rejects_non_string_scalars() {
 /// Verifies the exact adapter rejects unsupported units through serde.
 #[test]
 fn test_duration_with_unit_rejects_invalid_unit() {
-    let result = serde_json::from_str::<DurationWithUnitHolder>(
-        r#"{"duration":"250fortnights"}"#,
-    );
+    let result = serde_json::from_str::<DurationWithUnitHolder>(r#"{"duration":"250fortnights"}"#);
 
     assert!(result.is_err());
 }
@@ -121,8 +114,7 @@ fn test_duration_with_unit_serialize_preserves_sub_millisecond_precision() {
         duration: Duration::from_micros(1500),
     };
 
-    let json =
-        serde_json::to_string(&holder).expect("duration should serialize");
+    let json = serde_json::to_string(&holder).expect("duration should serialize");
 
     assert_eq!(json, r#"{"duration":"1500µs"}"#);
 }
@@ -131,8 +123,7 @@ fn test_duration_with_unit_serialize_preserves_sub_millisecond_precision() {
 #[test]
 fn test_duration_with_unit_format_round_trips_duration_max() {
     let text = duration_with_unit::format(&Duration::MAX);
-    let parsed = duration_with_unit::parse(&text)
-        .expect("formatted maximum should parse");
+    let parsed = duration_with_unit::parse(&text).expect("formatted maximum should parse");
 
     assert_eq!(parsed, Duration::MAX);
 }
@@ -140,18 +131,7 @@ fn test_duration_with_unit_format_round_trips_duration_max() {
 /// Verifies exact formatting round-trips semantic unit boundaries.
 #[test]
 fn test_duration_with_unit_format_round_trips_semantic_boundaries() {
-    let seconds = [
-        0,
-        1,
-        59,
-        60,
-        3599,
-        3600,
-        86_399,
-        86_400,
-        u64::from(u32::MAX),
-        u64::MAX,
-    ];
+    let seconds = [0, 1, 59, 60, 3599, 3600, 86_399, 86_400, u64::from(u32::MAX), u64::MAX];
     let nanoseconds = [
         0,
         1,
@@ -168,8 +148,7 @@ fn test_duration_with_unit_format_round_trips_semantic_boundaries() {
         for nanoseconds in nanoseconds {
             let duration = Duration::new(seconds, nanoseconds);
             let text = duration_with_unit::format(&duration);
-            let parsed = duration_with_unit::parse(&text)
-                .expect("formatted boundary duration should parse");
+            let parsed = duration_with_unit::parse(&text).expect("formatted boundary duration should parse");
             assert_eq!(parsed, duration, "failed to round-trip {text}");
         }
     }
@@ -187,12 +166,7 @@ fn test_duration_with_unit_parse_rejects_empty_text() {
 #[test]
 fn test_duration_with_unit_parse_rejects_surrounding_whitespace() {
     assert!(duration_with_unit::parse(" 2ms ").is_err());
-    assert!(
-        serde_json::from_str::<DurationWithUnitHolder>(
-            r#"{"duration":" 2ms "}"#
-        )
-        .is_err()
-    );
+    assert!(serde_json::from_str::<DurationWithUnitHolder>(r#"{"duration":" 2ms "}"#).is_err());
 }
 
 /// Verifies exact parsing rejects suffixless numbers.
@@ -204,14 +178,8 @@ fn test_duration_with_unit_parse_rejects_bare_numbers() {
 /// Verifies serde rejects invalid numbers and non-scalar values.
 #[test]
 fn test_duration_with_unit_deserialize_rejects_invalid_number_and_non_scalar() {
-    assert!(
-        serde_json::from_str::<DurationWithUnitHolder>(r#"{"duration":-1}"#)
-            .is_err()
-    );
-    assert!(
-        serde_json::from_str::<DurationWithUnitHolder>(r#"{"duration":1.5}"#)
-            .is_err()
-    );
+    assert!(serde_json::from_str::<DurationWithUnitHolder>(r#"{"duration":-1}"#).is_err());
+    assert!(serde_json::from_str::<DurationWithUnitHolder>(r#"{"duration":1.5}"#).is_err());
     for json in [
         r#"{"duration":null}"#,
         r#"{"duration":true}"#,
@@ -274,8 +242,7 @@ fn test_duration_with_unit_parse_errors_and_overflows() {
 fn test_duration_with_unit_serialize_function() {
     let mut buf = Vec::new();
     let mut ser = serde_json::Serializer::new(&mut buf);
-    duration_with_unit::serialize(&Duration::from_millis(7), &mut ser)
-        .expect("serialize");
+    duration_with_unit::serialize(&Duration::from_millis(7), &mut ser).expect("serialize");
     assert_eq!(
         String::from_utf8(buf).expect("serialized text should be UTF-8"),
         r#""7ms""#
@@ -288,10 +255,8 @@ fn test_duration_with_unit_postcard_round_trip() {
     let holder = DurationWithUnitHolder {
         duration: Duration::from_nanos(42),
     };
-    let bytes =
-        postcard::to_stdvec(&holder).expect("duration should serialize");
-    let decoded: DurationWithUnitHolder =
-        postcard::from_bytes(&bytes).expect("duration should deserialize");
+    let bytes = postcard::to_stdvec(&holder).expect("duration should serialize");
+    let decoded: DurationWithUnitHolder = postcard::from_bytes(&bytes).expect("duration should deserialize");
 
     assert_eq!(decoded, holder);
 }

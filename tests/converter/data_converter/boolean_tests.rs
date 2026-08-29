@@ -115,15 +115,10 @@ fn test_data_converter_bool_target_accepts_supported_sources() {
 fn test_data_converter_bool_numeric_text_limit() {
     let options = ConversionPolicy::strict();
     let limits = ConversionLimits::builder()
-        .numeric_limits(
-            NumericConversionLimits::builder().max_text_bytes(1).build(),
-        )
+        .numeric_limits(NumericConversionLimits::builder().max_text_bytes(1).build())
         .build();
 
-    assert_eq!(
-        DataConverter::from("true").to_with::<bool>(&options, &limits),
-        Ok(true),
-    );
+    assert_eq!(DataConverter::from("true").to_with::<bool>(&options, &limits), Ok(true),);
     let error = DataConverter::from("10")
         .to_with::<bool>(&options, &limits)
         .expect_err("numeric Boolean text should honor the byte limit");

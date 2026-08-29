@@ -16,25 +16,19 @@ fn test_collection_conversion_limits_defaults_builders_and_wire() {
         defaults.max_source_bytes(),
         CollectionConversionLimits::DEFAULT_MAX_SOURCE_BYTES
     );
-    assert_eq!(
-        defaults.max_items(),
-        CollectionConversionLimits::DEFAULT_MAX_ITEMS
-    );
+    assert_eq!(defaults.max_items(), CollectionConversionLimits::DEFAULT_MAX_ITEMS);
 
     let limits = CollectionConversionLimits::builder()
         .max_source_bytes(128)
         .max_items(3)
         .build();
     assert_eq!(
-        serde_json::to_string(&limits)
-            .expect("collection limits should serialize"),
+        serde_json::to_string(&limits).expect("collection limits should serialize"),
         r#"{"max_source_bytes":128,"max_items":3}"#
     );
     assert_eq!(
-        serde_json::from_str::<CollectionConversionLimits>(
-            r#"{"max_source_bytes":128,"max_items":3}"#
-        )
-        .expect("collection limits should deserialize"),
+        serde_json::from_str::<CollectionConversionLimits>(r#"{"max_source_bytes":128,"max_items":3}"#)
+            .expect("collection limits should deserialize"),
         limits
     );
 }

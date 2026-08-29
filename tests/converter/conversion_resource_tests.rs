@@ -11,8 +11,5 @@ use qubit_datatype::ConversionResource;
 
 #[test]
 fn test_conversion_resource_output_bytes_is_distinct() {
-    assert_ne!(
-        ConversionResource::OutputBytes,
-        ConversionResource::InputBytes
-    );
+    assert_ne!(ConversionResource::OutputBytes, ConversionResource::InputBytes);
 }

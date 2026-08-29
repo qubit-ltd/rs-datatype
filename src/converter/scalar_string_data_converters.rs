@@ -70,10 +70,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         T: DataConversionTarget,
     {
-        self.to_vec_with(
-            ConversionPolicy::default_ref(),
-            ConversionLimits::default_ref(),
-        )
+        self.to_vec_with(ConversionPolicy::default_ref(), ConversionLimits::default_ref())
     }
 
     /// Converts the scalar string to a vector using the specified policy and
@@ -111,10 +108,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     }
 
     /// Converts the scalar string using an existing conversion session.
-    pub fn to_vec_in<T>(
-        self,
-        session: &mut ConversionSession<'_>,
-    ) -> Result<Vec<T>, DataListConversionError>
+    pub fn to_vec_in<T>(self, session: &mut ConversionSession<'_>) -> Result<Vec<T>, DataListConversionError>
     where
         T: DataConversionTarget,
     {
@@ -122,25 +116,17 @@ impl<'a> ScalarStringDataConverters<'a> {
             .map_err(|source| DataListConversionError::new(0, source))?;
         let policy = session.policy();
         let limits = session.limits();
-        let items = policy
-            .collection()
-            .scalar_items(limits.collection(), self.source);
+        let items = policy.collection().scalar_items(limits.collection(), self.source);
         let mut converted = Vec::new();
         for item in items {
-            let item = item.map_err(|error| {
-                error.into_list_conversion_error(T::DATA_TYPE)
-            })?;
+            let item = item.map_err(|error| error.into_list_conversion_error(T::DATA_TYPE))?;
             let _admitted = match session.admit_scalar_item(item) {
                 Ok(admitted) => admitted,
                 Err(error) => {
                     let source = DataConverter::from(item.value);
                     return Err(DataListConversionError::new(
                         item.source_index,
-                        DataConversionError::limit_exceeded(
-                            source.data_type(),
-                            T::DATA_TYPE,
-                            error,
-                        ),
+                        DataConversionError::limit_exceeded(source.data_type(), T::DATA_TYPE, error),
                     ));
                 }
             };
@@ -148,10 +134,7 @@ impl<'a> ScalarStringDataConverters<'a> {
             let value = match session.delegate::<T>(&source) {
                 Ok(value) => value,
                 Err(error) => {
-                    return Err(DataListConversionError::new(
-                        item.source_index,
-                        error,
-                    ));
+                    return Err(DataListConversionError::new(item.source_index, error));
                 }
             };
             converted.push(value);
@@ -180,10 +163,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         T: DataConversionTarget,
     {
-        self.to_first_with(
-            ConversionPolicy::default_ref(),
-            ConversionLimits::default_ref(),
-        )
+        self.to_first_with(ConversionPolicy::default_ref(), ConversionLimits::default_ref())
     }
 
     /// Converts the first scalar string item using an explicit policy and
@@ -224,10 +204,7 @@ impl<'a> ScalarStringDataConverters<'a> {
 
     /// Converts the first scalar item using an existing conversion session.
     #[inline]
-    pub fn to_first_in<T>(
-        self,
-        session: &mut ConversionSession<'_>,
-    ) -> Result<T, DataConversionError>
+    pub fn to_first_in<T>(self, session: &mut ConversionSession<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -241,28 +218,19 @@ impl<'a> ScalarStringDataConverters<'a> {
             .ok_or(DataConversionError::empty_collection(T::DATA_TYPE))?
             .map_err(|error| error.into_data_conversion_error(T::DATA_TYPE))?;
         let source = DataConverter::from(first.value);
-        let _admitted = session.admit_scalar_item(first).map_err(|error| {
-            DataConversionError::limit_exceeded(
-                source.data_type(),
-                T::DATA_TYPE,
-                error,
-            )
-        })?;
+        let _admitted = session
+            .admit_scalar_item(first)
+            .map_err(|error| DataConversionError::limit_exceeded(source.data_type(), T::DATA_TYPE, error))?;
         session.delegate::<T>(&source)
     }
 
     /// Checks the complete scalar source and charges it once before scanning.
     #[inline]
-    fn check_and_charge_source(
-        &self,
-        session: &mut ConversionSession<'_>,
-    ) -> Result<(), DataConversionError> {
+    fn check_and_charge_source(&self, session: &mut ConversionSession<'_>) -> Result<(), DataConversionError> {
         let target = DataType::String;
         session
             .admit_scalar_source_bytes_usize(self.source.len())
-            .map_err(|error| {
-                DataConversionError::measured_limit(target, target, error)
-            })
+            .map_err(|error| DataConversionError::measured_limit(target, target, error))
     }
 }
 

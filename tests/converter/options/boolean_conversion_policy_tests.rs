@@ -45,19 +45,11 @@ fn test_boolean_conversion_policy_cover_literal_branches() {
 fn test_boolean_conversion_policy_env_friendly_profile() {
     let options = BooleanConversionPolicy::env_friendly();
     assert_eq!(
-        options
-            .true_literals()
-            .iter()
-            .map(String::as_str)
-            .collect::<Vec<_>>(),
+        options.true_literals().iter().map(String::as_str).collect::<Vec<_>>(),
         ["true", "yes", "on"],
     );
     assert_eq!(
-        options
-            .false_literals()
-            .iter()
-            .map(String::as_str)
-            .collect::<Vec<_>>(),
+        options.false_literals().iter().map(String::as_str).collect::<Vec<_>>(),
         ["false", "no", "off"],
     );
     assert!(!options.case_sensitive());
@@ -96,10 +88,8 @@ fn test_boolean_conversion_policy_reject_literal_conflicts() {
         .is_err(),
     );
     assert!(
-        serde_json::from_str::<BooleanConversionPolicy>(
-            r#"{"true_literals":["yes"],"false_literals":["YES"]}"#,
-        )
-        .is_err(),
+        serde_json::from_str::<BooleanConversionPolicy>(r#"{"true_literals":["yes"],"false_literals":["YES"]}"#,)
+            .is_err(),
     );
 }
 
@@ -151,19 +141,12 @@ fn test_boolean_conversion_policy_numeric_builder() {
 /// Characterizes validation for large disjoint literal collections.
 #[test]
 fn test_boolean_conversion_policy_validate_large_disjoint_sets() {
-    let true_literals =
-        (0..4096).map(|index| format!("true-{index}")).collect();
-    let false_literals =
-        (0..4096).map(|index| format!("false-{index}")).collect();
+    let true_literals = (0..4096).map(|index| format!("true-{index}")).collect();
+    let false_literals = (0..4096).map(|index| format!("false-{index}")).collect();
 
     assert!(
-        BooleanConversionPolicy::try_new(
-            true_literals,
-            false_literals,
-            false,
-            BooleanNumericPolicy::ZeroOrOne,
-        )
-        .is_ok(),
+        BooleanConversionPolicy::try_new(true_literals, false_literals, false, BooleanNumericPolicy::ZeroOrOne,)
+            .is_ok(),
     );
 }
 
@@ -175,11 +158,9 @@ fn test_boolean_conversion_policy_serde_and_defaults() {
     assert_eq!(BooleanConversionPolicy::DEFAULT_FALSE_LITERALS, &["false"],);
     assert_eq!(defaults.true_literals(), &["true".to_string()]);
     assert_eq!(defaults.false_literals(), &["false".to_string()]);
-    let wire = serde_json::to_string(&defaults)
-        .expect("boolean policys should serialize");
+    let wire = serde_json::to_string(&defaults).expect("boolean policys should serialize");
     assert_eq!(
-        serde_json::from_str::<BooleanConversionPolicy>(&wire)
-            .expect("boolean policys should deserialize"),
+        serde_json::from_str::<BooleanConversionPolicy>(&wire).expect("boolean policys should deserialize"),
         defaults,
     );
 }
@@ -187,10 +168,8 @@ fn test_boolean_conversion_policy_serde_and_defaults() {
 /// Test that misspelled Boolean option fields are rejected.
 #[test]
 fn test_boolean_conversion_policy_reject_unknown_fields() {
-    let error = serde_json::from_str::<BooleanConversionPolicy>(
-        r#"{"case_sensitive":true,"unexpected":false}"#,
-    )
-    .expect_err("unknown Boolean option fields must be rejected");
+    let error = serde_json::from_str::<BooleanConversionPolicy>(r#"{"case_sensitive":true,"unexpected":false}"#)
+        .expect_err("unknown Boolean option fields must be rejected");
 
     assert!(error.to_string().contains("unknown field `unexpected`"));
 }

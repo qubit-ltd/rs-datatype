@@ -122,10 +122,7 @@ where
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,
     {
-        self.to_vec_with(
-            ConversionPolicy::default_ref(),
-            ConversionLimits::default_ref(),
-        )
+        self.to_vec_with(ConversionPolicy::default_ref(), ConversionLimits::default_ref())
     }
 
     /// Converts every source item to the requested target type using the
@@ -164,20 +161,14 @@ where
     }
 
     /// Converts every source item using an existing conversion session.
-    pub fn to_vec_in<'a, T>(
-        self,
-        session: &mut ConversionSession<'_>,
-    ) -> Result<Vec<T>, DataListConversionError>
+    pub fn to_vec_in<'a, T>(self, session: &mut ConversionSession<'_>) -> Result<Vec<T>, DataListConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,
     {
         let sources = self.sources;
         let capacity = self.trusted_capacity.map_or(0, |capacity| {
-            capacity.min(
-                usize::try_from(session.remaining_items())
-                    .unwrap_or(usize::MAX),
-            )
+            capacity.min(usize::try_from(session.remaining_items()).unwrap_or(usize::MAX))
         });
         let mut converted = Vec::with_capacity(capacity);
         for (index, source) in sources.enumerate() {
@@ -227,10 +218,7 @@ where
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,
     {
-        self.to_first_with(
-            ConversionPolicy::default_ref(),
-            ConversionLimits::default_ref(),
-        )
+        self.to_first_with(ConversionPolicy::default_ref(), ConversionLimits::default_ref())
     }
 
     /// Converts the first source item to the requested target type using the
@@ -271,10 +259,7 @@ where
 
     /// Converts the first source item using an existing conversion session.
     #[inline]
-    pub fn to_first_in<'a, T>(
-        self,
-        session: &mut ConversionSession<'_>,
-    ) -> Result<T, DataConversionError>
+    pub fn to_first_in<'a, T>(self, session: &mut ConversionSession<'_>) -> Result<T, DataConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
         T: DataConversionTarget,

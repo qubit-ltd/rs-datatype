@@ -39,17 +39,9 @@ fn benchmark_exact_integer_text(c: &mut Criterion) {
         DataConverter::from(source)
             .to::<i64>()
             .expect("exact integer benchmark fixture should convert");
-        group.bench_with_input(
-            BenchmarkId::from_parameter(name),
-            source,
-            |b, source| {
-                b.iter(|| {
-                    black_box(
-                        DataConverter::from(black_box(source)).to::<i64>(),
-                    )
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::from_parameter(name), source, |b, source| {
+            b.iter(|| black_box(DataConverter::from(black_box(source)).to::<i64>()));
+        });
     }
     group.finish();
 }
@@ -67,20 +59,13 @@ fn benchmark_lossy_integer_text(c: &mut Criterion) {
         DataConverter::from(source)
             .to_with::<i64>(&options, &limits)
             .expect("lossy integer benchmark fixture should convert");
-        group.bench_with_input(
-            BenchmarkId::from_parameter(name),
-            source,
-            |b, source| {
-                b.iter(|| {
-                    black_box(
-                        DataConverter::from(black_box(source)).to_with::<i64>(
-                            black_box(&options),
-                            black_box(&limits),
-                        ),
-                    )
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::from_parameter(name), source, |b, source| {
+            b.iter(|| {
+                black_box(
+                    DataConverter::from(black_box(source)).to_with::<i64>(black_box(&options), black_box(&limits)),
+                )
+            });
+        });
     }
     group.finish();
 }
@@ -89,10 +74,7 @@ fn benchmark_lossy_integer_text(c: &mut Criterion) {
 fn benchmark_exact_float_text(c: &mut Criterion) {
     let unbounded_exact = "340282366920938463463374607431768211456";
     let long_coefficient = "5".repeat(4096);
-    let long_inexact = format!(
-        "{long_coefficient}e-{}",
-        long_coefficient.len().saturating_sub(1)
-    );
+    let long_inexact = format!("{long_coefficient}e-{}", long_coefficient.len().saturating_sub(1));
     let sources = [
         ("bounded_exact", "0.5".to_string()),
         ("unbounded_exact", unbounded_exact.to_string()),
@@ -103,18 +85,9 @@ fn benchmark_exact_float_text(c: &mut Criterion) {
         DataConverter::from(source.as_str())
             .to::<f64>()
             .expect("exact float benchmark fixture should convert");
-        group.bench_with_input(
-            BenchmarkId::from_parameter(name),
-            source,
-            |b, source| {
-                b.iter(|| {
-                    black_box(
-                        DataConverter::from(black_box(source.as_str()))
-                            .to::<f64>(),
-                    )
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::from_parameter(name), source, |b, source| {
+            b.iter(|| black_box(DataConverter::from(black_box(source.as_str())).to::<f64>()));
+        });
     }
     group.finish();
 }
@@ -138,21 +111,14 @@ fn benchmark_big_integer_text(c: &mut Criterion) {
             DataConverter::from(source.as_str())
                 .to_with::<num_bigint::BigInt>(&options, &limits)
                 .expect("integer benchmark fixture should parse");
-            group.bench_with_input(
-                BenchmarkId::from_parameter(name),
-                &source,
-                |b, source| {
-                    b.iter(|| {
-                        black_box(
-                            DataConverter::from(black_box(source.as_str()))
-                                .to_with::<num_bigint::BigInt>(
-                                black_box(&options),
-                                black_box(&limits),
-                            ),
-                        )
-                    });
-                },
-            );
+            group.bench_with_input(BenchmarkId::from_parameter(name), &source, |b, source| {
+                b.iter(|| {
+                    black_box(
+                        DataConverter::from(black_box(source.as_str()))
+                            .to_with::<num_bigint::BigInt>(black_box(&options), black_box(&limits)),
+                    )
+                });
+            });
         }
         group.finish();
     }
@@ -179,21 +145,14 @@ fn benchmark_big_decimal_text(c: &mut Criterion) {
             DataConverter::from(source.as_str())
                 .to_with::<bigdecimal::BigDecimal>(&options, &limits)
                 .expect("decimal benchmark fixture should parse");
-            group.bench_with_input(
-                BenchmarkId::from_parameter(name),
-                &source,
-                |b, source| {
-                    b.iter(|| {
-                        black_box(
-                            DataConverter::from(black_box(source.as_str()))
-                                .to_with::<bigdecimal::BigDecimal>(
-                                black_box(&options),
-                                black_box(&limits),
-                            ),
-                        )
-                    });
-                },
-            );
+            group.bench_with_input(BenchmarkId::from_parameter(name), &source, |b, source| {
+                b.iter(|| {
+                    black_box(
+                        DataConverter::from(black_box(source.as_str()))
+                            .to_with::<bigdecimal::BigDecimal>(black_box(&options), black_box(&limits)),
+                    )
+                });
+            });
         }
         group.finish();
     }

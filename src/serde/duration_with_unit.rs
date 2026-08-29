@@ -26,10 +26,8 @@ use crate::format_duration_exact;
 use crate::parse_duration_text;
 
 /// Strict Duration text profile.
-const DURATION_TEXT_OPTIONS: DurationTextOptions = DurationTextOptions::new(
-    SuffixlessDurationPolicy::Reject,
-    DurationUnitParseMode::Strict,
-);
+const DURATION_TEXT_OPTIONS: DurationTextOptions =
+    DurationTextOptions::new(SuffixlessDurationPolicy::Reject, DurationUnitParseMode::Strict);
 
 /// Serializes a [`Duration`] as an exact string such as `"500µs"`.
 ///
@@ -50,10 +48,7 @@ const DURATION_TEXT_OPTIONS: DurationTextOptions = DurationTextOptions::new(
 ///
 /// Returns the serializer error if writing the string value fails.
 #[inline(always)]
-pub fn serialize<S>(
-    duration: &Duration,
-    serializer: S,
-) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {

@@ -54,24 +54,14 @@ pub(super) fn signed_magnitude(value: i128) -> (bool, u128) {
 /// # Returns
 ///
 /// The exact sign and magnitude for a supported scalar integer source.
-pub(super) fn scalar_integer_magnitude(
-    source: &DataConverter<'_>,
-) -> Option<(bool, u128)> {
+pub(super) fn scalar_integer_magnitude(source: &DataConverter<'_>) -> Option<(bool, u128)> {
     match source {
         DataConverter::Bool(value) => Some((false, u128::from(*value))),
         DataConverter::Char(value) => Some((false, u128::from(*value as u32))),
-        DataConverter::Int8(value) => {
-            Some(signed_magnitude(i128::from(*value)))
-        }
-        DataConverter::Int16(value) => {
-            Some(signed_magnitude(i128::from(*value)))
-        }
-        DataConverter::Int32(value) => {
-            Some(signed_magnitude(i128::from(*value)))
-        }
-        DataConverter::Int64(value) => {
-            Some(signed_magnitude(i128::from(*value)))
-        }
+        DataConverter::Int8(value) => Some(signed_magnitude(i128::from(*value))),
+        DataConverter::Int16(value) => Some(signed_magnitude(i128::from(*value))),
+        DataConverter::Int32(value) => Some(signed_magnitude(i128::from(*value))),
+        DataConverter::Int64(value) => Some(signed_magnitude(i128::from(*value))),
         DataConverter::Int128(value) => Some(signed_magnitude(*value)),
         DataConverter::UInt8(value) => Some((false, u128::from(*value))),
         DataConverter::UInt16(value) => Some((false, u128::from(*value))),
@@ -106,11 +96,7 @@ fn float_to_integer(
     to: DataType,
 ) -> Result<(bool, u128), DataConversionError> {
     if !value.is_finite() {
-        return Err(DataConversionError::invalid(
-            from,
-            to,
-            InvalidValueReason::NonFinite,
-        ));
+        return Err(DataConversionError::invalid(from, to, InvalidValueReason::NonFinite));
     }
     if policy == FractionalToIntegerPolicy::Reject && value.fract() != 0.0 {
         return Err(DataConversionError::invalid(
@@ -126,11 +112,7 @@ fn float_to_integer(
         return Ok((false, 0));
     }
     if exponent > 127 {
-        return Err(DataConversionError::invalid(
-            from,
-            to,
-            InvalidValueReason::OutOfRange,
-        ));
+        return Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange));
     }
     let significand = (bits & ((1_u64 << 52) - 1)) | (1_u64 << 52);
     let magnitude = if exponent < 52 {
@@ -173,12 +155,9 @@ pub(in crate::converter::data_converter) fn source_to_integer(
             DataType::Float32,
             to,
         ),
-        DataConverter::Float64(value) => float_to_integer(
-            *value,
-            options.numeric().fractional_to_integer(),
-            DataType::Float64,
-            to,
-        ),
+        DataConverter::Float64(value) => {
+            float_to_integer(*value, options.numeric().fractional_to_integer(), DataType::Float64, to)
+        }
         #[cfg(feature = "big-integer")]
         DataConverter::BigInteger(value) => {
             if let Some(value) = value.to_i128() {
@@ -216,15 +195,9 @@ pub(in crate::converter::data_converter) fn source_to_integer(
         }
         DataConverter::String(value) => {
             let value = normalize_numeric_text(value, options, limits, to)?;
-            parse_text_integer(
-                value,
-                options.numeric().fractional_to_integer(),
-                to,
-            )
+            parse_text_integer(value, options.numeric().fractional_to_integer(), to)
         }
-        DataConverter::Duration(value) => {
-            Ok((false, duration_to_u128(*value, options, to)?))
-        }
+        DataConverter::Duration(value) => Ok((false, duration_to_u128(*value, options, to)?)),
         DataConverter::Unset(_) => Err(source.missing(to)),
         _ => Err(source.unsupported(to)),
     }
@@ -256,13 +229,7 @@ pub(in crate::converter::data_converter) fn duration_to_u128(
             .duration()
             .output_unit()
             .exact_units(duration)
-            .ok_or_else(|| {
-                DataConversionError::invalid(
-                    DataType::Duration,
-                    to,
-                    InvalidValueReason::PrecisionLoss,
-                )
-            })
+            .ok_or_else(|| DataConversionError::invalid(DataType::Duration, to, InvalidValueReason::PrecisionLoss))
     } else {
         Ok(options.duration().output_unit().rounded_units(duration))
     }
@@ -362,11 +329,7 @@ fn to_u128(
 ///
 /// Returns an out-of-range error when `value` cannot be represented by `T`.
 #[inline]
-fn checked_signed<T>(
-    value: i128,
-    source: &DataConverter<'_>,
-    to: DataType,
-) -> Result<T, DataConversionError>
+fn checked_signed<T>(value: i128, source: &DataConverter<'_>, to: DataType) -> Result<T, DataConversionError>
 where
     T: TryFrom<i128>,
 {
@@ -400,11 +363,7 @@ where
 ///
 /// Returns an out-of-range error when `value` cannot be represented by `T`.
 #[inline]
-fn checked_unsigned<T>(
-    value: u128,
-    source: &DataConverter<'_>,
-    to: DataType,
-) -> Result<T, DataConversionError>
+fn checked_unsigned<T>(value: u128, source: &DataConverter<'_>, to: DataType) -> Result<T, DataConversionError>
 where
     T: TryFrom<u128>,
 {
@@ -444,11 +403,7 @@ macro_rules! impl_signed_target {
             ) -> Result<Self, DataConversionError> {
                 let options = session.policy();
                 let limits = session.limits().numeric();
-                checked_signed(
-                    to_i128(source, options, limits, $data_type)?,
-                    source,
-                    $data_type,
-                )
+                checked_signed(to_i128(source, options, limits, $data_type)?, source, $data_type)
             }
         }
     };
@@ -481,11 +436,7 @@ macro_rules! impl_unsigned_target {
             ) -> Result<Self, DataConversionError> {
                 let options = session.policy();
                 let limits = session.limits().numeric();
-                checked_unsigned(
-                    to_u128(source, options, limits, $data_type)?,
-                    source,
-                    $data_type,
-                )
+                checked_unsigned(to_u128(source, options, limits, $data_type)?, source, $data_type)
             }
         }
     };

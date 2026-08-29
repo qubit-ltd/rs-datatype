@@ -16,18 +16,14 @@ fn test_suffixless_duration_policy_default_and_serde() {
     let default = SuffixlessDurationPolicy::default();
     assert_eq!(default, SuffixlessDurationPolicy::Reject);
 
-    let reject = serde_json::to_string(&SuffixlessDurationPolicy::Reject)
-        .expect("reject policy should serialize");
+    let reject = serde_json::to_string(&SuffixlessDurationPolicy::Reject).expect("reject policy should serialize");
     assert_eq!(reject, "\"reject\"");
 
-    let assume = serde_json::to_string(&SuffixlessDurationPolicy::Assume(
-        DurationUnit::Seconds,
-    ))
-    .expect("assume policy should serialize");
+    let assume = serde_json::to_string(&SuffixlessDurationPolicy::Assume(DurationUnit::Seconds))
+        .expect("assume policy should serialize");
     assert_eq!(assume, r#"{"assume":"seconds"}"#);
     assert_eq!(
-        serde_json::from_str::<SuffixlessDurationPolicy>(&assume)
-            .expect("assume policy should deserialize"),
+        serde_json::from_str::<SuffixlessDurationPolicy>(&assume).expect("assume policy should deserialize"),
         SuffixlessDurationPolicy::Assume(DurationUnit::Seconds),
     );
 }

@@ -36,11 +36,7 @@ fn decimal_power_of_five(exponent: usize) -> String {
             digits.push(carry);
         }
     }
-    digits
-        .iter()
-        .rev()
-        .map(|digit| char::from(b'0' + digit))
-        .collect()
+    digits.iter().rev().map(|digit| char::from(b'0' + digit)).collect()
 }
 
 /// Verifies that lossy text-to-f32 conversion rounds directly at target width.
@@ -65,8 +61,7 @@ fn test_text_to_float_rounding_is_independent() {
         .build();
 
     assert_eq!(
-        DataConverter::from("0.1")
-            .to_with::<f32>(&options, ConversionLimits::default_ref()),
+        DataConverter::from("0.1").to_with::<f32>(&options, ConversionLimits::default_ref()),
         Ok(0.1_f32),
     );
     assert!(
@@ -87,8 +82,7 @@ fn test_env_friendly_numeric_profile_relaxes_only_text_float() {
     let options = ConversionPolicy::env_friendly();
 
     assert_eq!(
-        DataConverter::from("0.1")
-            .to_with::<f32>(&options, ConversionLimits::default_ref()),
+        DataConverter::from("0.1").to_with::<f32>(&options, ConversionLimits::default_ref()),
         Ok(0.1_f32),
     );
     assert!(
@@ -106,18 +100,13 @@ fn test_env_friendly_numeric_profile_relaxes_only_text_float() {
 /// Verifies that redundant decimal zeros do not defeat exact conversion.
 #[test]
 fn test_exact_float_text_normalizes_redundant_zeros() {
-    let source =
-        DataConverter::from("1.000000000000000000000000000000000000000");
+    let source = DataConverter::from("1.000000000000000000000000000000000000000");
     assert_eq!(
-        source
-            .to::<f32>()
-            .expect("redundant zeros should remain exact for f32"),
+        source.to::<f32>().expect("redundant zeros should remain exact for f32"),
         1.0,
     );
     assert_eq!(
-        source
-            .to::<f64>()
-            .expect("redundant zeros should remain exact for f64"),
+        source.to::<f64>().expect("redundant zeros should remain exact for f64"),
         1.0,
     );
 }
@@ -135,10 +124,7 @@ fn test_exact_float_text_accepts_power_of_two_beyond_u128() {
 fn test_exact_float_text_accepts_minimum_f32_subnormal() {
     let value = format!("{}e-149", decimal_power_of_five(149));
 
-    assert_eq!(
-        DataConverter::from(value.as_str()).to::<f32>(),
-        Ok(f32::from_bits(1)),
-    );
+    assert_eq!(DataConverter::from(value.as_str()).to::<f32>(), Ok(f32::from_bits(1)),);
 }
 
 /// Verifies the exact decimal expansion of the minimum f64 subnormal converts.
@@ -146,10 +132,7 @@ fn test_exact_float_text_accepts_minimum_f32_subnormal() {
 fn test_exact_float_text_accepts_minimum_f64_subnormal() {
     let value = format!("{}e-1074", decimal_power_of_five(1074));
 
-    assert_eq!(
-        DataConverter::from(value.as_str()).to::<f64>(),
-        Ok(f64::from_bits(1)),
-    );
+    assert_eq!(DataConverter::from(value.as_str()).to::<f64>(), Ok(f64::from_bits(1)),);
 }
 
 /// Verifies a half-minimum f64 subnormal remains a precision failure.
@@ -166,10 +149,7 @@ fn test_exact_float_text_rejects_half_minimum_f64_subnormal() {
 /// Verifies zero remains exact even when its exponent exceeds integer bounds.
 #[test]
 fn test_exact_float_text_accepts_zero_with_unbounded_exponent() {
-    assert_eq!(
-        DataConverter::from("0e999999999999999999999999").to::<f64>(),
-        Ok(0.0),
-    );
+    assert_eq!(DataConverter::from("0e999999999999999999999999").to::<f64>(), Ok(0.0),);
     assert_eq!(
         DataConverter::from("-0e-999999999999999999999999").to::<f32>(),
         Ok(-0.0),

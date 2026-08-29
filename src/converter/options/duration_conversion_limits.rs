@@ -24,8 +24,7 @@ pub struct DurationConversionLimits {
 
 impl DurationConversionLimits {
     /// Default maximum duration source text length in UTF-8 bytes.
-    pub const DEFAULT_MAX_TEXT_BYTES: usize =
-        DurationTextOptions::DEFAULT_MAX_TEXT_BYTES;
+    pub const DEFAULT_MAX_TEXT_BYTES: usize = DurationTextOptions::DEFAULT_MAX_TEXT_BYTES;
 
     /// Creates a builder initialized with the default duration limits.
     #[inline]
@@ -66,8 +65,7 @@ impl DurationConversionLimitsBuilder {
     pub const fn new() -> Self {
         Self {
             limits: DurationConversionLimits {
-                max_text_bytes:
-                    DurationConversionLimits::DEFAULT_MAX_TEXT_BYTES,
+                max_text_bytes: DurationConversionLimits::DEFAULT_MAX_TEXT_BYTES,
             },
         }
     }

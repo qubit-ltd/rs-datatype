@@ -20,8 +20,8 @@ use qubit_datatype::converter::StringConversionPolicy;
 /// Verifies the policy wire contains semantic fields but no resource limits.
 #[test]
 fn test_conversion_policy_wire_contains_no_resource_limits() {
-    let value = serde_json::to_value(ConversionPolicy::default())
-        .expect("the default conversion policy should serialize");
+    let value =
+        serde_json::to_value(ConversionPolicy::default()).expect("the default conversion policy should serialize");
     let object = value
         .as_object()
         .expect("the conversion policy wire should be an object");
@@ -39,30 +39,20 @@ fn test_conversion_policy_wire_contains_no_resource_limits() {
         "budget",
         "operation",
     ] {
-        assert!(
-            !text.contains(forbidden),
-            "unexpected policy field: {forbidden}",
-        );
+        assert!(!text.contains(forbidden), "unexpected policy field: {forbidden}",);
     }
 }
 
 #[test]
 fn test_conversion_policy_profiles_preserve_semantic_defaults() {
     assert_eq!(ConversionPolicy::strict(), ConversionPolicy::default());
-    assert_eq!(
-        ConversionPolicy::lossy().numeric(),
-        &NumericConversionPolicy::lossy()
-    );
+    assert_eq!(ConversionPolicy::lossy().numeric(), &NumericConversionPolicy::lossy());
     assert!(ConversionPolicy::lossy().string().trim());
     assert_eq!(
         ConversionPolicy::lossy().duration().rounding_policy(),
         DurationRoundingPolicy::HalfUp
     );
-    assert!(
-        ConversionPolicy::env_friendly()
-            .collection()
-            .split_scalar_strings()
-    );
+    assert!(ConversionPolicy::env_friendly().collection().split_scalar_strings());
     assert!(std::ptr::eq(
         ConversionPolicy::default_ref(),
         ConversionPolicy::default_ref()
@@ -83,16 +73,10 @@ fn test_conversion_policy_builders_replace_each_policy_group() {
 
     assert_eq!(policy.numeric(), &NumericConversionPolicy::lossy());
     assert!(policy.string().trim());
-    assert_eq!(
-        policy.string().blank_string_policy(),
-        BlankStringPolicy::TreatAsMissing
-    );
+    assert_eq!(policy.string().blank_string_policy(), BlankStringPolicy::TreatAsMissing);
     assert_eq!(policy.boolean(), &BooleanConversionPolicy::env_friendly());
     assert!(policy.collection().split_scalar_strings());
-    assert_eq!(
-        policy.collection().empty_item_policy(),
-        EmptyItemPolicy::Skip
-    );
+    assert_eq!(policy.collection().empty_item_policy(), EmptyItemPolicy::Skip);
     assert_eq!(policy.duration(), &DurationConversionPolicy::default());
 }
 
@@ -116,24 +100,16 @@ fn test_conversion_policy_profile_into_builder() {
 #[test]
 fn test_conversion_policy_individual_builder_overrides() {
     let boolean = std::hint::black_box(BooleanConversionPolicy::env_friendly());
-    let policy = ConversionPolicy::builder()
-        .boolean_policy(boolean.clone())
-        .build();
+    let policy = ConversionPolicy::builder().boolean_policy(boolean.clone()).build();
     assert_eq!(policy.boolean(), &boolean);
 
     let policy = ConversionPolicy::builder()
         .blank_string_policy(BlankStringPolicy::TreatAsMissing)
         .build();
-    assert_eq!(
-        policy.string().blank_string_policy(),
-        BlankStringPolicy::TreatAsMissing
-    );
+    assert_eq!(policy.string().blank_string_policy(), BlankStringPolicy::TreatAsMissing);
 
     let policy = ConversionPolicy::builder()
         .empty_item_policy(EmptyItemPolicy::Skip)
         .build();
-    assert_eq!(
-        policy.collection().empty_item_policy(),
-        EmptyItemPolicy::Skip
-    );
+    assert_eq!(policy.collection().empty_item_policy(), EmptyItemPolicy::Skip);
 }

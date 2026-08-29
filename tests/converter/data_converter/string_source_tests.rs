@@ -27,12 +27,8 @@ fn test_string_source_normalization_maps_policy_errors() {
         )
         .build();
     assert_eq!(
-        DataConverter::from(" ")
-            .to_with::<u32>(&missing_options, ConversionLimits::default_ref()),
-        Err(DataConversionError::missing(
-            DataType::String,
-            DataType::UInt32
-        )),
+        DataConverter::from(" ").to_with::<u32>(&missing_options, ConversionLimits::default_ref()),
+        Err(DataConversionError::missing(DataType::String, DataType::UInt32)),
     );
 
     let reject_options = ConversionPolicy::builder()
@@ -43,8 +39,7 @@ fn test_string_source_normalization_maps_policy_errors() {
         )
         .build();
     assert_eq!(
-        DataConverter::from(" ")
-            .to_with::<bool>(&reject_options, ConversionLimits::default_ref()),
+        DataConverter::from(" ").to_with::<bool>(&reject_options, ConversionLimits::default_ref()),
         Err(DataConversionError::invalid(
             DataType::String,
             DataType::Bool,

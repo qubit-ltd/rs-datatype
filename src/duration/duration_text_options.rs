@@ -55,10 +55,7 @@ impl DurationTextOptions {
     ///
     /// The configured options.
     #[inline(always)]
-    pub const fn new(
-        suffixless_policy: SuffixlessDurationPolicy,
-        unit_parse_mode: DurationUnitParseMode,
-    ) -> Self {
+    pub const fn new(suffixless_policy: SuffixlessDurationPolicy, unit_parse_mode: DurationUnitParseMode) -> Self {
         Self {
             suffixless_policy,
             unit_parse_mode,
@@ -86,10 +83,7 @@ impl DurationTextOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub(crate) const fn with_suffixless_policy(
-        mut self,
-        suffixless_policy: SuffixlessDurationPolicy,
-    ) -> Self {
+    pub(crate) const fn with_suffixless_policy(mut self, suffixless_policy: SuffixlessDurationPolicy) -> Self {
         self.suffixless_policy = suffixless_policy;
         self
     }
@@ -114,10 +108,7 @@ impl DurationTextOptions {
     ///
     /// Updated options.
     #[inline(always)]
-    pub(crate) const fn with_unit_parse_mode(
-        mut self,
-        unit_parse_mode: DurationUnitParseMode,
-    ) -> Self {
+    pub(crate) const fn with_unit_parse_mode(mut self, unit_parse_mode: DurationUnitParseMode) -> Self {
         self.unit_parse_mode = unit_parse_mode;
         self
     }
@@ -174,10 +165,7 @@ impl DurationTextOptionsBuilder {
     /// Configures suffixless input handling.
     #[inline(always)]
     #[must_use]
-    pub const fn suffixless_policy(
-        self,
-        policy: SuffixlessDurationPolicy,
-    ) -> Self {
+    pub const fn suffixless_policy(self, policy: SuffixlessDurationPolicy) -> Self {
         Self {
             options: self.options.with_suffixless_policy(policy),
         }
@@ -215,9 +203,6 @@ impl Default for DurationTextOptions {
     /// Strict options using the default source text byte limit.
     #[inline]
     fn default() -> Self {
-        Self::new(
-            SuffixlessDurationPolicy::Reject,
-            DurationUnitParseMode::Strict,
-        )
+        Self::new(SuffixlessDurationPolicy::Reject, DurationUnitParseMode::Strict)
     }
 }
