@@ -90,41 +90,18 @@ fn compare_big_integer_unsigned(left: &BigInt, right: u128) -> Ordering {
 /// The ordering for a fixed-width integer, or `None` for any other numeric
 /// representation.
 #[cfg(feature = "big-integer")]
-fn compare_big_integer_to_fixed(
-    left: &BigInt,
-    right: NumberRepr<'_>,
-) -> Option<Ordering> {
+fn compare_big_integer_to_fixed(left: &BigInt, right: NumberRepr<'_>) -> Option<Ordering> {
     match right {
-        NumberRepr::Int8(right) => {
-            Some(compare_big_integer_signed(left, i128::from(right)))
-        }
-        NumberRepr::Int16(right) => {
-            Some(compare_big_integer_signed(left, i128::from(right)))
-        }
-        NumberRepr::Int32(right) => {
-            Some(compare_big_integer_signed(left, i128::from(right)))
-        }
-        NumberRepr::Int64(right) => {
-            Some(compare_big_integer_signed(left, i128::from(right)))
-        }
-        NumberRepr::Int128(right) => {
-            Some(compare_big_integer_signed(left, right))
-        }
-        NumberRepr::UInt8(right) => {
-            Some(compare_big_integer_unsigned(left, u128::from(right)))
-        }
-        NumberRepr::UInt16(right) => {
-            Some(compare_big_integer_unsigned(left, u128::from(right)))
-        }
-        NumberRepr::UInt32(right) => {
-            Some(compare_big_integer_unsigned(left, u128::from(right)))
-        }
-        NumberRepr::UInt64(right) => {
-            Some(compare_big_integer_unsigned(left, u128::from(right)))
-        }
-        NumberRepr::UInt128(right) => {
-            Some(compare_big_integer_unsigned(left, right))
-        }
+        NumberRepr::Int8(right) => Some(compare_big_integer_signed(left, i128::from(right))),
+        NumberRepr::Int16(right) => Some(compare_big_integer_signed(left, i128::from(right))),
+        NumberRepr::Int32(right) => Some(compare_big_integer_signed(left, i128::from(right))),
+        NumberRepr::Int64(right) => Some(compare_big_integer_signed(left, i128::from(right))),
+        NumberRepr::Int128(right) => Some(compare_big_integer_signed(left, right)),
+        NumberRepr::UInt8(right) => Some(compare_big_integer_unsigned(left, u128::from(right))),
+        NumberRepr::UInt16(right) => Some(compare_big_integer_unsigned(left, u128::from(right))),
+        NumberRepr::UInt32(right) => Some(compare_big_integer_unsigned(left, u128::from(right))),
+        NumberRepr::UInt64(right) => Some(compare_big_integer_unsigned(left, u128::from(right))),
+        NumberRepr::UInt128(right) => Some(compare_big_integer_unsigned(left, right)),
         _ => None,
     }
 }
@@ -430,11 +407,7 @@ impl<'a> NumberRef<'a> {
     ///
     /// The numeric ordering, or `None` when either operand is NaN.
     #[must_use]
-    pub fn compare(
-        self,
-        right: NumberRef<'_>,
-        policy: NumericComparisonPolicy,
-    ) -> Option<Ordering> {
+    pub fn compare(self, right: NumberRef<'_>, policy: NumericComparisonPolicy) -> Option<Ordering> {
         if self.is_nan() || right.is_nan() {
             return None;
         }
@@ -466,8 +439,7 @@ impl<'a> NumberRef<'a> {
         }
         if policy == NumericComparisonPolicy::Approximate
             && (self.is_float() || right.is_float())
-            && let (Some(left), Some(right)) =
-                (self.to_approximate_f64(), right.to_approximate_f64())
+            && let (Some(left), Some(right)) = (self.to_approximate_f64(), right.to_approximate_f64())
             && left.is_finite()
             && right.is_finite()
         {
@@ -476,13 +448,11 @@ impl<'a> NumberRef<'a> {
         #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
         {
             #[cfg(feature = "big-integer")]
-            let has_big_integer =
-                self.is_big_integer() || right.is_big_integer();
+            let has_big_integer = self.is_big_integer() || right.is_big_integer();
             #[cfg(not(feature = "big-integer"))]
             let has_big_integer = false;
             #[cfg(feature = "big-decimal")]
-            let has_big_decimal =
-                self.is_big_decimal() || right.is_big_decimal();
+            let has_big_decimal = self.is_big_decimal() || right.is_big_decimal();
             #[cfg(not(feature = "big-decimal"))]
             let has_big_decimal = false;
             if has_big_integer || has_big_decimal {
@@ -519,9 +489,7 @@ impl<'a> NumberRef<'a> {
     #[must_use]
     fn compare_exact_rational(self, right: NumberRef<'_>) -> Option<Ordering> {
         #[cfg(feature = "big-integer")]
-        if let (NumberRepr::BigInteger(left), NumberRepr::BigInteger(right)) =
-            (self.inner, right.inner)
-        {
+        if let (NumberRepr::BigInteger(left), NumberRepr::BigInteger(right)) = (self.inner, right.inner) {
             return Some(left.cmp(right));
         }
         #[cfg(feature = "big-integer")]
@@ -529,9 +497,7 @@ impl<'a> NumberRef<'a> {
             return Some(ordering);
         }
         #[cfg(feature = "big-decimal")]
-        if let (NumberRepr::BigDecimal(left), NumberRepr::BigDecimal(right)) =
-            (self.inner, right.inner)
-        {
+        if let (NumberRepr::BigDecimal(left), NumberRepr::BigDecimal(right)) = (self.inner, right.inner) {
             return Some(left.cmp(right));
         }
         match (self.to_exact_rational(), right.to_exact_rational()) {
@@ -556,17 +522,10 @@ impl<'a> NumberRef<'a> {
     #[cfg(feature = "big-integer")]
     #[must_use]
     #[inline]
-    fn compare_big_integer_fixed(
-        self,
-        right: NumberRef<'_>,
-    ) -> Option<Ordering> {
+    fn compare_big_integer_fixed(self, right: NumberRef<'_>) -> Option<Ordering> {
         match (self.inner, right.inner) {
-            (NumberRepr::BigInteger(left), right) => {
-                compare_big_integer_to_fixed(left, right)
-            }
-            (left, NumberRepr::BigInteger(right)) => {
-                compare_big_integer_to_fixed(right, left).map(Ordering::reverse)
-            }
+            (NumberRepr::BigInteger(left), right) => compare_big_integer_to_fixed(left, right),
+            (left, NumberRepr::BigInteger(right)) => compare_big_integer_to_fixed(right, left).map(Ordering::reverse),
             _ => None,
         }
     }
@@ -601,10 +560,8 @@ impl<'a> NumberRef<'a> {
     /// input.
     #[must_use]
     fn compare_fixed(self, right: NumberRef<'_>) -> Option<Ordering> {
-        let (left_negative, left_significand, left_exponent) =
-            finite_parts(self)?;
-        let (right_negative, right_significand, right_exponent) =
-            finite_parts(right)?;
+        let (left_negative, left_significand, left_exponent) = finite_parts(self)?;
+        let (right_negative, right_significand, right_exponent) = finite_parts(right)?;
         if left_significand == 0 && right_significand == 0 {
             return Some(Ordering::Equal);
         }
@@ -612,17 +569,8 @@ impl<'a> NumberRef<'a> {
             Ordering::Less => Some(Ordering::Greater),
             Ordering::Greater => Some(Ordering::Less),
             Ordering::Equal => {
-                let ordering = compare_magnitude(
-                    left_significand,
-                    left_exponent,
-                    right_significand,
-                    right_exponent,
-                );
-                Some(if left_negative {
-                    ordering.reverse()
-                } else {
-                    ordering
-                })
+                let ordering = compare_magnitude(left_significand, left_exponent, right_significand, right_exponent);
+                Some(if left_negative { ordering.reverse() } else { ordering })
             }
         }
     }
@@ -672,42 +620,20 @@ impl<'a> NumberRef<'a> {
     #[must_use]
     fn to_exact_rational(self) -> Option<BigRational> {
         match self.inner {
-            NumberRepr::Int8(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::Int16(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::Int32(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::Int64(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::Int128(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::UInt8(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::UInt16(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::UInt32(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::UInt64(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
-            NumberRepr::UInt128(value) => {
-                Some(BigRational::from_integer(BigInt::from(value)))
-            }
+            NumberRepr::Int8(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::Int16(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::Int32(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::Int64(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::Int128(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::UInt8(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::UInt16(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::UInt32(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::UInt64(value) => Some(BigRational::from_integer(BigInt::from(value))),
+            NumberRepr::UInt128(value) => Some(BigRational::from_integer(BigInt::from(value))),
             NumberRepr::Float32(value) => Some(f32_rational(value)),
             NumberRepr::Float64(value) => Some(f64_rational(value)),
             #[cfg(feature = "big-integer")]
-            NumberRepr::BigInteger(value) => {
-                Some(BigRational::from_integer(value.clone()))
-            }
+            NumberRepr::BigInteger(value) => Some(BigRational::from_integer(value.clone())),
             #[cfg(feature = "big-decimal")]
             NumberRepr::BigDecimal(value) => decimal_rational(value),
         }
@@ -739,9 +665,7 @@ impl<'a> NumberRef<'a> {
             NumberRepr::Float32(value) => BigDecimal::try_from(value).ok(),
             NumberRepr::Float64(value) => BigDecimal::try_from(value).ok(),
             #[cfg(feature = "big-integer")]
-            NumberRepr::BigInteger(value) => {
-                Some(BigDecimal::from(value.clone()))
-            }
+            NumberRepr::BigInteger(value) => Some(BigDecimal::from(value.clone())),
             NumberRepr::BigDecimal(value) => Some(value.clone()),
         }
     }

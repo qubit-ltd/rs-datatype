@@ -21,10 +21,7 @@ fn test_scalar_items_lazily_retains_original_indices() {
         .trim_items(true)
         .empty_item_policy(EmptyItemPolicy::Skip)
         .build();
-    let mut items: ScalarItems<'_> = options.scalar_items(
-        &CollectionConversionLimits::default(),
-        " alpha,  、beta ",
-    );
+    let mut items: ScalarItems<'_> = options.scalar_items(&CollectionConversionLimits::default(), " alpha,  、beta ");
 
     let first = items
         .next()
@@ -48,8 +45,7 @@ fn test_scalar_items_reports_rejection_when_reached() {
         .trim_items(true)
         .empty_item_policy(EmptyItemPolicy::Reject)
         .build();
-    let mut items = options
-        .scalar_items(&CollectionConversionLimits::default(), "first, ,third");
+    let mut items = options.scalar_items(&CollectionConversionLimits::default(), "first, ,third");
 
     assert_eq!(
         items
@@ -90,10 +86,7 @@ fn test_scalar_items_enforces_retained_item_limit() {
     let mut items = options.scalar_items(&limits, "a,  ,b,c,d");
 
     assert_eq!(items.next().expect("first item").expect("valid").value, "a");
-    assert_eq!(
-        items.next().expect("second item").expect("valid").value,
-        "b"
-    );
+    assert_eq!(items.next().expect("second item").expect("valid").value, "b");
     let error = items
         .next()
         .expect("limit error")
@@ -132,9 +125,7 @@ fn test_scalar_items_rejection_precedes_item_limit() {
 /// Test zero permits only an empty retained result.
 #[test]
 fn test_scalar_items_zero_limit_allows_only_empty_result() {
-    let retained = CollectionConversionPolicy::builder()
-        .split_scalar_strings(true)
-        .build();
+    let retained = CollectionConversionPolicy::builder().split_scalar_strings(true).build();
     let zero = CollectionConversionLimits::builder().max_items(0).build();
     let error = retained
         .scalar_items(&zero, "a")
@@ -154,17 +145,13 @@ fn test_scalar_items_zero_limit_allows_only_empty_result() {
 /// Test a large delimiter set preserves Unicode splitting semantics.
 #[test]
 fn test_scalar_items_supports_large_delimiter_sets() {
-    let delimiters =
-        std::iter::once(',').chain((0x100..0x140).filter_map(char::from_u32));
+    let delimiters = std::iter::once(',').chain((0x100..0x140).filter_map(char::from_u32));
     let options = CollectionConversionPolicy::builder()
         .split_scalar_strings(true)
         .delimiters(delimiters)
         .build();
     let values = options
-        .scalar_items(
-            &CollectionConversionLimits::default(),
-            "alpha,bravoĀcharlie",
-        )
+        .scalar_items(&CollectionConversionLimits::default(), "alpha,bravoĀcharlie")
         .map(|item| item.expect("all split items should be valid").value)
         .collect::<Vec<_>>();
 
@@ -173,11 +160,8 @@ fn test_scalar_items_supports_large_delimiter_sets() {
 
 #[test]
 fn test_scalar_items_can_be_cloned_before_iteration() {
-    let options = CollectionConversionPolicy::builder()
-        .split_scalar_strings(true)
-        .build();
-    let items = options
-        .scalar_items(&CollectionConversionLimits::default(), "alpha,beta");
+    let options = CollectionConversionPolicy::builder().split_scalar_strings(true).build();
+    let items = options.scalar_items(&CollectionConversionLimits::default(), "alpha,beta");
     let mut cloned = items.clone();
 
     assert_eq!(

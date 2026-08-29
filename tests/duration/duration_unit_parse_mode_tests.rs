@@ -12,18 +12,13 @@ use qubit_datatype::DurationUnitParseMode;
 /// Tests the default and JSON wire values of Duration unit parse modes.
 #[test]
 fn test_duration_unit_parse_mode_default_and_serde() {
+    assert_eq!(DurationUnitParseMode::default(), DurationUnitParseMode::Strict,);
     assert_eq!(
-        DurationUnitParseMode::default(),
-        DurationUnitParseMode::Strict,
-    );
-    assert_eq!(
-        serde_json::to_string(&DurationUnitParseMode::Lenient)
-            .expect("parse mode should serialize"),
+        serde_json::to_string(&DurationUnitParseMode::Lenient).expect("parse mode should serialize"),
         "\"lenient\"",
     );
     assert_eq!(
-        serde_json::from_str::<DurationUnitParseMode>("\"strict\"")
-            .expect("strict mode should deserialize"),
+        serde_json::from_str::<DurationUnitParseMode>("\"strict\"").expect("strict mode should deserialize"),
         DurationUnitParseMode::Strict,
     );
 }

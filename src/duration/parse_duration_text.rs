@@ -36,10 +36,7 @@ use super::SuffixlessDurationPolicy;
 /// alphabetic suffix, [`DurationParseError::NonCanonicalUnit`] for a
 /// Lenient-only alias in strict mode, and [`DurationParseError::OutOfRange`]
 /// for numeric or Duration overflow.
-pub fn parse_duration_text(
-    text: &str,
-    options: &DurationTextOptions,
-) -> Result<Duration, DurationParseError> {
+pub fn parse_duration_text(text: &str, options: &DurationTextOptions) -> Result<Duration, DurationParseError> {
     let maximum = options.max_text_bytes();
     if text.len() > maximum {
         return Err(DurationParseError::LimitExceeded { maximum });
@@ -56,9 +53,7 @@ pub fn parse_duration_text(
         return Err(DurationParseError::InvalidSyntax);
     }
     let unit = resolve_unit(suffix, options)?;
-    let value = digits
-        .parse::<u128>()
-        .map_err(|_| DurationParseError::OutOfRange)?;
+    let value = digits.parse::<u128>().map_err(|_| DurationParseError::OutOfRange)?;
     unit.duration_from_u128(value)
         .map_err(|_| DurationParseError::OutOfRange)
 }
@@ -79,15 +74,10 @@ pub fn parse_duration_text(
 /// Returns invalid syntax for a rejected omission or malformed suffix,
 /// [`DurationParseError::NonCanonicalUnit`] for a Lenient-only alias in
 /// strict mode, and unsupported unit for an unknown alphabetic suffix.
-fn resolve_unit(
-    suffix: &str,
-    options: &DurationTextOptions,
-) -> Result<DurationUnit, DurationParseError> {
+fn resolve_unit(suffix: &str, options: &DurationTextOptions) -> Result<DurationUnit, DurationParseError> {
     if suffix.is_empty() {
         return match options.suffixless_policy() {
-            SuffixlessDurationPolicy::Reject => {
-                Err(DurationParseError::InvalidSyntax)
-            }
+            SuffixlessDurationPolicy::Reject => Err(DurationParseError::InvalidSyntax),
             SuffixlessDurationPolicy::Assume(unit) => Ok(unit),
         };
     }

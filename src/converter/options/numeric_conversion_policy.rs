@@ -104,10 +104,7 @@ impl NumericConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub(crate) const fn with_fractional_to_integer(
-        mut self,
-        policy: FractionalToIntegerPolicy,
-    ) -> Self {
+    pub(crate) const fn with_fractional_to_integer(mut self, policy: FractionalToIntegerPolicy) -> Self {
         self.fractional_to_integer = policy;
         self
     }
@@ -132,10 +129,7 @@ impl NumericConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub(crate) const fn with_numeric_to_float(
-        mut self,
-        policy: FloatRoundingPolicy,
-    ) -> Self {
+    pub(crate) const fn with_numeric_to_float(mut self, policy: FloatRoundingPolicy) -> Self {
         self.numeric_to_float = policy;
         self
     }
@@ -160,10 +154,7 @@ impl NumericConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub(crate) const fn with_text_to_float(
-        mut self,
-        policy: FloatRoundingPolicy,
-    ) -> Self {
+    pub(crate) const fn with_text_to_float(mut self, policy: FloatRoundingPolicy) -> Self {
         self.text_to_float = policy;
         self
     }
@@ -187,10 +178,7 @@ impl NumericConversionPolicyBuilder {
     /// Configures fractional-to-integer conversion.
     #[inline(always)]
     #[must_use]
-    pub const fn fractional_to_integer(
-        self,
-        policy: FractionalToIntegerPolicy,
-    ) -> Self {
+    pub const fn fractional_to_integer(self, policy: FractionalToIntegerPolicy) -> Self {
         Self {
             policy: self.policy.with_fractional_to_integer(policy),
         }

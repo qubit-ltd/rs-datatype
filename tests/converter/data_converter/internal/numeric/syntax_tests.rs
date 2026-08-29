@@ -33,15 +33,10 @@ fn test_numeric_text_rejects_duplicate_signs() {
 fn test_numeric_text_limit_preserves_conversion_limit_fact() {
     let options = ConversionPolicy::default();
     let limits = ConversionLimits::builder()
-        .numeric_limits(
-            NumericConversionLimits::builder().max_text_bytes(3).build(),
-        )
+        .numeric_limits(NumericConversionLimits::builder().max_text_bytes(3).build())
         .build();
 
-    assert_eq!(
-        DataConverter::from("123").to_with::<u32>(&options, &limits),
-        Ok(123),
-    );
+    assert_eq!(DataConverter::from("123").to_with::<u32>(&options, &limits), Ok(123),);
     assert_eq!(
         DataConverter::from("1234").to_with::<u32>(&options, &limits),
         Err(DataConversionError::limit_exceeded(

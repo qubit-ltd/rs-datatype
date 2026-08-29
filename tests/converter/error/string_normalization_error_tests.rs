@@ -15,10 +15,7 @@ use qubit_datatype::StringNormalizationError;
 /// Test normalization error identity and value-free display.
 #[test]
 fn test_string_normalization_error_display() {
-    assert_eq!(
-        StringNormalizationError::Missing.to_string(),
-        "missing string value"
-    );
+    assert_eq!(StringNormalizationError::Missing.to_string(), "missing string value");
     assert_eq!(
         StringNormalizationError::BlankRejected.to_string(),
         "blank string rejected",
@@ -35,14 +32,12 @@ fn test_string_normalization_error_is_missing() {
 /// Test conversion into a target-aware data conversion error.
 #[test]
 fn test_string_normalization_error_into_data_conversion_error() {
-    let missing = StringNormalizationError::Missing
-        .into_data_conversion_error(DataType::UInt16);
+    let missing = StringNormalizationError::Missing.into_data_conversion_error(DataType::UInt16);
     assert_eq!(missing.kind(), DataConversionErrorKind::Missing);
     assert_eq!(missing.from_type(), Some(DataType::String));
     assert_eq!(missing.to_type(), DataType::UInt16);
 
-    let blank = StringNormalizationError::BlankRejected
-        .into_data_conversion_error(DataType::Bool);
+    let blank = StringNormalizationError::BlankRejected.into_data_conversion_error(DataType::Bool);
     assert_eq!(blank.kind(), DataConversionErrorKind::InvalidValue);
     assert_eq!(blank.from_type(), Some(DataType::String));
     assert_eq!(blank.to_type(), DataType::Bool);

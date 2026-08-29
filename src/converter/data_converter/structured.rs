@@ -65,10 +65,7 @@ pub(super) fn account_string_map_structure(
 pub(super) fn account_json_structure(
     value: &Value,
     session: &mut ConversionSession<'_>,
-) -> Result<
-    (),
-    JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>,
-> {
+) -> Result<(), JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>> {
     session.account_json_value(value)
 }
 
@@ -98,12 +95,8 @@ pub(super) fn check_structured_text_limit(
     limits: &StructuredConversionLimits,
 ) -> Result<(), DataConversionError> {
     limits.text().check(value).map_err(|error| match error {
-        MeasuredBudgetError::Budget(error) => {
-            DataConversionError::limit_exceeded(from, to, error)
-        }
-        MeasuredBudgetError::Quantity { resource, source } => {
-            DataConversionError::quantity(from, to, resource, source)
-        }
+        MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(from, to, error),
+        MeasuredBudgetError::Quantity { resource, source } => DataConversionError::quantity(from, to, resource, source),
     })
 }
 
@@ -160,16 +153,10 @@ impl DataConversionTarget for Value {
             DataConverter::Json(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = normalize(value, policy, DataType::Json)?;
-                check_structured_text_limit(
-                    value,
-                    source.data_type(),
-                    DataType::Json,
-                    limits.structured(),
-                )?;
-                let decoded: Value =
-                    session.decode_json(value.as_bytes()).map_err(|error| {
-                        map_json_decode_error(source, DataType::Json, error)
-                    })?;
+                check_structured_text_limit(value, source.data_type(), DataType::Json, limits.structured())?;
+                let decoded: Value = session
+                    .decode_json(value.as_bytes())
+                    .map_err(|error| map_json_decode_error(source, DataType::Json, error))?;
                 Ok(decoded)
             }
             DataConverter::StringMap(value) => Ok(string_map_to_json(value)),
@@ -200,9 +187,7 @@ impl DataConversionTarget for Value {
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::Json(value) => Ok(value.into_owned()),
-            DataConverter::StringMap(value) => {
-                Ok(string_map_into_json(value.into_owned()))
-            }
+            DataConverter::StringMap(value) => Ok(string_map_into_json(value.into_owned())),
             source => Self::convert_from(&source, session),
         }
     }
@@ -248,9 +233,7 @@ pub(super) fn map_json_decode_error_from_type(
 ) -> DataConversionError {
     match error.budget_error().cloned() {
         Some(error) => match error {
-            MeasuredBudgetError::Budget(error) => {
-                DataConversionError::limit_exceeded(source, target, error)
-            }
+            MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(source, target, error),
             MeasuredBudgetError::Quantity {
                 resource,
                 source: error,
@@ -271,17 +254,11 @@ pub(super) fn map_json_decode_error_from_type(
 pub(super) fn map_json_tree_error_from_type(
     source: DataType,
     target: DataType,
-    error: JsonTreeProcessError<
-        ConversionResource,
-        u64,
-        std::convert::Infallible,
-    >,
+    error: JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>,
 ) -> DataConversionError {
     match error {
         JsonTreeProcessError::Budget(error) => match error {
-            MeasuredBudgetError::Budget(error) => {
-                DataConversionError::limit_exceeded(source, target, error)
-            }
+            MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(source, target, error),
             MeasuredBudgetError::Quantity {
                 resource,
                 source: error,
@@ -322,21 +299,10 @@ impl DataConversionTarget for HashMap<String, String> {
             #[cfg(feature = "json")]
             DataConverter::String(value) => {
                 let value = normalize(value, policy, DataType::StringMap)?;
-                check_structured_text_limit(
-                    value,
-                    source.data_type(),
-                    DataType::StringMap,
-                    limits.structured(),
-                )?;
+                check_structured_text_limit(value, source.data_type(), DataType::StringMap, limits.structured())?;
                 let decoded = session
                     .decode_json_seed(StringMapVisitor, value.as_bytes())
-                    .map_err(|error| {
-                        map_json_decode_error(
-                            source,
-                            DataType::StringMap,
-                            error,
-                        )
-                    })?;
+                    .map_err(|error| map_json_decode_error(source, DataType::StringMap, error))?;
                 Ok(decoded)
             }
             DataConverter::Unset(_) => Err(source.missing(DataType::StringMap)),

@@ -23,26 +23,15 @@ use qubit_datatype::NumberRef;
 use qubit_datatype::NumericComparisonPolicy;
 
 /// Compares two number views through the public method API.
-fn compare_numbers(
-    left: NumberRef<'_>,
-    right: NumberRef<'_>,
-    policy: NumericComparisonPolicy,
-) -> Option<Ordering> {
+fn compare_numbers(left: NumberRef<'_>, right: NumberRef<'_>, policy: NumericComparisonPolicy) -> Option<Ordering> {
     left.compare(right, policy)
 }
 #[cfg(feature = "big-number")]
 use std::str::FromStr;
 
 /// Asserts an exact ordering and its reverse-direction symmetry.
-fn assert_exact(
-    left: NumberRef<'_>,
-    right: NumberRef<'_>,
-    expected: Option<Ordering>,
-) {
-    assert_eq!(
-        compare_numbers(left, right, NumericComparisonPolicy::Exact),
-        expected
-    );
+fn assert_exact(left: NumberRef<'_>, right: NumberRef<'_>, expected: Option<Ordering>) {
+    assert_eq!(compare_numbers(left, right, NumericComparisonPolicy::Exact), expected);
     assert_eq!(
         compare_numbers(right, left, NumericComparisonPolicy::Exact),
         expected.map(Ordering::reverse)
@@ -87,10 +76,7 @@ fn finite_f64(sign: bool, exponent: u16, fraction: u64) -> f64 {
 /// Panics if `value` is NaN or infinite.
 #[cfg(feature = "big-number")]
 fn finite_f64_to_rational(value: f64) -> BigRational {
-    assert!(
-        value.is_finite(),
-        "the rational oracle requires a finite f64"
-    );
+    assert!(value.is_finite(), "the rational oracle requires a finite f64");
     let bits = value.to_bits();
     let negative = bits >> 63 != 0;
     let encoded_exponent = ((bits >> 52) & 0x7ff) as i32;
@@ -107,10 +93,7 @@ fn finite_f64_to_rational(value: f64) -> BigRational {
     if binary_exponent >= 0 {
         BigRational::from_integer(numerator << (binary_exponent as usize))
     } else {
-        BigRational::new(
-            numerator,
-            BigInt::from(1_u8) << ((-binary_exponent) as usize),
-        )
+        BigRational::new(numerator, BigInt::from(1_u8) << ((-binary_exponent) as usize))
     }
 }
 
@@ -153,11 +136,7 @@ fn test_number_ref_comparison_exact_fixed_boundaries() {
         NumberRef::from((1_u32 << 24) as f32),
         Some(Ordering::Greater),
     );
-    assert_exact(
-        NumberRef::from(1_i32),
-        NumberRef::from(1.5_f64),
-        Some(Ordering::Less),
-    );
+    assert_exact(NumberRef::from(1_i32), NumberRef::from(1.5_f64), Some(Ordering::Less));
     assert_exact(
         NumberRef::from(-0.0_f64),
         NumberRef::from(0.0_f64),
@@ -269,11 +248,7 @@ fn test_number_ref_comparison_approximate_policy() {
         NumberRef::from(0.0_f64),
     ] {
         assert_eq!(
-            compare_numbers(
-                value,
-                NumberRef::from(0.0_f64),
-                NumericComparisonPolicy::Approximate,
-            ),
+            compare_numbers(value, NumberRef::from(0.0_f64), NumericComparisonPolicy::Approximate,),
             Some(Ordering::Equal)
         );
     }
@@ -525,8 +500,7 @@ fn test_number_ref_comparison_big_number_paths() {
         Some(Ordering::Greater),
     );
 
-    let decimal =
-        BigDecimal::from_str("0.1").expect("decimal fixture should parse");
+    let decimal = BigDecimal::from_str("0.1").expect("decimal fixture should parse");
     assert_eq!(
         compare_numbers(
             NumberRef::from(&decimal),
@@ -558,11 +532,7 @@ fn test_number_ref_comparison_big_number_paths() {
         NumberRef::from(1.0_f32),
         NumberRef::from(1.0_f64),
     ] {
-        assert_exact(
-            NumberRef::from(&BigInt::from(1)),
-            value,
-            Some(Ordering::Equal),
-        );
+        assert_exact(NumberRef::from(&BigInt::from(1)), value, Some(Ordering::Equal));
     }
 
     assert_exact(
@@ -570,15 +540,8 @@ fn test_number_ref_comparison_big_number_paths() {
         NumberRef::from(-f32::from_bits(1)),
         Some(Ordering::Greater),
     );
-    for value in [
-        NumberRef::from(f64::from_bits(1)),
-        NumberRef::from(f64::MAX),
-    ] {
-        assert_exact(
-            NumberRef::from(&BigInt::from(0)),
-            value,
-            Some(Ordering::Less),
-        );
+    for value in [NumberRef::from(f64::from_bits(1)), NumberRef::from(f64::MAX)] {
+        assert_exact(NumberRef::from(&BigInt::from(0)), value, Some(Ordering::Less));
     }
 
     let negative_scale = BigDecimal::new(BigInt::from(12), -2);
@@ -588,10 +551,8 @@ fn test_number_ref_comparison_big_number_paths() {
         Some(Ordering::Equal),
     );
 
-    let extreme_scale =
-        BigDecimal::new(BigInt::from(0), i64::from(u32::MAX) + 1);
-    let extreme_negative_scale =
-        BigDecimal::new(BigInt::from(0), -(i64::from(u32::MAX) + 1));
+    let extreme_scale = BigDecimal::new(BigInt::from(0), i64::from(u32::MAX) + 1);
+    let extreme_negative_scale = BigDecimal::new(BigInt::from(0), -(i64::from(u32::MAX) + 1));
     assert_exact(
         NumberRef::from(&extreme_negative_scale),
         NumberRef::from(&extreme_scale),
@@ -623,18 +584,10 @@ fn test_number_ref_comparison_big_number_paths() {
         NumberRef::from(0.0_f32),
         NumberRef::from(0.0_f64),
     ] {
-        assert_exact(
-            NumberRef::from(&extreme_scale),
-            value,
-            Some(Ordering::Equal),
-        );
+        assert_exact(NumberRef::from(&extreme_scale), value, Some(Ordering::Equal));
     }
     for value in [NumberRef::from(&integer), NumberRef::from(&decimal)] {
-        assert_exact(
-            NumberRef::from(&extreme_scale),
-            value,
-            Some(Ordering::Less),
-        );
+        assert_exact(NumberRef::from(&extreme_scale), value, Some(Ordering::Less));
     }
 
     let too_large_for_f64 = BigInt::from(1_u8) << 20_000;

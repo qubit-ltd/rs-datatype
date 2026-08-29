@@ -28,11 +28,7 @@ use serde::de::DeserializeSeed;
 fn test_one_session_accumulates_multiple_conversions() {
     let policy = ConversionPolicy::default();
     let limits = ConversionLimits::builder()
-        .operation_limits(
-            ConversionOperationLimits::builder()
-                .max_input_bytes(3)
-                .build(),
-        )
+        .operation_limits(ConversionOperationLimits::builder().max_input_bytes(3).build())
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
@@ -53,11 +49,7 @@ fn test_one_session_accumulates_multiple_conversions() {
 fn test_independent_sessions_reset_operation_usage() {
     let policy = ConversionPolicy::default();
     let limits = ConversionLimits::builder()
-        .operation_limits(
-            ConversionOperationLimits::builder()
-                .max_input_bytes(2)
-                .build(),
-        )
+        .operation_limits(ConversionOperationLimits::builder().max_input_bytes(2).build())
         .build();
 
     for _ in 0..2 {
@@ -73,11 +65,7 @@ fn test_trimmed_text_is_charged_by_raw_input_length() {
         .string_policy(StringConversionPolicy::builder().trim(true).build())
         .build();
     let limits = ConversionLimits::builder()
-        .operation_limits(
-            ConversionOperationLimits::builder()
-                .max_input_bytes(2)
-                .build(),
-        )
+        .operation_limits(ConversionOperationLimits::builder().max_input_bytes(2).build())
         .build();
 
     let error = DataConverter::from(" 12 ")
@@ -124,11 +112,7 @@ fn test_failed_conversion_keeps_attempted_item_and_input_accounting() {
 fn test_native_length_output_accounting_uses_shared_budget() {
     let policy = ConversionPolicy::default();
     let limits = ConversionLimits::builder()
-        .operation_limits(
-            ConversionOperationLimits::builder()
-                .max_output_bytes(2)
-                .build(),
-        )
+        .operation_limits(ConversionOperationLimits::builder().max_output_bytes(2).build())
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
@@ -193,32 +177,20 @@ fn test_direct_session_accounting_adapters() {
 
     assert_eq!(session.policy(), &policy);
     assert_eq!(session.limits(), &limits);
-    session
-        .consume_input_bytes(1)
-        .expect("input bytes should fit");
+    session.consume_input_bytes(1).expect("input bytes should fit");
     session
         .check_collection_source_bytes(1)
         .expect("source bytes should fit");
-    session
-        .check_output_bytes(1)
-        .expect("output bytes should fit");
-    session
-        .consume_output_bytes(1)
-        .expect("output bytes should fit");
+    session.check_output_bytes(1).expect("output bytes should fit");
+    session.consume_output_bytes(1).expect("output bytes should fit");
     let rendered = session
         .try_write_string(|writer| write!(writer.as_fmt(), "ok"))
         .expect("rendered output should fit");
     assert_eq!(rendered, "ok");
 
     assert_eq!(session.items_limit(), limits.operation().max_items());
-    assert_eq!(
-        session.input_bytes_limit(),
-        limits.operation().max_input_bytes()
-    );
-    assert_eq!(
-        session.output_bytes_limit(),
-        limits.operation().max_output_bytes()
-    );
+    assert_eq!(session.input_bytes_limit(), limits.operation().max_input_bytes());
+    assert_eq!(session.output_bytes_limit(), limits.operation().max_output_bytes());
     assert_eq!(
         session.structured_nodes_limit(),
         limits.operation().max_structured_nodes()

@@ -28,9 +28,7 @@ const FIXED_INPUT_SIZE: usize = 42;
 const MAX_COEFFICIENT_SIZE: usize = 128;
 
 fuzz_target!(|data: &[u8]| {
-    if data.len() < FIXED_INPUT_SIZE
-        || data.len() > FIXED_INPUT_SIZE + MAX_COEFFICIENT_SIZE
-    {
+    if data.len() < FIXED_INPUT_SIZE || data.len() > FIXED_INPUT_SIZE + MAX_COEFFICIENT_SIZE {
         return;
     }
     let Some(signed_bytes) = read_array::<16>(data, 0) else {
@@ -63,10 +61,7 @@ fuzz_target!(|data: &[u8]| {
         NumberRef::from(&decimal),
     ];
 
-    for policy in [
-        NumericComparisonPolicy::Exact,
-        NumericComparisonPolicy::Approximate,
-    ] {
+    for policy in [NumericComparisonPolicy::Exact, NumericComparisonPolicy::Approximate] {
         for &left in &values {
             for &right in &values {
                 let forward = left
@@ -89,14 +84,10 @@ fuzz_target!(|data: &[u8]| {
                 let middle_right = middle
                     .compare(right, NumericComparisonPolicy::Exact)
                     .expect("generated non-NaN numeric values must be ordered");
-                if left_middle != Ordering::Greater
-                    && middle_right != Ordering::Greater
-                {
+                if left_middle != Ordering::Greater && middle_right != Ordering::Greater {
                     let left_right = left
                         .compare(right, NumericComparisonPolicy::Exact)
-                        .expect(
-                            "generated non-NaN numeric values must be ordered",
-                        );
+                        .expect("generated non-NaN numeric values must be ordered");
                     assert_ne!(left_right, Ordering::Greater);
                 }
             }

@@ -20,11 +20,7 @@ fn test_budget_error_accessor_preserves_complete_budget_facts() {
         remaining: 1,
         requested: 3,
     };
-    let error = DataConversionError::limit_exceeded(
-        DataType::Int32,
-        DataType::String,
-        budget_error.clone(),
-    );
+    let error = DataConversionError::limit_exceeded(DataType::Int32, DataType::String, budget_error.clone());
 
     assert_eq!(error.budget_error(), Some(&budget_error));
     assert_eq!(error.budget_error(), Some(&budget_error));

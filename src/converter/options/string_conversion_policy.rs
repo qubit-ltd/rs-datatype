@@ -133,10 +133,7 @@ impl StringConversionPolicy {
     ///
     /// Updated options.
     #[inline(always)]
-    pub(crate) fn with_blank_string_policy(
-        mut self,
-        policy: BlankStringPolicy,
-    ) -> Self {
+    pub(crate) fn with_blank_string_policy(mut self, policy: BlankStringPolicy) -> Self {
         self.blank_string_policy = policy;
         self
     }
@@ -160,20 +157,13 @@ impl StringConversionPolicy {
     /// Returns [`StringNormalizationError::Missing`] when blank strings are
     /// treated as missing, or [`StringNormalizationError::BlankRejected`] when
     /// blank strings are rejected.
-    pub fn normalize<'a>(
-        &self,
-        value: &'a str,
-    ) -> Result<&'a str, StringNormalizationError> {
+    pub fn normalize<'a>(&self, value: &'a str) -> Result<&'a str, StringNormalizationError> {
         let value = if self.trim { value.trim() } else { value };
         if value.trim().is_empty() {
             match self.blank_string_policy {
                 BlankStringPolicy::Preserve => Ok(value),
-                BlankStringPolicy::TreatAsMissing => {
-                    Err(StringNormalizationError::Missing)
-                }
-                BlankStringPolicy::Reject => {
-                    Err(StringNormalizationError::BlankRejected)
-                }
+                BlankStringPolicy::TreatAsMissing => Err(StringNormalizationError::Missing),
+                BlankStringPolicy::Reject => Err(StringNormalizationError::BlankRejected),
             }
         } else {
             Ok(value)
@@ -200,10 +190,7 @@ impl StringConversionPolicy {
     /// Returns [`StringNormalizationError::BlankRejected`] when the configured
     /// blank policy rejects the value.
     #[inline]
-    pub fn normalize_optional<'a>(
-        &self,
-        value: &'a str,
-    ) -> Result<Option<&'a str>, StringNormalizationError> {
+    pub fn normalize_optional<'a>(&self, value: &'a str) -> Result<Option<&'a str>, StringNormalizationError> {
         match self.normalize(value) {
             Ok(value) => Ok(Some(value)),
             Err(StringNormalizationError::Missing) => Ok(None),

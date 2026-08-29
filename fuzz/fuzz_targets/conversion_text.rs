@@ -48,10 +48,7 @@ fuzz_target!(|data: &[u8]| {
     let options = [
         (ConversionPolicy::strict(), ConversionLimits::default()),
         (ConversionPolicy::lossy(), ConversionLimits::default()),
-        (
-            ConversionPolicy::env_friendly(),
-            ConversionLimits::default(),
-        ),
+        (ConversionPolicy::env_friendly(), ConversionLimits::default()),
         (
             ConversionPolicy::strict(),
             ConversionLimits::builder()
@@ -62,11 +59,7 @@ fuzz_target!(|data: &[u8]| {
                         .max_map_entries(2)
                         .build(),
                 )
-                .operation_limits(
-                    ConversionOperationLimits::builder()
-                        .max_structured_nodes(4)
-                        .build(),
-                )
+                .operation_limits(ConversionOperationLimits::builder().max_structured_nodes(4).build())
                 .build(),
         ),
     ];
@@ -96,10 +89,8 @@ fuzz_target!(|data: &[u8]| {
 ///
 /// * `converter` - Valid UTF-8 source to convert.
 /// * `options` - Bounded set of conversion profiles to exercise.
-fn exercise_conversion<T>(
-    converter: &DataConverter<'_>,
-    options: &[(ConversionPolicy, ConversionLimits)],
-) where
+fn exercise_conversion<T>(converter: &DataConverter<'_>, options: &[(ConversionPolicy, ConversionLimits)])
+where
     T: DataConversionTarget,
 {
     for (policy, limits) in options {

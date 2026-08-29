@@ -41,10 +41,7 @@ impl DataListConversionError {
     /// A list conversion error containing the failed position and cause.
     #[inline(always)]
     pub const fn new(source_index: usize, source: DataConversionError) -> Self {
-        Self {
-            source_index,
-            source,
-        }
+        Self { source_index, source }
     }
 
     /// Returns the original zero-based source position of the failed item.

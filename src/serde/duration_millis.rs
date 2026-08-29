@@ -54,15 +54,12 @@ pub(super) fn rounded_millis(duration: Duration) -> u128 {
 /// Returns the serializer error if converting or writing the integer value
 /// fails.
 #[inline]
-pub fn serialize<S>(
-    duration: &Duration,
-    serializer: S,
-) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    let millis = u64::try_from(rounded_millis(*duration))
-        .map_err(|_| S::Error::custom("duration exceeds u64 milliseconds"))?;
+    let millis =
+        u64::try_from(rounded_millis(*duration)).map_err(|_| S::Error::custom("duration exceeds u64 milliseconds"))?;
     serializer.serialize_u64(millis)
 }
 

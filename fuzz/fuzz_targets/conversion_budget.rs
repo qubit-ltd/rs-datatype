@@ -36,10 +36,7 @@ fuzz_target!(|data: &[u8]| {
     let limits = ConversionLimits::builder()
         .operation_limits(
             ConversionOperationLimits::builder()
-                .max_output_bytes(
-                    u64::try_from(output_limit)
-                        .expect("fuzz output limit byte fits u64"),
-                )
+                .max_output_bytes(u64::try_from(output_limit).expect("fuzz output limit byte fits u64"))
                 .build(),
         )
         .build();
@@ -68,45 +65,27 @@ fn padded_bytes<const N: usize>(data: &[u8]) -> [u8; N] {
 }
 
 /// Compares borrowed and owned integer conversion accounting.
-fn assert_borrowed_and_owned_number(
-    number: i128,
-    policy: &ConversionPolicy,
-    limits: &ConversionLimits,
-) {
-    let borrowed_result =
-        DataConverter::from(number).to_with::<String>(policy, limits);
-    let owned_result =
-        DataConverter::from(number).into_target_with::<String>(policy, limits);
+fn assert_borrowed_and_owned_number(number: i128, policy: &ConversionPolicy, limits: &ConversionLimits) {
+    let borrowed_result = DataConverter::from(number).to_with::<String>(policy, limits);
+    let owned_result = DataConverter::from(number).into_target_with::<String>(policy, limits);
     assert_equivalent_results(&borrowed_result, &owned_result);
     assert_output_failure(&borrowed_result);
     assert_output_failure(&owned_result);
 }
 
 /// Compares borrowed and owned Unicode text conversion accounting.
-fn assert_borrowed_and_owned_text(
-    text: &str,
-    policy: &ConversionPolicy,
-    limits: &ConversionLimits,
-) {
-    let borrowed_result =
-        DataConverter::from(text).to_with::<String>(policy, limits);
-    let owned_result = DataConverter::from(text.to_owned())
-        .into_target_with::<String>(policy, limits);
+fn assert_borrowed_and_owned_text(text: &str, policy: &ConversionPolicy, limits: &ConversionLimits) {
+    let borrowed_result = DataConverter::from(text).to_with::<String>(policy, limits);
+    let owned_result = DataConverter::from(text.to_owned()).into_target_with::<String>(policy, limits);
     assert_equivalent_results(&borrowed_result, &owned_result);
     assert_output_failure(&borrowed_result);
     assert_output_failure(&owned_result);
 }
 
 /// Compares borrowed and owned canonical JSON map conversion accounting.
-fn assert_borrowed_and_owned_map(
-    map: &HashMap<String, String>,
-    policy: &ConversionPolicy,
-    limits: &ConversionLimits,
-) {
-    let borrowed_result =
-        DataConverter::from(map).to_with::<String>(policy, limits);
-    let owned_result = DataConverter::from(map.clone())
-        .into_target_with::<String>(policy, limits);
+fn assert_borrowed_and_owned_map(map: &HashMap<String, String>, policy: &ConversionPolicy, limits: &ConversionLimits) {
+    let borrowed_result = DataConverter::from(map).to_with::<String>(policy, limits);
+    let owned_result = DataConverter::from(map.clone()).into_target_with::<String>(policy, limits);
     assert_equivalent_results(&borrowed_result, &owned_result);
     assert_output_failure(&borrowed_result);
     assert_output_failure(&owned_result);
@@ -125,14 +104,14 @@ fn assert_equivalent_results(
 }
 
 /// Verifies output-limit failures retain their complete budget facts.
-fn assert_output_failure(
-    result: &Result<String, qubit_datatype::DataConversionError>,
-) {
+fn assert_output_failure(result: &Result<String, qubit_datatype::DataConversionError>) {
     if let Err(error) = result
         && error.kind() == DataConversionErrorKind::LimitExceeded
     {
-        assert!(error.budget_error().is_some_and(|budget| {
-            *budget.resource() == ConversionResource::OutputBytes
-        }));
+        assert!(
+            error
+                .budget_error()
+                .is_some_and(|budget| { *budget.resource() == ConversionResource::OutputBytes })
+        );
     }
 }

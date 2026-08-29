@@ -46,11 +46,7 @@ const DATA_TYPE_CASES: [(DataType, &str); 25] = [
 /// Verifies that the public catalog contains only platform-independent types.
 #[test]
 fn test_data_type_catalog_excludes_platform_sized_integers() {
-    let names: Vec<&str> = DataType::ALL
-        .iter()
-        .copied()
-        .map(DataType::as_str)
-        .collect();
+    let names: Vec<&str> = DataType::ALL.iter().copied().map(DataType::as_str).collect();
 
     assert_eq!(names.len(), 25);
     assert!(!names.contains(&"intsize"));
@@ -84,20 +80,10 @@ fn test_data_type_all_and_numeric_classifications() {
         (DataType::BigDecimal, true, false, false, false, false, true),
         (DataType::Duration, false, false, false, false, false, false),
         (DataType::Url, false, false, false, false, false, false),
-        (
-            DataType::StringMap,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-        ),
+        (DataType::StringMap, false, false, false, false, false, false),
         (DataType::Json, false, false, false, false, false, false),
     ];
-    for (data_type, numeric, integer, signed, unsigned, float, big_number) in
-        cases
-    {
+    for (data_type, numeric, integer, signed, unsigned, float, big_number) in cases {
         assert_eq!(data_type.is_numeric(), numeric, "{data_type}");
         assert_eq!(data_type.is_integer(), integer, "{data_type}");
         assert_eq!(data_type.is_signed_integer(), signed, "{data_type}");
@@ -110,10 +96,7 @@ fn test_data_type_all_and_numeric_classifications() {
 /// Verifies the stable catalog, text, parsing, and Serde protocol together.
 #[test]
 fn test_data_type_protocol_cases() {
-    let expected: Vec<DataType> = DATA_TYPE_CASES
-        .iter()
-        .map(|(data_type, _)| *data_type)
-        .collect();
+    let expected: Vec<DataType> = DATA_TYPE_CASES.iter().map(|(data_type, _)| *data_type).collect();
     assert_eq!(DataType::ALL, expected.as_slice());
 
     for (data_type, canonical) in DATA_TYPE_CASES {
@@ -122,17 +105,12 @@ fn test_data_type_protocol_cases() {
         assert_eq!(<&'static str>::from(data_type), canonical);
         assert_eq!(<&'static str>::from(&data_type), canonical);
         assert_eq!(DataType::from_str(canonical), Ok(data_type));
-        assert_eq!(
-            DataType::from_str(&canonical.to_ascii_uppercase()),
-            Ok(data_type),
-        );
+        assert_eq!(DataType::from_str(&canonical.to_ascii_uppercase()), Ok(data_type),);
 
-        let serialized = serde_json::to_string(&data_type)
-            .expect("DataType serialization should succeed");
+        let serialized = serde_json::to_string(&data_type).expect("DataType serialization should succeed");
         assert_eq!(serialized, format!("\"{canonical}\""));
         assert_eq!(
-            serde_json::from_str::<DataType>(&serialized)
-                .expect("DataType deserialization should succeed"),
+            serde_json::from_str::<DataType>(&serialized).expect("DataType deserialization should succeed"),
             data_type,
         );
     }
@@ -143,11 +121,7 @@ fn test_data_type_protocol_cases() {
 fn test_data_type_protocol_names_are_unique() {
     let mut names = HashSet::new();
     for (_, canonical) in DATA_TYPE_CASES {
-        assert!(
-            names.insert(canonical),
-            "Duplicate as_str() value found: {}",
-            canonical,
-        );
+        assert!(names.insert(canonical), "Duplicate as_str() value found: {}", canonical,);
     }
     assert_eq!(names.len(), DATA_TYPE_CASES.len());
 }
@@ -201,8 +175,7 @@ fn test_data_type_from_str_case_insensitive_for_all_variants() {
             })
             .collect();
         assert_eq!(
-            DataType::from_str(&alternating_case)
-                .expect("alternating-case data type name should parse"),
+            DataType::from_str(&alternating_case).expect("alternating-case data type name should parse"),
             data_type
         );
     }
@@ -222,9 +195,6 @@ fn test_data_type_deserialize_rejects_non_lowercase_values() {
 
     for raw in cases {
         let deserialized: Result<DataType, _> = serde_json::from_str(raw);
-        assert!(
-            deserialized.is_err(),
-            "Should reject non-lowercase JSON: {raw}"
-        );
+        assert!(deserialized.is_err(), "Should reject non-lowercase JSON: {raw}");
     }
 }

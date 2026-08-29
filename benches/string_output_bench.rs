@@ -36,37 +36,22 @@ fn benchmark_scalar_string_output(c: &mut Criterion) {
                     .build(),
             )
             .build();
-        group.bench_with_input(
-            BenchmarkId::new("borrowed_identity", size),
-            &source,
-            |bench, source| {
-                bench.iter(|| {
+        group.bench_with_input(BenchmarkId::new("borrowed_identity", size), &source, |bench, source| {
+            bench.iter(|| {
+                let mut session = ConversionSession::new(&policy, &limits);
+                black_box(DataConverter::from(black_box(source.as_str())).to_in::<String>(&mut session))
+            });
+        });
+        group.bench_with_input(BenchmarkId::new("owned_identity", size), &source, |bench, source| {
+            bench.iter_batched(
+                || source.clone(),
+                |source| {
                     let mut session = ConversionSession::new(&policy, &limits);
-                    black_box(
-                        DataConverter::from(black_box(source.as_str()))
-                            .to_in::<String>(&mut session),
-                    )
-                });
-            },
-        );
-        group.bench_with_input(
-            BenchmarkId::new("owned_identity", size),
-            &source,
-            |bench, source| {
-                bench.iter_batched(
-                    || source.clone(),
-                    |source| {
-                        let mut session =
-                            ConversionSession::new(&policy, &limits);
-                        black_box(
-                            DataConverter::from(black_box(source))
-                                .into_target_in::<String>(&mut session),
-                        )
-                    },
-                    BatchSize::LargeInput,
-                );
-            },
-        );
+                    black_box(DataConverter::from(black_box(source)).into_target_in::<String>(&mut session))
+                },
+                BatchSize::LargeInput,
+            );
+        });
     }
     group.finish();
 }
@@ -81,19 +66,12 @@ fn benchmark_string_map_output(c: &mut Criterion) {
     ]);
     let policy = ConversionPolicy::strict();
     let limits = ConversionLimits::builder()
-        .operation_limits(
-            ConversionOperationLimits::builder()
-                .max_output_bytes(32)
-                .build(),
-        )
+        .operation_limits(ConversionOperationLimits::builder().max_output_bytes(32).build())
         .build();
     group.bench_function("borrowed", |bench| {
         bench.iter(|| {
             let mut session = ConversionSession::new(&policy, &limits);
-            black_box(
-                DataConverter::from(black_box(&map))
-                    .to_in::<String>(&mut session),
-            )
+            black_box(DataConverter::from(black_box(&map)).to_in::<String>(&mut session))
         });
     });
     group.bench_function("owned", |bench| {
@@ -101,10 +79,7 @@ fn benchmark_string_map_output(c: &mut Criterion) {
             || map.clone(),
             |map| {
                 let mut session = ConversionSession::new(&policy, &limits);
-                black_box(
-                    DataConverter::from(black_box(map))
-                        .into_target_in::<String>(&mut session),
-                )
+                black_box(DataConverter::from(black_box(map)).into_target_in::<String>(&mut session))
             },
             BatchSize::SmallInput,
         );

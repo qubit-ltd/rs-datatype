@@ -34,8 +34,7 @@ fuzz_target!(|data: &[u8]| {
         return;
     };
     let max_items = usize::from(*policy_control >> 3);
-    let delimiter_count =
-        usize::from(*delimiter_control) % (MAX_DELIMITERS + 1);
+    let delimiter_count = usize::from(*delimiter_control) % (MAX_DELIMITERS + 1);
     let delimiter_count = delimiter_count.min(payload.len());
     let (delimiter_bytes, text_bytes) = payload.split_at(delimiter_count);
     let delimiters = delimiter_bytes.iter().copied().map(char::from);
@@ -56,10 +55,7 @@ fuzz_target!(|data: &[u8]| {
     let limits = ConversionLimits::builder()
         .collection_limits(
             CollectionConversionLimits::builder()
-                .max_items(
-                    u64::try_from(max_items)
-                        .expect("fuzz policy byte fits u64"),
-                )
+                .max_items(u64::try_from(max_items).expect("fuzz policy byte fits u64"))
                 .build(),
         )
         .build();
@@ -68,9 +64,7 @@ fuzz_target!(|data: &[u8]| {
         let _ = item;
     }
 
-    let options = ConversionPolicy::builder()
-        .collection_policy(collection)
-        .build();
+    let options = ConversionPolicy::builder().collection_policy(collection).build();
     let converter = ScalarStringDataConverters::from(text);
     let first = converter.to_first_with::<String>(&options, &limits);
     let values = converter.to_vec_with::<String>(&options, &limits);
@@ -88,10 +82,7 @@ fuzz_target!(|data: &[u8]| {
                 );
             }
             None => {
-                assert!(
-                    first.is_err(),
-                    "empty vector conversion must not produce a first item"
-                );
+                assert!(first.is_err(), "empty vector conversion must not produce a first item");
             }
         }
     }

@@ -11,10 +11,7 @@ use qubit_datatype::NumericComparisonPolicy;
 /// Verifies the stable default and serialized policy vocabulary.
 #[test]
 fn test_numeric_comparison_policy_default_and_serde() {
-    assert_eq!(
-        NumericComparisonPolicy::default(),
-        NumericComparisonPolicy::Exact
-    );
+    assert_eq!(NumericComparisonPolicy::default(), NumericComparisonPolicy::Exact);
     assert_eq!(
         serde_json::to_string(&NumericComparisonPolicy::Approximate)
             .expect("numeric comparison policy should serialize"),

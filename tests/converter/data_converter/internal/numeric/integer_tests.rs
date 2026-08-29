@@ -22,10 +22,7 @@ fn test_integer_to_f32_checks_target_mantissa() {
     let source = DataConverter::from(16_777_217_u32);
     assert!(source.to::<f32>().is_err());
     assert_eq!(
-        source.to_with::<f32>(
-            &ConversionPolicy::lossy(),
-            ConversionLimits::default_ref()
-        ),
+        source.to_with::<f32>(&ConversionPolicy::lossy(), ConversionLimits::default_ref()),
         Ok(16_777_216.0),
     );
 }
@@ -44,10 +41,7 @@ fn test_negative_integer_to_f32_checks_target_mantissa() {
             )
     ));
     assert_eq!(
-        source.to_with::<f32>(
-            &ConversionPolicy::lossy(),
-            ConversionLimits::default_ref()
-        ),
+        source.to_with::<f32>(&ConversionPolicy::lossy(), ConversionLimits::default_ref()),
         Ok(-16_777_216.0),
     );
 }
@@ -66,10 +60,7 @@ fn test_negative_integer_to_f64_checks_target_mantissa() {
             )
     ));
     assert_eq!(
-        source.to_with::<f64>(
-            &ConversionPolicy::lossy(),
-            ConversionLimits::default_ref()
-        ),
+        source.to_with::<f64>(&ConversionPolicy::lossy(), ConversionLimits::default_ref()),
         Ok(-9_007_199_254_740_992.0),
     );
 }
@@ -79,16 +70,10 @@ fn test_negative_integer_to_f64_checks_target_mantissa() {
 #[test]
 fn test_integer_to_f32_rejects_overflow() {
     let error = DataConverter::from(u128::MAX)
-        .to_with::<f32>(
-            &ConversionPolicy::lossy(),
-            ConversionLimits::default_ref(),
-        )
+        .to_with::<f32>(&ConversionPolicy::lossy(), ConversionLimits::default_ref())
         .expect_err("u128::MAX must overflow f32");
 
-    assert!(matches!(
-        error.reason(),
-        Some(InvalidValueReason::OutOfRange)
-    ));
+    assert!(matches!(error.reason(), Some(InvalidValueReason::OutOfRange)));
 }
 
 /// Verifies numeric-to-float rounding can be enabled independently.
@@ -103,8 +88,7 @@ fn test_numeric_to_float_rounding_is_independent() {
         .build();
 
     assert_eq!(
-        DataConverter::from(16_777_217_u32)
-            .to_with::<f32>(&options, ConversionLimits::default_ref()),
+        DataConverter::from(16_777_217_u32).to_with::<f32>(&options, ConversionLimits::default_ref()),
         Ok(16_777_216.0),
     );
     assert!(
@@ -122,22 +106,10 @@ fn test_numeric_to_float_rounding_is_independent() {
 /// Verifies float sources preserve exact representable integer values.
 #[test]
 fn test_float_to_integer_preserves_exact_binary_integer() {
-    assert_eq!(
-        DataConverter::from(2_f64.powi(100)).to::<u128>(),
-        Ok(1_u128 << 100),
-    );
-    assert_eq!(
-        DataConverter::from(2_f32.powi(100)).to::<u128>(),
-        Ok(1_u128 << 100),
-    );
-    assert_eq!(
-        DataConverter::from(-2_f64.powi(100)).to::<i128>(),
-        Ok(-(1_i128 << 100)),
-    );
-    assert_eq!(
-        DataConverter::from(-2_f64.powi(127)).to::<i128>(),
-        Ok(i128::MIN),
-    );
+    assert_eq!(DataConverter::from(2_f64.powi(100)).to::<u128>(), Ok(1_u128 << 100),);
+    assert_eq!(DataConverter::from(2_f32.powi(100)).to::<u128>(), Ok(1_u128 << 100),);
+    assert_eq!(DataConverter::from(-2_f64.powi(100)).to::<i128>(), Ok(-(1_i128 << 100)),);
+    assert_eq!(DataConverter::from(-2_f64.powi(127)).to::<i128>(), Ok(i128::MIN),);
     assert!(DataConverter::from(2_f64.powi(128)).to::<u128>().is_err());
 }
 

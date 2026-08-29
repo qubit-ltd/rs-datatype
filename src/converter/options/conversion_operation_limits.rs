@@ -85,9 +85,7 @@ impl ConversionOperationLimits {
 
     /// Returns the input byte resource limit.
     #[inline(always)]
-    pub const fn input_bytes_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, u64> {
+    pub const fn input_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.input_bytes
     }
 
@@ -100,9 +98,7 @@ impl ConversionOperationLimits {
 
     /// Returns the output byte resource limit.
     #[inline(always)]
-    pub const fn output_bytes_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, u64> {
+    pub const fn output_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.output_bytes
     }
 
@@ -115,9 +111,7 @@ impl ConversionOperationLimits {
 
     /// Returns the structured node resource limit.
     #[inline(always)]
-    pub const fn structured_nodes_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, u64> {
+    pub const fn structured_nodes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.structured_nodes
     }
 
@@ -130,9 +124,7 @@ impl ConversionOperationLimits {
 
     /// Returns the structured payload byte resource limit.
     #[inline(always)]
-    pub const fn structured_payload_bytes_limit(
-        &self,
-    ) -> &ResourceLimit<ConversionResource, u64> {
+    pub const fn structured_payload_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.structured_payload_bytes
     }
 }
@@ -150,10 +142,7 @@ impl ConversionOperationLimitsBuilder {
     pub const fn new() -> Self {
         Self {
             limits: ConversionOperationLimits {
-                items: ResourceLimit::new(
-                    ConversionResource::Items,
-                    ConversionOperationLimits::DEFAULT_MAX_ITEMS,
-                ),
+                items: ResourceLimit::new(ConversionResource::Items, ConversionOperationLimits::DEFAULT_MAX_ITEMS),
                 input_bytes: ResourceLimit::new(
                     ConversionResource::InputBytes,
                     ConversionOperationLimits::DEFAULT_MAX_INPUT_BYTES,
@@ -178,8 +167,7 @@ impl ConversionOperationLimitsBuilder {
     #[inline(always)]
     #[must_use]
     pub const fn max_items(mut self, maximum: u64) -> Self {
-        self.limits.items =
-            ResourceLimit::new(ConversionResource::Items, maximum);
+        self.limits.items = ResourceLimit::new(ConversionResource::Items, maximum);
         self
     }
 
@@ -187,8 +175,7 @@ impl ConversionOperationLimitsBuilder {
     #[inline(always)]
     #[must_use]
     pub const fn max_input_bytes(mut self, maximum: u64) -> Self {
-        self.limits.input_bytes =
-            ResourceLimit::new(ConversionResource::InputBytes, maximum);
+        self.limits.input_bytes = ResourceLimit::new(ConversionResource::InputBytes, maximum);
         self
     }
 
@@ -196,8 +183,7 @@ impl ConversionOperationLimitsBuilder {
     #[inline(always)]
     #[must_use]
     pub const fn max_output_bytes(mut self, maximum: u64) -> Self {
-        self.limits.output_bytes =
-            ResourceLimit::new(ConversionResource::OutputBytes, maximum);
+        self.limits.output_bytes = ResourceLimit::new(ConversionResource::OutputBytes, maximum);
         self
     }
 
@@ -205,8 +191,7 @@ impl ConversionOperationLimitsBuilder {
     #[inline(always)]
     #[must_use]
     pub const fn max_structured_nodes(mut self, maximum: u64) -> Self {
-        self.limits.structured_nodes =
-            ResourceLimit::new(ConversionResource::StructuredNodes, maximum);
+        self.limits.structured_nodes = ResourceLimit::new(ConversionResource::StructuredNodes, maximum);
         self
     }
 
@@ -214,10 +199,7 @@ impl ConversionOperationLimitsBuilder {
     #[inline(always)]
     #[must_use]
     pub const fn max_structured_payload_bytes(mut self, maximum: u64) -> Self {
-        self.limits.structured_payload_bytes = ResourceLimit::new(
-            ConversionResource::StructuredPayloadBytes,
-            maximum,
-        );
+        self.limits.structured_payload_bytes = ResourceLimit::new(ConversionResource::StructuredPayloadBytes, maximum);
         self
     }
 
@@ -234,18 +216,9 @@ impl Default for ConversionOperationLimits {
     #[inline]
     fn default() -> Self {
         Self {
-            items: ResourceLimit::new(
-                ConversionResource::Items,
-                Self::DEFAULT_MAX_ITEMS,
-            ),
-            input_bytes: ResourceLimit::new(
-                ConversionResource::InputBytes,
-                Self::DEFAULT_MAX_INPUT_BYTES,
-            ),
-            output_bytes: ResourceLimit::new(
-                ConversionResource::OutputBytes,
-                Self::DEFAULT_MAX_OUTPUT_BYTES,
-            ),
+            items: ResourceLimit::new(ConversionResource::Items, Self::DEFAULT_MAX_ITEMS),
+            input_bytes: ResourceLimit::new(ConversionResource::InputBytes, Self::DEFAULT_MAX_INPUT_BYTES),
+            output_bytes: ResourceLimit::new(ConversionResource::OutputBytes, Self::DEFAULT_MAX_OUTPUT_BYTES),
             structured_nodes: ResourceLimit::new(
                 ConversionResource::StructuredNodes,
                 Self::DEFAULT_MAX_STRUCTURED_NODES,

@@ -17,10 +17,7 @@ use qubit_datatype::DurationUnit;
 #[test]
 fn test_duration_unit_parses_symbols() {
     for symbol in ["us", "µs", "μs"] {
-        assert_eq!(
-            DurationUnit::parse_strict(symbol),
-            Ok(DurationUnit::Microseconds),
-        );
+        assert_eq!(DurationUnit::parse_strict(symbol), Ok(DurationUnit::Microseconds),);
     }
     assert_eq!(
         DurationUnit::parse_strict("m"),

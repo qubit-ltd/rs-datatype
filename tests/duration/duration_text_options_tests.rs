@@ -17,10 +17,7 @@ fn test_duration_text_options_builders() {
     assert_eq!(DurationTextOptions::DEFAULT_MAX_TEXT_BYTES, 256);
     assert_eq!(
         DurationTextOptions::default(),
-        DurationTextOptions::new(
-            SuffixlessDurationPolicy::Reject,
-            DurationUnitParseMode::Strict,
-        ),
+        DurationTextOptions::new(SuffixlessDurationPolicy::Reject, DurationUnitParseMode::Strict,),
     );
     assert_eq!(
         DurationTextOptions::builder().build().max_text_bytes(),
@@ -32,10 +29,7 @@ fn test_duration_text_options_builders() {
         .unit_parse_mode(DurationUnitParseMode::Lenient)
         .max_text_bytes(4_096)
         .build();
-    assert_eq!(
-        options.suffixless_policy(),
-        SuffixlessDurationPolicy::Reject,
-    );
+    assert_eq!(options.suffixless_policy(), SuffixlessDurationPolicy::Reject,);
     assert_eq!(options.unit_parse_mode(), DurationUnitParseMode::Lenient);
     assert_eq!(options.max_text_bytes(), 4_096);
 }
