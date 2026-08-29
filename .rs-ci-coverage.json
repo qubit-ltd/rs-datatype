@@ -1,0 +1,7 @@
+{
+  "threshold_exempt_files": {
+    "qubit-datatype": [
+      "src/converter/data_converter/text.rs"
+    ]
+  }
+}
