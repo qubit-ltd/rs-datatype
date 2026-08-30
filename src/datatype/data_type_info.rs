@@ -54,6 +54,7 @@ impl DataTypeInfo {
     /// # Returns
     ///
     /// The original [`DataType`].
+    #[must_use = "the data type is returned"]
     #[inline(always)]
     pub const fn data_type(self) -> DataType {
         self.data_type
@@ -75,6 +76,7 @@ impl DataTypeInfo {
     /// # Returns
     ///
     /// A feature-independent category for the stable runtime type.
+    #[must_use = "the data type category is returned"]
     #[inline]
     pub const fn category(self) -> DataTypeCategory {
         match self.data_type {

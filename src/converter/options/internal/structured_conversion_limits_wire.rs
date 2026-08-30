@@ -15,13 +15,18 @@ use super::super::StructuredConversionLimits;
 #[derive(Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub(crate) struct StructuredConversionLimitsWire {
+    /// Maximum normalized structured text size in bytes.
     pub(crate) max_text_bytes: u64,
+    /// Maximum root-inclusive structured depth.
     pub(crate) max_depth: u64,
+    /// Maximum structured sequence item count.
     pub(crate) max_sequence_items: u64,
+    /// Maximum structured map entry count.
     pub(crate) max_map_entries: u64,
 }
 
 impl Default for StructuredConversionLimitsWire {
+    /// Creates wire defaults matching [`StructuredConversionLimits`].
     fn default() -> Self {
         let limits = StructuredConversionLimits::default();
         Self {

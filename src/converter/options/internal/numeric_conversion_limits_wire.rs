@@ -15,13 +15,18 @@ use super::super::NumericConversionLimits;
 #[derive(Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub(crate) struct NumericConversionLimitsWire {
+    /// Maximum normalized numeric text size in bytes.
     pub(crate) max_text_bytes: u64,
+    /// Maximum materialized BigInt decimal digits.
     pub(crate) max_big_integer_digits: u64,
+    /// Maximum materialized BigDecimal coefficient digits.
     pub(crate) max_big_decimal_coefficient_digits: u64,
+    /// Maximum absolute BigDecimal scale magnitude.
     pub(crate) max_big_decimal_scale_magnitude: u64,
 }
 
 impl Default for NumericConversionLimitsWire {
+    /// Creates wire defaults matching [`NumericConversionLimits`].
     fn default() -> Self {
         let limits = NumericConversionLimits::default();
         Self {

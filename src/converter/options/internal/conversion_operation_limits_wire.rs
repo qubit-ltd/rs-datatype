@@ -15,14 +15,20 @@ use super::super::ConversionOperationLimits;
 #[derive(Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub(crate) struct ConversionOperationLimitsWire {
+    /// Cumulative converted-item limit.
     pub(crate) items: u64,
+    /// Cumulative input-byte limit.
     pub(crate) input_bytes: u64,
+    /// Cumulative output-byte limit.
     pub(crate) output_bytes: u64,
+    /// Cumulative structured-node limit.
     pub(crate) structured_nodes: u64,
+    /// Cumulative structured-payload byte limit.
     pub(crate) structured_payload_bytes: u64,
 }
 
 impl Default for ConversionOperationLimitsWire {
+    /// Creates wire defaults matching [`ConversionOperationLimits`].
     fn default() -> Self {
         let limits = ConversionOperationLimits::default();
         Self {

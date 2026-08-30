@@ -38,6 +38,7 @@ impl ConversionCapabilities {
     /// # Returns
     ///
     /// A zero-sized value that queries the active Cargo feature combination.
+    #[must_use = "the active conversion capabilities are returned"]
     #[inline(always)]
     pub const fn current() -> Self {
         Self { private: () }
@@ -154,6 +155,7 @@ impl ConversionCapabilities {
     ///
     /// Every supported target in [`DataType::ALL`] order, or an empty iterator
     /// when the source type is unavailable.
+    #[must_use = "the supported target iterator must be consumed"]
     #[inline]
     pub fn supported_targets(self, from: DataType) -> impl Iterator<Item = DataType> {
         DataType::ALL.iter().copied().filter(move |to| self.supports(from, *to))

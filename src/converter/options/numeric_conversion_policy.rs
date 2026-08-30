@@ -90,6 +90,7 @@ impl NumericConversionPolicy {
     ///
     /// The configured fractional conversion policy.
     #[inline(always)]
+    #[must_use]
     pub const fn fractional_to_integer(&self) -> FractionalToIntegerPolicy {
         self.fractional_to_integer
     }
@@ -115,6 +116,7 @@ impl NumericConversionPolicy {
     ///
     /// The rounding policy for typed numeric sources.
     #[inline(always)]
+    #[must_use]
     pub const fn numeric_to_float(&self) -> FloatRoundingPolicy {
         self.numeric_to_float
     }
@@ -140,6 +142,7 @@ impl NumericConversionPolicy {
     ///
     /// The rounding policy for textual float sources.
     #[inline(always)]
+    #[must_use]
     pub const fn text_to_float(&self) -> FloatRoundingPolicy {
         self.text_to_float
     }
@@ -163,6 +166,7 @@ impl NumericConversionPolicy {
 /// Builder for [`NumericConversionPolicy`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NumericConversionPolicyBuilder {
+    /// Numeric policy being configured.
     policy: NumericConversionPolicy,
 }
 

@@ -70,6 +70,7 @@ impl CollectionConversionLimits {
 /// Builder for [`CollectionConversionLimits`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CollectionConversionLimitsBuilder {
+    /// Collection limits being configured.
     limits: CollectionConversionLimits,
 }
 

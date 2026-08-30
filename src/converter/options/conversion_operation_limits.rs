@@ -71,6 +71,7 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the item resource limit.
+    #[must_use]
     #[inline(always)]
     pub const fn items_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.items
@@ -84,6 +85,7 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the input byte resource limit.
+    #[must_use]
     #[inline(always)]
     pub const fn input_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.input_bytes
@@ -97,6 +99,7 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the output byte resource limit.
+    #[must_use]
     #[inline(always)]
     pub const fn output_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.output_bytes
@@ -110,6 +113,7 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the structured node resource limit.
+    #[must_use]
     #[inline(always)]
     pub const fn structured_nodes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.structured_nodes
@@ -123,6 +127,7 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the structured payload byte resource limit.
+    #[must_use]
     #[inline(always)]
     pub const fn structured_payload_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.structured_payload_bytes
@@ -132,6 +137,7 @@ impl ConversionOperationLimits {
 /// Builder for [`ConversionOperationLimits`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ConversionOperationLimitsBuilder {
+    /// Operation limits being configured.
     limits: ConversionOperationLimits,
 }
 
@@ -232,6 +238,7 @@ impl Default for ConversionOperationLimits {
 }
 
 impl Serialize for ConversionOperationLimits {
+    /// Serializes the configured limits through the private wire shape.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -248,6 +255,7 @@ impl Serialize for ConversionOperationLimits {
 }
 
 impl<'de> Deserialize<'de> for ConversionOperationLimits {
+    /// Deserializes limits from the private wire shape.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,

@@ -69,6 +69,7 @@ impl DurationTextOptions {
     ///
     /// The configured suffixless-input policy.
     #[inline(always)]
+    #[must_use]
     pub const fn suffixless_policy(&self) -> SuffixlessDurationPolicy {
         self.suffixless_policy
     }
@@ -94,6 +95,7 @@ impl DurationTextOptions {
     ///
     /// The configured strict or lenient unit parse mode.
     #[inline(always)]
+    #[must_use]
     pub const fn unit_parse_mode(&self) -> DurationUnitParseMode {
         self.unit_parse_mode
     }
@@ -150,6 +152,7 @@ impl DurationTextOptions {
 /// Builder for [`DurationTextOptions`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DurationTextOptionsBuilder {
+    /// Duration text options being configured.
     options: DurationTextOptions,
 }
 

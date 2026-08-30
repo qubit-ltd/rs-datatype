@@ -109,6 +109,16 @@ fn format_display_source(
     }
 }
 
+/// Reports whether a source can be rendered directly through `Display`.
+///
+/// # Parameters
+///
+/// * `source` - Borrowed source representation to inspect.
+///
+/// # Returns
+///
+/// `true` when the source has a canonical direct display representation;
+/// otherwise, `false` when conversion requires normalization or validation.
 fn is_display_source(source: &DataConverter<'_>) -> bool {
     match source {
         DataConverter::Bool(_)
@@ -139,6 +149,21 @@ fn is_display_source(source: &DataConverter<'_>) -> bool {
     }
 }
 
+/// Converts serialized JSON bytes into a UTF-8 String result.
+///
+/// # Parameters
+///
+/// * `from` - Runtime source type retained in the error.
+/// * `bytes` - Serialized JSON bytes to decode as UTF-8.
+///
+/// # Returns
+///
+/// The decoded string when the bytes are valid UTF-8.
+///
+/// # Errors
+///
+/// Returns a JSON serialization invalid-value error when the bytes are not
+/// valid UTF-8.
 #[cfg(feature = "json")]
 fn json_bytes_to_string(from: DataType, bytes: Vec<u8>) -> Result<String, DataConversionError> {
     String::from_utf8(bytes).map_err(|_| {

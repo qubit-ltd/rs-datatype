@@ -17,6 +17,9 @@ pub(crate) struct JsonAccountingVisitor;
 impl JsonTreeVisitor for JsonAccountingVisitor {
     type Error = std::convert::Infallible;
 
+    /// Accepts a node after the traversal layer has charged its budget.
+    ///
+    /// The visitor performs no additional work and therefore cannot fail.
     #[inline(always)]
     fn enter(&mut self, _value: &Value, _context: JsonTreeContext<'_>) -> Result<(), Self::Error> {
         Ok(())

@@ -55,6 +55,7 @@ impl DurationConversionLimits {
 /// Builder for [`DurationConversionLimits`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DurationConversionLimitsBuilder {
+    /// Duration limits being configured.
     limits: DurationConversionLimits,
 }
 
