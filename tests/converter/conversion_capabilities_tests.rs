@@ -8,6 +8,7 @@
 //! Tests for feature-aware conversion capability discovery.
 
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::time::Duration;
 
 #[cfg(feature = "big-decimal")]
@@ -221,8 +222,17 @@ fn test_supported_targets_are_empty_for_unavailable_source() {
 #[test]
 fn test_capabilities_match_representative_conversion_dispatch() {
     let capabilities = ConversionCapabilities::current();
+    let sources = representative_sources();
+    let represented: HashSet<DataType> = sources.iter().map(DataConverter::data_type).collect();
+    let available: HashSet<DataType> = DataType::ALL
+        .iter()
+        .copied()
+        .filter(|data_type| capabilities.is_available(*data_type))
+        .collect();
 
-    for source in representative_sources() {
+    assert_eq!(represented, available);
+
+    for source in sources {
         let from = source.data_type();
         for target in DataType::ALL.iter().copied() {
             let Some(result) = convert_to(&source, target) else {
