@@ -30,7 +30,7 @@ source. A conversion combines that source with a `ConversionPolicy` (meaning)
 and `ConversionLimits` (resource bounds). `ConversionSession` is optional: use
 one only when several calls must share the same cumulative budget.
 
-```
+```text
 runtime source ── DataConverter ── policy + limits ──> typed result
                                       │
                                       └─ optional shared ConversionSession

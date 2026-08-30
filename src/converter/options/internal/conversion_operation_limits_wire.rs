@@ -12,6 +12,7 @@ use serde::Serialize;
 
 use super::super::ConversionOperationLimits;
 
+/// Serializable field-based representation of operation limits.
 #[derive(Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub(crate) struct ConversionOperationLimitsWire {
