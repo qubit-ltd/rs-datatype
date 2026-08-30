@@ -55,8 +55,11 @@ use crate::datatype::DataType;
 #[must_use]
 #[derive(Debug, PartialEq, Eq)]
 pub struct ConversionSession<'a> {
+    /// Immutable conversion policy applied to every nested operation.
     policy: &'a ConversionPolicy,
+    /// Immutable resource limits used to initialize the session budgets.
     limits: &'a ConversionLimits,
+    /// Mutable cumulative accounting for this conversion session.
     budget: ConversionBudget,
 }
 
@@ -393,6 +396,7 @@ impl<'a> ConversionSession<'a> {
         self.limits.operation().max_structured_payload_bytes()
     }
 
+    /// Returns remaining cumulative item capacity for internal adapters.
     #[inline(always)]
     pub(crate) fn remaining_items(&self) -> u64 {
         self.items_remaining()
@@ -448,6 +452,18 @@ impl<'a> ConversionSession<'a> {
     }
 }
 
+/// Converts a budgeted string rendering failure into a conversion error.
+///
+/// # Parameters
+///
+/// * `from` - Runtime source type retained in the error.
+/// * `to` - Requested target type retained in the error.
+/// * `error` - Rendering or budget failure to convert.
+///
+/// # Returns
+///
+/// A conversion error preserving budget, quantity, render, or encoding
+/// failure details where the public error model supports them.
 fn map_string_write_error(
     from: DataType,
     to: DataType,
@@ -465,6 +481,18 @@ fn map_string_write_error(
     }
 }
 
+/// Converts a JSON decoder failure into a conversion error.
+///
+/// # Parameters
+///
+/// * `from` - Runtime source type retained in the error.
+/// * `to` - Requested target type retained in the error.
+/// * `error` - JSON decoding failure to convert.
+///
+/// # Returns
+///
+/// A measured-limit error when the decoder exhausted a budget, otherwise a
+/// JSON deserialization invalid-value error.
 #[cfg(feature = "json")]
 fn map_json_decode_error(
     from: DataType,
@@ -483,6 +511,17 @@ fn map_json_decode_error(
     }
 }
 
+/// Converts a JSON tree traversal failure into a conversion error.
+///
+/// # Parameters
+///
+/// * `from` - Runtime source type retained in the error.
+/// * `to` - Requested target type retained in the error.
+/// * `error` - JSON traversal failure to convert.
+///
+/// # Returns
+///
+/// The corresponding measured-limit conversion error.
 #[cfg(feature = "json")]
 fn map_json_tree_error(
     from: DataType,
@@ -495,6 +534,18 @@ fn map_json_tree_error(
     }
 }
 
+/// Converts a JSON encoder failure into a conversion error.
+///
+/// # Parameters
+///
+/// * `from` - Runtime source type retained in the error.
+/// * `to` - Requested target type retained in the error.
+/// * `error` - JSON encoding failure to convert.
+///
+/// # Returns
+///
+/// A measured-limit error for budget failures, or a JSON serialization
+/// invalid-value error for encoding failures.
 #[cfg(feature = "json")]
 fn map_json_encode_error(
     from: DataType,

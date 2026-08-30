@@ -20,7 +20,7 @@ use qubit_budget::json::JsonValueTransaction;
 use super::super::conversion_resource::ConversionResource;
 use super::super::options::ConversionLimits;
 
-/// Mutable budgets owned by one [`super::ConversionSession`].
+/// Mutable budgets owned by one [`crate::converter::ConversionSession`].
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct ConversionBudget {
     /// Cumulative converted-item budget.
@@ -114,30 +114,37 @@ impl ConversionBudget {
         self.items.remaining()
     }
 
+    /// Returns cumulative converted items already consumed.
     pub(crate) fn items_used(&self) -> u64 {
         self.items.used()
     }
 
+    /// Returns remaining cumulative input-byte capacity.
     pub(crate) fn input_bytes_remaining(&self) -> u64 {
         self.input_bytes.remaining()
     }
 
+    /// Returns remaining cumulative output-byte capacity.
     pub(crate) fn output_bytes_remaining(&self) -> u64 {
         self.output_bytes.remaining()
     }
 
+    /// Returns cumulative input bytes already consumed.
     pub(crate) fn input_bytes_used(&self) -> u64 {
         self.input_bytes.used()
     }
 
+    /// Returns cumulative output bytes already consumed.
     pub(crate) fn output_bytes_used(&self) -> u64 {
         self.output_bytes.used()
     }
 
+    /// Returns cumulative structured nodes already consumed.
     pub(crate) fn structured_nodes_used(&self) -> u64 {
         self.structured.used_nodes().unwrap_or(0)
     }
 
+    /// Returns cumulative structured payload bytes already consumed.
     pub(crate) fn structured_payload_bytes_used(&self) -> u64 {
         self.structured.used_payload_bytes().unwrap_or(0)
     }

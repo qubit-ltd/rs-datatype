@@ -106,6 +106,7 @@ impl ConversionLimits {
 /// Builder for [`ConversionLimits`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConversionLimitsBuilder {
+    /// Aggregate limits being configured.
     limits: ConversionLimits,
 }
 

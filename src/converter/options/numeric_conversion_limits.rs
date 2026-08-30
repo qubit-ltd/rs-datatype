@@ -85,12 +85,14 @@ impl NumericConversionLimits {
 
     /// Returns the composed text-byte limits.
     #[inline]
+    #[must_use]
     pub const fn text(&self) -> &StringLimits<ConversionResource> {
         &self.text
     }
 
     /// Returns the numeric text resource limit.
     #[inline]
+    #[must_use]
     pub fn max_text_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         self.text.utf8_bytes_limit().expect("numeric text limit is configured")
     }
@@ -135,6 +137,7 @@ impl NumericConversionLimits {
     /// Returns composed BigInteger limits when the feature is enabled.
     #[cfg(feature = "big-integer")]
     #[inline]
+    #[must_use]
     pub const fn big_integer(&self) -> &BigIntegerLimits<ConversionResource> {
         &self.big_integer
     }
@@ -244,6 +247,7 @@ impl NumericConversionLimits {
     /// Returns composed BigDecimal limits when the feature is enabled.
     #[cfg(feature = "big-decimal")]
     #[inline]
+    #[must_use]
     pub const fn big_decimal(&self) -> &BigDecimalLimits<ConversionResource> {
         &self.big_decimal
     }
@@ -273,6 +277,7 @@ impl NumericConversionLimits {
 /// Builder for [`NumericConversionLimits`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NumericConversionLimitsBuilder {
+    /// Numeric limits being configured.
     limits: NumericConversionLimits,
 }
 
@@ -382,6 +387,7 @@ impl Default for NumericConversionLimits {
 }
 
 impl Serialize for NumericConversionLimits {
+    /// Serializes the configured limits through the private wire shape.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -397,6 +403,7 @@ impl Serialize for NumericConversionLimits {
 }
 
 impl<'de> Deserialize<'de> for NumericConversionLimits {
+    /// Deserializes limits from the private wire shape.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,

@@ -69,12 +69,14 @@ impl StructuredConversionLimits {
 
     /// Returns the composed text-byte limits.
     #[inline]
+    #[must_use]
     pub const fn text(&self) -> &StringLimits<ConversionResource> {
         &self.text
     }
 
     /// Returns the structured text resource limit.
     #[inline(always)]
+    #[must_use]
     pub fn max_text_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         self.text
             .utf8_bytes_limit()
@@ -105,6 +107,7 @@ impl StructuredConversionLimits {
 
     /// Returns the composed JSON value limits used by structured traversal.
     #[inline]
+    #[must_use]
     pub const fn value(&self) -> &JsonValueLimits<ConversionResource, u64> {
         &self.value
     }
@@ -118,6 +121,7 @@ impl StructuredConversionLimits {
 
     /// Returns the depth resource limit.
     #[inline(always)]
+    #[must_use]
     pub fn max_depth_limit(&self) -> ResourceLimit<ConversionResource, u64> {
         self.value
             .structure_limits()
@@ -154,6 +158,7 @@ impl StructuredConversionLimits {
 
     /// Returns the sequence item resource limit.
     #[inline(always)]
+    #[must_use]
     pub fn max_sequence_items_limit(&self) -> ResourceLimit<ConversionResource, u64> {
         self.value
             .structure_limits()
@@ -190,6 +195,7 @@ impl StructuredConversionLimits {
 
     /// Returns the map entry resource limit.
     #[inline(always)]
+    #[must_use]
     pub fn max_map_entries_limit(&self) -> ResourceLimit<ConversionResource, u64> {
         self.value
             .structure_limits()
@@ -219,6 +225,7 @@ impl StructuredConversionLimits {
 /// Builder for [`StructuredConversionLimits`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StructuredConversionLimitsBuilder {
+    /// Structured limits being configured.
     limits: StructuredConversionLimits,
 }
 
@@ -354,6 +361,7 @@ fn rebuild_value(
 }
 
 impl Serialize for StructuredConversionLimits {
+    /// Serializes the configured limits through the private wire shape.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -369,6 +377,7 @@ impl Serialize for StructuredConversionLimits {
 }
 
 impl<'de> Deserialize<'de> for StructuredConversionLimits {
+    /// Deserializes limits from the private wire shape.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,

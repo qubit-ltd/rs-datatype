@@ -344,6 +344,7 @@ impl ConversionPolicy {
 /// Builder for [`ConversionPolicy`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConversionPolicyBuilder {
+    /// Conversion policy being configured.
     policy: ConversionPolicy,
 }
 

@@ -28,16 +28,19 @@ pub(crate) trait ConversionStringSink {
 }
 
 impl ConversionStringSink for BudgetedStringWriter<'_, ConversionResource> {
+    /// Forwards string slices to the budgeted formatter.
     #[inline]
     fn write_str(&mut self, value: &str) -> fmt::Result {
         self.as_fmt().write_str(value)
     }
 
+    /// Forwards one Unicode scalar to the budgeted formatter.
     #[inline]
     fn write_char(&mut self, value: char) -> fmt::Result {
         self.as_fmt().write_char(value)
     }
 
+    /// Forwards formatting arguments to the budgeted formatter.
     #[inline]
     fn write_fmt(&mut self, arguments: fmt::Arguments<'_>) -> fmt::Result {
         self.as_fmt().write_fmt(arguments)

@@ -25,12 +25,26 @@ use crate::datatype::DataType;
 ///
 /// [`ConversionSession::write_string`]: super::ConversionSession::write_string
 pub struct ConversionStringWriter<'writer> {
+    /// Type-erased budgeted output sink receiving rendered bytes.
     inner: &'writer mut dyn ConversionStringSink,
+    /// Runtime source type used to contextualize rendering errors.
     from: DataType,
+    /// Runtime target type used to contextualize rendering errors.
     to: DataType,
 }
 
 impl<'writer> ConversionStringWriter<'writer> {
+    /// Creates a writer connected to one conversion session's output budget.
+    ///
+    /// # Parameters
+    ///
+    /// * `inner` - Budgeted sink that receives rendered output.
+    /// * `from` - Runtime source type for conversion errors.
+    /// * `to` - Runtime target type for conversion errors.
+    ///
+    /// # Returns
+    ///
+    /// A writer borrowing the supplied sink for the duration of the render.
     #[inline(always)]
     pub(crate) fn new<'budget>(
         inner: &'writer mut BudgetedStringWriter<'budget, ConversionResource>,

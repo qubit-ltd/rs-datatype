@@ -180,6 +180,7 @@ impl DataType {
     ///
     /// A lightweight metadata value containing this type's stable name and
     /// semantic category.
+    #[must_use = "the data type metadata is returned"]
     #[inline(always)]
     pub const fn info(self) -> DataTypeInfo {
         DataTypeInfo::new(self)
@@ -296,6 +297,7 @@ impl DataType {
 }
 
 impl Display for DataType {
+    /// Writes the stable lowercase type name to the formatter.
     #[inline(always)]
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         formatter.write_str(self.as_str())
@@ -305,6 +307,7 @@ impl Display for DataType {
 impl FromStr for DataType {
     type Err = DataTypeParseError;
 
+    /// Parses a type name case-insensitively using the stable vocabulary.
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         Self::ALL
             .iter()
@@ -315,6 +318,7 @@ impl FromStr for DataType {
 }
 
 impl From<DataType> for &'static str {
+    /// Converts a type descriptor to its stable lowercase name.
     #[inline(always)]
     fn from(value: DataType) -> Self {
         value.as_str()
@@ -322,6 +326,7 @@ impl From<DataType> for &'static str {
 }
 
 impl From<&DataType> for &'static str {
+    /// Converts a borrowed type descriptor to its stable lowercase name.
     #[inline(always)]
     fn from(value: &DataType) -> Self {
         value.as_str()

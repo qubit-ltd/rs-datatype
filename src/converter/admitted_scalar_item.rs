@@ -37,8 +37,11 @@ use super::error::DataConversionError;
 #[must_use]
 #[derive(Debug)]
 pub struct AdmittedScalarItem<'session, 'policy, 'source> {
+    /// Session whose item budget admitted this scalar.
     session: &'session mut ConversionSession<'policy>,
+    /// Zero-based position of the scalar in its original collection.
     source_index: usize,
+    /// Source value whose conversion consumes this admission.
     source: DataConverter<'source>,
 }
 

@@ -438,6 +438,7 @@ impl DataConverter<'_> {
     /// # Returns
     ///
     /// Returns the [`DataType`] corresponding to this enum variant.
+    #[must_use = "the source data type is returned"]
     #[inline(always)]
     pub const fn data_type(&self) -> DataType {
         for_each_data_type_mapping!(data_converter_data_type_match, self)

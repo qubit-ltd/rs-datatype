@@ -119,6 +119,7 @@ impl StringConversionPolicy {
     ///
     /// The policy applied after optional trimming.
     #[inline(always)]
+    #[must_use]
     pub const fn blank_string_policy(&self) -> BlankStringPolicy {
         self.blank_string_policy
     }
@@ -202,6 +203,7 @@ impl StringConversionPolicy {
 /// Builder for [`StringConversionPolicy`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StringConversionPolicyBuilder {
+    /// String policy being configured.
     policy: StringConversionPolicy,
 }
 

@@ -285,6 +285,7 @@ impl BooleanConversionPolicy {
     /// # Returns
     ///
     /// The configured numeric boolean policy.
+    #[must_use]
     #[inline(always)]
     pub const fn numeric_policy(&self) -> BooleanNumericPolicy {
         self.numeric_policy
@@ -370,6 +371,7 @@ impl BooleanConversionPolicy {
 /// Builder for [`BooleanConversionPolicy`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BooleanConversionPolicyBuilder {
+    /// Validated policy or the first literal-conflict error encountered.
     policy: Result<BooleanConversionPolicy, BooleanLiteralConflictError>,
 }
 
