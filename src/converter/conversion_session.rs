@@ -26,7 +26,6 @@ use qubit_json::encode::JsonEncodeError;
 #[cfg(feature = "json")]
 use qubit_json::encode::JsonEncoder;
 #[cfg(feature = "json")]
-#[cfg(feature = "json")]
 use qubit_json::value::traverse::JsonTreeProcessError;
 #[cfg(feature = "json")]
 use qubit_json::value::traverse::JsonTreeReader;
