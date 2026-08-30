@@ -116,6 +116,15 @@ fn compare_big_integer_to_fixed(left: &BigInt, right: NumberRepr<'_>) -> Option<
 ///
 /// * `'a` - Lifetime of a borrowed arbitrary-precision numeric value.
 ///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::NumberRef;
+///
+/// let number = NumberRef::from(42_i64);
+/// assert!(number.is_integer());
+/// ```
+///
 /// ```compile_fail
 /// use qubit_datatype::NumberRef;
 ///

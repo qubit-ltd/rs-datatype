@@ -18,6 +18,15 @@ use super::internal::ConversionOperationLimitsWire;
 use crate::converter::ConversionResource;
 
 /// Cumulative limits shared by single and batch conversions.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::ConversionOperationLimits;
+///
+/// let limits = ConversionOperationLimits::builder().max_items(8).build();
+/// assert_eq!(limits.max_items(), 8);
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ConversionOperationLimits {

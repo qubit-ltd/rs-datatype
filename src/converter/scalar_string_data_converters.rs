@@ -28,6 +28,26 @@ use crate::datatype::DataType;
 /// # Type Parameters
 ///
 /// * `'a` - Lifetime of the borrowed scalar string source.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::CollectionConversionPolicy;
+/// use qubit_datatype::ConversionLimits;
+/// use qubit_datatype::ConversionPolicy;
+/// use qubit_datatype::ScalarStringDataConverters;
+///
+/// let collection = CollectionConversionPolicy::builder()
+///     .split_scalar_strings(true)
+///     .delimiters([','])
+///     .build();
+/// let policy = ConversionPolicy::builder().collection_policy(collection).build();
+/// let limits = ConversionLimits::default();
+/// let values = ScalarStringDataConverters::from("1,2,3")
+///     .to_vec_with::<u32>(&policy, &limits)
+///     .unwrap();
+/// assert_eq!(values, vec![1, 2, 3]);
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct ScalarStringDataConverters<'a> {
