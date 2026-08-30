@@ -7,8 +7,9 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![English Document](https://img.shields.io/badge/Document-English-blue.svg)](README.md)
 
-面向 Rust 的运行时类型描述、跨表示精确数值比较和策略驱动值转换工具。API 文档
-发布于 [docs.rs](https://docs.rs/qubit-datatype)。
+当 Rust 服务需要处理配置、协议或数据接入中的运行时类型值时，`qubit-datatype`
+提供稳定的类型描述、跨表示精确数值比较和可配置的转换规则，避免在未声明的情况下
+丢失精度。API 文档发布于 [docs.rs](https://docs.rs/qubit-datatype)。
 
 ## 1. 工具概览
 
@@ -370,6 +371,12 @@ assert_eq!(DataConverter::from("8080").to::<Port>(), Ok(Port(8080)));
 ```
 
 优先采用委托，以继承内置目标的规范化、精度、错误和 feature 契约。
+
+## 延伸阅读
+
+[English user guide](doc/user_guide.md) 以配置输入为场景，说明策略选择、资源限制、
+诊断和 Duration 文本处理；[中文用户手册](doc/user_guide.zh_CN.md) 提供同一内容的
+中文说明。
 
 ## 测试
 
