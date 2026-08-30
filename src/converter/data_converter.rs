@@ -414,8 +414,7 @@ impl DataConverter<'_> {
             }
             #[cfg(feature = "json")]
             Self::Json(value) if target == DataType::Json => {
-                account_json_structure(value, session)
-                    .map_err(|error| structured::map_json_tree_error_from_type(self.data_type(), target, error))?;
+                account_json_structure(value, self.data_type(), target, session)?;
             }
             Self::StringMap(value) if target == DataType::StringMap => {
                 account_string_map_structure(value, 1, session)

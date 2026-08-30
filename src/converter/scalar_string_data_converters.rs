@@ -120,18 +120,14 @@ impl<'a> ScalarStringDataConverters<'a> {
         let mut converted = Vec::new();
         for item in items {
             let item = item.map_err(|error| error.into_list_conversion_error(T::DATA_TYPE))?;
-            let _admitted = match session.admit_scalar_item(item) {
+            let source = DataConverter::from(item.value);
+            let admitted = match session.admit_scalar_item(item.source_index, source) {
                 Ok(admitted) => admitted,
                 Err(error) => {
-                    let source = DataConverter::from(item.value);
-                    return Err(DataListConversionError::new(
-                        item.source_index,
-                        DataConversionError::limit_exceeded(source.data_type(), T::DATA_TYPE, error),
-                    ));
+                    return Err(DataListConversionError::new(item.source_index, error));
                 }
             };
-            let source = DataConverter::from(item.value);
-            let value = match session.delegate::<T>(&source) {
+            let value = match admitted.convert::<T>() {
                 Ok(value) => value,
                 Err(error) => {
                     return Err(DataListConversionError::new(item.source_index, error));
@@ -218,19 +214,13 @@ impl<'a> ScalarStringDataConverters<'a> {
             .ok_or(DataConversionError::empty_collection(T::DATA_TYPE))?
             .map_err(|error| error.into_data_conversion_error(T::DATA_TYPE))?;
         let source = DataConverter::from(first.value);
-        let _admitted = session
-            .admit_scalar_item(first)
-            .map_err(|error| DataConversionError::limit_exceeded(source.data_type(), T::DATA_TYPE, error))?;
-        session.delegate::<T>(&source)
+        session.admit_scalar_item(first.source_index, source)?.convert::<T>()
     }
 
     /// Checks the complete scalar source and charges it once before scanning.
     #[inline]
     fn check_and_charge_source(&self, session: &mut ConversionSession<'_>) -> Result<(), DataConversionError> {
-        let target = DataType::String;
-        session
-            .admit_scalar_source_bytes_usize(self.source.len())
-            .map_err(|error| DataConversionError::measured_limit(target, target, error))
+        session.admit_scalar_source(DataType::String, DataType::String, self.source.len())
     }
 }
 

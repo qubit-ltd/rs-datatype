@@ -65,21 +65,30 @@ or formatting that map as JSON additionally needs `json`.
 ## 3. Runtime type descriptors
 
 `DataType` is a stable vocabulary with parsing, display, Serde, classification
-methods, and the exhaustive `DataType::ALL` slice. `DataTypeOf` maps supported
-Rust types to that vocabulary. Platform-sized `isize` and `usize` are omitted
-because their representation is target-dependent.
+methods, uniform `DataTypeInfo` metadata, and the exhaustive `DataType::ALL`
+slice. `DataTypeOf` maps supported Rust types to that vocabulary.
+Platform-sized `isize` and `usize` are omitted because their representation is
+target-dependent.
 
 The lowercase spellings returned by `DataType::as_str`, accepted by Serde, and
 listed by `DataType::ALL` form a compatibility surface. Existing spellings are
 not changed or reused for a different meaning in a non-breaking release.
 
 ```rust
-use qubit_datatype::{DataType, DataTypeOf};
+use qubit_datatype::{ConversionCapabilities, DataType, DataTypeCategory, DataTypeOf};
 
 assert_eq!(u64::DATA_TYPE, DataType::UInt64);
 assert!(DataType::Float64.is_numeric());
+assert_eq!(DataType::Float64.info().category(), DataTypeCategory::FloatingPoint);
 assert_eq!("INT32".parse::<DataType>(), Ok(DataType::Int32));
+
+let capabilities = ConversionCapabilities::current();
+assert!(capabilities.supports(DataType::String, DataType::UInt64));
 ```
+
+Capability queries describe conversion paths compiled by the active feature
+set; they do not predict whether a particular value or policy will accept a
+conversion.
 
 ## 4. Numeric comparison
 
@@ -270,12 +279,13 @@ still retains its item and input charges; only transactional String output is
 committed after the complete result succeeds. Convenience calls do not share
 that state because each constructs a fresh session.
 
-Limit errors expose resource and observed or remaining-budget facts through
-`DataConversionError::budget_error()`, which returns the original
-`qubit_budget::BudgetError` without a datatype-specific wrapper. Output-byte
-budgets count the cumulative UTF-8 payload of successful built-in `String`
-targets across a session, regardless of whether the source is borrowed or
-owned; non-`String` targets do not consume this output budget.
+Limit errors expose stable resource, configured-limit, observation, used,
+remaining, and requested facts directly through `DataConversionError`
+accessors. The underlying accounting and JSON-library error types remain an
+implementation detail. Output-byte budgets count the cumulative UTF-8 payload
+of successful built-in `String` targets across a session, regardless of
+whether the source is borrowed or owned; non-`String` targets do not consume
+this output budget.
 
 Boolean literal builders are fallible because true and false sets must remain
 disjoint under the selected case-sensitivity rule.
@@ -302,10 +312,12 @@ selects the largest exact preferred unit.
 Duration parse errors retain only stable categories and static canonical unit
 symbols; they neither echo nor own arbitrary input suffixes.
 
-The `duration` feature also exposes three `#[serde(with = "...")]` modules:
+The `duration` feature also exposes four `#[serde(with = "...")]` modules:
 `duration_millis` stores a half-up rounded `u64` millisecond count,
 `duration_millis_with_unit` stores half-up rounded `<integer>ms` text, and
-`duration_with_unit` stores an exact preferred-unit string.
+`duration_millis_with_unit_exact` stores `<integer>ms` text only when no
+submillisecond precision would be lost. `duration_with_unit` stores an exact
+preferred-unit string.
 
 ```rust
 use std::time::Duration;
@@ -375,9 +387,15 @@ conversion as a second top-level item.
 
 The outer `to_in`/`into_target_in` call has already charged one item and its
 source input. Custom targets should use `session.delegate` or
-`session.delegate_owned` for nested conversions; direct budget-consumption
-methods are intended only for custom work units with their own documented
-accounting.
+`session.delegate_owned` for nested conversions. Extensions with their own
+work units can use the domain-level admission, JSON, and transactional String
+methods on `ConversionSession`; these return `DataConversionError` rather than
+backend-specific errors.
+
+For scalar collection adapters, `admit_scalar_item` returns a one-use proof
+that owns both the exact source and its session borrow. Consume that proof with
+`convert` or `convert_with_session`; it cannot be paired with another source or
+reused.
 
 ```rust
 use qubit_datatype::{ConversionSession, DataConversionError,

@@ -160,9 +160,7 @@ fn map_duration_parse_error(error: DurationParseError, value: &str, options: &Co
         DurationParseError::NonCanonicalUnit { canonical } => DataConversionError::invalid(
             DataType::String,
             to,
-            InvalidValueReason::NonCanonicalDurationUnit {
-                canonical: canonical.to_owned(),
-            },
+            InvalidValueReason::NonCanonicalDurationUnit { canonical },
         ),
         DurationParseError::UnsupportedUnit => {
             DataConversionError::invalid(DataType::String, to, InvalidValueReason::UnsupportedDurationUnit)

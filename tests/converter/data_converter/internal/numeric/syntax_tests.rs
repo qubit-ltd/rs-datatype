@@ -7,12 +7,9 @@
 // =============================================================================
 //! Numeric syntax validation tests.
 
-use qubit_budget::BudgetError;
-use qubit_budget::Observation;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
-use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
 use qubit_datatype::InvalidValueReason;
@@ -37,16 +34,12 @@ fn test_numeric_text_limit_preserves_conversion_limit_fact() {
         .build();
 
     assert_eq!(DataConverter::from("123").to_with::<u32>(&options, &limits), Ok(123),);
-    assert_eq!(
-        DataConverter::from("1234").to_with::<u32>(&options, &limits),
-        Err(DataConversionError::limit_exceeded(
-            DataType::String,
-            DataType::UInt32,
-            BudgetError::LimitExceeded {
-                resource: ConversionResource::NumericTextBytes,
-                observed: Observation::Exact(4),
-                maximum: 3,
-            },
-        )),
-    );
+    let error = DataConverter::from("1234")
+        .to_with::<u32>(&options, &limits)
+        .expect_err("four bytes must exceed the configured limit");
+    assert_eq!(error.from_type(), Some(DataType::String));
+    assert_eq!(error.to_type(), DataType::UInt32);
+    assert_eq!(error.resource(), Some(ConversionResource::NumericTextBytes));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
 }

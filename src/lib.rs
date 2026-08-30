@@ -36,8 +36,8 @@
 //! require exact divisibility unless `DurationRoundingPolicy::HalfUp` is
 //! selected explicitly.
 //!
-//! A reusable conversion session exposes the original
-//! `qubit_budget::BudgetError` through `DataConversionError::budget_error()`.
+//! A reusable conversion session reports stable resource facts through
+//! `DataConversionError` accessors without exposing its accounting backend.
 //! Its output-byte budget counts successful built-in `String` payloads
 //! cumulatively for both borrowed and owned sources; each String source is
 //! normalized exactly once.
@@ -96,6 +96,7 @@ mod serde_impl;
 pub mod serde {
     pub use super::serde_impl::duration_millis;
     pub use super::serde_impl::duration_millis_with_unit;
+    pub use super::serde_impl::duration_millis_with_unit_exact;
     pub use super::serde_impl::duration_with_unit;
 }
 
@@ -124,6 +125,8 @@ pub use converter::CollectionConversionPolicy;
 #[cfg(feature = "converter")]
 pub use converter::CollectionConversionPolicyBuilder;
 #[cfg(feature = "converter")]
+pub use converter::ConversionCapabilities;
+#[cfg(feature = "converter")]
 pub use converter::ConversionLimits;
 #[cfg(feature = "converter")]
 pub use converter::ConversionLimitsBuilder;
@@ -139,6 +142,8 @@ pub use converter::ConversionPolicyBuilder;
 pub use converter::ConversionResource;
 #[cfg(feature = "converter")]
 pub use converter::ConversionSession;
+#[cfg(feature = "converter")]
+pub use converter::ConversionStringWriter;
 #[cfg(feature = "converter")]
 pub use converter::DataConversionError;
 #[cfg(feature = "converter")]
@@ -198,12 +203,16 @@ pub use converter::StructuredConversionLimits;
 #[cfg(feature = "converter")]
 pub use converter::StructuredConversionLimitsBuilder;
 pub use datatype::DataType;
+pub use datatype::DataTypeCategory;
+pub use datatype::DataTypeInfo;
 pub use datatype::DataTypeOf;
 pub use datatype::DataTypeParseError;
 #[cfg(feature = "duration")]
 pub use duration::DurationOverflowError;
 #[cfg(feature = "duration")]
 pub use duration::DurationParseError;
+#[cfg(feature = "duration")]
+pub use duration::DurationPrecisionLossError;
 #[cfg(feature = "duration")]
 pub use duration::DurationTextOptions;
 #[cfg(feature = "duration")]

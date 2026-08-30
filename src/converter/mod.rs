@@ -10,8 +10,10 @@
 //! Provides data conversion utilities based on [`crate::datatype::DataType`].
 
 mod admitted_scalar_item;
+mod conversion_capabilities;
 mod conversion_resource;
 mod conversion_session;
+mod conversion_string_writer;
 mod data_conversion_target;
 mod data_converter;
 mod data_converters;
@@ -23,8 +25,10 @@ mod scalar_items;
 mod scalar_string_data_converters;
 
 pub use admitted_scalar_item::AdmittedScalarItem;
+pub use conversion_capabilities::ConversionCapabilities;
 pub use conversion_resource::ConversionResource;
 pub use conversion_session::ConversionSession;
+pub use conversion_string_writer::ConversionStringWriter;
 pub use data_conversion_target::DataConversionTarget;
 pub use data_converter::DataConverter;
 pub use data_converters::DataConverters;

@@ -15,10 +15,6 @@ use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 #[cfg(feature = "big-integer")]
-use qubit_budget::BudgetError;
-#[cfg(feature = "big-integer")]
-use qubit_budget::Observation;
-#[cfg(feature = "big-integer")]
 use qubit_datatype::ConversionLimits;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::ConversionPolicy;
@@ -81,14 +77,9 @@ fn test_primitive_to_bigint_enforces_result_digit_limit() {
         .expect_err("a four-digit result must exceed a three-digit limit");
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
-    assert_eq!(
-        error.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::BigIntegerDigits,
-            observed: Observation::Exact(4),
-            maximum: 3,
-        }),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
 }
 
 /// Verifies borrowed BigInteger sources are checked before cloning.
@@ -103,14 +94,9 @@ fn test_bigint_to_bigint_enforces_result_digit_limit() {
         .expect_err("a four-digit result must exceed a three-digit limit");
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
-    assert_eq!(
-        error.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::BigIntegerDigits,
-            observed: Observation::Exact(4),
-            maximum: 3,
-        }),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
 }
 
 /// Verifies positive-scale decimals enforce the truncated result digit limit.
@@ -125,14 +111,9 @@ fn test_positive_scale_decimal_to_bigint_enforces_result_digit_limit() {
         .expect_err("a four-digit quotient must exceed a three-digit limit");
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
-    assert_eq!(
-        error.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::BigIntegerDigits,
-            observed: Observation::Exact(4),
-            maximum: 3,
-        }),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
 }
 
 /// Verifies an exponent outside `BigInt::pow`'s range is rejected safely.

@@ -9,8 +9,6 @@
 
 use std::error::Error;
 
-use qubit_budget::BudgetError;
-use qubit_budget::Observation;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::DataConversionErrorKind;
 use qubit_datatype::DataType;
@@ -45,14 +43,9 @@ fn test_scalar_item_error_item_limit_exceeded_contract() {
     assert_eq!(converted.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(converted.from_type(), Some(DataType::String));
     assert_eq!(converted.to_type(), DataType::UInt16);
-    assert_eq!(
-        converted.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::CollectionItems,
-            observed: Observation::Exact(3),
-            maximum: 2,
-        }),
-    );
+    assert_eq!(converted.resource(), Some(ConversionResource::CollectionItems));
+    assert_eq!(converted.configured_limit(), Some(2));
+    assert_eq!(converted.observed_lower_bound(), Some(3));
 }
 
 /// Test that a rejected item reports its original unfiltered source index.

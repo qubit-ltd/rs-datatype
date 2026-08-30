@@ -9,11 +9,11 @@
 //!
 //! Tests for reusable data conversion errors.
 
-use qubit_budget::BudgetError;
-use qubit_budget::Observation;
-use qubit_budget::QuantityConversionError;
-use qubit_budget::QuantityMeasurement;
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionOperationLimits;
+use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
+use qubit_datatype::ConversionSession;
 use qubit_datatype::DataType;
 use qubit_datatype::converter::DataConversionError;
 use qubit_datatype::converter::DataConversionErrorKind;
@@ -30,59 +30,63 @@ fn test_data_conversion_error_constructors_and_accessors() {
     assert_eq!(error.from_type(), Some(DataType::Int64));
     assert_eq!(error.to_type(), DataType::UInt8);
     assert_eq!(error.reason(), Some(&reason));
-    assert_eq!(error.budget_error(), None);
+    assert_eq!(error.resource(), None);
 
     let empty = DataConversionError::empty_collection(DataType::String);
     assert_eq!(empty.kind(), DataConversionErrorKind::EmptyCollection);
     assert_eq!(empty.from_type(), None);
     assert_eq!(empty.to_type(), DataType::String);
     assert_eq!(empty.reason(), None);
-    assert_eq!(empty.budget_error(), None);
+    assert_eq!(empty.resource(), None);
 }
 
 /// Test the resource-limit constructor, accessors, and list wrapping.
 #[test]
 fn test_data_conversion_error_limit_exceeded_contract() {
-    let budget_error = BudgetError::LimitExceeded {
-        resource: ConversionResource::BigIntegerDigits,
-        observed: Observation::Exact(13),
-        maximum: 12,
-    };
-    let error = DataConversionError::limit_exceeded(DataType::String, DataType::BigInteger, budget_error.clone());
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::builder()
+        .operation_limits(ConversionOperationLimits::builder().max_output_bytes(4).build())
+        .build();
+    let mut session = ConversionSession::new(&policy, &limits);
+    session
+        .admit_output_bytes(DataType::String, DataType::String, 3)
+        .expect("initial output should fit");
+    let error = session
+        .admit_output_bytes(DataType::String, DataType::String, 2)
+        .expect_err("second output should exceed remaining capacity");
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert!(!error.is_missing());
     assert_eq!(error.from_type(), Some(DataType::String));
-    assert_eq!(error.to_type(), DataType::BigInteger);
+    assert_eq!(error.to_type(), DataType::String);
     assert_eq!(error.reason(), None);
-    assert_eq!(error.budget_error(), Some(&budget_error));
+    assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+    assert_eq!(error.configured_limit(), Some(4));
+    assert_eq!(error.observed_lower_bound(), None);
+    assert_eq!(error.observation_is_exact(), None);
+    assert_eq!(error.used(), Some(3));
+    assert_eq!(error.remaining(), Some(1));
+    assert_eq!(error.requested(), Some(2));
 
     let list_error = DataListConversionError::new(7, error.clone());
     assert_eq!(list_error.source_index(), 7);
     assert_eq!(list_error.conversion_error(), &error);
-    assert_eq!(list_error.conversion_error().budget_error(), Some(&budget_error));
+    assert_eq!(
+        list_error.conversion_error().resource(),
+        Some(ConversionResource::OutputBytes),
+    );
 }
 
-/// Test that measurement failures remain distinct from budget-limit failures.
+/// Test non-accounting errors do not fabricate resource details.
 #[test]
 fn test_data_conversion_error_quantity_contract() {
-    let source = QuantityConversionError::new(QuantityMeasurement::Usize(9), "u8");
-    let error = DataConversionError::quantity(
-        DataType::String,
-        DataType::Json,
-        ConversionResource::StructuredPayloadBytes,
-        source,
-    );
+    let error = DataConversionError::invalid(DataType::String, DataType::Json, InvalidValueReason::OutOfRange);
 
-    assert_eq!(error.kind(), DataConversionErrorKind::Quantity);
+    assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
     assert_eq!(error.from_type(), Some(DataType::String));
     assert_eq!(error.to_type(), DataType::Json);
-    assert_eq!(
-        error.quantity_resource(),
-        Some(ConversionResource::StructuredPayloadBytes)
-    );
-    assert_eq!(error.quantity_error(), Some(&source));
-    assert_eq!(error.budget_error(), None);
+    assert_eq!(error.quantity_resource(), None);
+    assert_eq!(error.resource(), None);
 }
 
 /// Test that structured errors cannot reveal source text.

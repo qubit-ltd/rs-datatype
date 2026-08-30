@@ -56,20 +56,27 @@ qubit-datatype = { version = "0.11", default-features = false, features = ["conv
 
 ## 3. 运行时类型描述
 
-`DataType` 提供稳定类型词汇、解析、显示、Serde、分类方法和完整的
-`DataType::ALL`。`DataTypeOf` 把 Rust 类型映射为该词汇。平台相关的 `isize`、
-`usize` 不提供映射，以免数据表示随目标平台变化。
+`DataType` 提供稳定类型词汇、解析、显示、Serde、分类方法、统一的 `DataTypeInfo`
+元数据和完整的 `DataType::ALL`。`DataTypeOf` 把 Rust 类型映射为该词汇。平台相关的
+`isize`、`usize` 不提供映射，以免数据表示随目标平台变化。
 
 `DataType::as_str` 返回、Serde 接受且 `DataType::ALL` 列出的全小写拼写属于兼容性
 接口；非破坏性版本不会修改既有拼写，也不会把既有拼写复用于其他含义。
 
 ```rust
-use qubit_datatype::{DataType, DataTypeOf};
+use qubit_datatype::{ConversionCapabilities, DataType, DataTypeCategory, DataTypeOf};
 
 assert_eq!(u64::DATA_TYPE, DataType::UInt64);
 assert!(DataType::Float64.is_numeric());
+assert_eq!(DataType::Float64.info().category(), DataTypeCategory::FloatingPoint);
 assert_eq!("INT32".parse::<DataType>(), Ok(DataType::Int32));
+
+let capabilities = ConversionCapabilities::current();
+assert!(capabilities.supports(DataType::String, DataType::UInt64));
 ```
+
+能力查询描述当前 feature 组合实际编译进来的转换路径，不预测某个具体值或策略是否会
+接受该转换。
 
 ## 4. 数值比较
 
@@ -240,9 +247,9 @@ assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
 
 第三次请求的预算检查在准入前失败，因此不会再消耗条目；已经准入但随后转换失败的
 请求仍保留条目和输入消耗，只有事务式的 String 输出会在完整结果成功后提交。便捷入口每次
-都会新建 session，因此彼此不共享状态。限制错误可通过
-`DataConversionError::budget_error()` 读取原始
-`qubit_budget::BudgetError` 及完整预算事实，不再经过 datatype 专用包装。
+都会新建 session，因此彼此不共享状态。限制错误通过 `DataConversionError` 的稳定
+访问器直接提供资源、配置上限、观测值、已用量、剩余量和请求量；底层预算与 JSON
+库错误类型保留为实现细节。
 输出字节预算按会话累计内置 `String` 目标成功产生的 UTF-8 payload，借用和拥有
 来源采用相同计费规则；非 `String` 目标不消耗该预算。
 
@@ -264,9 +271,10 @@ ASCII `us`、微符号 `µs` 与希腊 mu `μs` 三种微秒拼写。Lenient 额
 最大的精确首选单位。
 Duration 解析错误只保留稳定类别和静态规范单位，不回显也不持有任意长度的输入后缀。
 
-`duration` feature 还提供三个 `#[serde(with = "...")]` 模块：
+`duration` feature 还提供四个 `#[serde(with = "...")]` 模块：
 `duration_millis` 存储按 half-up 舍入的 `u64` 毫秒数，
 `duration_millis_with_unit` 存储按 half-up 舍入的 `<integer>ms` 文本，
+`duration_millis_with_unit_exact` 只在不损失亚毫秒精度时存储 `<integer>ms` 文本，
 `duration_with_unit` 存储使用首选单位的精确字符串。
 
 ```rust
@@ -329,8 +337,12 @@ assert_eq!(values, [1, 2, 3]);
 不会把嵌套转换重复计为新的顶层条目。
 
 外层 `to_in`/`into_target_in` 调用已经为一个条目及其输入完成准入。自定义目标应使用
-`session.delegate` 或 `session.delegate_owned` 进行嵌套转换；只有自定义目标拥有独立且
-有明确文档的工作单元时，才应直接调用预算消耗方法。
+`session.delegate` 或 `session.delegate_owned` 进行嵌套转换。拥有独立工作单元的扩展
+可以使用 `ConversionSession` 的领域级准入、JSON 和事务式 String 方法；这些方法统一
+返回 `DataConversionError`，不会暴露后端错误。
+
+标量集合适配器可通过 `admit_scalar_item` 获得一次性 proof；它同时拥有精确 source 和
+对应 session 借用，只能用 `convert` 或 `convert_with_session` 消费一次，不能换源或复用。
 
 ```rust
 use qubit_datatype::{ConversionSession, DataConversionError,

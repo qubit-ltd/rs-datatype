@@ -7,7 +7,6 @@
 // =============================================================================
 //! Regression tests for cumulative String output budgets.
 
-use qubit_budget::BudgetError;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
@@ -60,15 +59,10 @@ fn test_string_output_budget_failure_is_transactional() {
         .expect("the rejected render must not consume output bytes");
 
     assert_eq!(second, "7");
-    assert_eq!(
-        first.budget_error(),
-        Some(&BudgetError::Insufficient {
-            resource: ConversionResource::OutputBytes,
-            limit: 3,
-            remaining: 1,
-            requested: 3,
-        }),
-    );
+    assert_eq!(first.resource(), Some(ConversionResource::OutputBytes));
+    assert_eq!(first.configured_limit(), Some(3));
+    assert_eq!(first.remaining(), Some(1));
+    assert_eq!(first.requested(), Some(3));
 }
 
 #[test]

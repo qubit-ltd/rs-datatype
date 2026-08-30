@@ -9,7 +9,6 @@
 
 use qubit_budget::BudgetError;
 use qubit_budget::BudgetedStringError;
-use qubit_budget::BudgetedStringWriter;
 use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceLimit;
 use qubit_budget::ResourceQuantity;
@@ -27,13 +26,10 @@ use qubit_json::encode::JsonEncodeError;
 #[cfg(feature = "json")]
 use qubit_json::encode::JsonEncoder;
 #[cfg(feature = "json")]
-use qubit_json::value::traverse::JsonTreeContext;
 #[cfg(feature = "json")]
 use qubit_json::value::traverse::JsonTreeProcessError;
 #[cfg(feature = "json")]
 use qubit_json::value::traverse::JsonTreeReader;
-#[cfg(feature = "json")]
-use qubit_json::value::traverse::JsonTreeVisitor;
 #[cfg(feature = "json")]
 use serde::Deserialize;
 #[cfg(feature = "json")]
@@ -45,13 +41,16 @@ use serde_json::Value;
 
 use super::admitted_scalar_item::AdmittedScalarItem;
 use super::conversion_resource::ConversionResource;
+use super::conversion_string_writer::ConversionStringWriter;
 use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::DataConversionError;
 use super::internal::ConversionBudget;
+#[cfg(feature = "json")]
+use super::internal::JsonAccountingVisitor;
 use super::options::ConversionLimits;
 use super::options::ConversionPolicy;
-use super::scalar_item::ScalarItem;
+use crate::datatype::DataType;
 
 /// Mutable conversion accounting shared by nested and batch conversions.
 #[must_use]
@@ -95,9 +94,9 @@ impl<'a> ConversionSession<'a> {
     /// methods are reserved for custom targets that own a distinct budgeted
     /// unit of work.
     ///
-    /// The nested target must not call [`Self::consume_item`] or charge the
-    /// source input again unless it intentionally represents another
-    /// top-level unit of work.
+    /// The nested target must not charge another item or account the source
+    /// input again unless it intentionally represents another top-level unit
+    /// of work.
     #[inline(always)]
     pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
     where
@@ -129,12 +128,19 @@ impl<'a> ConversionSession<'a> {
     /// node/payload budget is exhausted. Failed budget admissions do not
     /// increase the corresponding counters.
     #[cfg(feature = "json")]
-    pub fn decode_json<'de, T>(&mut self, input: &'de [u8]) -> Result<T, JsonDecodeError<ConversionResource, u64>>
+    pub fn decode_json<'de, T>(
+        &mut self,
+        from: DataType,
+        to: DataType,
+        input: &'de [u8],
+    ) -> Result<T, DataConversionError>
     where
         T: Deserialize<'de>,
     {
         let decode = JsonDecodeSession::borrowing_value(self.budget.structured_mut());
-        JsonDecoder::new(decode).decode_utf8(input)
+        JsonDecoder::new(decode)
+            .decode_utf8(input)
+            .map_err(|error| map_json_decode_error(from, to, error))
     }
 
     /// Decodes JSON through a seed while charging the shared budget directly.
@@ -144,29 +150,35 @@ impl<'a> ConversionSession<'a> {
     #[cfg(feature = "json")]
     pub fn decode_json_seed<'de, S>(
         &mut self,
+        from: DataType,
+        to: DataType,
         seed: S,
         input: &'de [u8],
-    ) -> Result<S::Value, JsonDecodeError<ConversionResource, u64>>
+    ) -> Result<S::Value, DataConversionError>
     where
         S: DeserializeSeed<'de>,
     {
         let decode = JsonDecodeSession::borrowing_value(self.budget.structured_mut());
-        JsonDecoder::new(decode).decode_seed_utf8(seed, input)
+        JsonDecoder::new(decode)
+            .decode_seed_utf8(seed, input)
+            .map_err(|error| map_json_decode_error(from, to, error))
     }
 
     /// Accounts an already materialized JSON value through rs-budget's
     /// canonical iterative traversal.
     #[cfg(feature = "json")]
-    pub(crate) fn account_json_value(
+    pub fn account_json_value(
         &mut self,
+        from: DataType,
+        to: DataType,
         value: &Value,
-    ) -> Result<(), JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>> {
+    ) -> Result<(), DataConversionError> {
         let mut transaction = self.budget.structured_transaction();
         let result = JsonTreeReader::new(&mut transaction).process(value, &mut JsonAccountingVisitor);
         if result.is_ok() {
             transaction.commit();
         }
-        result
+        result.map_err(|error| map_json_tree_error(from, to, error))
     }
 
     /// Starts a transactional admission over the shared structured budget.
@@ -182,13 +194,82 @@ impl<'a> ConversionSession<'a> {
     /// output budget cannot admit the next value. Output bytes are committed
     /// only for a successfully encoded payload.
     #[cfg(feature = "json")]
-    pub fn encode_json<T>(&mut self, value: &T) -> Result<Vec<u8>, JsonEncodeError<ConversionResource, u64>>
+    pub fn encode_json<T>(&mut self, from: DataType, to: DataType, value: &T) -> Result<Vec<u8>, DataConversionError>
     where
         T: Serialize + ?Sized,
     {
         let (output, structured) = self.budget.split_json_mut();
         let encode = JsonEncodeSession::borrowing_output(output, structured);
-        JsonEncoder::new(encode).to_vec(value)
+        JsonEncoder::new(encode)
+            .to_vec(value)
+            .map_err(|error| map_json_encode_error(from, to, error))
+    }
+
+    /// Admits one input payload measured by a Rust slice or string length.
+    ///
+    /// # Errors
+    ///
+    /// Returns a conversion-domain quantity or resource-limit error.
+    #[inline]
+    pub fn admit_input_bytes(
+        &mut self,
+        from: DataType,
+        to: DataType,
+        amount: usize,
+    ) -> Result<(), DataConversionError> {
+        self.budget
+            .consume_input_bytes_usize(amount)
+            .map_err(|error| DataConversionError::measured_limit(from, to, error))
+    }
+
+    /// Admits one complete scalar collection source before it is scanned.
+    ///
+    /// # Errors
+    ///
+    /// Returns a conversion-domain quantity or resource-limit error.
+    #[inline]
+    pub fn admit_scalar_source(
+        &mut self,
+        from: DataType,
+        to: DataType,
+        amount: usize,
+    ) -> Result<(), DataConversionError> {
+        self.admit_scalar_source_bytes_usize(amount)
+            .map_err(|error| DataConversionError::measured_limit(from, to, error))
+    }
+
+    /// Admits one completed output payload measured by a Rust String length.
+    ///
+    /// # Errors
+    ///
+    /// Returns a conversion-domain quantity or resource-limit error.
+    #[inline]
+    pub fn admit_output_bytes(
+        &mut self,
+        from: DataType,
+        to: DataType,
+        amount: usize,
+    ) -> Result<(), DataConversionError> {
+        self.budget
+            .consume_output_bytes_usize(amount)
+            .map_err(|error| DataConversionError::measured_limit(from, to, error))
+    }
+
+    /// Renders one String transactionally under the cumulative output budget.
+    ///
+    /// # Errors
+    ///
+    /// Returns the renderer's conversion error, or a conversion-domain error
+    /// when output accounting or allocation fails. Failed renders do not
+    /// consume output bytes.
+    #[inline]
+    pub fn write_string<F>(&mut self, from: DataType, to: DataType, render: F) -> Result<String, DataConversionError>
+    where
+        F: FnOnce(&mut ConversionStringWriter<'_>) -> Result<(), DataConversionError>,
+    {
+        self.budget
+            .try_write_string(|writer| render(&mut ConversionStringWriter::new(writer, from, to)))
+            .map_err(|error| map_string_write_error(from, to, error))
     }
 
     /// Consumes one top-level conversion item.
@@ -197,7 +278,7 @@ impl<'a> ConversionSession<'a> {
     ///
     /// Returns a budget error when the cumulative item limit is exhausted.
     #[inline]
-    pub fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
+    pub(crate) fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_item()
     }
 
@@ -213,7 +294,7 @@ impl<'a> ConversionSession<'a> {
     /// length cannot be represented as `u64`, or the cumulative input budget
     /// is exhausted.
     #[inline]
-    pub fn admit_scalar_source_bytes_usize(
+    pub(crate) fn admit_scalar_source_bytes_usize(
         &mut self,
         amount: usize,
     ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
@@ -221,65 +302,44 @@ impl<'a> ConversionSession<'a> {
         self.consume_input_bytes_usize(amount)
     }
 
-    /// Consumes one scalar item and returns a token for precharged conversion.
+    /// Consumes one scalar item and returns its one-use admission proof.
     ///
     /// Constructed tokens are intended for downstream deserializers that need
     /// to continue conversion without charging the same item a second time.
     ///
     /// # Errors
     ///
-    /// Returns a budget error when the cumulative item limit is exhausted.
+    /// Returns a conversion-domain resource error when the cumulative item
+    /// limit is exhausted.
     #[inline]
-    pub fn admit_scalar_item(
-        &mut self,
-        item: ScalarItem<'_>,
-    ) -> Result<AdmittedScalarItem, BudgetError<ConversionResource, u64>> {
-        self.consume_item()?;
-        Ok(AdmittedScalarItem::new(item))
-    }
-
-    /// Consumes cumulative input bytes.
-    ///
-    /// # Errors
-    ///
-    /// Returns a budget error when the cumulative input-byte limit is
-    /// exhausted. The counter is unchanged when admission fails.
-    #[inline]
-    pub fn consume_input_bytes(&mut self, amount: u64) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.budget.consume_input_bytes(amount)
+    pub fn admit_scalar_item<'session, 'source>(
+        &'session mut self,
+        source_index: usize,
+        source: DataConverter<'source>,
+    ) -> Result<AdmittedScalarItem<'session, 'a, 'source>, DataConversionError> {
+        let source_type = source.data_type();
+        self.consume_item()
+            .map_err(|error| DataConversionError::limit_exceeded(source_type, source_type, error))?;
+        Ok(AdmittedScalarItem::new(self, source_index, source))
     }
 
     /// Consumes input bytes measured by a native Rust string or slice length.
-    ///
-    /// This is a convenience adapter for `usize` lengths. Use the `u64`
-    /// variant when the measured quantity is already represented as `u64`.
     ///
     /// # Errors
     ///
     /// Returns a quantity error if the `usize` value cannot be represented as
     /// `u64`, or a budget error when the cumulative limit is exhausted.
     #[inline]
-    pub fn consume_input_bytes_usize(
+    pub(crate) fn consume_input_bytes_usize(
         &mut self,
         amount: usize,
     ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
         self.budget.consume_input_bytes_usize(amount)
     }
 
-    /// Checks one complete scalar collection source before scanning it.
-    #[inline]
-    pub fn check_collection_source_bytes(&self, actual: u64) -> Result<(), BudgetError<ConversionResource, u64>> {
-        ResourceLimit::new(
-            ConversionResource::CollectionSourceBytes,
-            self.limits.collection().max_source_bytes(),
-        )
-        .check(actual)
-        .map_err(Into::into)
-    }
-
     /// Checks a scalar collection source measured by a native slice length.
     #[inline]
-    pub fn check_collection_source_bytes_usize(
+    pub(crate) fn check_collection_source_bytes_usize(
         &self,
         actual: usize,
     ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
@@ -290,55 +350,6 @@ impl<'a> ConversionSession<'a> {
         let actual = u64::try_from_usize(actual)
             .map_err(|source| MeasuredBudgetError::quantity(ConversionResource::CollectionSourceBytes, source))?;
         limit.check(actual).map_err(MeasuredBudgetError::from)
-    }
-
-    /// Checks cumulative built-in String output payload bytes.
-    ///
-    /// This is a non-mutating pre-check; call a consume method only after the
-    /// payload has been materialized successfully.
-    #[inline]
-    pub fn check_output_bytes(&self, amount: u64) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.budget.check_output_bytes(amount)
-    }
-
-    /// Checks output bytes measured by a native Rust string length.
-    #[inline]
-    pub fn check_output_bytes_usize(&self, amount: usize) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        self.budget.check_output_bytes_usize(amount)
-    }
-
-    /// Consumes cumulative output payload bytes after a successful pre-check.
-    ///
-    /// # Errors
-    ///
-    /// Returns a budget error when the cumulative output-byte limit is
-    /// exhausted. The counter is unchanged when admission fails.
-    #[inline]
-    pub fn consume_output_bytes(&mut self, amount: u64) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.budget.consume_output_bytes(amount)
-    }
-
-    /// Consumes output bytes measured by a native Rust string length.
-    ///
-    /// Use the `u64` variant when the measured quantity is already represented
-    /// as `u64`; this adapter also reports native-length conversion overflow.
-    #[inline]
-    pub fn consume_output_bytes_usize(
-        &mut self,
-        amount: usize,
-    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        self.budget.consume_output_bytes_usize(amount)
-    }
-
-    /// Renders a String payload in one pass and commits its UTF-8 bytes only
-    /// after the renderer succeeds.
-    #[inline]
-    pub fn try_write_string<E, F>(&mut self, render: F) -> Result<String, BudgetedStringError<ConversionResource, E>>
-    where
-        E: std::fmt::Debug + std::fmt::Display,
-        F: FnOnce(&mut BudgetedStringWriter<'_, ConversionResource>) -> Result<(), E>,
-    {
-        self.budget.try_write_string(render)
     }
 
     /// Returns remaining top-level item capacity.
@@ -438,17 +449,69 @@ impl<'a> ConversionSession<'a> {
     }
 }
 
-/// Performs full JSON budget admission without adding conversion-domain
-/// behavior.
-#[cfg(feature = "json")]
-struct JsonAccountingVisitor;
+fn map_string_write_error(
+    from: DataType,
+    to: DataType,
+    error: BudgetedStringError<ConversionResource, DataConversionError>,
+) -> DataConversionError {
+    match error {
+        BudgetedStringError::Budget(error) => DataConversionError::limit_exceeded(from, to, error.into()),
+        BudgetedStringError::Quantity { resource, source } => DataConversionError::quantity(from, to, resource, source),
+        BudgetedStringError::Render(error) => error,
+        BudgetedStringError::InvalidUtf8(_)
+        | BudgetedStringError::LengthOverflow
+        | BudgetedStringError::Allocation(_) => {
+            DataConversionError::invalid(from, to, super::error::InvalidValueReason::OutOfRange)
+        }
+    }
+}
 
 #[cfg(feature = "json")]
-impl JsonTreeVisitor for JsonAccountingVisitor {
-    type Error = std::convert::Infallible;
+fn map_json_decode_error(
+    from: DataType,
+    to: DataType,
+    error: JsonDecodeError<ConversionResource, u64>,
+) -> DataConversionError {
+    match error.budget_error().cloned() {
+        Some(error) => DataConversionError::measured_limit(from, to, error),
+        None => DataConversionError::invalid(
+            from,
+            to,
+            super::error::InvalidValueReason::Deserialization {
+                format: super::error::DataFormat::Json,
+            },
+        ),
+    }
+}
 
-    /// Accepts every budget-admitted JSON node.
-    fn enter(&mut self, _value: &Value, _context: JsonTreeContext<'_>) -> Result<(), Self::Error> {
-        Ok(())
+#[cfg(feature = "json")]
+fn map_json_tree_error(
+    from: DataType,
+    to: DataType,
+    error: JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>,
+) -> DataConversionError {
+    match error {
+        JsonTreeProcessError::Budget(error) => DataConversionError::measured_limit(from, to, error),
+        JsonTreeProcessError::Visitor(error) => match error {},
+    }
+}
+
+#[cfg(feature = "json")]
+fn map_json_encode_error(
+    from: DataType,
+    to: DataType,
+    error: JsonEncodeError<ConversionResource, u64>,
+) -> DataConversionError {
+    match error {
+        JsonEncodeError::Budget(error) => DataConversionError::measured_limit(from, to, error),
+        JsonEncodeError::InvalidRawJson(_) | JsonEncodeError::Serialize(_) | JsonEncodeError::Write(_) => {
+            DataConversionError::invalid(
+                from,
+                to,
+                super::error::InvalidValueReason::Serialization {
+                    format: super::error::DataFormat::Json,
+                },
+            )
+        }
     }
 }
