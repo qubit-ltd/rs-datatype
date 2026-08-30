@@ -7,9 +7,11 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![中文文档](https://img.shields.io/badge/文档-中文版-blue.svg)](README.zh_CN.md)
 
-Runtime data type descriptors, exact cross-representation numeric comparison,
-and policy-driven value conversion for Rust. API documentation is available on
-[docs.rs](https://docs.rs/qubit-datatype).
+For Rust services that accept configuration, protocol, or ingestion values whose
+types are known only at runtime, `qubit-datatype` supplies stable type
+descriptors, exact cross-representation numeric comparison, and policy-driven
+conversion without silently discarding precision. API documentation is
+available on [docs.rs](https://docs.rs/qubit-datatype).
 
 ## 1. What the crate provides
 
@@ -424,6 +426,13 @@ assert_eq!(DataConverter::from("8080").to::<Port>(), Ok(Port(8080)));
 
 Prefer delegation so downstream types inherit the same normalization,
 precision, error, and feature contracts as built-in targets.
+
+## Learn more
+
+The [English user guide](doc/user_guide.md) walks through a configuration-input
+scenario, policy selection, resource limits, diagnostics, and Duration text.
+Read the [中文用户手册](doc/user_guide.zh_CN.md) for the same material in
+Simplified Chinese.
 
 ## Testing
 
