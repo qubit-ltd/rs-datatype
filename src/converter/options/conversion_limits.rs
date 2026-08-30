@@ -6,8 +6,6 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Value and operation limits applied by data conversion.
-// qubit-style: allow multiple-public-types
-
 use std::sync::LazyLock;
 
 use serde::Deserialize;
@@ -18,6 +16,10 @@ use super::ConversionOperationLimits;
 use super::DurationConversionLimits;
 use super::NumericConversionLimits;
 use super::StructuredConversionLimits;
+
+mod conversion_limits_builder;
+
+pub use conversion_limits_builder::ConversionLimitsBuilder;
 
 /// Aggregates immutable value limits and cumulative operation limits.
 ///
@@ -109,71 +111,6 @@ impl ConversionLimits {
     #[inline(always)]
     pub const fn operation(&self) -> &ConversionOperationLimits {
         &self.operation
-    }
-}
-
-/// Builder for [`ConversionLimits`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ConversionLimitsBuilder {
-    /// Aggregate limits being configured.
-    limits: ConversionLimits,
-}
-
-impl ConversionLimitsBuilder {
-    /// Creates a builder initialized with the documented defaults.
-    #[inline]
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            limits: ConversionLimits::default(),
-        }
-    }
-
-    /// Configures numeric value limits.
-    #[inline(always)]
-    #[must_use]
-    pub fn numeric_limits(mut self, limits: NumericConversionLimits) -> Self {
-        self.limits.numeric = limits;
-        self
-    }
-
-    /// Configures scalar collection value limits.
-    #[inline(always)]
-    #[must_use]
-    pub fn collection_limits(mut self, limits: CollectionConversionLimits) -> Self {
-        self.limits.collection = limits;
-        self
-    }
-
-    /// Configures duration value limits.
-    #[inline(always)]
-    #[must_use]
-    pub fn duration_limits(mut self, limits: DurationConversionLimits) -> Self {
-        self.limits.duration = limits;
-        self
-    }
-
-    /// Configures structured value limits.
-    #[inline(always)]
-    #[must_use]
-    pub fn structured_limits(mut self, limits: StructuredConversionLimits) -> Self {
-        self.limits.structured = limits;
-        self
-    }
-
-    /// Configures cumulative operation limits.
-    #[inline(always)]
-    #[must_use]
-    pub fn operation_limits(mut self, limits: ConversionOperationLimits) -> Self {
-        self.limits.operation = limits;
-        self
-    }
-
-    /// Builds the configured conversion limits.
-    #[inline]
-    #[must_use]
-    pub fn build(self) -> ConversionLimits {
-        self.limits
     }
 }
 

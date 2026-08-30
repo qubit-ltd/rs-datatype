@@ -6,8 +6,6 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Resource limits for structured text conversions.
-// qubit-style: allow multiple-public-types
-
 use qubit_budget::ResourceLimit;
 use qubit_budget::StringLimits;
 use qubit_budget::StructureLimits;
@@ -19,6 +17,10 @@ use serde::Serializer;
 
 use super::internal::StructuredConversionLimitsWire;
 use crate::converter::ConversionResource;
+
+mod structured_conversion_limits_builder;
+
+pub use structured_conversion_limits_builder::StructuredConversionLimitsBuilder;
 
 /// Bounds point checks and structural work introduced by structured conversion.
 ///
@@ -231,62 +233,6 @@ impl StructuredConversionLimits {
     }
 }
 
-/// Builder for [`StructuredConversionLimits`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct StructuredConversionLimitsBuilder {
-    /// Structured limits being configured.
-    limits: StructuredConversionLimits,
-}
-
-impl StructuredConversionLimitsBuilder {
-    /// Creates a builder initialized with the documented defaults.
-    #[inline]
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            limits: StructuredConversionLimits::default(),
-        }
-    }
-    /// Configures the normalized text byte maximum.
-    #[inline(always)]
-    #[must_use]
-    pub fn max_text_bytes(self, maximum: u64) -> Self {
-        Self {
-            limits: self.limits.with_max_text_bytes(maximum),
-        }
-    }
-    /// Configures the depth maximum.
-    #[inline(always)]
-    #[must_use]
-    pub fn max_depth(self, maximum: u64) -> Self {
-        Self {
-            limits: self.limits.with_max_depth(maximum),
-        }
-    }
-    /// Configures the sequence item maximum.
-    #[inline(always)]
-    #[must_use]
-    pub fn max_sequence_items(self, maximum: u64) -> Self {
-        Self {
-            limits: self.limits.with_max_sequence_items(maximum),
-        }
-    }
-    /// Configures the map entry maximum.
-    #[inline(always)]
-    #[must_use]
-    pub fn max_map_entries(self, maximum: u64) -> Self {
-        Self {
-            limits: self.limits.with_max_map_entries(maximum),
-        }
-    }
-    /// Builds the configured structured limits.
-    #[inline]
-    #[must_use]
-    pub fn build(self) -> StructuredConversionLimits {
-        self.limits
-    }
-}
-
 impl Default for StructuredConversionLimits {
     /// Creates the default structured conversion limits.
     ///
@@ -328,6 +274,7 @@ impl Default for StructuredConversionLimits {
     }
 }
 
+/// Rebuilds structure limits while replacing the supplied resource bounds.
 fn rebuild_structure(
     source: &StructureLimits<ConversionResource, u64>,
     depth: Option<ResourceLimit<ConversionResource, u64>>,
@@ -351,6 +298,7 @@ fn rebuild_structure(
     builder.build()
 }
 
+/// Rebuilds JSON value limits while retaining unspecified resource bounds.
 fn rebuild_value(
     source: &JsonValueLimits<ConversionResource, u64>,
     structure: StructureLimits<ConversionResource, u64>,
