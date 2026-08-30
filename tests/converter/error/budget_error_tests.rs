@@ -5,23 +5,31 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Regression tests for direct rs-budget error exposure.
+//! Regression tests for stable resource-error facts.
 
-use qubit_budget::BudgetError;
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionOperationLimits;
+use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
-use qubit_datatype::DataConversionError;
+use qubit_datatype::ConversionSession;
 use qubit_datatype::DataType;
 
 #[test]
-fn test_budget_error_accessor_preserves_complete_budget_facts() {
-    let budget_error = BudgetError::Insufficient {
-        resource: ConversionResource::OutputBytes,
-        limit: 4,
-        remaining: 1,
-        requested: 3,
-    };
-    let error = DataConversionError::limit_exceeded(DataType::Int32, DataType::String, budget_error.clone());
+fn test_resource_accessors_preserve_complete_budget_facts() {
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::builder()
+        .operation_limits(ConversionOperationLimits::builder().max_output_bytes(4).build())
+        .build();
+    let mut session = ConversionSession::new(&policy, &limits);
+    session
+        .admit_output_bytes(DataType::Int32, DataType::String, 3)
+        .expect("initial output should fit");
+    let error = session
+        .admit_output_bytes(DataType::Int32, DataType::String, 3)
+        .expect_err("next output should exceed remaining capacity");
 
-    assert_eq!(error.budget_error(), Some(&budget_error));
-    assert_eq!(error.budget_error(), Some(&budget_error));
+    assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+    assert_eq!(error.configured_limit(), Some(4));
+    assert_eq!(error.remaining(), Some(1));
+    assert_eq!(error.requested(), Some(3));
 }

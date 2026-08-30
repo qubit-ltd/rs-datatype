@@ -13,7 +13,7 @@ use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::ConversionSession;
 use qubit_datatype::DataConverter;
-use qubit_datatype::ScalarItem;
+use qubit_datatype::DataType;
 use qubit_datatype::StringConversionPolicy;
 #[cfg(feature = "json")]
 use serde::Deserialize;
@@ -39,10 +39,11 @@ fn test_one_session_accumulates_multiple_conversions() {
         .to_in::<u16>(&mut session)
         .expect_err("second text should exceed cumulative bytes");
 
-    assert_eq!(
-        error.budget_error().map(|facts| *facts.resource()),
-        Some(ConversionResource::InputBytes),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::InputBytes));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.used(), Some(2));
+    assert_eq!(error.remaining(), Some(1));
+    assert_eq!(error.requested(), Some(2));
 }
 
 #[test]
@@ -72,10 +73,7 @@ fn test_trimmed_text_is_charged_by_raw_input_length() {
         .to_with::<u16>(&policy, &limits)
         .expect_err("raw whitespace must count toward the input budget");
 
-    assert_eq!(
-        error.budget_error().map(|facts| *facts.resource()),
-        Some(ConversionResource::InputBytes),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::InputBytes));
 }
 
 #[test]
@@ -101,10 +99,7 @@ fn test_failed_conversion_keeps_attempted_item_and_input_accounting() {
         .to_in::<u16>(&mut session)
         .expect_err("the failed attempt must retain its item budget usage");
 
-    assert_eq!(
-        error.budget_error().map(|facts| *facts.resource()),
-        Some(ConversionResource::Items),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::Items));
 }
 
 /// Test native-length session methods share the configured output budget.
@@ -117,19 +112,13 @@ fn test_native_length_output_accounting_uses_shared_budget() {
     let mut session = ConversionSession::new(&policy, &limits);
 
     session
-        .check_output_bytes_usize("ok".len())
-        .expect("exact native length should fit");
-    session
-        .consume_output_bytes_usize("ok".len())
+        .admit_output_bytes(DataType::String, DataType::String, "ok".len())
         .expect("exact native length should consume budget");
     let error = session
-        .check_output_bytes_usize("x".len())
+        .admit_output_bytes(DataType::String, DataType::String, "x".len())
         .expect_err("remaining budget should be exhausted");
 
-    assert_eq!(
-        error.budget_error().map(|facts| *facts.resource()),
-        Some(ConversionResource::OutputBytes)
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
 }
 
 /// Verifies scalar source and item admission produce one-use conversion tokens.
@@ -147,44 +136,40 @@ fn test_scalar_admission_charges_source_and_items_once() {
     let mut session = ConversionSession::new(&policy, &limits);
 
     session
-        .admit_scalar_source_bytes_usize(3)
+        .admit_scalar_source(DataType::String, DataType::String, 3)
         .expect("the complete scalar source should fit");
     let admitted = session
-        .admit_scalar_item(ScalarItem {
-            source_index: 2,
-            value: "abc",
-        })
+        .admit_scalar_item(2, DataConverter::from("abc"))
         .expect("the first scalar item should fit");
     assert_eq!(admitted.source_index(), 2);
+    assert_eq!(admitted.convert::<String>(), Ok(String::from("abc")));
 
     let error = session
-        .admit_scalar_item(ScalarItem {
-            source_index: 3,
-            value: "d",
-        })
+        .admit_scalar_item(3, DataConverter::from("d"))
         .expect_err("the second scalar item should exceed the item budget");
-    assert_eq!(error.resource(), &ConversionResource::Items);
+    assert_eq!(error.resource(), Some(ConversionResource::Items));
 }
 
 /// Exercises the direct session accounting adapters and observability methods.
 #[test]
 fn test_direct_session_accounting_adapters() {
-    use std::fmt::Write;
-
     let policy = ConversionPolicy::default();
     let limits = ConversionLimits::default();
     let mut session = ConversionSession::new(&policy, &limits);
 
     assert_eq!(session.policy(), &policy);
     assert_eq!(session.limits(), &limits);
-    session.consume_input_bytes(1).expect("input bytes should fit");
     session
-        .check_collection_source_bytes(1)
+        .admit_input_bytes(DataType::String, DataType::String, 1)
+        .expect("input bytes should fit");
+    session
+        .admit_scalar_source(DataType::String, DataType::String, 1)
         .expect("source bytes should fit");
-    session.check_output_bytes(1).expect("output bytes should fit");
-    session.consume_output_bytes(1).expect("output bytes should fit");
+    session
+        .admit_output_bytes(DataType::String, DataType::String, 1)
+        .expect("output bytes should fit");
     let rendered = session
-        .try_write_string(|writer| write!(writer.as_fmt(), "ok"))
+        .write_string(DataType::String, DataType::String, |writer| writer.write_str("ok"))
         .expect("rendered output should fit");
     assert_eq!(rendered, "ok");
 
@@ -240,17 +225,20 @@ fn test_json_session_accounting_adapters() {
     let input = br#"{"name":"value"}"#;
 
     let decoded: SessionJsonValue = session
-        .decode_json(input)
+        .decode_json(DataType::String, DataType::Json, input)
         .expect("JSON should decode within the shared budget");
     assert_eq!(decoded.name, "value");
     let seeded: SessionJsonValue = session
-        .decode_json_seed(SessionJsonSeed, input)
+        .decode_json_seed(DataType::String, DataType::Json, SessionJsonSeed, input)
         .expect("seeded JSON should decode within the shared budget");
     assert_eq!(seeded.name, "value");
     let encoded = session
-        .encode_json(&decoded)
+        .encode_json(DataType::Json, DataType::String, &decoded)
         .expect("JSON should encode within the shared budget");
     assert_eq!(encoded, input);
+    session
+        .account_json_value(DataType::Json, DataType::Json, &serde_json::json!({"accounted": true}))
+        .expect("materialized JSON should fit the shared budget");
     assert!(session.structured_nodes_used() > 0);
     assert!(session.structured_payload_bytes_used() > 0);
 }

@@ -77,12 +77,6 @@ impl ConversionBudget {
         self.items.try_consume(1).map_err(Into::into)
     }
 
-    /// Consumes input bytes.
-    #[inline]
-    pub(crate) fn consume_input_bytes(&mut self, amount: u64) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.input_bytes.try_consume(amount).map_err(Into::into)
-    }
-
     /// Consumes input bytes measured by Rust's native string length type.
     #[inline]
     pub(crate) fn consume_input_bytes_usize(
@@ -90,27 +84,6 @@ impl ConversionBudget {
         amount: usize,
     ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
         self.input_bytes.try_consume_usize(amount)
-    }
-
-    /// Checks output capacity without changing accounting.
-    #[inline]
-    pub(crate) fn check_output_bytes(&self, amount: u64) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.output_bytes.check_available(amount).map_err(Into::into)
-    }
-
-    /// Checks output bytes measured by Rust's native string length type.
-    #[inline]
-    pub(crate) fn check_output_bytes_usize(
-        &self,
-        amount: usize,
-    ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
-        self.output_bytes.check_available_usize(amount)
-    }
-
-    /// Consumes output payload bytes.
-    #[inline]
-    pub(crate) fn consume_output_bytes(&mut self, amount: u64) -> Result<(), BudgetError<ConversionResource, u64>> {
-        self.output_bytes.try_consume(amount).map_err(Into::into)
     }
 
     /// Consumes output bytes measured by Rust's native string length type.

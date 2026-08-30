@@ -8,5 +8,11 @@
 //! Private helpers shared by the conversion implementation.
 
 mod conversion_budget;
+mod conversion_string_sink;
+#[cfg(feature = "json")]
+mod json_accounting_visitor;
 
 pub(super) use conversion_budget::ConversionBudget;
+pub(super) use conversion_string_sink::ConversionStringSink;
+#[cfg(feature = "json")]
+pub(super) use json_accounting_visitor::JsonAccountingVisitor;

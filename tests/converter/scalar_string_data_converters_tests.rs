@@ -9,8 +9,6 @@
 //!
 //! Tests for scalar string collection conversion behavior.
 
-use qubit_budget::BudgetError;
-use qubit_budget::Observation;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::DataType;
 use qubit_datatype::converter::BlankStringPolicy;
@@ -166,13 +164,12 @@ fn test_scalar_string_data_converters_to_vec_with_enforces_item_limit() {
     assert_eq!(error.conversion_error().from_type(), Some(DataType::String));
     assert_eq!(error.conversion_error().to_type(), DataType::UInt16);
     assert_eq!(
-        error.conversion_error().budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::CollectionItems,
-            observed: Observation::Exact(3),
-            maximum: 2,
-        }),
+        error.conversion_error().resource(),
+        Some(ConversionResource::CollectionItems),
     );
+    assert_eq!(error.conversion_error().configured_limit(), Some(2));
+    assert_eq!(error.conversion_error().observed_lower_bound(), Some(3));
+    assert_eq!(error.conversion_error().observation_is_exact(), Some(true));
 }
 
 /// Test first conversion remains lazy and honors a zero item limit.
@@ -199,14 +196,9 @@ fn test_scalar_string_data_converters_to_first_with_item_limit() {
         .to_first_with::<u16>(&zero, &zero_limit)
         .expect_err("zero limit must reject the first retained item");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
-    assert_eq!(
-        error.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::CollectionItems,
-            observed: Observation::Exact(1),
-            maximum: 0,
-        }),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::CollectionItems));
+    assert_eq!(error.configured_limit(), Some(0));
+    assert_eq!(error.observed_lower_bound(), Some(1));
 }
 
 /// Test scalar string first-value empty item rejection.
@@ -341,7 +333,7 @@ fn test_scalar_string_data_converters_checks_delimiter_only_source_before_scan()
         .expect_err("the complete source should be checked before empty items are skipped");
 
     assert_eq!(
-        error.conversion_error().budget_error().map(|error| *error.resource()),
+        error.conversion_error().resource(),
         Some(ConversionResource::CollectionSourceBytes),
     );
 }
@@ -359,8 +351,5 @@ fn test_scalar_string_data_converters_to_first_checks_complete_source() {
         .to_first_with::<u16>(&policy, &limits)
         .expect_err("the complete source should be checked before returning its first item");
 
-    assert_eq!(
-        error.budget_error().map(|error| *error.resource()),
-        Some(ConversionResource::CollectionSourceBytes),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::CollectionSourceBytes),);
 }

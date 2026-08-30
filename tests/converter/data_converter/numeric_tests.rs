@@ -28,8 +28,6 @@ use chrono::Utc;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use proptest::proptest;
-use qubit_budget::BudgetError;
-use qubit_budget::Observation;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
@@ -484,14 +482,9 @@ fn test_data_converter_bigint_exponent_expansion_is_bounded() {
             result,
             Err(conversion_error)
                 if conversion_error.kind() == DataConversionErrorKind::LimitExceeded
-                    && matches!(
-                        conversion_error.budget_error(),
-                        Some(BudgetError::LimitExceeded {
-                            resource: ConversionResource::BigIntegerDigits,
-                            maximum: NumericConversionLimits::DEFAULT_MAX_BIG_INTEGER_DIGITS,
-                            ..
-                        })
-                    ),
+                    && conversion_error.resource() == Some(ConversionResource::BigIntegerDigits)
+                    && conversion_error.configured_limit()
+                        == Some(NumericConversionLimits::DEFAULT_MAX_BIG_INTEGER_DIGITS)
         ));
     }
 }
@@ -795,14 +788,9 @@ fn test_numeric_text_byte_limit_boundaries() {
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
     assert_eq!(error.from_type(), Some(DataType::String));
     assert_eq!(error.to_type(), DataType::UInt32);
-    assert_eq!(
-        error.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::NumericTextBytes,
-            observed: Observation::Exact(4),
-            maximum: 3,
-        }),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::NumericTextBytes));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
     assert_eq!(error.reason(), None);
 }
 
@@ -824,14 +812,9 @@ fn test_numeric_text_limit_applies_before_float_parsing() {
         .to_with::<f32>(&options, &limits)
         .expect_err("limit checking must precede target float parsing");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
-    assert_eq!(
-        error.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::NumericTextBytes,
-            observed: Observation::Exact(4),
-            maximum: 3,
-        }),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::NumericTextBytes));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
 }
 
 /// Test BigInteger decimal digit limits for text materialization.
@@ -851,14 +834,9 @@ fn test_big_integer_digit_limit_text_boundaries() {
         .to_with::<BigInt>(&over_limit, &over_limit_limits)
         .expect_err("four result digits must exceed a three-digit limit");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
-    assert_eq!(
-        error.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::BigIntegerDigits,
-            observed: Observation::Exact(4),
-            maximum: 3,
-        }),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
 
     let (zero_limit, zero_limit_limits) =
         options_with_limits(NumericConversionLimits::builder().max_big_integer_digits(0).build());
@@ -899,14 +877,9 @@ fn test_big_integer_digit_limit_big_decimal_expansion() {
         .to_with::<BigInt>(&over_limit, &over_limit_limits)
         .expect_err("BigDecimal expansion must honor the digit limit");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
-    assert_eq!(
-        error.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::BigIntegerDigits,
-            observed: Observation::Exact(4),
-            maximum: 3,
-        }),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
 }
 
 /// Verifies consuming big-number identity conversion preserves values and
@@ -931,12 +904,7 @@ fn test_data_converter_consuming_big_number_identity_preserves_limits() {
         .into_target_with::<BigInt>(&options, &limits)
         .expect_err("consuming BigInteger identity must honor the digit limit");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
-    assert_eq!(
-        error.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::BigIntegerDigits,
-            observed: Observation::Exact(5),
-            maximum: 4,
-        }),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(4));
+    assert_eq!(error.observed_lower_bound(), Some(5));
 }

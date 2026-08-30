@@ -26,10 +26,6 @@ use chrono::Utc;
 #[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
 use num_bigint::BigInt;
 #[cfg(any(feature = "json", feature = "url"))]
-use qubit_budget::BudgetError;
-#[cfg(any(feature = "json", feature = "url"))]
-use qubit_budget::Observation;
-#[cfg(any(feature = "json", feature = "url"))]
 use qubit_datatype::ConversionLimits;
 #[cfg(feature = "json")]
 use qubit_datatype::ConversionOperationLimits;
@@ -89,7 +85,7 @@ fn assert_budget_resource<T>(result: Result<T, DataConversionError>, expected: C
         Ok(_) => panic!("conversion should exceed the configured budget"),
         Err(error) => error,
     };
-    assert_eq!(error.budget_error().map(|error| *error.resource()), Some(expected),);
+    assert_eq!(error.resource(), Some(expected));
 }
 
 /// Tests that structured text conversions enforce the configured byte limit.
@@ -106,36 +102,27 @@ fn test_data_converter_rejects_oversize_structured_text() {
             .to_with::<serde_json::Value>(&policy, &limits)
             .is_ok()
     );
-    assert_eq!(
-        DataConverter::from("[0]").to_with::<serde_json::Value>(&policy, &limits),
-        Err(DataConversionError::limit_exceeded(
-            DataType::String,
-            DataType::Json,
-            BudgetError::LimitExceeded {
-                resource: ConversionResource::StructuredTextBytes,
-                observed: Observation::Exact(3),
-                maximum: 2,
-            },
-        )),
-    );
+    let error = DataConverter::from("[0]")
+        .to_with::<serde_json::Value>(&policy, &limits)
+        .expect_err("three input bytes must exceed the configured limit");
+    assert_eq!(error.from_type(), Some(DataType::String));
+    assert_eq!(error.to_type(), DataType::Json);
+    assert_eq!(error.resource(), Some(ConversionResource::StructuredTextBytes));
+    assert_eq!(error.configured_limit(), Some(2));
+    assert_eq!(error.observed_lower_bound(), Some(3));
 
     assert!(
         DataConverter::from("{}")
             .to_with::<HashMap<String, String>>(&policy, &limits)
             .is_ok()
     );
-    assert_eq!(
-        DataConverter::from(r#"{"a":"b"}"#).to_with::<HashMap<String, String>>(&policy, &limits),
-        Err(DataConversionError::limit_exceeded(
-            DataType::String,
-            DataType::StringMap,
-            BudgetError::LimitExceeded {
-                resource: ConversionResource::StructuredTextBytes,
-                observed: Observation::Exact(9),
-                maximum: 2,
-            },
-        )),
-    );
+    let error = DataConverter::from(r#"{"a":"b"}"#)
+        .to_with::<HashMap<String, String>>(&policy, &limits)
+        .expect_err("nine input bytes must exceed the configured limit");
+    assert_eq!(error.to_type(), DataType::StringMap);
+    assert_eq!(error.resource(), Some(ConversionResource::StructuredTextBytes));
+    assert_eq!(error.configured_limit(), Some(2));
+    assert_eq!(error.observed_lower_bound(), Some(9));
 }
 
 /// Tests that JSON text decoding enforces every configured structural point
@@ -187,10 +174,7 @@ fn test_data_converter_string_map_limit_precedes_serialization() {
         .to_in::<String>(&mut session)
         .expect_err("the map entry limit must reject the complete source size");
 
-    assert_eq!(
-        error.budget_error().map(|error| *error.resource()),
-        Some(ConversionResource::MapEntries),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::MapEntries));
     assert_eq!(session.structured_nodes_used(), 0);
 }
 
@@ -293,18 +277,13 @@ fn test_data_converter_rejects_oversize_url_text() {
         DataConverter::from("https://a.test").to_with::<Url>(&policy, &limits),
         Ok(Url::parse("https://a.test").expect("test URL should parse")),
     );
-    assert_eq!(
-        DataConverter::from("https://a.test/x").to_with::<Url>(&policy, &limits),
-        Err(DataConversionError::limit_exceeded(
-            DataType::String,
-            DataType::Url,
-            BudgetError::LimitExceeded {
-                resource: ConversionResource::StructuredTextBytes,
-                observed: Observation::Exact(16),
-                maximum: 14,
-            },
-        )),
-    );
+    let error = DataConverter::from("https://a.test/x")
+        .to_with::<Url>(&policy, &limits)
+        .expect_err("sixteen input bytes must exceed the configured limit");
+    assert_eq!(error.to_type(), DataType::Url);
+    assert_eq!(error.resource(), Some(ConversionResource::StructuredTextBytes));
+    assert_eq!(error.configured_limit(), Some(14));
+    assert_eq!(error.observed_lower_bound(), Some(16));
 }
 
 /// Test rejection boundaries for every canonical rich textual format.

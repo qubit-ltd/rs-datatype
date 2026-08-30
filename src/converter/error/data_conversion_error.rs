@@ -11,6 +11,7 @@
 
 use qubit_budget::BudgetError;
 use qubit_budget::MeasuredBudgetError;
+use qubit_budget::Observation;
 use qubit_budget::QuantityConversionError;
 
 use super::super::conversion_resource::ConversionResource;
@@ -129,7 +130,7 @@ impl DataConversionError {
     ///
     /// A resource-limit conversion error.
     #[inline(always)]
-    pub fn limit_exceeded(from: DataType, to: DataType, source: BudgetError<ConversionResource, u64>) -> Self {
+    pub(crate) fn limit_exceeded(from: DataType, to: DataType, source: BudgetError<ConversionResource, u64>) -> Self {
         Self {
             inner: DataConversionErrorInner::LimitExceeded { from, to, source },
         }
@@ -148,7 +149,7 @@ impl DataConversionError {
     ///
     /// A conversion measurement error distinct from a budget-limit violation.
     #[inline(always)]
-    pub fn quantity(
+    pub(crate) fn quantity(
         from: DataType,
         to: DataType,
         resource: ConversionResource,
@@ -166,7 +167,11 @@ impl DataConversionError {
 
     /// Maps native measurement accounting into a public conversion error.
     #[inline(always)]
-    pub fn measured_limit(from: DataType, to: DataType, error: MeasuredBudgetError<ConversionResource, u64>) -> Self {
+    pub(crate) fn measured_limit(
+        from: DataType,
+        to: DataType,
+        error: MeasuredBudgetError<ConversionResource, u64>,
+    ) -> Self {
         match error {
             MeasuredBudgetError::Budget(error) => Self::limit_exceeded(from, to, error),
             MeasuredBudgetError::Quantity { resource, source } => Self::quantity(from, to, resource, source),
@@ -258,15 +263,113 @@ impl DataConversionError {
         }
     }
 
-    /// Returns the complete rs-budget failure when one was exceeded.
+    /// Returns the conversion resource associated with an accounting failure.
     ///
     /// # Returns
     ///
-    /// `Some` for a resource-limit error, or `None` for every other error kind.
+    /// `Some` for resource-limit and native-measurement failures, or `None`
+    /// for conversion errors unrelated to resource accounting.
+    #[must_use]
     #[inline(always)]
-    pub const fn budget_error(&self) -> Option<&BudgetError<ConversionResource, u64>> {
+    pub const fn resource(&self) -> Option<ConversionResource> {
         match &self.inner {
-            DataConversionErrorInner::LimitExceeded { source, .. } => Some(source),
+            DataConversionErrorInner::LimitExceeded { source, .. } => Some(*source.resource()),
+            DataConversionErrorInner::Quantity { resource, .. } => Some(*resource),
+            _ => None,
+        }
+    }
+
+    /// Returns the configured limit associated with a resource-limit failure.
+    ///
+    /// # Returns
+    ///
+    /// `Some` with the point maximum or cumulative limit for a
+    /// resource-limit error, or `None` for every other error kind.
+    #[must_use]
+    #[inline(always)]
+    pub const fn configured_limit(&self) -> Option<u64> {
+        match &self.inner {
+            DataConversionErrorInner::LimitExceeded { source, .. } => Some(source.configured_limit()),
+            _ => None,
+        }
+    }
+
+    /// Returns the safe lower bound observed by a failed point-limit check.
+    ///
+    /// # Returns
+    ///
+    /// `Some` for a point-limit failure, including inexact observations, or
+    /// `None` for cumulative and non-budget failures.
+    #[must_use]
+    #[inline(always)]
+    pub const fn observed_lower_bound(&self) -> Option<u64> {
+        match &self.inner {
+            DataConversionErrorInner::LimitExceeded { source, .. } => source.observed_lower_bound(),
+            _ => None,
+        }
+    }
+
+    /// Reports whether a point-limit observation is exact.
+    ///
+    /// # Returns
+    ///
+    /// `Some(true)` for an exact point observation, `Some(false)` for a
+    /// lower-bound observation, or `None` when the error is not a point-limit
+    /// failure.
+    #[must_use]
+    #[inline(always)]
+    pub const fn observation_is_exact(&self) -> Option<bool> {
+        match &self.inner {
+            DataConversionErrorInner::LimitExceeded { source, .. } => match source.observation() {
+                Some(Observation::Exact(_)) => Some(true),
+                Some(Observation::AtLeast(_)) => Some(false),
+                None => None,
+            },
+            _ => None,
+        }
+    }
+
+    /// Returns cumulative usage before a failed request.
+    ///
+    /// # Returns
+    ///
+    /// `Some` for an insufficient cumulative budget, or `None` for point-limit
+    /// and non-budget failures.
+    #[must_use]
+    #[inline(always)]
+    pub fn used(&self) -> Option<u64> {
+        match &self.inner {
+            DataConversionErrorInner::LimitExceeded { source, .. } => source.used(),
+            _ => None,
+        }
+    }
+
+    /// Returns capacity remaining before a failed cumulative request.
+    ///
+    /// # Returns
+    ///
+    /// `Some` for an insufficient cumulative budget, or `None` for point-limit
+    /// and non-budget failures.
+    #[must_use]
+    #[inline(always)]
+    pub const fn remaining(&self) -> Option<u64> {
+        match &self.inner {
+            DataConversionErrorInner::LimitExceeded { source, .. } => source.remaining(),
+            _ => None,
+        }
+    }
+
+    /// Returns the quantity rejected by a failed cumulative request.
+    ///
+    /// # Returns
+    ///
+    /// `Some` for an insufficient cumulative budget, or `None` for point-limit
+    /// and non-budget failures.
+    #[must_use]
+    #[inline(always)]
+    pub const fn requested(&self) -> Option<u64> {
+        match &self.inner {
+            DataConversionErrorInner::LimitExceeded { source, .. } => source.requested(),
             _ => None,
         }
     }
@@ -277,16 +380,6 @@ impl DataConversionError {
     pub const fn quantity_resource(&self) -> Option<ConversionResource> {
         match &self.inner {
             DataConversionErrorInner::Quantity { resource, .. } => Some(*resource),
-            _ => None,
-        }
-    }
-
-    /// Returns the native quantity conversion failure when one occurred.
-    #[must_use]
-    #[inline(always)]
-    pub const fn quantity_error(&self) -> Option<&QuantityConversionError> {
-        match &self.inner {
-            DataConversionErrorInner::Quantity { source, .. } => Some(source),
             _ => None,
         }
     }

@@ -5,13 +5,10 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! # Data Type Module Tests
-//!
-//! Tests for datatype-related language utilities.
+//! Error returned when a Duration cannot be represented exactly.
 
-pub(crate) mod data_type_info_tests;
-pub(crate) mod data_type_of_tests;
-pub(crate) mod data_type_parse_error_tests;
-#[cfg(feature = "converter")]
-pub(crate) mod data_type_table_tests;
-pub(crate) mod data_type_tests;
+/// Indicates that exact millisecond encoding would discard precision.
+#[must_use]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[error("duration has submillisecond precision")]
+pub struct DurationPrecisionLossError;

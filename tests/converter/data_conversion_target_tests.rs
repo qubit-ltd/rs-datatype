@@ -51,10 +51,7 @@ fn test_delegate_does_not_double_charge_item_or_input_budgets() {
     let error = DataConverter::from("1")
         .to_in::<Port>(&mut session)
         .expect_err("a second top-level item should exceed the shared budget");
-    assert_eq!(
-        error.budget_error().map(|error| *error.resource()),
-        Some(ConversionResource::Items),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::Items));
 }
 
 #[test]

@@ -18,6 +18,7 @@ use std::str::FromStr;
 use serde::Deserialize;
 use serde::Serialize;
 
+use super::DataTypeInfo;
 use super::data_type_parse_error::DataTypeParseError;
 
 /// Universal data type enumeration for cross-module type representation
@@ -172,6 +173,17 @@ impl DataType {
         DataType::StringMap,
         DataType::Json,
     ];
+
+    /// Returns stable descriptive metadata for this runtime data type.
+    ///
+    /// # Returns
+    ///
+    /// A lightweight metadata value containing this type's stable name and
+    /// semantic category.
+    #[inline(always)]
+    pub const fn info(self) -> DataTypeInfo {
+        DataTypeInfo::new(self)
+    }
 
     /// Returns the stable lowercase name of this data type.
     ///

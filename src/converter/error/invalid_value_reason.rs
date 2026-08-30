@@ -48,7 +48,7 @@ pub enum InvalidValueReason {
     #[error("non-canonical duration unit; use {canonical}")]
     NonCanonicalDurationUnit {
         /// Preferred strict duration unit symbol suggested to the caller.
-        canonical: String,
+        canonical: &'static str,
     },
     /// The duration suffix is not supported.
     #[error("unsupported duration unit")]

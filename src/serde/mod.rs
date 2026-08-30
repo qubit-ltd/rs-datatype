@@ -14,4 +14,5 @@ mod internal;
 
 pub mod duration_millis;
 pub mod duration_millis_with_unit;
+pub mod duration_millis_with_unit_exact;
 pub mod duration_with_unit;

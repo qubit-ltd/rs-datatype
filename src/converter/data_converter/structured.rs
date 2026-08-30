@@ -12,10 +12,6 @@ use std::collections::HashMap;
 use qubit_budget::MeasuredBudgetError;
 use qubit_budget::json::JsonMeasurement;
 #[cfg(feature = "json")]
-use qubit_json::decode::JsonDecodeError;
-#[cfg(feature = "json")]
-use qubit_json::value::traverse::JsonTreeProcessError;
-#[cfg(feature = "json")]
 use serde_json::Value;
 
 use super::DataConverter;
@@ -29,10 +25,6 @@ use crate::converter::ConversionResource;
 use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionTarget;
-#[cfg(feature = "json")]
-use crate::converter::DataFormat;
-#[cfg(feature = "json")]
-use crate::converter::InvalidValueReason;
 #[cfg(any(feature = "json", feature = "url"))]
 use crate::converter::StructuredConversionLimits;
 use crate::datatype::DataType;
@@ -64,9 +56,11 @@ pub(super) fn account_string_map_structure(
 #[cfg(feature = "json")]
 pub(super) fn account_json_structure(
     value: &Value,
+    source: DataType,
+    target: DataType,
     session: &mut ConversionSession<'_>,
-) -> Result<(), JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>> {
-    session.account_json_value(value)
+) -> Result<(), DataConversionError> {
+    session.account_json_value(source, target, value)
 }
 
 /// Enforces the configured normalized structured-text byte limit.
@@ -154,9 +148,7 @@ impl DataConversionTarget for Value {
             DataConverter::String(value) => {
                 let value = normalize(value, policy, DataType::Json)?;
                 check_structured_text_limit(value, source.data_type(), DataType::Json, limits.structured())?;
-                let decoded: Value = session
-                    .decode_json(value.as_bytes())
-                    .map_err(|error| map_json_decode_error(source, DataType::Json, error))?;
+                let decoded: Value = session.decode_json(source.data_type(), DataType::Json, value.as_bytes())?;
                 Ok(decoded)
             }
             DataConverter::StringMap(value) => Ok(string_map_to_json(value)),
@@ -193,81 +185,6 @@ impl DataConversionTarget for Value {
     }
 }
 
-/// Maps a budget-aware JSON decoding error to the public conversion error.
-///
-/// # Parameters
-///
-/// * `source` - Conversion source that supplies the source data type.
-/// * `target` - Requested structured target data type.
-/// * `error` - Budget-aware JSON decoding failure to translate.
-///
-/// # Returns
-///
-/// Returns the corresponding value-free public conversion error.
-#[cfg(feature = "json")]
-fn map_json_decode_error(
-    source: &DataConverter<'_>,
-    target: DataType,
-    error: JsonDecodeError<ConversionResource, u64>,
-) -> DataConversionError {
-    map_json_decode_error_from_type(source.data_type(), target, error)
-}
-
-/// Maps a budget-aware JSON decoding error with an explicit source type.
-///
-/// # Parameters
-///
-/// * `source` - Runtime source data type retained in the public error.
-/// * `target` - Requested structured target data type.
-/// * `error` - Budget-aware JSON decoding failure to translate.
-///
-/// # Returns
-///
-/// Returns a budget-limit or quantity error for accounting failures and a
-/// deserialization error for JSON or I/O failures.
-#[cfg(feature = "json")]
-pub(super) fn map_json_decode_error_from_type(
-    source: DataType,
-    target: DataType,
-    error: JsonDecodeError<ConversionResource, u64>,
-) -> DataConversionError {
-    match error.budget_error().cloned() {
-        Some(error) => match error {
-            MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(source, target, error),
-            MeasuredBudgetError::Quantity {
-                resource,
-                source: error,
-            } => DataConversionError::quantity(source, target, resource, error),
-        },
-        None => DataConversionError::invalid(
-            source,
-            target,
-            InvalidValueReason::Deserialization {
-                format: DataFormat::Json,
-            },
-        ),
-    }
-}
-
-/// Maps JSON tree-accounting failures to conversion errors.
-#[cfg(feature = "json")]
-pub(super) fn map_json_tree_error_from_type(
-    source: DataType,
-    target: DataType,
-    error: JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>,
-) -> DataConversionError {
-    match error {
-        JsonTreeProcessError::Budget(error) => match error {
-            MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(source, target, error),
-            MeasuredBudgetError::Quantity {
-                resource,
-                source: error,
-            } => DataConversionError::quantity(source, target, resource, error),
-        },
-        JsonTreeProcessError::Visitor(error) => match error {},
-    }
-}
-
 impl DataConversionTarget for HashMap<String, String> {
     /// Converts a borrowed runtime value to a string map.
     ///
@@ -300,9 +217,12 @@ impl DataConversionTarget for HashMap<String, String> {
             DataConverter::String(value) => {
                 let value = normalize(value, policy, DataType::StringMap)?;
                 check_structured_text_limit(value, source.data_type(), DataType::StringMap, limits.structured())?;
-                let decoded = session
-                    .decode_json_seed(StringMapVisitor, value.as_bytes())
-                    .map_err(|error| map_json_decode_error(source, DataType::StringMap, error))?;
+                let decoded = session.decode_json_seed(
+                    source.data_type(),
+                    DataType::StringMap,
+                    StringMapVisitor,
+                    value.as_bytes(),
+                )?;
                 Ok(decoded)
             }
             DataConverter::Unset(_) => Err(source.missing(DataType::StringMap)),

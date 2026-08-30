@@ -167,10 +167,7 @@ fn test_data_converters_to_vec_in_enforces_session_item_budget() {
         .to_vec_in::<u16>(&mut session)
         .expect_err("the third item must exceed the shared budget");
     assert_eq!(error.source_index(), 2);
-    assert_eq!(
-        error.conversion_error().budget_error().map(|facts| *facts.resource()),
-        Some(ConversionResource::Items),
-    );
+    assert_eq!(error.conversion_error().resource(), Some(ConversionResource::Items),);
 }
 
 /// Test first-value conversion from a borrowed vector.

@@ -11,6 +11,7 @@
 
 mod duration_overflow_error;
 mod duration_parse_error;
+mod duration_precision_loss_error;
 mod duration_text_options;
 mod duration_unit;
 mod duration_unit_parse_mode;
@@ -20,6 +21,7 @@ mod suffixless_duration_policy;
 
 pub use duration_overflow_error::DurationOverflowError;
 pub use duration_parse_error::DurationParseError;
+pub use duration_precision_loss_error::DurationPrecisionLossError;
 pub use duration_text_options::DurationTextOptions;
 pub use duration_text_options::DurationTextOptionsBuilder;
 pub use duration_unit::DurationUnit;

@@ -108,10 +108,6 @@ fn assert_output_failure(result: &Result<String, qubit_datatype::DataConversionE
     if let Err(error) = result
         && error.kind() == DataConversionErrorKind::LimitExceeded
     {
-        assert!(
-            error
-                .budget_error()
-                .is_some_and(|budget| { *budget.resource() == ConversionResource::OutputBytes })
-        );
+        assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
     }
 }

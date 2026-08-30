@@ -26,9 +26,7 @@ fn test_invalid_value_reason_display_is_value_free() {
         (InvalidValueReason::InvalidBoolean, "invalid boolean"),
         (InvalidValueReason::NegativeDuration, "negative duration"),
         (
-            InvalidValueReason::NonCanonicalDurationUnit {
-                canonical: "min".to_owned(),
-            },
+            InvalidValueReason::NonCanonicalDurationUnit { canonical: "min" },
             "non-canonical duration unit; use min",
         ),
         (InvalidValueReason::UnsupportedDurationUnit, "unsupported duration unit"),

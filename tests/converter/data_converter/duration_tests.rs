@@ -18,8 +18,6 @@ use proptest::prop_oneof;
 use proptest::proptest;
 use proptest::strategy::Just;
 use proptest::strategy::Strategy;
-use qubit_budget::BudgetError;
-use qubit_budget::Observation;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
@@ -96,9 +94,7 @@ fn test_data_converter_duration_string_conversion() {
         .expect_err("strict mode should reject the minute alias");
     assert_eq!(
         non_canonical.reason(),
-        Some(&InvalidValueReason::NonCanonicalDurationUnit {
-            canonical: "min".to_owned(),
-        }),
+        Some(&InvalidValueReason::NonCanonicalDurationUnit { canonical: "min" }),
     );
 
     assert!(DataConverter::from("10").to::<Duration>().is_err());
@@ -211,14 +207,9 @@ fn test_data_converter_duration_enforces_text_limit() {
         .to_with::<Duration>(&options, &limits)
         .expect_err("oversized duration text should be rejected");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
-    assert_eq!(
-        error.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::DurationTextBytes,
-            observed: Observation::Exact(4),
-            maximum: 3,
-        }),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::DurationTextBytes));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
 }
 
 /// Test that numeric input, suffixless strings, and output use independent
@@ -486,9 +477,7 @@ fn test_data_converter_duration_text_honors_unit_parse_mode() {
         .expect_err("strict mode should reject the minute alias");
     assert_eq!(
         non_canonical.reason(),
-        Some(&InvalidValueReason::NonCanonicalDurationUnit {
-            canonical: "min".to_owned(),
-        }),
+        Some(&InvalidValueReason::NonCanonicalDurationUnit { canonical: "min" }),
     );
 
     let reject_suffixless_strict = ConversionPolicy::builder()

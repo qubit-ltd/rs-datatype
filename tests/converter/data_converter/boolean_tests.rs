@@ -10,8 +10,6 @@
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use proptest::proptest;
-use qubit_budget::BudgetError;
-use qubit_budget::Observation;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
@@ -123,14 +121,9 @@ fn test_data_converter_bool_numeric_text_limit() {
         .to_with::<bool>(&options, &limits)
         .expect_err("numeric Boolean text should honor the byte limit");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
-    assert_eq!(
-        error.budget_error(),
-        Some(&BudgetError::LimitExceeded {
-            resource: ConversionResource::NumericTextBytes,
-            observed: Observation::Exact(2),
-            maximum: 1,
-        }),
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::NumericTextBytes));
+    assert_eq!(error.configured_limit(), Some(1));
+    assert_eq!(error.observed_lower_bound(), Some(2));
 }
 
 proptest! {
