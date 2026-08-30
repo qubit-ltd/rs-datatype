@@ -193,10 +193,12 @@ impl<'a> ConversionSession<'a> {
     ) -> Result<(), DataConversionError> {
         let mut transaction = self.budget.structured_transaction();
         let result = JsonTreeReader::new(&mut transaction).process(value, &mut JsonAccountingVisitor);
-        if result.is_ok() {
-            transaction.commit();
+        match result {
+            Ok(()) => transaction
+                .commit()
+                .map_err(|error| DataConversionError::measured_limit(from, to, error)),
+            Err(error) => Err(map_json_tree_error(from, to, error)),
         }
-        result.map_err(|error| map_json_tree_error(from, to, error))
     }
 
     /// Starts a transactional admission over the shared structured budget.

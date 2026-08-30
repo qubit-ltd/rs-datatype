@@ -48,8 +48,7 @@ pub(super) fn account_string_map_structure(
             bytes: value.len(),
         })?;
     }
-    transaction.commit();
-    Ok(())
+    transaction.commit()
 }
 
 /// Accounts a materialized JSON value through rs-budget's canonical traversal.
