@@ -20,6 +20,15 @@ use super::NumericConversionLimits;
 use super::StructuredConversionLimits;
 
 /// Aggregates immutable value limits and cumulative operation limits.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::ConversionLimits;
+///
+/// let limits = ConversionLimits::builder().build();
+/// assert!(limits.operation().max_items() > 0);
+/// ```
 #[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]

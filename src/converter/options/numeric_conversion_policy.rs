@@ -15,6 +15,16 @@ use super::FloatRoundingPolicy;
 use super::FractionalToIntegerPolicy;
 
 /// Groups semantic policies for numeric conversion.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::NumericConversionPolicy;
+/// use qubit_datatype::NumericConversionPolicyBuilder;
+///
+/// let policy = NumericConversionPolicy::builder().build();
+/// assert_eq!(policy, NumericConversionPolicyBuilder::new().build());
+/// ```
 #[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]

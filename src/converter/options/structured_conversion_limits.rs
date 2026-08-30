@@ -24,6 +24,15 @@ use crate::converter::ConversionResource;
 ///
 /// The text limit applies to UTF-8 bytes after configured string normalization
 /// and covers JSON values, JSON objects converted to string maps, and URLs.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::StructuredConversionLimits;
+///
+/// let limits = StructuredConversionLimits::builder().max_depth(4).build();
+/// assert_eq!(limits.max_depth(), 4);
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StructuredConversionLimits {

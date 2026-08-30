@@ -15,6 +15,15 @@ use super::DurationUnitParseMode;
 use super::SuffixlessDurationPolicy;
 
 /// Controls suffixless input and Duration unit parsing.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::DurationTextOptions;
+///
+/// let options = DurationTextOptions::builder().max_text_bytes(128).build();
+/// assert_eq!(options.max_text_bytes(), 128);
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
