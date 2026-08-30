@@ -12,6 +12,7 @@ use serde::Serialize;
 
 use super::super::StructuredConversionLimits;
 
+/// Serializable field-based representation of structured limits.
 #[derive(Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub(crate) struct StructuredConversionLimitsWire {

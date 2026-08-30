@@ -307,7 +307,7 @@ Chrono 执行范围校验前会拒绝内部空白、带符号年份、替代分�
 标量字符串集合转换默认最多保留 65,536 项。上限在 trim 和空项过滤后检查，
 因此被跳过的项不占配额。上限为零时只允许空结果；第一个额外保留项返回
 `LimitExceeded`，并保留其原始源索引。可通过
-`CollectionConversionLimits::with_max_items` 调整上限。
+`CollectionConversionLimits::builder().max_items(limit).build()` 调整上限。
 该选项只限制一次标量字符串拆分；会话预算还会限制普通迭代器批量转换。
 
 ```rust

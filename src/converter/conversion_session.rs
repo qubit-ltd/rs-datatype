@@ -52,6 +52,22 @@ use super::options::ConversionPolicy;
 use crate::datatype::DataType;
 
 /// Mutable conversion accounting shared by nested and batch conversions.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{
+///     ConversionLimits, ConversionPolicy, ConversionSession, DataConverter,
+/// };
+///
+/// let policy = ConversionPolicy::strict();
+/// let limits = ConversionLimits::default();
+/// let mut session = ConversionSession::new(&policy, &limits);
+/// let value = DataConverter::from("42").to_in::<u16>(&mut session)?;
+///
+/// assert_eq!(value, 42);
+/// # Ok::<(), qubit_datatype::DataConversionError>(())
+/// ```
 #[must_use]
 #[derive(Debug, PartialEq, Eq)]
 pub struct ConversionSession<'a> {

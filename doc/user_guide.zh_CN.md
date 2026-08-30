@@ -25,7 +25,7 @@
 由 `ConversionLimits` 限制资源。只有多次调用必须共用累计预算时，才需要
 `ConversionSession`。
 
-```
+```text
 运行时来源值 ── DataConverter ── 策略 + 限制 ──> 强类型结果
                                       │
                                       └─ 可选的共享 ConversionSession

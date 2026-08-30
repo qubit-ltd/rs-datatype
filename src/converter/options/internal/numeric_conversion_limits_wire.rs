@@ -12,6 +12,7 @@ use serde::Serialize;
 
 use super::super::NumericConversionLimits;
 
+/// Serializable field-based representation of numeric limits.
 #[derive(Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub(crate) struct NumericConversionLimitsWire {

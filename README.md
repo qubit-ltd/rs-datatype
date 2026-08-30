@@ -354,7 +354,8 @@ Scalar-string collection conversion retains at most 65,536 items by default.
 The limit is checked after trimming and empty-item filtering, so skipped items
 do not consume the budget. A zero limit permits only an empty retained result;
 the first additional retained item returns `LimitExceeded` with its original
-source index. Use `CollectionConversionLimits::with_max_items` to select a
+source index. Use
+`CollectionConversionLimits::builder().max_items(limit).build()` to select a
 different bound. This per-string splitting limit is separate from the session
 budget, which also applies to ordinary iterator batches.
 
