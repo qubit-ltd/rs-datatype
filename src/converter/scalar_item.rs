@@ -6,7 +6,6 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Borrowed scalar collection item.
-// qubit-style: allow multiple-public-types
 
 /// A borrowed scalar item together with its index in the original source.
 ///

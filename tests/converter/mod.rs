@@ -21,6 +21,7 @@ mod data_converter_tests;
 mod data_converters_tests;
 mod error;
 mod internal;
+mod options;
 mod scalar_item_tests;
 mod scalar_items_tests;
 mod scalar_string_data_converters_tests;

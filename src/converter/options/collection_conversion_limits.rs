@@ -6,10 +6,12 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Value limits for scalar-string collection conversion.
-// qubit-style: allow multiple-public-types
-
 use serde::Deserialize;
 use serde::Serialize;
+
+mod collection_conversion_limits_builder;
+
+pub use collection_conversion_limits_builder::CollectionConversionLimitsBuilder;
 
 /// Limits the source and retained items of one collection conversion.
 #[must_use]
@@ -64,50 +66,6 @@ impl CollectionConversionLimits {
     #[must_use]
     pub const fn max_items(&self) -> u64 {
         self.max_items
-    }
-}
-
-/// Builder for [`CollectionConversionLimits`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct CollectionConversionLimitsBuilder {
-    /// Collection limits being configured.
-    limits: CollectionConversionLimits,
-}
-
-impl CollectionConversionLimitsBuilder {
-    /// Creates a builder initialized with the documented defaults.
-    #[inline]
-    #[must_use]
-    pub const fn new() -> Self {
-        Self {
-            limits: CollectionConversionLimits {
-                max_source_bytes: CollectionConversionLimits::DEFAULT_MAX_SOURCE_BYTES,
-                max_items: CollectionConversionLimits::DEFAULT_MAX_ITEMS,
-            },
-        }
-    }
-
-    /// Configures the maximum UTF-8 source size.
-    #[inline(always)]
-    #[must_use]
-    pub const fn max_source_bytes(mut self, maximum: u64) -> Self {
-        self.limits.max_source_bytes = maximum;
-        self
-    }
-
-    /// Configures the maximum retained item count.
-    #[inline(always)]
-    #[must_use]
-    pub const fn max_items(mut self, maximum: u64) -> Self {
-        self.limits.max_items = maximum;
-        self
-    }
-
-    /// Builds the configured collection limits.
-    #[inline]
-    #[must_use]
-    pub const fn build(self) -> CollectionConversionLimits {
-        self.limits
     }
 }
 

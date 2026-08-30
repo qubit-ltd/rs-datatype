@@ -6,13 +6,15 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Independently configurable numeric conversion policy.
-// qubit-style: allow multiple-public-types
-
 use serde::Deserialize;
 use serde::Serialize;
 
 use super::FloatRoundingPolicy;
 use super::FractionalToIntegerPolicy;
+
+mod numeric_conversion_policy_builder;
+
+pub use numeric_conversion_policy_builder::NumericConversionPolicyBuilder;
 
 /// Groups semantic policies for numeric conversion.
 ///
@@ -170,54 +172,6 @@ impl NumericConversionPolicy {
     pub(crate) const fn with_text_to_float(mut self, policy: FloatRoundingPolicy) -> Self {
         self.text_to_float = policy;
         self
-    }
-}
-
-/// Builder for [`NumericConversionPolicy`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct NumericConversionPolicyBuilder {
-    /// Numeric policy being configured.
-    policy: NumericConversionPolicy,
-}
-
-impl NumericConversionPolicyBuilder {
-    /// Creates a builder initialized with the documented defaults.
-    #[inline]
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            policy: NumericConversionPolicy::default(),
-        }
-    }
-    /// Configures fractional-to-integer conversion.
-    #[inline(always)]
-    #[must_use]
-    pub const fn fractional_to_integer(self, policy: FractionalToIntegerPolicy) -> Self {
-        Self {
-            policy: self.policy.with_fractional_to_integer(policy),
-        }
-    }
-    /// Configures numeric-to-float conversion.
-    #[inline(always)]
-    #[must_use]
-    pub const fn numeric_to_float(self, policy: FloatRoundingPolicy) -> Self {
-        Self {
-            policy: self.policy.with_numeric_to_float(policy),
-        }
-    }
-    /// Configures text-to-float conversion.
-    #[inline(always)]
-    #[must_use]
-    pub const fn text_to_float(self, policy: FloatRoundingPolicy) -> Self {
-        Self {
-            policy: self.policy.with_text_to_float(policy),
-        }
-    }
-    /// Builds the configured numeric policy.
-    #[inline]
-    #[must_use]
-    pub const fn build(self) -> NumericConversionPolicy {
-        self.policy
     }
 }
 
