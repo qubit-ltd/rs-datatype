@@ -61,7 +61,7 @@ chrono = { version = "0.4", default-features = false, features = ["std"], option
 num-bigint = { version = "0.4", optional = true }
 num-rational = { version = "0.4", optional = true }
 num-traits = { version = "0.2", optional = true }
-qubit-budget = { version = "0.4", path = "../rs-budget", features = ["json"], optional = true }
+qubit-budget = { version = "0.4", features = ["json"], optional = true }
 qubit-json = { version = "0.8", path = "../rs-json", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
