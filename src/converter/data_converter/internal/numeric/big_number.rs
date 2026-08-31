@@ -26,8 +26,8 @@ use super::syntax::normalize_numeric_text;
 #[cfg(feature = "big-decimal")]
 use super::syntax::parse_number;
 use super::syntax::parse_text_bigint;
+use crate::converter::ConversionContext;
 use crate::converter::ConversionPolicy;
-use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionTarget;
 use crate::converter::FractionalToIntegerPolicy;
@@ -444,10 +444,10 @@ impl DataConversionTarget for BigInt {
     #[inline(always)]
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.policy();
-        let limits = session.limits().numeric();
+        let options = context.policy();
+        let limits = context.limits().numeric();
         source_to_bigint(source, options, limits, DataType::BigInteger)
     }
 
@@ -469,9 +469,9 @@ impl DataConversionTarget for BigInt {
     #[inline]
     fn convert_owned(
         source: DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        let limits = session.limits().numeric();
+        let limits = context.limits().numeric();
         match source {
             DataConverter::BigInteger(value) => {
                 let maximum_digits = limits.max_big_integer_digits();
@@ -483,7 +483,7 @@ impl DataConversionTarget for BigInt {
                 )?;
                 Ok(value.into_owned())
             }
-            source => Self::convert_from(&source, session),
+            source => Self::convert_from(&source, context),
         }
     }
 }
@@ -507,10 +507,10 @@ impl DataConversionTarget for BigDecimal {
     /// resource-limit error.
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.policy();
-        let limits = session.limits().numeric();
+        let options = context.policy();
+        let limits = context.limits().numeric();
         match source {
             DataConverter::BigDecimal(value) => {
                 enforce_big_decimal_limits(value.as_ref(), limits, DataType::BigDecimal, DataType::BigDecimal)?;
@@ -564,19 +564,19 @@ impl DataConversionTarget for BigDecimal {
     #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::BigDecimal(value) => {
                 enforce_big_decimal_limits(
                     value.as_ref(),
-                    session.limits().numeric(),
+                    context.limits().numeric(),
                     DataType::BigDecimal,
                     DataType::BigDecimal,
                 )?;
                 Ok(value.into_owned())
             }
-            source => Self::convert_from(&source, session),
+            source => Self::convert_from(&source, context),
         }
     }
 }

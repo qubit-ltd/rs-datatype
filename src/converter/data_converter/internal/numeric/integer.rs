@@ -17,8 +17,8 @@ use super::super::super::DataConverter;
 use super::big_number::decimal_to_bigint;
 use super::syntax::normalize_numeric_text;
 use super::syntax::parse_text_integer;
+use crate::converter::ConversionContext;
 use crate::converter::ConversionPolicy;
-use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionTarget;
 use crate::converter::DurationRoundingPolicy;
@@ -399,10 +399,10 @@ macro_rules! impl_signed_target {
             #[inline(always)]
             fn convert_from(
                 source: &DataConverter<'_>,
-                session: &mut ConversionSession<'_>,
+                context: &mut ConversionContext<'_, '_>,
             ) -> Result<Self, DataConversionError> {
-                let options = session.policy();
-                let limits = session.limits().numeric();
+                let options = context.policy();
+                let limits = context.limits().numeric();
                 checked_signed(to_i128(source, options, limits, $data_type)?, source, $data_type)
             }
         }
@@ -432,10 +432,10 @@ macro_rules! impl_unsigned_target {
             #[inline(always)]
             fn convert_from(
                 source: &DataConverter<'_>,
-                session: &mut ConversionSession<'_>,
+                context: &mut ConversionContext<'_, '_>,
             ) -> Result<Self, DataConversionError> {
-                let options = session.policy();
-                let limits = session.limits().numeric();
+                let options = context.policy();
+                let limits = context.limits().numeric();
                 checked_unsigned(to_u128(source, options, limits, $data_type)?, source, $data_type)
             }
         }

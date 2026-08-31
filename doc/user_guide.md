@@ -117,7 +117,42 @@ assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
 An admitted conversion that later fails still retains its item and input
 charges. A failed admission does not consume an additional item. Use the
 session's `*_used`, `*_remaining`, and `*_limit` accessors when you need to
-observe the budget.
+observe the budget. `ConversionSession` is an operation-level owner: custom
+targets do not receive it directly.
+
+### Extend a target type safely
+
+Implement `DataConversionTarget` for a downstream newtype. The converter gives
+the implementation a `ConversionContext`, which has the active source/target
+types already bound. Use it to delegate or render output; do not re-admit the
+top-level source.
+
+```rust
+use qubit_datatype::{
+    ConversionContext, DataConversionError, DataConversionTarget, DataConverter,
+    DataType, DataTypeOf,
+};
+
+struct Port(u16);
+
+impl DataTypeOf for Port {
+    const DATA_TYPE: DataType = DataType::UInt16;
+}
+
+impl DataConversionTarget for Port {
+    fn convert_from(
+        source: &DataConverter<'_>,
+        context: &mut ConversionContext<'_, '_>,
+    ) -> Result<Self, DataConversionError> {
+        context.delegate::<u16>(source).map(Self)
+    }
+}
+```
+
+`ConversionContext` also exposes JSON decoding/encoding (with `json`) and
+transactional `write_string`. This preserves one shared budget and error type
+context. Raw admission and byte-accounting operations are intentionally not
+part of the extension API.
 
 ### Compare mixed numeric values
 
@@ -160,6 +195,15 @@ assert!(parse_duration_text("1500", &DurationTextOptions::default()).is_err());
 
 Strict mode accepts `us`, `µs`, and `μs` for microseconds. It rejects the
 lenient-only minute alias `m`; canonical output uses `µs` and `min`.
+
+For Serde fields, select the adapter from the wire contract:
+
+| Adapter | Representation | Precision |
+| --- | --- | --- |
+| `duration_millis` | JSON number | Half-up to milliseconds |
+| `duration_millis_with_unit` | `"<integer>ms"` | Half-up to milliseconds |
+| `duration_millis_with_unit_exact` | `"<integer>ms"` | Rejects submillisecond values |
+| `duration_with_unit` | Canonical unit string | Exact |
 
 ## Errors and diagnostics
 

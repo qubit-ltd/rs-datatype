@@ -7,7 +7,7 @@
 // =============================================================================
 //! Target-side data conversion extension point.
 
-use super::ConversionSession;
+use super::ConversionContext;
 use super::DataConversionError;
 use super::DataConverter;
 use crate::DataTypeOf;
@@ -21,7 +21,7 @@ use crate::DataTypeOf;
 ///
 /// ```
 /// use qubit_datatype::{
-///     ConversionSession, DataConversionError, DataConversionTarget,
+///     ConversionContext, DataConversionError, DataConversionTarget,
 ///     DataConverter, DataType, DataTypeOf,
 /// };
 ///
@@ -34,9 +34,9 @@ use crate::DataTypeOf;
 /// impl DataConversionTarget for Port {
 ///     fn convert_from(
 ///         source: &DataConverter<'_>,
-///         session: &mut ConversionSession<'_>,
+///         context: &mut ConversionContext<'_, '_>,
 ///     ) -> Result<Self, DataConversionError> {
-///         session.delegate::<u16>(source).map(Self)
+///         context.delegate::<u16>(source).map(Self)
 ///     }
 /// }
 ///
@@ -44,12 +44,12 @@ use crate::DataTypeOf;
 /// assert_eq!(port.0, 8080);
 /// ```
 pub trait DataConversionTarget: DataTypeOf + Sized {
-    /// Converts `source` into this target type using a shared session.
+    /// Converts `source` into this target type using a bound context.
     ///
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `session` - Policies and cumulative budgets for this conversion.
+    /// * `context` - Bound policies, budgets, and execution operations.
     ///
     /// # Returns
     ///
@@ -61,10 +61,10 @@ pub trait DataConversionTarget: DataTypeOf + Sized {
     /// and target are unsupported, or the value violates a conversion policy.
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError>;
 
-    /// Converts a consumed source into this target type using a shared session.
+    /// Converts a consumed source into this target type using a bound context.
     ///
     /// The default implementation borrows the consumed source. Targets that
     /// can reuse an owned source allocation may override this method.
@@ -72,7 +72,7 @@ pub trait DataConversionTarget: DataTypeOf + Sized {
     /// # Parameters
     ///
     /// * `source` - Runtime value consumed by the conversion.
-    /// * `session` - Policies and cumulative budgets for this conversion.
+    /// * `context` - Bound policies, budgets, and execution operations.
     ///
     /// # Returns
     ///
@@ -85,8 +85,8 @@ pub trait DataConversionTarget: DataTypeOf + Sized {
     #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        Self::convert_from(&source, session)
+        Self::convert_from(&source, context)
     }
 }

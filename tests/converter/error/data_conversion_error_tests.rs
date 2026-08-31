@@ -14,6 +14,7 @@ use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::ConversionSession;
+use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
 use qubit_datatype::converter::DataConversionError;
 use qubit_datatype::converter::DataConversionErrorKind;
@@ -48,11 +49,11 @@ fn test_data_conversion_error_limit_exceeded_contract() {
         .operation_limits(ConversionOperationLimits::builder().max_output_bytes(4).build())
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
-    session
-        .admit_output_bytes(DataType::String, DataType::String, 3)
+    DataConverter::from("one")
+        .to_in::<String>(&mut session)
         .expect("initial output should fit");
-    let error = session
-        .admit_output_bytes(DataType::String, DataType::String, 2)
+    let error = DataConverter::from("two")
+        .to_in::<String>(&mut session)
         .expect_err("second output should exceed remaining capacity");
 
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
@@ -66,7 +67,7 @@ fn test_data_conversion_error_limit_exceeded_contract() {
     assert_eq!(error.observation_is_exact(), None);
     assert_eq!(error.used(), Some(3));
     assert_eq!(error.remaining(), Some(1));
-    assert_eq!(error.requested(), Some(2));
+    assert_eq!(error.requested(), Some(3));
 
     let list_error = DataListConversionError::new(7, error.clone());
     assert_eq!(list_error.source_index(), 7);

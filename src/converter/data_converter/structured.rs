@@ -21,6 +21,7 @@ use super::internal::StringMapVisitor;
 use super::internal::sorted_string_map_entries;
 #[cfg(feature = "json")]
 use super::string_source::normalize;
+use crate::converter::ConversionContext;
 use crate::converter::ConversionResource;
 use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
@@ -138,16 +139,16 @@ impl DataConversionTarget for Value {
     /// text-limit errors.
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        let policy = session.policy();
-        let limits = session.limits();
+        let policy = context.policy();
+        let limits = context.limits();
         match source {
             DataConverter::Json(value) => Ok(value.as_ref().clone()),
             DataConverter::String(value) => {
                 let value = normalize(value, policy, DataType::Json)?;
                 check_structured_text_limit(value, source.data_type(), DataType::Json, limits.structured())?;
-                let decoded: Value = session.decode_json(source.data_type(), DataType::Json, value.as_bytes())?;
+                let decoded: Value = context.decode_json(value.as_bytes())?;
                 Ok(decoded)
             }
             DataConverter::StringMap(value) => Ok(string_map_to_json(value)),
@@ -174,12 +175,12 @@ impl DataConversionTarget for Value {
     #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::Json(value) => Ok(value.into_owned()),
             DataConverter::StringMap(value) => Ok(string_map_into_json(value.into_owned())),
-            source => Self::convert_from(&source, session),
+            source => Self::convert_from(&source, context),
         }
     }
 }
@@ -202,26 +203,21 @@ impl DataConversionTarget for HashMap<String, String> {
     /// or structured text-limit errors.
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
         #[cfg(feature = "json")]
-        let policy = session.policy();
+        let policy = context.policy();
         #[cfg(feature = "json")]
-        let limits = session.limits();
+        let limits = context.limits();
         #[cfg(not(feature = "json"))]
-        let _ = session;
+        let _ = context;
         match source {
             DataConverter::StringMap(value) => Ok(value.as_ref().clone()),
             #[cfg(feature = "json")]
             DataConverter::String(value) => {
                 let value = normalize(value, policy, DataType::StringMap)?;
                 check_structured_text_limit(value, source.data_type(), DataType::StringMap, limits.structured())?;
-                let decoded = session.decode_json_seed(
-                    source.data_type(),
-                    DataType::StringMap,
-                    StringMapVisitor,
-                    value.as_bytes(),
-                )?;
+                let decoded = context.decode_json_seed(StringMapVisitor, value.as_bytes())?;
                 Ok(decoded)
             }
             DataConverter::Unset(_) => Err(source.missing(DataType::StringMap)),
@@ -246,11 +242,11 @@ impl DataConversionTarget for HashMap<String, String> {
     #[inline(always)]
     fn convert_owned(
         source: DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
         match source {
             DataConverter::StringMap(value) => Ok(value.into_owned()),
-            source => Self::convert_from(&source, session),
+            source => Self::convert_from(&source, context),
         }
     }
 }

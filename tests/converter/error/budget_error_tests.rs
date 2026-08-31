@@ -12,7 +12,7 @@ use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::ConversionSession;
-use qubit_datatype::DataType;
+use qubit_datatype::DataConverter;
 
 #[test]
 fn test_resource_accessors_preserve_complete_budget_facts() {
@@ -21,11 +21,11 @@ fn test_resource_accessors_preserve_complete_budget_facts() {
         .operation_limits(ConversionOperationLimits::builder().max_output_bytes(4).build())
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
-    session
-        .admit_output_bytes(DataType::Int32, DataType::String, 3)
+    DataConverter::from(123_i32)
+        .to_in::<String>(&mut session)
         .expect("initial output should fit");
-    let error = session
-        .admit_output_bytes(DataType::Int32, DataType::String, 3)
+    let error = DataConverter::from(456_i32)
+        .to_in::<String>(&mut session)
         .expect_err("next output should exceed remaining capacity");
 
     assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));

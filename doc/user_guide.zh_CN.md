@@ -104,6 +104,37 @@ assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
 
 已经准入但随后失败的转换仍会保留条目和输入字节消耗；准入失败不会再消耗一个条目。
 需要观察预算时，可使用会话的 `*_used`、`*_remaining` 和 `*_limit` 访问器。
+`ConversionSession` 是操作级所有者；自定义目标不会直接获得它。
+
+### 安全扩展目标类型
+
+为下游 newtype 实现 `DataConversionTarget`。转换器会传入已绑定当前来源/目标类型的
+`ConversionContext`；用它委托或渲染输出，不要再次准入顶层来源。
+
+```rust
+use qubit_datatype::{
+    ConversionContext, DataConversionError, DataConversionTarget, DataConverter,
+    DataType, DataTypeOf,
+};
+
+struct Port(u16);
+
+impl DataTypeOf for Port {
+    const DATA_TYPE: DataType = DataType::UInt16;
+}
+
+impl DataConversionTarget for Port {
+    fn convert_from(
+        source: &DataConverter<'_>,
+        context: &mut ConversionContext<'_, '_>,
+    ) -> Result<Self, DataConversionError> {
+        context.delegate::<u16>(source).map(Self)
+    }
+}
+```
+
+启用 `json` 后，`ConversionContext` 还提供 JSON 解码/编码和事务式 `write_string`。
+它们共享同一预算与错误类型上下文；原始准入和字节记账操作有意不属于扩展 API。
 
 ### 比较不同数值表示
 
@@ -144,6 +175,15 @@ assert!(parse_duration_text("1500", &DurationTextOptions::default()).is_err());
 
 严格模式接受 `us`、`µs` 和 `μs` 三种微秒拼写，但拒绝仅在宽松模式中接受的分钟别名
 `m`；规范输出固定使用 `µs` 和 `min`。
+
+Serde 字段应按 wire contract 选择适配器：
+
+| 适配器 | 表示 | 精度 |
+| --- | --- | --- |
+| `duration_millis` | JSON 数字 | 向毫秒 half-up 舍入 |
+| `duration_millis_with_unit` | `"<integer>ms"` | 向毫秒 half-up 舍入 |
+| `duration_millis_with_unit_exact` | `"<integer>ms"` | 拒绝亚毫秒值 |
+| `duration_with_unit` | 规范化单位字符串 | 精确 |
 
 ## 错误与诊断
 

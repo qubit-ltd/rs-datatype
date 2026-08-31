@@ -21,8 +21,8 @@ use super::DataConverter;
 use super::numeric::duration_to_u128;
 use super::numeric::source_to_integer;
 use super::string_source::normalize;
+use crate::converter::ConversionContext;
 use crate::converter::ConversionPolicy;
-use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionTarget;
 use crate::converter::DurationConversionLimits;
@@ -215,10 +215,10 @@ impl DataConversionTarget for Duration {
     /// configured resource-limit error as applicable to the source.
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.policy();
-        let limits = session.limits();
+        let options = context.policy();
+        let limits = context.limits();
         match source {
             DataConverter::Duration(value) => Ok(*value),
             DataConverter::String(value) => parse_duration(value, options, limits.duration()),

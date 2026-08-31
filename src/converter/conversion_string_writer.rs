@@ -17,13 +17,13 @@ use super::error::InvalidValueReason;
 use super::internal::ConversionStringSink;
 use crate::datatype::DataType;
 
-/// Writes one conversion result into a session-owned, budgeted String.
+/// Writes one conversion result into a context-owned, budgeted String.
 ///
-/// Values of this type are supplied by [`ConversionSession::write_string`]
+/// Values of this type are supplied by [`ConversionContext::write_string`]
 /// and cannot outlive that call. Bytes are committed to the session only when
 /// the complete rendering operation succeeds.
 ///
-/// [`ConversionSession::write_string`]: super::ConversionSession::write_string
+/// [`ConversionContext::write_string`]: super::ConversionContext::write_string
 pub struct ConversionStringWriter<'writer> {
     /// Type-erased budgeted output sink receiving rendered bytes.
     inner: &'writer mut dyn ConversionStringSink,
@@ -34,7 +34,7 @@ pub struct ConversionStringWriter<'writer> {
 }
 
 impl<'writer> ConversionStringWriter<'writer> {
-    /// Creates a writer connected to one conversion session's output budget.
+    /// Creates a writer connected to one conversion context's output budget.
     ///
     /// # Parameters
     ///
@@ -60,9 +60,9 @@ impl<'writer> ConversionStringWriter<'writer> {
     ///
     /// Returns an invalid-value error if the underlying formatter rejects the
     /// write. Budget failures are reported by the enclosing
-    /// [`ConversionSession::write_string`] call.
+    /// [`ConversionContext::write_string`] call.
     ///
-    /// [`ConversionSession::write_string`]: super::ConversionSession::write_string
+    /// [`ConversionContext::write_string`]: super::ConversionContext::write_string
     #[inline]
     pub fn write_str(&mut self, value: &str) -> Result<(), DataConversionError> {
         self.inner
