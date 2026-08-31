@@ -36,6 +36,7 @@ use url::Url;
 #[cfg(feature = "json")]
 use self::structured::account_json_structure;
 use self::structured::account_string_map_structure;
+use super::conversion_context::ConversionContext;
 use super::conversion_session::ConversionSession;
 use super::data_conversion_target::DataConversionTarget;
 use super::error::DataConversionError;
@@ -323,7 +324,8 @@ impl DataConverter<'_> {
             .map_err(|limit| DataConversionError::limit_exceeded(self.data_type(), T::DATA_TYPE, limit))?;
         self.charge_input_for_target(T::DATA_TYPE, session)?;
 
-        T::convert_from(self, session)
+        let mut context = ConversionContext::new(session, self.data_type(), T::DATA_TYPE);
+        T::convert_from(self, &mut context)
     }
 
     /// Consumes this source and converts it using the shared default options.
@@ -396,7 +398,8 @@ impl DataConverter<'_> {
             .consume_item()
             .map_err(|limit| DataConversionError::limit_exceeded(from, T::DATA_TYPE, limit))?;
         self.charge_input_for_target(T::DATA_TYPE, session)?;
-        T::convert_owned(self, session)
+        let mut context = ConversionContext::new(session, from, T::DATA_TYPE);
+        T::convert_owned(self, &mut context)
     }
 
     /// Charges textual input and supported structured values before a target

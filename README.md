@@ -37,14 +37,14 @@ The minimum build has no optional dependencies:
 
 ```toml
 [dependencies]
-qubit-datatype = "0.11"
+qubit-datatype = "0.12"
 ```
 
 Enable conversion and only the rich families you need:
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.11", default-features = false, features = ["converter", "chrono"] }
+qubit-datatype = { version = "0.12", default-features = false, features = ["converter", "chrono"] }
 ```
 
 | Feature | Capability |
@@ -249,8 +249,10 @@ let limits = ConversionLimits::builder()
 
 Each `to_with`, `into_target_with`, or batch `*_with` call creates an independent
 session. Internally, `ConversionOperationLimits` creates a private
-`ConversionBudget`, and `ConversionSession` carries that mutable accounting
-through nested work. Reuse one explicitly constructed session with `to_in`,
+`ConversionBudget`, and `ConversionSession` owns that mutable accounting.
+Target implementations receive a conversion-scoped `ConversionContext`, so
+their nested work cannot bypass admission or detach errors from the active type
+pair. Reuse one explicitly constructed session with `to_in`,
 `into_target_in`, or `to_vec_in` only when limits must accumulate across calls:
 
 ```rust
@@ -321,6 +323,15 @@ The `duration` feature also exposes four `#[serde(with = "...")]` modules:
 submillisecond precision would be lost. `duration_with_unit` stores an exact
 preferred-unit string.
 
+Choose the adapter by wire contract rather than convenience:
+
+| Adapter | Wire representation | Precision rule | Use when |
+| --- | --- | --- | --- |
+| `duration_millis` | JSON number | Half-up to milliseconds | The protocol is a numeric millisecond field |
+| `duration_millis_with_unit` | `"<integer>ms"` | Half-up to milliseconds | The protocol requires an explicit `ms` suffix |
+| `duration_millis_with_unit_exact` | `"<integer>ms"` | Rejects submillisecond values | Losing precision is unacceptable |
+| `duration_with_unit` | Canonical unit string | Exact | The protocol permits any exact preferred unit |
+
 ```rust
 use std::time::Duration;
 
@@ -383,17 +394,19 @@ first retained value matters.
 
 ## 10. Downstream target types
 
-Downstream crates can implement `DataConversionTarget` for their own newtypes
-and delegate through the caller's `ConversionSession`. Delegation shares the
+Downstream crates can implement `DataConversionTarget` for their own newtypes.
+The converter passes a `ConversionContext` that binds delegation, JSON work,
+and transactional String output to the active type pair. Delegation shares the
 active item, input, output, and structured budgets without charging the nested
 conversion as a second top-level item.
 
 The outer `to_in`/`into_target_in` call has already charged one item and its
-source input. Custom targets should use `session.delegate` or
-`session.delegate_owned` for nested conversions. Extensions with their own
-work units can use the domain-level admission, JSON, and transactional String
-methods on `ConversionSession`; these return `DataConversionError` rather than
-backend-specific errors.
+source input. Custom targets use `context.delegate` or
+`context.delegate_owned` for nested conversions. They can use the context's
+JSON and transactional String operations, which return `DataConversionError`
+rather than backend-specific errors. `ConversionSession` intentionally exposes
+policy, limits, cumulative usage, and scalar-item admission only; it no longer
+offers raw accounting APIs to target implementations.
 
 For scalar collection adapters, `admit_scalar_item` returns a one-use proof
 that owns both the exact source and its session borrow. Consume that proof with
@@ -401,7 +414,7 @@ that owns both the exact source and its session borrow. Consume that proof with
 reused.
 
 ```rust
-use qubit_datatype::{ConversionSession, DataConversionError,
+use qubit_datatype::{ConversionContext, DataConversionError,
     DataConversionTarget, DataConverter, DataType, DataTypeOf};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -414,11 +427,11 @@ impl DataTypeOf for Port {
 impl DataConversionTarget for Port {
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     )
         -> Result<Self, DataConversionError>
     {
-        session.delegate::<u16>(source).map(Self)
+        context.delegate::<u16>(source).map(Self)
     }
 }
 
@@ -433,7 +446,8 @@ precision, error, and feature contracts as built-in targets.
 The [English user guide](doc/user_guide.md) walks through a configuration-input
 scenario, policy selection, resource limits, diagnostics, and Duration text.
 Read the [中文用户手册](doc/user_guide.zh_CN.md) for the same material in
-Simplified Chinese.
+Simplified Chinese. The [design note](doc/design.md) and
+[设计说明](doc/design.zh_CN.md) explain the conversion execution boundary.
 
 ## Testing
 

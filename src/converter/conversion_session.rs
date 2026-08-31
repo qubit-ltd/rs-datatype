@@ -6,6 +6,10 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Reusable accounting session for one or more data conversions.
+//!
+//! `ConversionSession` owns cumulative limits and observability. Target
+//! implementations receive [`super::ConversionContext`] instead, so every
+//! budgeted operation is bound to the active source and target type pair.
 
 use qubit_budget::BudgetError;
 use qubit_budget::BudgetedStringError;
@@ -41,7 +45,6 @@ use serde_json::Value;
 use super::admitted_scalar_item::AdmittedScalarItem;
 use super::conversion_resource::ConversionResource;
 use super::conversion_string_writer::ConversionStringWriter;
-use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
 use super::error::DataConversionError;
 use super::internal::ConversionBudget;
@@ -102,39 +105,6 @@ impl<'a> ConversionSession<'a> {
         self.limits
     }
 
-    /// Delegates a nested conversion without charging a new top-level item or
-    /// input payload.
-    ///
-    /// Custom [`DataConversionTarget`] implementations must use this method
-    /// (or [`Self::delegate_owned`]) for nested work. The outer
-    /// [`DataConverter::to_in`](crate::DataConverter::to_in) call has already
-    /// admitted one item and its source input; direct calls to the consume
-    /// methods are reserved for custom targets that own a distinct budgeted
-    /// unit of work.
-    ///
-    /// The nested target must not charge another item or account the source
-    /// input again unless it intentionally represents another top-level unit
-    /// of work.
-    #[inline(always)]
-    pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
-    where
-        T: DataConversionTarget,
-    {
-        T::convert_from(source, self)
-    }
-
-    /// Delegates an owned nested conversion while preserving this session.
-    ///
-    /// This has the same accounting contract as [`Self::delegate`], while
-    /// transferring ownership of the nested source to the target.
-    #[inline(always)]
-    pub fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
-    where
-        T: DataConversionTarget,
-    {
-        T::convert_owned(source, self)
-    }
-
     /// Decodes JSON while charging the shared structured budget directly.
     ///
     /// The caller is responsible for charging any outer source/input bytes;
@@ -146,7 +116,7 @@ impl<'a> ConversionSession<'a> {
     /// node/payload budget is exhausted. Failed budget admissions do not
     /// increase the corresponding counters.
     #[cfg(feature = "json")]
-    pub fn decode_json<'de, T>(
+    pub(crate) fn decode_json<'de, T>(
         &mut self,
         from: DataType,
         to: DataType,
@@ -166,7 +136,7 @@ impl<'a> ConversionSession<'a> {
     /// The caller is responsible for charging outer input bytes. This method
     /// accounts only the JSON structure and payload consumed by the decoder.
     #[cfg(feature = "json")]
-    pub fn decode_json_seed<'de, S>(
+    pub(crate) fn decode_json_seed<'de, S>(
         &mut self,
         from: DataType,
         to: DataType,
@@ -185,7 +155,7 @@ impl<'a> ConversionSession<'a> {
     /// Accounts an already materialized JSON value through rs-budget's
     /// canonical iterative traversal.
     #[cfg(feature = "json")]
-    pub fn account_json_value(
+    pub(crate) fn account_json_value(
         &mut self,
         from: DataType,
         to: DataType,
@@ -214,7 +184,12 @@ impl<'a> ConversionSession<'a> {
     /// output budget cannot admit the next value. Output bytes are committed
     /// only for a successfully encoded payload.
     #[cfg(feature = "json")]
-    pub fn encode_json<T>(&mut self, from: DataType, to: DataType, value: &T) -> Result<Vec<u8>, DataConversionError>
+    pub(crate) fn encode_json<T>(
+        &mut self,
+        from: DataType,
+        to: DataType,
+        value: &T,
+    ) -> Result<Vec<u8>, DataConversionError>
     where
         T: Serialize + ?Sized,
     {
@@ -225,30 +200,13 @@ impl<'a> ConversionSession<'a> {
             .map_err(|error| map_json_encode_error(from, to, error))
     }
 
-    /// Admits one input payload measured by a Rust slice or string length.
-    ///
-    /// # Errors
-    ///
-    /// Returns a conversion-domain quantity or resource-limit error.
-    #[inline]
-    pub fn admit_input_bytes(
-        &mut self,
-        from: DataType,
-        to: DataType,
-        amount: usize,
-    ) -> Result<(), DataConversionError> {
-        self.budget
-            .consume_input_bytes_usize(amount)
-            .map_err(|error| DataConversionError::measured_limit(from, to, error))
-    }
-
     /// Admits one complete scalar collection source before it is scanned.
     ///
     /// # Errors
     ///
     /// Returns a conversion-domain quantity or resource-limit error.
     #[inline]
-    pub fn admit_scalar_source(
+    pub(crate) fn admit_scalar_source(
         &mut self,
         from: DataType,
         to: DataType,
@@ -264,7 +222,7 @@ impl<'a> ConversionSession<'a> {
     ///
     /// Returns a conversion-domain quantity or resource-limit error.
     #[inline]
-    pub fn admit_output_bytes(
+    pub(crate) fn admit_output_bytes(
         &mut self,
         from: DataType,
         to: DataType,
@@ -283,7 +241,12 @@ impl<'a> ConversionSession<'a> {
     /// when output accounting or allocation fails. Failed renders do not
     /// consume output bytes.
     #[inline]
-    pub fn write_string<F>(&mut self, from: DataType, to: DataType, render: F) -> Result<String, DataConversionError>
+    pub(crate) fn write_string<F>(
+        &mut self,
+        from: DataType,
+        to: DataType,
+        render: F,
+    ) -> Result<String, DataConversionError>
     where
         F: FnOnce(&mut ConversionStringWriter<'_>) -> Result<(), DataConversionError>,
     {

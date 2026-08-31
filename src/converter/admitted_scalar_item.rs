@@ -7,6 +7,7 @@
 // =============================================================================
 //! Session-admitted scalar collection item.
 
+use super::conversion_context::ConversionContext;
 use super::conversion_session::ConversionSession;
 use super::data_conversion_target::DataConversionTarget;
 use super::data_converter::DataConverter;
@@ -77,7 +78,9 @@ impl<'session, 'policy, 'source> AdmittedScalarItem<'session, 'policy, 'source> 
     where
         T: DataConversionTarget,
     {
-        self.session.delegate_owned(self.source)
+        let from = self.source.data_type();
+        let mut context = ConversionContext::new(self.session, from, T::DATA_TYPE);
+        T::convert_owned(self.source, &mut context)
     }
 
     /// Converts the admitted source and returns its original session.
@@ -93,7 +96,11 @@ impl<'session, 'policy, 'source> AdmittedScalarItem<'session, 'policy, 'source> 
     where
         T: DataConversionTarget,
     {
-        let value = self.session.delegate_owned(self.source)?;
+        let from = self.source.data_type();
+        let value = {
+            let mut context = ConversionContext::new(self.session, from, T::DATA_TYPE);
+            T::convert_owned(self.source, &mut context)?
+        };
         Ok((value, self.session))
     }
 }

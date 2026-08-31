@@ -20,8 +20,8 @@ use super::float_text::parse_text_f32;
 use super::float_text::parse_text_f64;
 use super::integer::scalar_integer_magnitude;
 use super::syntax::normalize_numeric_text;
+use crate::converter::ConversionContext;
 use crate::converter::ConversionPolicy;
-use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionTarget;
 use crate::converter::FloatRoundingPolicy;
@@ -197,10 +197,10 @@ impl DataConversionTarget for f64 {
     #[inline(always)]
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.policy();
-        let limits = session.limits().numeric();
+        let options = context.policy();
+        let limits = context.limits().numeric();
         source_to_f64(source, options, limits, DataType::Float64)
     }
 }
@@ -223,10 +223,10 @@ impl DataConversionTarget for f32 {
     /// or resource-limit error.
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.policy();
-        let limits = session.limits().numeric();
+        let options = context.policy();
+        let limits = context.limits().numeric();
         let to = DataType::Float32;
         if let Some(value) = scalar_integer_magnitude(source) {
             return integer_to_f32(value, options.numeric().numeric_to_float(), source.data_type(), to);

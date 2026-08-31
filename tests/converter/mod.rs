@@ -11,6 +11,7 @@
 
 mod admitted_scalar_item_tests;
 mod conversion_capabilities_tests;
+mod conversion_context_tests;
 mod conversion_resource_tests;
 mod conversion_session_tests;
 mod conversion_string_writer_tests;

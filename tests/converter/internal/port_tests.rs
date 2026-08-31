@@ -7,7 +7,7 @@
 // =============================================================================
 //! Downstream-owned target used by conversion extension tests.
 
-use qubit_datatype::ConversionSession;
+use qubit_datatype::ConversionContext;
 use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConversionTarget;
 use qubit_datatype::DataConverter;
@@ -25,9 +25,9 @@ impl DataTypeOf for Port {
 impl DataConversionTarget for Port {
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        session.delegate::<u16>(source).map(Self)
+        context.delegate::<u16>(source).map(Self)
     }
 }
 
@@ -41,15 +41,15 @@ impl DataTypeOf for Text {
 impl DataConversionTarget for Text {
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        session.delegate::<String>(source).map(Self)
+        context.delegate::<String>(source).map(Self)
     }
 
     fn convert_owned(
         source: DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        session.delegate_owned::<String>(source).map(Self)
+        context.delegate_owned::<String>(source).map(Self)
     }
 }

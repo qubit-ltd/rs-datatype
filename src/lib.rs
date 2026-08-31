@@ -127,6 +127,8 @@ pub use converter::CollectionConversionPolicyBuilder;
 #[cfg(feature = "converter")]
 pub use converter::ConversionCapabilities;
 #[cfg(feature = "converter")]
+pub use converter::ConversionContext;
+#[cfg(feature = "converter")]
 pub use converter::ConversionLimits;
 #[cfg(feature = "converter")]
 pub use converter::ConversionLimitsBuilder;

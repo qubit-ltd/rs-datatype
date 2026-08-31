@@ -28,14 +28,14 @@
 
 ```toml
 [dependencies]
-qubit-datatype = "0.11"
+qubit-datatype = "0.12"
 ```
 
 按需启用转换器和富类型：
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.11", default-features = false, features = ["converter", "chrono"] }
+qubit-datatype = { version = "0.12", default-features = false, features = ["converter", "chrono"] }
 ```
 
 | Feature | 能力 |
@@ -221,7 +221,8 @@ let limits = ConversionLimits::builder()
 
 每次 `to_with`、`into_target_with` 或批量 `*_with` 调用都会创建相互独立的会话。
 内部由 `ConversionOperationLimits` 构造私有 `ConversionBudget`，再由
-`ConversionSession` 把可变记账状态传给嵌套转换。只有需要跨调用累计时，才显式
+`ConversionSession` 持有可变记账状态。目标实现获得的是转换作用域内的
+`ConversionContext`，因此嵌套工作不能绕过准入，也不会让错误脱离当前类型对。只有需要跨调用累计时，才显式
 构造会话并使用 `to_in`、`into_target_in` 或 `to_vec_in`：
 
 ```rust
@@ -278,6 +279,15 @@ Duration 解析错误只保留稳定类别和静态规范单位，不回显也�
 `duration_millis_with_unit_exact` 只在不损失亚毫秒精度时存储 `<integer>ms` 文本，
 `duration_with_unit` 存储使用首选单位的精确字符串。
 
+应按 wire contract 而非方便程度选择适配器：
+
+| 适配器 | wire 表示 | 精度规则 | 适用场景 |
+| --- | --- | --- | --- |
+| `duration_millis` | JSON 数字 | 向毫秒 half-up 舍入 | 协议字段是数值毫秒 |
+| `duration_millis_with_unit` | `"<integer>ms"` | 向毫秒 half-up 舍入 | 协议要求显式 `ms` 后缀 |
+| `duration_millis_with_unit_exact` | `"<integer>ms"` | 拒绝亚毫秒值 | 不允许丢失精度 |
+| `duration_with_unit` | 规范化单位字符串 | 精确 | 协议允许任意精确首选单位 |
+
 ```rust
 use std::time::Duration;
 
@@ -333,20 +343,21 @@ assert_eq!(values, [1, 2, 3]);
 
 ## 10. 扩展下游目标类型
 
-下游 crate 可以为自己的 newtype 实现 `DataConversionTarget`，并通过调用方的
-`ConversionSession` 委托给内置目标。委托会共享当前的条目、输入、输出和结构预算，
-不会把嵌套转换重复计为新的顶层条目。
+下游 crate 可以为自己的 newtype 实现 `DataConversionTarget`。转换器传入的
+`ConversionContext` 会把委托、JSON 工作和事务式 String 输出绑定到当前类型对。委托会共享
+当前的条目、输入、输出和结构预算，不会把嵌套转换重复计为新的顶层条目。
 
 外层 `to_in`/`into_target_in` 调用已经为一个条目及其输入完成准入。自定义目标应使用
-`session.delegate` 或 `session.delegate_owned` 进行嵌套转换。拥有独立工作单元的扩展
-可以使用 `ConversionSession` 的领域级准入、JSON 和事务式 String 方法；这些方法统一
-返回 `DataConversionError`，不会暴露后端错误。
+`context.delegate` 或 `context.delegate_owned` 进行嵌套转换。它们可使用 context 的 JSON
+和事务式 String 方法；这些方法统一返回 `DataConversionError`，不会暴露后端错误。
+`ConversionSession` 有意只公开策略、限制、累计用量和标量条目准入，不再向目标实现提供
+原始记账 API。
 
 标量集合适配器可通过 `admit_scalar_item` 获得一次性 proof；它同时拥有精确 source 和
 对应 session 借用，只能用 `convert` 或 `convert_with_session` 消费一次，不能换源或复用。
 
 ```rust
-use qubit_datatype::{ConversionSession, DataConversionError,
+use qubit_datatype::{ConversionContext, DataConversionError,
     DataConversionTarget, DataConverter, DataType, DataTypeOf};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -359,11 +370,11 @@ impl DataTypeOf for Port {
 impl DataConversionTarget for Port {
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     )
         -> Result<Self, DataConversionError>
     {
-        session.delegate::<u16>(source).map(Self)
+        context.delegate::<u16>(source).map(Self)
     }
 }
 
@@ -376,7 +387,8 @@ assert_eq!(DataConverter::from("8080").to::<Port>(), Ok(Port(8080)));
 
 [English user guide](doc/user_guide.md) 以配置输入为场景，说明策略选择、资源限制、
 诊断和 Duration 文本处理；[中文用户手册](doc/user_guide.zh_CN.md) 提供同一内容的
-中文说明。
+中文说明。[English design note](doc/design.md) 与[中文设计说明](doc/design.zh_CN.md)
+解释转换执行边界。
 
 ## 测试
 

@@ -11,7 +11,7 @@ use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionSession;
-use qubit_datatype::DataType;
+use qubit_datatype::DataConverter;
 
 /// Verifies output accounting rejects a request exceeding the remaining budget.
 #[test]
@@ -22,13 +22,13 @@ fn test_output_budget_precheck_preserves_remaining_capacity() {
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
-    session
-        .admit_output_bytes(DataType::String, DataType::String, 1)
+    DataConverter::from("a")
+        .to_in::<String>(&mut session)
         .expect("first output byte should fit");
-    let _error = session
-        .admit_output_bytes(DataType::String, DataType::String, 2)
+    let _error = DataConverter::from("bc")
+        .to_in::<String>(&mut session)
         .expect_err("precheck should reject bytes beyond remaining capacity");
-    session
-        .admit_output_bytes(DataType::String, DataType::String, 1)
+    DataConverter::from("d")
+        .to_in::<String>(&mut session)
         .expect("failed precheck must not consume capacity");
 }

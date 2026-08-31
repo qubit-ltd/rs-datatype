@@ -17,8 +17,8 @@ use super::numeric::check_numeric_text_limit;
 use super::numeric::is_integer_syntax;
 use super::string_source::normalize;
 use crate::converter::BooleanNumericPolicy;
+use crate::converter::ConversionContext;
 use crate::converter::ConversionPolicy;
-use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionTarget;
 use crate::converter::InvalidValueReason;
@@ -142,10 +142,10 @@ impl DataConversionTarget for bool {
     /// numeric-text-limit error as applicable to the source.
     fn convert_from(
         source: &DataConverter<'_>,
-        session: &mut ConversionSession<'_>,
+        context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        let options = session.policy();
-        let limits = session.limits().numeric();
+        let options = context.policy();
+        let limits = context.limits().numeric();
         match source {
             DataConverter::Bool(value) => Ok(*value),
             DataConverter::String(value) => string_to_bool(value, options, limits),
