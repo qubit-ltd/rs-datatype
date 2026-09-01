@@ -550,16 +550,15 @@ fn map_json_encode_error(
     to: DataType,
     error: JsonEncodeError<ConversionResource, u64>,
 ) -> DataConversionError {
-    match error {
-        JsonEncodeError::Budget(error) => DataConversionError::measured_limit(from, to, error),
-        JsonEncodeError::InvalidRawJson(_) | JsonEncodeError::Serialize(_) | JsonEncodeError::Write(_) => {
-            DataConversionError::invalid(
-                from,
-                to,
-                super::error::InvalidValueReason::Serialization {
-                    format: super::error::DataFormat::Json,
-                },
-            )
-        }
+    if let Some(error) = error.into_budget_error() {
+        DataConversionError::measured_limit(from, to, error)
+    } else {
+        DataConversionError::invalid(
+            from,
+            to,
+            super::error::InvalidValueReason::Serialization {
+                format: super::error::DataFormat::Json,
+            },
+        )
     }
 }
