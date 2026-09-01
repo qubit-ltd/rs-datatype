@@ -216,6 +216,23 @@ impl<'a> ConversionSession<'a> {
             .map_err(|error| DataConversionError::measured_limit(from, to, error))
     }
 
+    /// Admits one complete scalar String source before an external adapter
+    /// splits it into individually admitted items.
+    ///
+    /// The complete source is charged once to the cumulative input budget.
+    /// Callers must subsequently use [`Self::admit_scalar_item`] for each
+    /// split item so item accounting remains independent from source
+    /// accounting.
+    ///
+    /// # Errors
+    ///
+    /// Returns a String-to-String conversion-domain quantity or
+    /// resource-limit error.
+    #[inline]
+    pub fn admit_scalar_string_source(&mut self, source: &str) -> Result<(), DataConversionError> {
+        self.admit_scalar_source(DataType::String, DataType::String, source.len())
+    }
+
     /// Admits one completed output payload measured by a Rust String length.
     ///
     /// # Errors

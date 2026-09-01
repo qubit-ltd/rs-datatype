@@ -133,6 +133,27 @@ fn test_scalar_admission_charges_items_once() {
     assert_eq!(error.resource(), Some(ConversionResource::Items));
 }
 
+/// Verifies external adapters can charge one scalar-string source before
+/// splitting it into individually admitted items.
+#[test]
+fn test_scalar_string_source_admission_charges_input_once() {
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::builder()
+        .operation_limits(ConversionOperationLimits::builder().max_input_bytes(3).build())
+        .build();
+    let mut session = ConversionSession::new(&policy, &limits);
+
+    session
+        .admit_scalar_string_source("abc")
+        .expect("the exact source length should fit");
+    assert_eq!(session.input_bytes_used(), 3);
+
+    let error = session
+        .admit_scalar_string_source("d")
+        .expect_err("a second source should exceed the cumulative input budget");
+    assert_eq!(error.resource(), Some(ConversionResource::InputBytes));
+}
+
 /// Exercises the session's public configuration and usage observability
 /// methods.
 #[test]
