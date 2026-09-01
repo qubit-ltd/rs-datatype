@@ -206,7 +206,7 @@ impl<'a> ConversionSession<'a> {
     ///
     /// Returns a conversion-domain quantity or resource-limit error.
     #[inline]
-    pub(crate) fn admit_scalar_source(
+    pub fn admit_scalar_source(
         &mut self,
         from: DataType,
         to: DataType,
