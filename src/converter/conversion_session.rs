@@ -30,8 +30,6 @@ use qubit_json::encode::JsonEncodeError;
 #[cfg(feature = "json")]
 use qubit_json::encode::JsonEncoder;
 #[cfg(feature = "json")]
-use qubit_json::value::traverse::JsonTreeProcessError;
-#[cfg(feature = "json")]
 use qubit_json::value::traverse::JsonTreeReader;
 #[cfg(feature = "json")]
 use serde::Deserialize;
@@ -48,8 +46,6 @@ use super::conversion_string_writer::ConversionStringWriter;
 use super::data_converter::DataConverter;
 use super::error::DataConversionError;
 use super::internal::ConversionBudget;
-#[cfg(feature = "json")]
-use super::internal::JsonAccountingVisitor;
 use super::options::ConversionLimits;
 use super::options::ConversionPolicy;
 use crate::datatype::DataType;
@@ -162,13 +158,12 @@ impl<'a> ConversionSession<'a> {
         value: &Value,
     ) -> Result<(), DataConversionError> {
         let mut transaction = self.budget.structured_transaction();
-        let result = JsonTreeReader::new(&mut transaction).process(value, &mut JsonAccountingVisitor);
-        match result {
-            Ok(()) => transaction
-                .commit()
-                .map_err(|error| DataConversionError::measured_limit(from, to, error)),
-            Err(error) => Err(map_json_tree_error(from, to, error)),
-        }
+        JsonTreeReader::new(&mut transaction)
+            .account(value)
+            .map_err(|error| DataConversionError::measured_limit(from, to, error))?;
+        transaction
+            .commit()
+            .map_err(|error| DataConversionError::measured_limit(from, to, error))
     }
 
     /// Starts a transactional admission over the shared structured budget.
@@ -506,29 +501,6 @@ fn map_json_decode_error(
                 format: super::error::DataFormat::Json,
             },
         ),
-    }
-}
-
-/// Converts a JSON tree traversal failure into a conversion error.
-///
-/// # Parameters
-///
-/// * `from` - Runtime source type retained in the error.
-/// * `to` - Requested target type retained in the error.
-/// * `error` - JSON traversal failure to convert.
-///
-/// # Returns
-///
-/// The corresponding measured-limit conversion error.
-#[cfg(feature = "json")]
-fn map_json_tree_error(
-    from: DataType,
-    to: DataType,
-    error: JsonTreeProcessError<ConversionResource, u64, std::convert::Infallible>,
-) -> DataConversionError {
-    match error {
-        JsonTreeProcessError::Budget(error) => DataConversionError::measured_limit(from, to, error),
-        JsonTreeProcessError::Visitor(error) => match error {},
     }
 }
 
