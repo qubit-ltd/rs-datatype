@@ -353,7 +353,7 @@ assert_eq!(values, [1, 2, 3]);
 当前的条目、输入、输出和结构预算，不会把嵌套转换重复计为新的顶层条目。
 
 外层 `to_in`/`into_target_in` 调用已经为一个条目及其输入完成准入。自定义目标应使用
-`context.delegate` 或 `context.delegate_owned` 进行嵌套转换。它们可使用 context 的 JSON
+`context.delegate` 或 `context.delegate_owned`（均为 unsafe API）进行嵌套转换。调用者必须传入外层转换已经准入的同一个 source，以免绕过输入预算；它们可使用 context 的 JSON
 和事务式 String 方法；这些方法统一返回 `DataConversionError`，不会暴露后端错误。
 `ConversionSession` 有意只公开策略、限制、累计用量和标量条目准入，不再向目标实现提供
 原始记账 API。
@@ -379,7 +379,8 @@ impl DataConversionTarget for Port {
     )
         -> Result<Self, DataConversionError>
     {
-        context.delegate::<u16>(source).map(Self)
+        // SAFETY: `source` 是外层转换已经准入的原始值。
+        unsafe { context.delegate::<u16>(source) }.map(Self)
     }
 }
 
