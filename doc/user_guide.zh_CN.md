@@ -1,6 +1,6 @@
 # Qubit Datatype 用户手册
 
-[English user guide](user_guide.md) · 适用于 `qubit-datatype` 0.11.0
+[English user guide](user_guide.md) · 适用于 `qubit-datatype` 0.12.0
 
 本手册面向需要把配置、协议或数据接入值转换为 Rust 强类型的应用开发者。它说明如何
 显式控制精度、可接受的文本格式和资源消耗；项目能力概览请看
@@ -45,11 +45,11 @@
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.11", default-features = false, features = ["converter"] }
+qubit-datatype = { version = "0.12", default-features = false, features = ["converter"] }
 ```
 
 `converter` 已包含 `duration`。如果只需要 `DataType` 和 `NumberRef`，使用不带可选
-feature 的 `qubit-datatype = "0.11"` 即可。
+feature 的 `qubit-datatype = "0.12"` 即可。
 
 ### 核心工作流
 
@@ -128,7 +128,8 @@ impl DataConversionTarget for Port {
         source: &DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        context.delegate::<u16>(source).map(Self)
+        // SAFETY: `source` 是外层转换已经准入的原始值。
+        unsafe { context.delegate::<u16>(source) }.map(Self)
     }
 }
 ```

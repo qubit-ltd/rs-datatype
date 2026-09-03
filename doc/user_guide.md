@@ -1,6 +1,6 @@
 # Qubit Datatype User Guide
 
-[中文用户手册](user_guide.zh_CN.md) · Applies to `qubit-datatype` 0.11.0
+[中文用户手册](user_guide.zh_CN.md) · Applies to `qubit-datatype` 0.12.0
 
 This guide is for Rust application developers who must turn configuration,
 protocol, or ingestion values into typed values while retaining explicit rules
@@ -53,11 +53,11 @@ Add the conversion and Duration APIs:
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.11", default-features = false, features = ["converter"] }
+qubit-datatype = { version = "0.12", default-features = false, features = ["converter"] }
 ```
 
 `converter` includes `duration`. For only `DataType` and `NumberRef`, use
-`qubit-datatype = "0.11"` without optional features.
+`qubit-datatype = "0.12"` without optional features.
 
 ### Core workflow
 
@@ -144,7 +144,8 @@ impl DataConversionTarget for Port {
         source: &DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        context.delegate::<u16>(source).map(Self)
+        // SAFETY: `source` is the value admitted by the outer conversion.
+        unsafe { context.delegate::<u16>(source) }.map(Self)
     }
 }
 ```

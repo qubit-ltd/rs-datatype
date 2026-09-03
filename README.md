@@ -407,8 +407,10 @@ active item, input, output, and structured budgets without charging the nested
 conversion as a second top-level item.
 
 The outer `to_in`/`into_target_in` call has already charged one item and its
-source input. Custom targets use `context.delegate` or
-`context.delegate_owned` for nested conversions. They can use the context's
+source input. Custom targets use the unsafe `context.delegate` or
+`context.delegate_owned` APIs for nested conversions. The caller must pass the
+exact source admitted by the outer conversion; this explicit trust boundary
+prevents accidentally bypassing input-budget accounting. They can use the context's
 JSON and transactional String operations, which return `DataConversionError`
 rather than backend-specific errors. `ConversionSession` intentionally exposes
 policy, limits, cumulative usage, and scalar-item admission only; it no longer
@@ -437,7 +439,8 @@ impl DataConversionTarget for Port {
     )
         -> Result<Self, DataConversionError>
     {
-        context.delegate::<u16>(source).map(Self)
+        // SAFETY: `source` is the value admitted by the outer conversion.
+        unsafe { context.delegate::<u16>(source) }.map(Self)
     }
 }
 
