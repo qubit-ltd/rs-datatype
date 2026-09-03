@@ -13,6 +13,7 @@ use std::collections::HashSet;
 use std::str::FromStr;
 
 use qubit_datatype::DataType;
+use qubit_datatype::DataTypeCategory;
 
 /// Canonical protocol spelling for every data type in declaration order.
 const DATA_TYPE_CASES: [(DataType, &str); 25] = [
@@ -90,6 +91,43 @@ fn test_data_type_all_and_numeric_classifications() {
         assert_eq!(data_type.is_unsigned_integer(), unsigned, "{data_type}");
         assert_eq!(data_type.is_float(), float, "{data_type}");
         assert_eq!(data_type.is_big_number(), big_number, "{data_type}");
+    }
+}
+
+/// Verifies semantic categories are available directly from `DataType`.
+#[test]
+fn test_data_type_category_is_directly_available() {
+    let cases = [
+        (DataType::Bool, DataTypeCategory::Boolean),
+        (DataType::Char, DataTypeCategory::Character),
+        (DataType::Int8, DataTypeCategory::SignedInteger),
+        (DataType::Int16, DataTypeCategory::SignedInteger),
+        (DataType::Int32, DataTypeCategory::SignedInteger),
+        (DataType::Int64, DataTypeCategory::SignedInteger),
+        (DataType::Int128, DataTypeCategory::SignedInteger),
+        (DataType::UInt8, DataTypeCategory::UnsignedInteger),
+        (DataType::UInt16, DataTypeCategory::UnsignedInteger),
+        (DataType::UInt32, DataTypeCategory::UnsignedInteger),
+        (DataType::UInt64, DataTypeCategory::UnsignedInteger),
+        (DataType::UInt128, DataTypeCategory::UnsignedInteger),
+        (DataType::Float32, DataTypeCategory::FloatingPoint),
+        (DataType::Float64, DataTypeCategory::FloatingPoint),
+        (DataType::String, DataTypeCategory::Text),
+        (DataType::Date, DataTypeCategory::Temporal),
+        (DataType::Time, DataTypeCategory::Temporal),
+        (DataType::DateTime, DataTypeCategory::Temporal),
+        (DataType::Instant, DataTypeCategory::Temporal),
+        (DataType::BigInteger, DataTypeCategory::BigNumber),
+        (DataType::BigDecimal, DataTypeCategory::BigNumber),
+        (DataType::Duration, DataTypeCategory::Duration),
+        (DataType::Url, DataTypeCategory::Locator),
+        (DataType::StringMap, DataTypeCategory::Structured),
+        (DataType::Json, DataTypeCategory::Structured),
+    ];
+
+    assert_eq!(cases.len(), DataType::ALL.len());
+    for (data_type, expected_category) in cases {
+        assert_eq!(data_type.category(), expected_category);
     }
 }
 

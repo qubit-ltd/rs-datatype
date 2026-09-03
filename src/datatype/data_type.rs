@@ -18,6 +18,8 @@ use std::str::FromStr;
 use serde::Deserialize;
 use serde::Serialize;
 
+use super::DataTypeCategory;
+#[allow(deprecated)]
 use super::DataTypeInfo;
 use super::data_type_parse_error::DataTypeParseError;
 
@@ -180,10 +182,42 @@ impl DataType {
     ///
     /// A lightweight metadata value containing this type's stable name and
     /// semantic category.
+    #[deprecated(since = "0.12.0", note = "use DataType::as_str and DataType::category directly")]
     #[must_use = "the data type metadata is returned"]
     #[inline(always)]
+    #[allow(deprecated)]
     pub const fn info(self) -> DataTypeInfo {
         DataTypeInfo::new(self)
+    }
+
+    /// Returns the broad semantic category of this data type.
+    ///
+    /// Categories describe the stable runtime vocabulary and do not depend on
+    /// enabled Cargo features.
+    ///
+    /// # Returns
+    ///
+    /// The semantic category for this data type.
+    #[must_use = "the data type category is returned"]
+    #[inline(always)]
+    pub const fn category(self) -> DataTypeCategory {
+        match self {
+            DataType::Bool => DataTypeCategory::Boolean,
+            DataType::Char => DataTypeCategory::Character,
+            DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64 | DataType::Int128 => {
+                DataTypeCategory::SignedInteger
+            }
+            DataType::UInt8 | DataType::UInt16 | DataType::UInt32 | DataType::UInt64 | DataType::UInt128 => {
+                DataTypeCategory::UnsignedInteger
+            }
+            DataType::Float32 | DataType::Float64 => DataTypeCategory::FloatingPoint,
+            DataType::String => DataTypeCategory::Text,
+            DataType::Date | DataType::Time | DataType::DateTime | DataType::Instant => DataTypeCategory::Temporal,
+            DataType::BigInteger | DataType::BigDecimal => DataTypeCategory::BigNumber,
+            DataType::Duration => DataTypeCategory::Duration,
+            DataType::Url => DataTypeCategory::Locator,
+            DataType::StringMap | DataType::Json => DataTypeCategory::Structured,
+        }
     }
 
     /// Returns the stable lowercase name of this data type.

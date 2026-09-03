@@ -20,7 +20,7 @@
 /// use qubit_datatype::DataTypeCategory;
 ///
 /// assert_eq!(
-///     DataType::Int32.info().category(),
+///     DataType::Int32.category(),
 ///     DataTypeCategory::SignedInteger,
 /// );
 /// ```
