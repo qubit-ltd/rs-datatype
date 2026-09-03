@@ -206,6 +206,7 @@ pub use converter::StructuredConversionLimits;
 pub use converter::StructuredConversionLimitsBuilder;
 pub use datatype::DataType;
 pub use datatype::DataTypeCategory;
+#[allow(deprecated)]
 pub use datatype::DataTypeInfo;
 pub use datatype::DataTypeOf;
 pub use datatype::DataTypeParseError;

@@ -18,6 +18,7 @@ mod data_type_table;
 
 pub use data_type::DataType;
 pub use data_type_category::DataTypeCategory;
+#[allow(deprecated)]
 pub use data_type_info::DataTypeInfo;
 pub use data_type_of::DataTypeOf;
 pub use data_type_parse_error::DataTypeParseError;
