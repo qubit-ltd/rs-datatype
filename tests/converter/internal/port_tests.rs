@@ -27,7 +27,8 @@ impl DataConversionTarget for Port {
         source: &DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        context.delegate::<u16>(source).map(Self)
+        // SAFETY: `source` is the value admitted by the outer conversion.
+        unsafe { context.delegate::<u16>(source) }.map(Self)
     }
 }
 
@@ -43,13 +44,15 @@ impl DataConversionTarget for Text {
         source: &DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        context.delegate::<String>(source).map(Self)
+        // SAFETY: `source` is the value admitted by the outer conversion.
+        unsafe { context.delegate::<String>(source) }.map(Self)
     }
 
     fn convert_owned(
         source: DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,
     ) -> Result<Self, DataConversionError> {
-        context.delegate_owned::<String>(source).map(Self)
+        // SAFETY: `source` is the value admitted by the outer conversion.
+        unsafe { context.delegate_owned::<String>(source) }.map(Self)
     }
 }

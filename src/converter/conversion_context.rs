@@ -74,12 +74,27 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
 
     /// Delegates nested conversion without admitting another top-level item.
     ///
+    /// # Safety
+    ///
+    /// `source` must be the exact source value already admitted for this
+    /// context. Passing a newly fabricated converter bypasses the outer
+    /// input admission and can therefore defeat the session's resource
+    /// limits; making this boundary explicit keeps that trust requirement
+    /// visible to downstream target implementations.
+    ///
     /// # Errors
     ///
     /// Returns the nested target's conversion error while retaining this
     /// context's shared policy and cumulative budget.
+    ///
+    /// ```compile_fail
+    /// # use qubit_datatype::{ConversionContext, DataConverter};
+    /// # fn example(context: &mut ConversionContext<'_, '_>, source: &DataConverter<'_>) {
+    /// let _ = context.delegate::<u16>(source);
+    /// # }
+    /// ```
     #[inline(always)]
-    pub fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
+    pub unsafe fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
@@ -88,12 +103,18 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
 
     /// Delegates an owned nested conversion without admitting another item.
     ///
+    /// # Safety
+    ///
+    /// `source` must be the exact source value already admitted for this
+    /// context. See [`Self::delegate`] for why this is an explicit unsafe
+    /// trust boundary.
+    ///
     /// # Errors
     ///
     /// Returns the nested target's conversion error while retaining this
     /// context's shared policy and cumulative budget.
     #[inline(always)]
-    pub fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
+    pub unsafe fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
     {
