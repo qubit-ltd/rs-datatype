@@ -43,3 +43,16 @@ This is intentionally a breaking API change: downstream
 `&mut ConversionSession` parameter with `&mut ConversionContext` and call
 context methods. The change removes a capability rather than adding a parallel
 API, keeping the extension model singular and auditable.
+
+## Runtime descriptors and capability discovery
+
+`DataType` owns its stable name and feature-independent semantic category.
+Callers use `DataType::as_str` and `DataType::category` directly. The former
+`DataTypeInfo` wrapper remains deprecated for source compatibility, but it
+delegates to those methods and is not a second metadata authority.
+
+Conversion path topology has one internal canonical matrix. The public
+`ConversionCapabilities` facade first filters source and target availability
+using the active Cargo features, then consults that matrix. This keeps feature
+discovery public while preventing documentation, capability queries, and
+converter dispatch relationships from developing parallel policy tables.
