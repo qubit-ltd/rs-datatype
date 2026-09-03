@@ -8,7 +8,9 @@
 //! Private helpers shared by the conversion implementation.
 
 mod conversion_budget;
+mod conversion_capability_matrix;
 mod conversion_string_sink;
 
 pub(super) use conversion_budget::ConversionBudget;
+pub(super) use conversion_capability_matrix::supports_conversion;
 pub(super) use conversion_string_sink::ConversionStringSink;

@@ -7,6 +7,7 @@
 // =============================================================================
 //! Feature-aware discovery of available conversion paths.
 
+use super::internal::supports_conversion;
 use crate::DataType;
 
 /// Describes conversion paths compiled into the current crate build.
@@ -106,39 +107,7 @@ impl ConversionCapabilities {
         if !self.is_available(from) || !self.is_available(to) {
             return false;
         }
-        if from == to {
-            return true;
-        }
-        if from == DataType::String {
-            return to != DataType::StringMap || cfg!(feature = "json");
-        }
-        if to == DataType::String {
-            return from != DataType::StringMap || cfg!(feature = "json");
-        }
-        match from {
-            DataType::Bool | DataType::Char => to.is_numeric(),
-            DataType::Int8
-            | DataType::Int16
-            | DataType::Int32
-            | DataType::Int64
-            | DataType::Int128
-            | DataType::UInt8
-            | DataType::UInt16
-            | DataType::UInt32
-            | DataType::UInt64
-            | DataType::UInt128
-            | DataType::BigInteger => to.is_numeric() || matches!(to, DataType::Bool | DataType::Duration),
-            DataType::Float32 | DataType::Float64 | DataType::BigDecimal => to.is_numeric(),
-            DataType::Duration => to.is_integer() || to == DataType::BigInteger,
-            DataType::StringMap => cfg!(feature = "json") && to == DataType::Json,
-            DataType::Json
-            | DataType::Date
-            | DataType::Time
-            | DataType::DateTime
-            | DataType::Instant
-            | DataType::Url
-            | DataType::String => false,
-        }
+        supports_conversion(from, to)
     }
 
     /// Iterates over targets supported for one source in stable declaration
