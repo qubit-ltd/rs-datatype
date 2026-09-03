@@ -66,9 +66,11 @@ or formatting that map as JSON additionally needs `json`.
 
 ## 3. Runtime type descriptors
 
-`DataType` is a stable vocabulary with parsing, display, Serde, classification
-methods, uniform `DataTypeInfo` metadata, and the exhaustive `DataType::ALL`
-slice. `DataTypeOf` maps supported Rust types to that vocabulary.
+`DataType` is a stable vocabulary with parsing, display, Serde, direct
+classification methods, and the exhaustive `DataType::ALL` slice. `DataTypeOf`
+maps supported Rust types to that vocabulary. `DataTypeInfo` remains only as a
+deprecated compatibility wrapper; new code should use `DataType::as_str` and
+`DataType::category` directly.
 Platform-sized `isize` and `usize` are omitted because their representation is
 target-dependent.
 
@@ -77,20 +79,24 @@ listed by `DataType::ALL` form a compatibility surface. Existing spellings are
 not changed or reused for a different meaning in a non-breaking release.
 
 ```rust
-use qubit_datatype::{ConversionCapabilities, DataType, DataTypeCategory, DataTypeOf};
+use qubit_datatype::{DataType, DataTypeCategory, DataTypeOf};
 
 assert_eq!(u64::DATA_TYPE, DataType::UInt64);
 assert!(DataType::Float64.is_numeric());
-assert_eq!(DataType::Float64.info().category(), DataTypeCategory::FloatingPoint);
+assert_eq!(DataType::Float64.category(), DataTypeCategory::FloatingPoint);
 assert_eq!("INT32".parse::<DataType>(), Ok(DataType::Int32));
-
-let capabilities = ConversionCapabilities::current();
-assert!(capabilities.supports(DataType::String, DataType::UInt64));
 ```
 
 Capability queries describe conversion paths compiled by the active feature
 set; they do not predict whether a particular value or policy will accept a
-conversion.
+conversion. They are available only when the `converter` feature is enabled:
+
+```rust
+use qubit_datatype::{ConversionCapabilities, DataType};
+
+let capabilities = ConversionCapabilities::current();
+assert!(capabilities.supports(DataType::String, DataType::UInt64));
+```
 
 ## 4. Numeric comparison
 

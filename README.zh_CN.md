@@ -57,27 +57,32 @@ qubit-datatype = { version = "0.12", default-features = false, features = ["conv
 
 ## 3. 运行时类型描述
 
-`DataType` 提供稳定类型词汇、解析、显示、Serde、分类方法、统一的 `DataTypeInfo`
-元数据和完整的 `DataType::ALL`。`DataTypeOf` 把 Rust 类型映射为该词汇。平台相关的
+`DataType` 提供稳定类型词汇、解析、显示、Serde、直接分类方法和完整的
+`DataType::ALL`。`DataTypeOf` 把 Rust 类型映射为该词汇。`DataTypeInfo` 仅作为已弃用的
+兼容包装保留；新代码应直接使用 `DataType::as_str` 和 `DataType::category`。平台相关的
 `isize`、`usize` 不提供映射，以免数据表示随目标平台变化。
 
 `DataType::as_str` 返回、Serde 接受且 `DataType::ALL` 列出的全小写拼写属于兼容性
 接口；非破坏性版本不会修改既有拼写，也不会把既有拼写复用于其他含义。
 
 ```rust
-use qubit_datatype::{ConversionCapabilities, DataType, DataTypeCategory, DataTypeOf};
+use qubit_datatype::{DataType, DataTypeCategory, DataTypeOf};
 
 assert_eq!(u64::DATA_TYPE, DataType::UInt64);
 assert!(DataType::Float64.is_numeric());
-assert_eq!(DataType::Float64.info().category(), DataTypeCategory::FloatingPoint);
+assert_eq!(DataType::Float64.category(), DataTypeCategory::FloatingPoint);
 assert_eq!("INT32".parse::<DataType>(), Ok(DataType::Int32));
+```
+
+能力查询描述当前 feature 组合实际编译进来的转换路径，不预测某个具体值或策略是否会
+接受该转换。只有启用 `converter` feature 后才能使用能力查询：
+
+```rust
+use qubit_datatype::{ConversionCapabilities, DataType};
 
 let capabilities = ConversionCapabilities::current();
 assert!(capabilities.supports(DataType::String, DataType::UInt64));
 ```
-
-能力查询描述当前 feature 组合实际编译进来的转换路径，不预测某个具体值或策略是否会
-接受该转换。
 
 ## 4. 数值比较
 
