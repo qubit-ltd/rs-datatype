@@ -425,7 +425,7 @@ impl<'source> DataConverter<'source> {
                     .map_err(|limit| DataConversionError::measured_limit(self.data_type(), target, limit))?;
             }
             #[cfg(feature = "json")]
-            Self::StringMap(value) if matches!(target, DataType::Json | DataType::StringMap) => {
+            Self::StringMap(value) if target == DataType::Json => {
                 account_string_map_structure(value, 1, session)
                     .map_err(|limit| DataConversionError::measured_limit(self.data_type(), target, limit))?;
             }
