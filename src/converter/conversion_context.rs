@@ -30,7 +30,7 @@ use crate::datatype::DataType;
 /// it for conversion execution, JSON processing, and transactional String
 /// output without exposing raw accounting primitives to downstream targets.
 #[must_use]
-pub struct ConversionContext<'session, 'policy> {
+pub(crate) struct ConversionContext<'session, 'policy> {
     /// Shared session whose budget backs the current target conversion.
     session: &'session mut ConversionSession<'policy>,
     /// Runtime type of the admitted source value.
@@ -60,7 +60,7 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
 
     /// Returns the runtime type of the admitted source.
     #[inline(always)]
-    pub const fn from_type(&self) -> DataType {
+    pub(crate) const fn source_type(&self) -> DataType {
         self.from
     }
 
