@@ -123,13 +123,14 @@ targets do not receive it directly.
 ### Extend a target type safely
 
 Implement `DataConversionTarget` for a downstream newtype. The converter gives
-the implementation a `ConversionContext`, which has the active source/target
-types already bound. Use it to delegate or render output; do not re-admit the
-top-level source.
+the implementation an `AdmittedConversion` containing the exact source value
+and the already-bound policy, limits, session, and error context. This value is
+created by the framework, so the target does not implement an input wrapper or
+perform top-level admission itself.
 
 ```rust
 use qubit_datatype::{
-    ConversionContext, DataConversionError, DataConversionTarget, DataConverter,
+    AdmittedConversion, DataConversionError, DataConversionTarget, DataConverter,
     DataType, DataTypeOf,
 };
 
@@ -140,20 +141,20 @@ impl DataTypeOf for Port {
 }
 
 impl DataConversionTarget for Port {
-    fn convert_from(
-        source: &DataConverter<'_>,
-        context: &mut ConversionContext<'_, '_>,
-    ) -> Result<Self, DataConversionError> {
-        // SAFETY: `source` is the value admitted by the outer conversion.
-        unsafe { context.delegate::<u16>(source) }.map(Self)
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        input.convert::<u16>().map(Self)
     }
 }
+
+assert_eq!(DataConverter::from("8080").to::<Port>()?.0, 8080);
+# Ok::<(), qubit_datatype::DataConversionError>(())
 ```
 
-`ConversionContext` also exposes JSON decoding/encoding (with `json`) and
-transactional `write_string`. This preserves one shared budget and error type
-context. Raw admission and byte-accounting operations are intentionally not
-part of the extension API.
+`input.convert::<u16>()` consumes the admitted wrapper and delegates the same
+source; it does not create a second top-level conversion. The wrapper also
+provides `from_type()`, `to_type()`, `source()`, JSON helpers (with `json`), and
+transactional `write_string`. The old unsafe delegation methods are no longer
+part of the API, and raw admission/accounting operations remain internal.
 
 ### Compare mixed numeric values
 

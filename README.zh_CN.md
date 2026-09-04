@@ -226,8 +226,8 @@ let limits = ConversionLimits::builder()
 
 每次 `to_with`、`into_target_with` 或批量 `*_with` 调用都会创建相互独立的会话。
 内部由 `ConversionOperationLimits` 构造私有 `ConversionBudget`，再由
-`ConversionSession` 持有可变记账状态。目标实现获得的是转换作用域内的
-`ConversionContext`，因此嵌套工作不能绕过准入，也不会让错误脱离当前类型对。只有需要跨调用累计时，才显式
+`ConversionSession` 持有可变记账状态。框架把转换作用域内的执行上下文绑定到
+`AdmittedConversion`，因此目标实现不能绕过准入，也不会让错误脱离当前类型对。只有需要跨调用累计时，才显式
 构造会话并使用 `to_in`、`into_target_in` 或 `to_vec_in`：
 
 ```rust
@@ -348,21 +348,19 @@ assert_eq!(values, [1, 2, 3]);
 
 ## 10. 扩展下游目标类型
 
-下游 crate 可以为自己的 newtype 实现 `DataConversionTarget`。转换器传入的
-`ConversionContext` 会把委托、JSON 工作和事务式 String 输出绑定到当前类型对。委托会共享
-当前的条目、输入、输出和结构预算，不会把嵌套转换重复计为新的顶层条目。
+下游 crate 可以为自己的 newtype 实现 `DataConversionTarget`。`convert` 方法接收
+`AdmittedConversion`：其中封装了框架选定的原始 `DataConverter`，以及当前策略、限制、会话和错误
+类型上下文。这个封装由转换器创建，调用者不能伪造来源，也不会重复记账顶层条目。
 
-外层 `to_in`/`into_target_in` 调用已经为一个条目及其输入完成准入。自定义目标应使用
-`context.delegate` 或 `context.delegate_owned`（均为 unsafe API）进行嵌套转换。调用者必须传入外层转换已经准入的同一个 source，以免绕过输入预算；它们可使用 context 的 JSON
-和事务式 String 方法；这些方法统一返回 `DataConversionError`，不会暴露后端错误。
-`ConversionSession` 有意只公开策略、限制、累计用量和标量条目准入，不再向目标实现提供
-原始记账 API。
+使用 `input.convert::<T>()` 可以把同一个已准入来源交给内置目标类型；该方法会消费封装对象，明确
+表达“一次准入、一次来源”的边界，同时移除了旧的不安全委托 API。自定义目标还可以读取
+`from_type()`、`to_type()` 和 `source()`，并在启用相应 feature 时使用 JSON 与事务式 String 辅助方法。
 
 标量集合适配器可通过 `admit_scalar_item` 获得一次性 proof；它同时拥有精确 source 和
 对应 session 借用，只能用 `convert` 或 `convert_with_session` 消费一次，不能换源或复用。
 
 ```rust
-use qubit_datatype::{ConversionContext, DataConversionError,
+use qubit_datatype::{AdmittedConversion, DataConversionError,
     DataConversionTarget, DataConverter, DataType, DataTypeOf};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -373,14 +371,18 @@ impl DataTypeOf for Port {
 }
 
 impl DataConversionTarget for Port {
-    fn convert_from(
-        source: &DataConverter<'_>,
-        context: &mut ConversionContext<'_, '_>,
-    )
-        -> Result<Self, DataConversionError>
-    {
-        // SAFETY: `source` 是外层转换已经准入的原始值。
-        unsafe { context.delegate::<u16>(source) }.map(Self)
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        let from = input.from_type();
+        let to = input.to_type();
+        let value = input.convert::<u16>()?;
+        if value == 0 {
+            return Err(DataConversionError::invalid(
+                from,
+                to,
+                qubit_datatype::InvalidValueReason::OutOfRange,
+            ));
+        }
+        Ok(Self(value))
     }
 }
 
