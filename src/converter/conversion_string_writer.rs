@@ -19,11 +19,11 @@ use crate::datatype::DataType;
 
 /// Writes one conversion result into a context-owned, budgeted String.
 ///
-/// Values of this type are supplied by [`ConversionContext::write_string`]
+/// Values of this type are supplied by [`AdmittedConversion::write_string`]
 /// and cannot outlive that call. Bytes are committed to the session only when
 /// the complete rendering operation succeeds.
 ///
-/// [`ConversionContext::write_string`]: super::ConversionContext::write_string
+/// [`AdmittedConversion::write_string`]: super::AdmittedConversion::write_string
 pub struct ConversionStringWriter<'writer> {
     /// Type-erased budgeted output sink receiving rendered bytes.
     inner: &'writer mut dyn ConversionStringSink,
@@ -60,9 +60,9 @@ impl<'writer> ConversionStringWriter<'writer> {
     ///
     /// Returns an invalid-value error if the underlying formatter rejects the
     /// write. Budget failures are reported by the enclosing
-    /// [`ConversionContext::write_string`] call.
+    /// [`AdmittedConversion::write_string`] call.
     ///
-    /// [`ConversionContext::write_string`]: super::ConversionContext::write_string
+    /// [`AdmittedConversion::write_string`]: super::AdmittedConversion::write_string
     #[inline]
     pub fn write_str(&mut self, value: &str) -> Result<(), DataConversionError> {
         self.inner

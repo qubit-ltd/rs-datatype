@@ -29,7 +29,7 @@ mod scalar_string_data_converters;
 pub use admitted_conversion::AdmittedConversion;
 pub use admitted_scalar_item::AdmittedScalarItem;
 pub use conversion_capabilities::ConversionCapabilities;
-pub use conversion_context::ConversionContext;
+pub(crate) use conversion_context::ConversionContext;
 pub use conversion_resource::ConversionResource;
 pub use conversion_session::ConversionSession;
 pub use conversion_string_writer::ConversionStringWriter;

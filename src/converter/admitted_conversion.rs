@@ -46,7 +46,7 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     #[must_use = "the bound source data type is returned"]
     #[inline(always)]
     pub const fn from_type(&self) -> DataType {
-        self.context.from_type()
+        self.context.source_type()
     }
 
     /// Returns the runtime type requested by the active target.
