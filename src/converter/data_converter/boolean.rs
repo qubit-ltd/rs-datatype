@@ -17,10 +17,10 @@ use super::numeric::check_numeric_text_limit;
 use super::numeric::is_integer_syntax;
 use super::string_source::normalize;
 use crate::converter::BooleanNumericPolicy;
+use crate::converter::BuiltinDataConversionTarget;
 use crate::converter::ConversionContext;
 use crate::converter::ConversionPolicy;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionTarget;
 use crate::converter::InvalidValueReason;
 use crate::converter::NumericConversionLimits;
 use crate::datatype::DataType;
@@ -124,7 +124,7 @@ fn big_integer_to_bool(value: &BigInt, options: &ConversionPolicy) -> Result<boo
     )
 }
 
-impl DataConversionTarget for bool {
+impl BuiltinDataConversionTarget for bool {
     /// Converts a borrowed runtime value to a Boolean.
     ///
     /// # Parameters

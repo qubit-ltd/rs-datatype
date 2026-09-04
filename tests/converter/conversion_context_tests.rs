@@ -7,7 +7,7 @@
 // =============================================================================
 //! Tests for the conversion-target execution context.
 
-use qubit_datatype::ConversionContext;
+use qubit_datatype::AdmittedConversion;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
@@ -33,12 +33,8 @@ impl DataTypeOf for Port {
 
 impl DataConversionTarget for Port {
     /// Delegates to the built-in integer conversion through the bound context.
-    fn convert_from(
-        source: &DataConverter<'_>,
-        context: &mut ConversionContext<'_, '_>,
-    ) -> Result<Self, DataConversionError> {
-        // SAFETY: `source` is the value admitted by `DataConverter::to_in`.
-        unsafe { context.delegate::<u16>(source) }.map(Self)
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        input.convert::<u16>().map(Self)
     }
 }
 
@@ -63,32 +59,25 @@ impl DataTypeOf for JsonRoundTrip {
 #[cfg(feature = "json")]
 impl DataConversionTarget for JsonRoundTrip {
     /// Decodes, accounts, and encodes JSON through the bound context.
-    fn convert_from(
-        source: &DataConverter<'_>,
-        context: &mut ConversionContext<'_, '_>,
-    ) -> Result<Self, DataConversionError> {
-        let DataConverter::String(value) = source else {
-            return Err(DataConversionError::unsupported(source.data_type(), DataType::Json));
+    fn convert(mut input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        let text = match input.source() {
+            DataConverter::String(value) => value.to_string(),
+            _ => return Err(input.unsupported()),
         };
-        let decoded: Value = context.decode_json(value.as_bytes())?;
-        context.account_json_value(&decoded)?;
-        context.encode_json(&decoded).map(Self)
+        let decoded: Value = input.decode_json(text.as_bytes())?;
+        input.account_json_value(&decoded)?;
+        input.encode_json(&decoded).map(Self)
     }
 }
 
 impl DataConversionTarget for RejectedString {
     /// Renders output and then returns a conversion error to exercise rollback.
-    fn convert_from(
-        _source: &DataConverter<'_>,
-        context: &mut ConversionContext<'_, '_>,
-    ) -> Result<Self, DataConversionError> {
-        context.write_string(|writer: &mut ConversionStringWriter<'_>| {
+    fn convert(mut input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        let from = input.from_type();
+        let to = input.to_type();
+        input.write_string(|writer: &mut ConversionStringWriter<'_>| {
             writer.write_str("discard")?;
-            Err(DataConversionError::invalid(
-                DataType::String,
-                DataType::String,
-                InvalidValueReason::OutOfRange,
-            ))
+            Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange))
         })?;
         Ok(Self)
     }
@@ -96,7 +85,7 @@ impl DataConversionTarget for RejectedString {
 
 /// Verifies nested delegation preserves the outer admission exactly once.
 #[test]
-fn test_context_delegate_does_not_double_charge_top_level_item() {
+fn test_admitted_conversion_does_not_double_charge_top_level_item() {
     let policy = ConversionPolicy::strict();
     let limits = ConversionLimits::builder()
         .operation_limits(

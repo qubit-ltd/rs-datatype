@@ -17,10 +17,10 @@ use super::super::super::DataConverter;
 use super::big_number::decimal_to_bigint;
 use super::syntax::normalize_numeric_text;
 use super::syntax::parse_text_integer;
+use crate::converter::BuiltinDataConversionTarget;
 use crate::converter::ConversionContext;
 use crate::converter::ConversionPolicy;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionTarget;
 use crate::converter::DurationRoundingPolicy;
 use crate::converter::FractionalToIntegerPolicy;
 use crate::converter::InvalidValueReason;
@@ -380,7 +380,7 @@ where
 /// Implements a signed primitive integer conversion target.
 macro_rules! impl_signed_target {
     ($target:ty, $data_type:expr) => {
-        impl DataConversionTarget for $target {
+        impl BuiltinDataConversionTarget for $target {
             /// Converts a borrowed runtime value to the signed integer target.
             ///
             /// # Parameters
@@ -412,7 +412,7 @@ macro_rules! impl_signed_target {
 /// Implements an unsigned primitive integer conversion target.
 macro_rules! impl_unsigned_target {
     ($target:ty, $data_type:expr) => {
-        impl DataConversionTarget for $target {
+        impl BuiltinDataConversionTarget for $target {
             /// Converts a borrowed runtime value to the unsigned integer
             /// target.
             ///

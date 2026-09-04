@@ -7,12 +7,12 @@
 // =============================================================================
 //! Downstream-owned target used by conversion extension tests.
 
-use qubit_datatype::ConversionContext;
+use qubit_datatype::AdmittedConversion;
 use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConversionTarget;
-use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
 use qubit_datatype::DataTypeOf;
+use qubit_datatype::InvalidValueReason;
 
 /// Port newtype proving downstream target extensibility.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -23,12 +23,14 @@ impl DataTypeOf for Port {
 }
 
 impl DataConversionTarget for Port {
-    fn convert_from(
-        source: &DataConverter<'_>,
-        context: &mut ConversionContext<'_, '_>,
-    ) -> Result<Self, DataConversionError> {
-        // SAFETY: `source` is the value admitted by the outer conversion.
-        unsafe { context.delegate::<u16>(source) }.map(Self)
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        let from = input.from_type();
+        let to = input.to_type();
+        let value = input.convert::<u16>()?;
+        if value == 0 {
+            return Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange));
+        }
+        Ok(Self(value))
     }
 }
 
@@ -40,19 +42,7 @@ impl DataTypeOf for Text {
 }
 
 impl DataConversionTarget for Text {
-    fn convert_from(
-        source: &DataConverter<'_>,
-        context: &mut ConversionContext<'_, '_>,
-    ) -> Result<Self, DataConversionError> {
-        // SAFETY: `source` is the value admitted by the outer conversion.
-        unsafe { context.delegate::<String>(source) }.map(Self)
-    }
-
-    fn convert_owned(
-        source: DataConverter<'_>,
-        context: &mut ConversionContext<'_, '_>,
-    ) -> Result<Self, DataConversionError> {
-        // SAFETY: `source` is the value admitted by the outer conversion.
-        unsafe { context.delegate_owned::<String>(source) }.map(Self)
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        input.convert::<String>().map(Self)
     }
 }

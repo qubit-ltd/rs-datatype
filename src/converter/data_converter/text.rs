@@ -29,10 +29,10 @@ use super::internal::CanonicalStringMap;
 use super::string_source::normalize;
 #[cfg(feature = "url")]
 use super::structured::check_structured_text_limit;
+use crate::converter::BuiltinDataConversionTarget;
 use crate::converter::ConversionContext;
 use crate::converter::ConversionStringWriter;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionTarget;
 #[cfg(feature = "json")]
 use crate::converter::DataFormat;
 use crate::converter::InvalidValueReason;
@@ -177,7 +177,7 @@ fn json_bytes_to_string(from: DataType, bytes: Vec<u8>) -> Result<String, DataCo
     })
 }
 
-impl DataConversionTarget for char {
+impl BuiltinDataConversionTarget for char {
     /// Converts a borrowed runtime value to one Unicode scalar value.
     ///
     /// # Parameters
@@ -218,7 +218,7 @@ impl DataConversionTarget for char {
     }
 }
 
-impl DataConversionTarget for String {
+impl BuiltinDataConversionTarget for String {
     /// Formats a borrowed runtime value as canonical text.
     ///
     /// # Parameters
@@ -314,7 +314,7 @@ impl DataConversionTarget for String {
 #[cfg(feature = "chrono")]
 macro_rules! impl_text_or_copy_target {
     ($target:ty, $variant:ident, $data_type:expr, $format:literal, $parser:expr) => {
-        impl DataConversionTarget for $target {
+        impl BuiltinDataConversionTarget for $target {
             /// Converts a borrowed runtime value to the canonical temporal
             /// target.
             ///
@@ -478,7 +478,7 @@ impl_text_or_copy_target!(
 );
 
 #[cfg(feature = "chrono")]
-impl DataConversionTarget for DateTime<Utc> {
+impl BuiltinDataConversionTarget for DateTime<Utc> {
     /// Converts a borrowed runtime value to a UTC instant.
     ///
     /// # Parameters
@@ -519,7 +519,7 @@ impl DataConversionTarget for DateTime<Utc> {
 }
 
 #[cfg(feature = "url")]
-impl DataConversionTarget for Url {
+impl BuiltinDataConversionTarget for Url {
     /// Converts a borrowed runtime value to a URL.
     ///
     /// # Parameters

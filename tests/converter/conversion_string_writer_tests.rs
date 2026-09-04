@@ -7,7 +7,7 @@
 // =============================================================================
 //! Tests for domain-level bounded String construction.
 
-use qubit_datatype::ConversionContext;
+use qubit_datatype::AdmittedConversion;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
@@ -29,22 +29,17 @@ impl<const MODE: u8> DataTypeOf for Rendered<MODE> {
 }
 
 impl<const MODE: u8> DataConversionTarget for Rendered<MODE> {
-    fn convert_from(
-        _source: &DataConverter<'_>,
-        context: &mut ConversionContext<'_, '_>,
-    ) -> Result<Self, DataConversionError> {
-        let output = context.write_string(|writer| match MODE {
+    fn convert(mut input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        let from = input.from_type();
+        let to = input.to_type();
+        let output = input.write_string(|writer| match MODE {
             0 => {
                 writer.write_str("value=")?;
                 writer.write_display(&42)
             }
             1 => {
                 writer.write_str("discarded")?;
-                Err(DataConversionError::invalid(
-                    DataType::String,
-                    DataType::String,
-                    InvalidValueReason::OutOfRange,
-                ))
+                Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange))
             }
             _ => writer.write_str("too large"),
         })?;
