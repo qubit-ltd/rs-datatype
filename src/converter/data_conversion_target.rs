@@ -11,7 +11,8 @@ use super::AdmittedConversion;
 use super::DataConversionError;
 use crate::DataTypeOf;
 
-/// Defines how a target type is constructed from a [`DataConverter`].
+/// Defines how a target type is constructed from a
+/// [`DataConverter`](crate::DataConverter).
 ///
 /// Implementing the trait on the target makes the API extensible for
 /// downstream-owned newtypes without lifetime-wide bounds on the source.
