@@ -105,6 +105,8 @@ pub mod serde {
 pub mod converter;
 
 #[cfg(feature = "converter")]
+pub use converter::AdmittedConversion;
+#[cfg(feature = "converter")]
 pub use converter::AdmittedScalarItem;
 #[cfg(feature = "converter")]
 pub use converter::BlankStringPolicy;

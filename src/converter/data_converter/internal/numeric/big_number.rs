@@ -26,10 +26,10 @@ use super::syntax::normalize_numeric_text;
 #[cfg(feature = "big-decimal")]
 use super::syntax::parse_number;
 use super::syntax::parse_text_bigint;
+use crate::converter::BuiltinDataConversionTarget;
 use crate::converter::ConversionContext;
 use crate::converter::ConversionPolicy;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionTarget;
 use crate::converter::FractionalToIntegerPolicy;
 use crate::converter::InvalidValueReason;
 use crate::converter::NumericConversionLimits;
@@ -425,7 +425,7 @@ fn parse_big_decimal(
 }
 
 #[cfg(feature = "big-integer")]
-impl DataConversionTarget for BigInt {
+impl BuiltinDataConversionTarget for BigInt {
     /// Converts a borrowed runtime value to an arbitrary-precision integer.
     ///
     /// # Parameters
@@ -489,7 +489,7 @@ impl DataConversionTarget for BigInt {
 }
 
 #[cfg(feature = "big-decimal")]
-impl DataConversionTarget for BigDecimal {
+impl BuiltinDataConversionTarget for BigDecimal {
     /// Converts a borrowed runtime value to an arbitrary-precision decimal.
     ///
     /// # Parameters

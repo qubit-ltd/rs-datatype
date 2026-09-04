@@ -18,8 +18,6 @@ use serde_json::Value;
 
 use super::conversion_session::ConversionSession;
 use super::conversion_string_writer::ConversionStringWriter;
-use super::data_conversion_target::DataConversionTarget;
-use super::data_converter::DataConverter;
 use super::error::DataConversionError;
 use super::options::ConversionLimits;
 use super::options::ConversionPolicy;
@@ -28,9 +26,9 @@ use crate::datatype::DataType;
 /// Executes one target conversion after its top-level source was admitted.
 ///
 /// A context binds the runtime source and target types to every budgeted
-/// operation it exposes. Custom [`DataConversionTarget`] implementations use
-/// it for nested conversion, JSON processing, and transactional String output
-/// without receiving raw accounting primitives.
+/// operation it exposes. The framework and crate-private built-in adapters use
+/// it for conversion execution, JSON processing, and transactional String
+/// output without exposing raw accounting primitives to downstream targets.
 #[must_use]
 pub struct ConversionContext<'session, 'policy> {
     /// Shared session whose budget backs the current target conversion.
@@ -70,55 +68,6 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
     #[inline(always)]
     pub const fn to_type(&self) -> DataType {
         self.to
-    }
-
-    /// Delegates nested conversion without admitting another top-level item.
-    ///
-    /// # Safety
-    ///
-    /// `source` must be the exact source value already admitted for this
-    /// context. Passing a newly fabricated converter bypasses the outer
-    /// input admission and can therefore defeat the session's resource
-    /// limits; making this boundary explicit keeps that trust requirement
-    /// visible to downstream target implementations.
-    ///
-    /// # Errors
-    ///
-    /// Returns the nested target's conversion error while retaining this
-    /// context's shared policy and cumulative budget.
-    ///
-    /// ```compile_fail
-    /// # use qubit_datatype::{ConversionContext, DataConverter};
-    /// # fn example(context: &mut ConversionContext<'_, '_>, source: &DataConverter<'_>) {
-    /// let _ = context.delegate::<u16>(source);
-    /// # }
-    /// ```
-    #[inline(always)]
-    pub unsafe fn delegate<T>(&mut self, source: &DataConverter<'_>) -> Result<T, DataConversionError>
-    where
-        T: DataConversionTarget,
-    {
-        T::convert_from(source, self)
-    }
-
-    /// Delegates an owned nested conversion without admitting another item.
-    ///
-    /// # Safety
-    ///
-    /// `source` must be the exact source value already admitted for this
-    /// context. See [`Self::delegate`] for why this is an explicit unsafe
-    /// trust boundary.
-    ///
-    /// # Errors
-    ///
-    /// Returns the nested target's conversion error while retaining this
-    /// context's shared policy and cumulative budget.
-    #[inline(always)]
-    pub unsafe fn delegate_owned<T>(&mut self, source: DataConverter<'_>) -> Result<T, DataConversionError>
-    where
-        T: DataConversionTarget,
-    {
-        T::convert_owned(source, self)
     }
 
     /// Decodes JSON while charging this conversion's structured budget.

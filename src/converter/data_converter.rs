@@ -36,6 +36,7 @@ use url::Url;
 #[cfg(feature = "json")]
 use self::structured::account_json_structure;
 use self::structured::account_string_map_structure;
+use super::admitted_conversion::AdmittedConversion;
 use super::conversion_context::ConversionContext;
 use super::conversion_session::ConversionSession;
 use super::data_conversion_target::DataConversionTarget;
@@ -260,7 +261,7 @@ pub enum DataConverter<'a> {
     ),
 }
 
-impl DataConverter<'_> {
+impl<'source> DataConverter<'source> {
     /// Converts this source using the shared default options.
     ///
     /// # Type Parameters
@@ -324,8 +325,8 @@ impl DataConverter<'_> {
             .map_err(|limit| DataConversionError::limit_exceeded(self.data_type(), T::DATA_TYPE, limit))?;
         self.charge_input_for_target(T::DATA_TYPE, session)?;
 
-        let mut context = ConversionContext::new(session, self.data_type(), T::DATA_TYPE);
-        T::convert_from(self, &mut context)
+        let context = ConversionContext::new(session, self.data_type(), T::DATA_TYPE);
+        T::convert(AdmittedConversion::new(self.borrowed(), context))
     }
 
     /// Consumes this source and converts it using the shared default options.
@@ -398,8 +399,8 @@ impl DataConverter<'_> {
             .consume_item()
             .map_err(|limit| DataConversionError::limit_exceeded(from, T::DATA_TYPE, limit))?;
         self.charge_input_for_target(T::DATA_TYPE, session)?;
-        let mut context = ConversionContext::new(session, from, T::DATA_TYPE);
-        T::convert_owned(self, &mut context)
+        let context = ConversionContext::new(session, from, T::DATA_TYPE);
+        T::convert(AdmittedConversion::new(self, context))
     }
 
     /// Charges textual input and supported structured values before a target
@@ -431,6 +432,50 @@ impl DataConverter<'_> {
             _ => {}
         }
         Ok(())
+    }
+
+    /// Reborrows heap-backed storage while copying only scalar values.
+    #[inline(always)]
+    fn borrowed<'borrowed>(&'borrowed self) -> DataConverter<'borrowed>
+    where
+        'source: 'borrowed,
+    {
+        match self {
+            Self::Unset(value) => Self::Unset(*value),
+            Self::Bool(value) => Self::Bool(*value),
+            Self::Char(value) => Self::Char(*value),
+            Self::Int8(value) => Self::Int8(*value),
+            Self::Int16(value) => Self::Int16(*value),
+            Self::Int32(value) => Self::Int32(*value),
+            Self::Int64(value) => Self::Int64(*value),
+            Self::Int128(value) => Self::Int128(*value),
+            Self::UInt8(value) => Self::UInt8(*value),
+            Self::UInt16(value) => Self::UInt16(*value),
+            Self::UInt32(value) => Self::UInt32(*value),
+            Self::UInt64(value) => Self::UInt64(*value),
+            Self::UInt128(value) => Self::UInt128(*value),
+            Self::Float32(value) => Self::Float32(*value),
+            Self::Float64(value) => Self::Float64(*value),
+            Self::String(value) => DataConverter::String(Cow::Borrowed(value.as_ref())),
+            #[cfg(feature = "big-integer")]
+            Self::BigInteger(value) => DataConverter::BigInteger(Cow::Borrowed(value.as_ref())),
+            #[cfg(feature = "big-decimal")]
+            Self::BigDecimal(value) => DataConverter::BigDecimal(Cow::Borrowed(value.as_ref())),
+            #[cfg(feature = "chrono")]
+            Self::Date(value) => Self::Date(*value),
+            #[cfg(feature = "chrono")]
+            Self::Time(value) => Self::Time(*value),
+            #[cfg(feature = "chrono")]
+            Self::DateTime(value) => Self::DateTime(*value),
+            #[cfg(feature = "chrono")]
+            Self::Instant(value) => Self::Instant(*value),
+            Self::Duration(value) => Self::Duration(*value),
+            #[cfg(feature = "url")]
+            Self::Url(value) => DataConverter::Url(Cow::Borrowed(value.as_ref())),
+            Self::StringMap(value) => DataConverter::StringMap(Cow::Borrowed(value.as_ref())),
+            #[cfg(feature = "json")]
+            Self::Json(value) => DataConverter::Json(Cow::Borrowed(value.as_ref())),
+        }
     }
 
     /// Returns the runtime type of the wrapped source.

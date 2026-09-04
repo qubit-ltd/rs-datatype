@@ -21,10 +21,10 @@ use super::DataConverter;
 use super::numeric::duration_to_u128;
 use super::numeric::source_to_integer;
 use super::string_source::normalize;
+use crate::converter::BuiltinDataConversionTarget;
 use crate::converter::ConversionContext;
 use crate::converter::ConversionPolicy;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionTarget;
 use crate::converter::DurationConversionLimits;
 use crate::converter::InvalidValueReason;
 use crate::datatype::DataType;
@@ -197,7 +197,7 @@ fn parse_duration(
         .map_err(|error| map_duration_parse_error(error, value, options))
 }
 
-impl DataConversionTarget for Duration {
+impl BuiltinDataConversionTarget for Duration {
     /// Converts a borrowed runtime value to a duration.
     ///
     /// # Parameters

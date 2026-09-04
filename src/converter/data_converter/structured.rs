@@ -21,11 +21,11 @@ use super::internal::StringMapVisitor;
 use super::internal::sorted_string_map_entries;
 #[cfg(feature = "json")]
 use super::string_source::normalize;
+use crate::converter::BuiltinDataConversionTarget;
 use crate::converter::ConversionContext;
 use crate::converter::ConversionResource;
 use crate::converter::ConversionSession;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionTarget;
 #[cfg(any(feature = "json", feature = "url"))]
 use crate::converter::StructuredConversionLimits;
 use crate::datatype::DataType;
@@ -121,7 +121,7 @@ fn string_map_into_json(value: HashMap<String, String>) -> Value {
 }
 
 #[cfg(feature = "json")]
-impl DataConversionTarget for Value {
+impl BuiltinDataConversionTarget for Value {
     /// Converts a borrowed runtime value to JSON.
     ///
     /// # Parameters
@@ -185,7 +185,7 @@ impl DataConversionTarget for Value {
     }
 }
 
-impl DataConversionTarget for HashMap<String, String> {
+impl BuiltinDataConversionTarget for HashMap<String, String> {
     /// Converts a borrowed runtime value to a string map.
     ///
     /// # Parameters

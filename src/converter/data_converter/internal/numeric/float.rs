@@ -20,10 +20,10 @@ use super::float_text::parse_text_f32;
 use super::float_text::parse_text_f64;
 use super::integer::scalar_integer_magnitude;
 use super::syntax::normalize_numeric_text;
+use crate::converter::BuiltinDataConversionTarget;
 use crate::converter::ConversionContext;
 use crate::converter::ConversionPolicy;
 use crate::converter::DataConversionError;
-use crate::converter::DataConversionTarget;
 use crate::converter::FloatRoundingPolicy;
 use crate::converter::InvalidValueReason;
 use crate::converter::NumericConversionLimits;
@@ -178,7 +178,7 @@ fn source_to_f64(
     }
 }
 
-impl DataConversionTarget for f64 {
+impl BuiltinDataConversionTarget for f64 {
     /// Converts a borrowed runtime value to `f64`.
     ///
     /// # Parameters
@@ -205,7 +205,7 @@ impl DataConversionTarget for f64 {
     }
 }
 
-impl DataConversionTarget for f32 {
+impl BuiltinDataConversionTarget for f32 {
     /// Converts a borrowed runtime value to `f32`.
     ///
     /// # Parameters

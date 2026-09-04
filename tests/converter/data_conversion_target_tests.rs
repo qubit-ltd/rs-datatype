@@ -12,8 +12,10 @@ use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::ConversionSession;
+use qubit_datatype::DataConversionErrorKind;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
+use qubit_datatype::InvalidValueReason;
 
 use super::internal::Port;
 use super::internal::Text;
@@ -32,6 +34,18 @@ fn test_data_conversion_target_consuming_api_supports_downstream_newtype() {
         .into_target::<Port>()
         .expect("owned string should use the downstream conversion fallback");
     assert_eq!(port, Port(8080));
+}
+
+#[test]
+fn test_data_conversion_target_newtype_preserves_bound_error_context() {
+    let error = DataConverter::from("0")
+        .to::<Port>()
+        .expect_err("zero is not a usable network port");
+
+    assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+    assert_eq!(error.from_type(), Some(DataType::String));
+    assert_eq!(error.to_type(), DataType::UInt16);
+    assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
 }
 
 #[test]
