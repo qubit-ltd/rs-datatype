@@ -256,9 +256,9 @@ let limits = ConversionLimits::builder()
 Each `to_with`, `into_target_with`, or batch `*_with` call creates an independent
 session. Internally, `ConversionOperationLimits` creates a private
 `ConversionBudget`, and `ConversionSession` owns that mutable accounting.
-Target implementations receive a conversion-scoped `ConversionContext`, so
-their nested work cannot bypass admission or detach errors from the active type
-pair. Reuse one explicitly constructed session with `to_in`,
+The framework binds conversion-scoped execution context to each
+`AdmittedConversion`, so target implementations cannot bypass admission or
+detach errors from the active type pair. Reuse one explicitly constructed session with `to_in`,
 `into_target_in`, or `to_vec_in` only when limits must accumulate across calls:
 
 ```rust
@@ -401,20 +401,17 @@ first retained value matters.
 ## 10. Downstream target types
 
 Downstream crates can implement `DataConversionTarget` for their own newtypes.
-The converter passes a `ConversionContext` that binds delegation, JSON work,
-and transactional String output to the active type pair. Delegation shares the
-active item, input, output, and structured budgets without charging the nested
-conversion as a second top-level item.
+The `convert` method receives an `AdmittedConversion`: it contains the exact
+`DataConverter` source selected by the framework together with the active
+policy, limits, session, and error type context. The wrapper is created by the
+converter, not by the caller, so a custom target cannot fabricate a source or
+charge the top-level item twice.
 
-The outer `to_in`/`into_target_in` call has already charged one item and its
-source input. Custom targets use the unsafe `context.delegate` or
-`context.delegate_owned` APIs for nested conversions. The caller must pass the
-exact source admitted by the outer conversion; this explicit trust boundary
-prevents accidentally bypassing input-budget accounting. They can use the context's
-JSON and transactional String operations, which return `DataConversionError`
-rather than backend-specific errors. `ConversionSession` intentionally exposes
-policy, limits, cumulative usage, and scalar-item admission only; it no longer
-offers raw accounting APIs to target implementations.
+Use `input.convert::<T>()` to reuse that same admitted source for a built-in
+target. The call consumes the wrapper, which makes the one-source boundary
+explicit and removes the old unsafe delegation APIs. A custom target can also
+inspect `from_type()`, `to_type()`, and `source()`, or use the wrapper's JSON
+and transactional String helpers when those features are enabled.
 
 For scalar collection adapters, `admit_scalar_item` returns a one-use proof
 that owns both the exact source and its session borrow. Consume that proof with
@@ -422,7 +419,7 @@ that owns both the exact source and its session borrow. Consume that proof with
 reused.
 
 ```rust
-use qubit_datatype::{ConversionContext, DataConversionError,
+use qubit_datatype::{AdmittedConversion, DataConversionError,
     DataConversionTarget, DataConverter, DataType, DataTypeOf};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -433,14 +430,18 @@ impl DataTypeOf for Port {
 }
 
 impl DataConversionTarget for Port {
-    fn convert_from(
-        source: &DataConverter<'_>,
-        context: &mut ConversionContext<'_, '_>,
-    )
-        -> Result<Self, DataConversionError>
-    {
-        // SAFETY: `source` is the value admitted by the outer conversion.
-        unsafe { context.delegate::<u16>(source) }.map(Self)
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        let from = input.from_type();
+        let to = input.to_type();
+        let value = input.convert::<u16>()?;
+        if value == 0 {
+            return Err(DataConversionError::invalid(
+                from,
+                to,
+                qubit_datatype::InvalidValueReason::OutOfRange,
+            ));
+        }
+        Ok(Self(value))
     }
 }
 

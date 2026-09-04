@@ -108,12 +108,13 @@ assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
 
 ### 安全扩展目标类型
 
-为下游 newtype 实现 `DataConversionTarget`。转换器会传入已绑定当前来源/目标类型的
-`ConversionContext`；用它委托或渲染输出，不要再次准入顶层来源。
+为下游 newtype 实现 `DataConversionTarget`。转换器会传入一个
+`AdmittedConversion`，其中包含框架已经选定的原始值，以及绑定好的策略、限制、会话和错误上下文。
+这个对象由框架创建，因此目标类型不需要自己实现输入包装，也不能再次执行顶层准入。
 
 ```rust
 use qubit_datatype::{
-    ConversionContext, DataConversionError, DataConversionTarget, DataConverter,
+    AdmittedConversion, DataConversionError, DataConversionTarget, DataConverter,
     DataType, DataTypeOf,
 };
 
@@ -124,18 +125,18 @@ impl DataTypeOf for Port {
 }
 
 impl DataConversionTarget for Port {
-    fn convert_from(
-        source: &DataConverter<'_>,
-        context: &mut ConversionContext<'_, '_>,
-    ) -> Result<Self, DataConversionError> {
-        // SAFETY: `source` 是外层转换已经准入的原始值。
-        unsafe { context.delegate::<u16>(source) }.map(Self)
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        input.convert::<u16>().map(Self)
     }
 }
+
+assert_eq!(DataConverter::from("8080").to::<Port>()?.0, 8080);
+# Ok::<(), qubit_datatype::DataConversionError>(())
 ```
 
-启用 `json` 后，`ConversionContext` 还提供 JSON 解码/编码和事务式 `write_string`。
-它们共享同一预算与错误类型上下文；原始准入和字节记账操作有意不属于扩展 API。
+`input.convert::<u16>()` 会消费已准入封装，并把同一个来源交给内置目标，不会产生第二次顶层转换。
+封装还提供 `from_type()`、`to_type()`、`source()`，以及 JSON 辅助方法（启用 `json` 时）和事务式
+`write_string`。旧的不安全委托方法已不再属于 API，原始准入和记账操作仍保持内部可见。
 
 ### 比较不同数值表示
 
