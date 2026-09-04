@@ -13,6 +13,7 @@ use crate::converter::ConversionContext;
 use crate::converter::DataConversionError;
 use crate::converter::DataConversionTarget;
 use crate::converter::DataConverter;
+use crate::converter::internal::supports_conversion;
 
 /// Preserves specialized conversion paths for crate-owned target types.
 ///
@@ -47,6 +48,9 @@ where
     #[inline(always)]
     fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
         let (source, mut context) = input.into_parts();
+        if !supports_conversion(source.data_type(), context.to_type()) {
+            return Err(DataConversionError::unsupported(source.data_type(), context.to_type()));
+        }
         T::convert_owned(source, &mut context)
     }
 }
