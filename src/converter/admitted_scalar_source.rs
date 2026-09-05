@@ -43,15 +43,15 @@ use crate::DataType;
 /// # Ok::<(), Box<dyn std::error::Error>>(())
 /// ```
 ///
-/// An adapter cannot create an item token without a charged source:
+/// An adapter cannot create an item token directly; its constructor is
+/// private and tokens are created only by an admitted source:
 ///
 /// ```compile_fail
-/// use qubit_datatype::{ConversionLimits, ConversionPolicy, ConversionSession, DataConverter};
+/// use qubit_datatype::{AdmittedScalarItem, ConversionLimits, ConversionPolicy, ConversionSession, DataConverter};
 /// let policy = ConversionPolicy::default();
 /// let limits = ConversionLimits::default();
 /// let mut session = ConversionSession::new(&policy, &limits);
-/// let _ = DataConverter::from("uncharged");
-/// compile_error!("item tokens are created only by AdmittedScalarSource");
+/// let _ = AdmittedScalarItem::new(&mut session, 0, DataConverter::from("uncharged"));
 /// ```
 ///
 /// Outstanding items retain the exclusive session borrow:
