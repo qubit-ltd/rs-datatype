@@ -56,6 +56,10 @@ impl<'writer> ConversionStringWriter<'writer> {
 
     /// Writes a UTF-8 string slice.
     ///
+    /// # Parameters
+    ///
+    /// * `value` - UTF-8 text appended to the current output.
+    ///
     /// # Errors
     ///
     /// Returns an invalid-value error if the underlying formatter rejects the
@@ -72,6 +76,10 @@ impl<'writer> ConversionStringWriter<'writer> {
 
     /// Writes one Unicode scalar value.
     ///
+    /// # Parameters
+    ///
+    /// * `value` - Character appended to the current output.
+    ///
     /// # Errors
     ///
     /// Returns the same errors as [`Self::write_str`].
@@ -84,6 +92,10 @@ impl<'writer> ConversionStringWriter<'writer> {
 
     /// Writes pre-built formatting arguments without an intermediate String.
     ///
+    /// # Parameters
+    ///
+    /// * `arguments` - Formatting arguments rendered into the current output.
+    ///
     /// # Errors
     ///
     /// Returns the same errors as [`Self::write_str`].
@@ -95,6 +107,14 @@ impl<'writer> ConversionStringWriter<'writer> {
     }
 
     /// Formats a displayable value without an intermediate String.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Displayable value type.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Value rendered into the current output.
     ///
     /// # Errors
     ///

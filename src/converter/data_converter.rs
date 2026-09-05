@@ -315,6 +315,22 @@ impl<'source> DataConverter<'source> {
     }
 
     /// Converts this source using an existing conversion session.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Requested target type.
+    ///
+    /// # Parameters
+    ///
+    /// * `session` - Session whose policy and cumulative budgets are reused.
+    ///
+    /// # Returns
+    ///
+    /// Returns the converted target value.
+    ///
+    /// # Errors
+    ///
+    /// Returns a structured error under the same conditions as [`Self::to`].
     #[inline(always)]
     pub fn to_in<T>(&self, session: &mut ConversionSession<'_>) -> Result<T, DataConversionError>
     where
@@ -389,6 +405,22 @@ impl<'source> DataConverter<'source> {
     }
 
     /// Consumes this source and converts it using an existing session.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Requested target type.
+    ///
+    /// # Parameters
+    ///
+    /// * `session` - Session whose policy and cumulative budgets are reused.
+    ///
+    /// # Returns
+    ///
+    /// Returns the converted target value.
+    ///
+    /// # Errors
+    ///
+    /// Returns a structured error under the same conditions as [`Self::to`].
     #[inline(always)]
     pub fn into_target_in<T>(self, session: &mut ConversionSession<'_>) -> Result<T, DataConversionError>
     where

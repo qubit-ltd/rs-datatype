@@ -18,6 +18,15 @@ use super::DurationUnit;
 ///
 /// This enum intentionally defines a closed policy set. Exhaustive matching is
 /// part of its API contract; adding a variant is a deliberate breaking change.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{DurationUnit, SuffixlessDurationPolicy};
+///
+/// let policy = SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds);
+/// assert!(matches!(policy, SuffixlessDurationPolicy::Assume(_)));
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

@@ -218,6 +218,10 @@ impl<'a> ConversionSession<'a> {
     ///
     /// A source-bound capability borrowing this session and the source text.
     ///
+    /// # Parameters
+    ///
+    /// * `source` - Scalar collection text borrowed for lazy item iteration.
+    ///
     /// # Errors
     ///
     /// Returns a String-to-String conversion-domain quantity or

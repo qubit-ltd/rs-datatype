@@ -22,6 +22,15 @@ use crate::DurationPrecisionLossError;
 
 /// Deserializes strict canonical millisecond text.
 ///
+/// # Type Parameters
+///
+/// * `'de` - Lifetime of data borrowed by the deserializer.
+/// * `D` - Serde deserializer type.
+///
+/// # Parameters
+///
+/// * `deserializer` - Deserializer producing the millisecond text.
+///
 /// # Errors
 ///
 /// Returns the deserializer error when the input is not a string or does not
@@ -36,6 +45,10 @@ where
 
 /// Parses strict canonical millisecond text.
 ///
+/// # Parameters
+///
+/// * `text` - Canonical `<integer>ms` text to parse.
+///
 /// # Errors
 ///
 /// Returns [`DurationParseError`] when the input exceeds the default text
@@ -46,6 +59,15 @@ pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
 }
 
 /// Serializes a Duration only when it has exact millisecond precision.
+///
+/// # Type Parameters
+///
+/// * `S` - Serde serializer type.
+///
+/// # Parameters
+///
+/// * `duration` - Duration to serialize.
+/// * `serializer` - Serializer receiving the canonical text.
 ///
 /// # Errors
 ///
@@ -61,6 +83,10 @@ where
 }
 
 /// Formats a Duration in exact canonical millisecond text.
+///
+/// # Parameters
+///
+/// * `duration` - Duration to format.
 ///
 /// # Errors
 ///

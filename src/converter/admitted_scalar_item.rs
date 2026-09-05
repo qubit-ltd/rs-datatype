@@ -70,6 +70,10 @@ impl<'session, 'policy, 'source> AdmittedScalarItem<'session, 'policy, 'source> 
 
     /// Converts the admitted source without charging its item budget again.
     ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Target type that implements the crate's conversion contract.
+    ///
     /// # Errors
     ///
     /// Returns the conversion-domain error produced by the requested target.
@@ -87,6 +91,10 @@ impl<'session, 'policy, 'source> AdmittedScalarItem<'session, 'policy, 'source> 
     ///
     /// This form supports nested protocols, such as Serde enum access, that
     /// must continue using the same session after the scalar value converts.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Target type that implements the crate's conversion contract.
     ///
     /// # Errors
     ///

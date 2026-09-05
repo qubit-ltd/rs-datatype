@@ -126,6 +126,23 @@ impl<'a> ScalarStringDataConverters<'a> {
     }
 
     /// Converts the scalar string using an existing conversion session.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Target element type.
+    ///
+    /// # Parameters
+    ///
+    /// * `session` - Session reused for source admission and item conversion.
+    ///
+    /// # Returns
+    ///
+    /// Returns converted values in retained source order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DataListConversionError`] when source admission, splitting, or
+    /// an item conversion fails.
     pub fn to_vec_in<T>(self, session: &mut ConversionSession<'_>) -> Result<Vec<T>, DataListConversionError>
     where
         T: DataConversionTarget,
@@ -206,6 +223,23 @@ impl<'a> ScalarStringDataConverters<'a> {
     }
 
     /// Converts the first scalar item using an existing conversion session.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Target type.
+    ///
+    /// # Parameters
+    ///
+    /// * `session` - Session reused for source admission and item conversion.
+    ///
+    /// # Returns
+    ///
+    /// Returns the first retained converted value.
+    ///
+    /// # Errors
+    ///
+    /// Returns a missing-value, empty-collection, admission, or conversion
+    /// error.
     #[inline]
     pub fn to_first_in<T>(self, session: &mut ConversionSession<'_>) -> Result<T, DataConversionError>
     where
