@@ -207,8 +207,8 @@ assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
 
 自定义标量列表适配器应调用 `session.admit_scalar_string_source(text)`，通过返回的
 `AdmittedScalarSource::next_item` 逐项借用已准入元素，再用 `convert` 或
-`convert_with_session` 消费。该接口保留原始索引，完整来源只计费一次；未访问的元素
-不会扫描或计费。分割错误和元素准入错误会终止来源访问。
+`convert_with_session` 消费。该接口保留原始索引，完整来源字节只计费一次；未访问的元素
+不会被扫描。分割错误和元素准入错误会终止来源访问。
 
 ## 排障
 
