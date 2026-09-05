@@ -77,3 +77,15 @@ fn test_data_converter_unset_retains_declared_type() {
         Err(DataConversionError::missing(DataType::UInt64, DataType::String,)),
     );
 }
+
+/// Test cross-type unset sources remain missing instead of becoming
+/// unsupported.
+#[test]
+fn test_data_converter_cross_type_unset_reports_missing() {
+    for source_type in [DataType::StringMap, DataType::Json] {
+        assert_eq!(
+            DataConverter::Unset(source_type).to::<bool>(),
+            Err(DataConversionError::missing(source_type, DataType::Bool)),
+        );
+    }
+}
