@@ -227,6 +227,14 @@ For a limit failure, inspect `resource()`, `configured_limit()`,
 applicable. Batch APIs return `DataListConversionError`, which retains the
 original `source_index` alongside the conversion error.
 
+For custom scalar-list adapters, call
+`session.admit_scalar_string_source(text)` and use the returned
+`AdmittedScalarSource::next_item` to borrow one admitted item at a time.
+Consume each item with `convert` or `convert_with_session`. This preserves
+original indices and charges the full source exactly once, while unvisited
+items are neither scanned nor charged. Splitting and item-admission errors
+exhaust the source.
+
 ## Troubleshooting
 
 | Symptom | Check | Resolution |

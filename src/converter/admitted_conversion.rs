@@ -108,7 +108,7 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
         self.context.write_string(render)
     }
 
-    /// Splits the admitted source from its context for compatibility adapters.
+    /// Unpacks the admitted source and its conversion context for built-in targets.
     #[inline(always)]
     pub(crate) fn into_parts(self) -> (DataConverter<'source>, ConversionContext<'session, 'policy>) {
         (self.source, self.context)

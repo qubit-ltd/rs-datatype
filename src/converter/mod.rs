@@ -11,6 +11,7 @@
 
 mod admitted_conversion;
 mod admitted_scalar_item;
+mod admitted_scalar_source;
 mod conversion_capabilities;
 mod conversion_context;
 mod conversion_resource;
@@ -28,6 +29,7 @@ mod scalar_string_data_converters;
 
 pub use admitted_conversion::AdmittedConversion;
 pub use admitted_scalar_item::AdmittedScalarItem;
+pub use admitted_scalar_source::AdmittedScalarSource;
 pub use conversion_capabilities::ConversionCapabilities;
 pub(crate) use conversion_context::ConversionContext;
 pub use conversion_resource::ConversionResource;

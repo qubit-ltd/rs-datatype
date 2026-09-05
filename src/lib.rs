@@ -109,6 +109,8 @@ pub use converter::AdmittedConversion;
 #[cfg(feature = "converter")]
 pub use converter::AdmittedScalarItem;
 #[cfg(feature = "converter")]
+pub use converter::AdmittedScalarSource;
+#[cfg(feature = "converter")]
 pub use converter::BlankStringPolicy;
 #[cfg(feature = "converter")]
 pub use converter::BooleanConversionPolicy;
@@ -206,8 +208,6 @@ pub use converter::StructuredConversionLimits;
 pub use converter::StructuredConversionLimitsBuilder;
 pub use datatype::DataType;
 pub use datatype::DataTypeCategory;
-#[allow(deprecated)]
-pub use datatype::DataTypeInfo;
 pub use datatype::DataTypeOf;
 pub use datatype::DataTypeParseError;
 #[cfg(feature = "duration")]

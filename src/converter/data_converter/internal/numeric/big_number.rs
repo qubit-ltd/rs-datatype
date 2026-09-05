@@ -13,9 +13,13 @@ use std::time::Duration;
 use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 use num_traits::FromPrimitive;
+use qubit_budget::BigIntegerLimits;
+#[cfg(feature = "big-decimal")]
 use qubit_budget::BudgetError;
 use qubit_budget::MeasuredBudgetError;
+#[cfg(feature = "big-decimal")]
 use qubit_budget::Observation;
+use qubit_budget::ResourceLimit;
 
 use super::super::super::DataConverter;
 use super::integer::duration_to_u128;
@@ -35,38 +39,6 @@ use crate::converter::InvalidValueReason;
 use crate::converter::NumericConversionLimits;
 use crate::datatype::DataType;
 
-/// Tests whether a non-zero BigInteger exceeds a decimal digit budget.
-///
-/// The bit-length checks avoid formatting values that are clearly far below or
-/// above the limit. Values near the boundary use an exact decimal count whose
-/// temporary allocation remains proportional to the configured budget.
-///
-/// # Parameters
-///
-/// * `value` - BigInteger value whose magnitude is inspected.
-/// * `maximum_digits` - Largest permitted significant decimal digit count.
-///
-/// # Returns
-///
-/// `true` when the non-zero magnitude has more than `maximum_digits` decimal
-/// digits; zero never exceeds the budget.
-#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-#[must_use]
-fn exceeds_big_integer_digit_limit(value: &BigInt, maximum_digits: u64) -> bool {
-    let bits = u128::from(value.bits());
-    if bits == 0 {
-        return false;
-    }
-    let maximum_digits = u128::from(maximum_digits);
-    if bits <= maximum_digits.saturating_mul(3) {
-        return false;
-    }
-    if bits > maximum_digits.saturating_mul(4) {
-        return true;
-    }
-    value.to_str_radix(10).trim_start_matches('-').len() as u128 > maximum_digits
-}
-
 /// Enforces the configured BigInteger result digit limit.
 ///
 /// # Parameters
@@ -83,7 +55,9 @@ fn exceeds_big_integer_digit_limit(value: &BigInt, maximum_digits: u64) -> bool 
 /// # Errors
 ///
 /// Returns [`DataConversionErrorKind::LimitExceeded`](crate::converter::DataConversionErrorKind::LimitExceeded)
-/// when a BigInteger target would exceed `maximum_digits`.
+/// when a BigInteger target would exceed `maximum_digits`. Clearly oversized
+/// values report a lower bound without formatting their full decimal expansion.
+/// Returns a quantity error if the measurement cannot fit the budget quantity.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 #[inline]
 fn enforce_big_integer_digit_limit(
@@ -92,18 +66,28 @@ fn enforce_big_integer_digit_limit(
     from: DataType,
     to: DataType,
 ) -> Result<(), DataConversionError> {
-    if to != DataType::BigInteger || !exceeds_big_integer_digit_limit(value, maximum_digits) {
+    if to != DataType::BigInteger {
         return Ok(());
     }
-    Err(DataConversionError::limit_exceeded(
-        from,
-        to,
-        BudgetError::LimitExceeded {
-            resource: crate::converter::ConversionResource::BigIntegerDigits,
-            observed: Observation::Exact(u64::try_from(value.to_str_radix(10).trim_start_matches('-').len()).unwrap()),
-            maximum: maximum_digits,
-        },
-    ))
+    // Since 2^3 < 10, at most three bits per permitted decimal digit always
+    // fit. Widen before multiplying so generous u64 limits keep this check
+    // allocation-free instead of overflowing into decimal formatting.
+    if u128::from(value.bits()) <= u128::from(maximum_digits) * 3 {
+        return Ok(());
+    }
+    BigIntegerLimits::builder()
+        .significant_decimal_digits_limit(ResourceLimit::new(
+            crate::converter::ConversionResource::BigIntegerDigits,
+            maximum_digits,
+        ))
+        .build()
+        .check(value)
+        .map_err(|error| match error {
+            MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(from, to, error),
+            MeasuredBudgetError::Quantity { resource, source } => {
+                DataConversionError::quantity(from, to, resource, source)
+            }
+        })
 }
 
 /// Enforces coefficient and scale bounds before a decimal is consumed.

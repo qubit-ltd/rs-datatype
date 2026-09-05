@@ -115,22 +115,25 @@ fn test_public_conversion_output_accounting_uses_shared_budget() {
 /// Verifies scalar item admission produces one-use conversion tokens.
 #[test]
 fn test_scalar_admission_charges_items_once() {
-    let policy = ConversionPolicy::default();
+    let policy = ConversionPolicy::env_friendly();
     let limits = ConversionLimits::builder()
         .operation_limits(ConversionOperationLimits::builder().max_items(1).build())
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
-    let admitted = session
-        .admit_scalar_item(2, DataConverter::from("abc"))
+    let mut source = session.admit_scalar_string_source(",,abc,d").expect("source fits");
+    let admitted = source
+        .next_item()
+        .expect("first retained item")
         .expect("the first scalar item should fit");
     assert_eq!(admitted.source_index(), 2);
     assert_eq!(admitted.convert::<String>(), Ok(String::from("abc")));
 
-    let error = session
-        .admit_scalar_item(3, DataConverter::from("d"))
+    let error = source
+        .next_item()
+        .expect("second retained item")
         .expect_err("the second scalar item should exceed the item budget");
-    assert_eq!(error.resource(), Some(ConversionResource::Items));
+    assert_eq!(error.conversion_error().resource(), Some(ConversionResource::Items));
 }
 
 /// Verifies external adapters can charge one scalar-string source before
@@ -143,7 +146,7 @@ fn test_scalar_string_source_admission_charges_input_once() {
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
-    session
+    let _ = session
         .admit_scalar_string_source("abc")
         .expect("the exact source length should fit");
     assert_eq!(session.input_bytes_used(), 3);

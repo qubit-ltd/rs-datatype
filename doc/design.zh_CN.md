@@ -30,17 +30,10 @@ context 只暴露当前转换中有意义的操作：
 4. String 渲染或输出准入失败不会提交输出字节。
 5. 标量条目 token 只能消耗一次，并且获得已绑定的 context。
 
-## 兼容性
-
-这是有意的破坏性 API 变更：下游 `DataConversionTarget` 实现必须把
-`&mut ConversionSession` 参数替换为 `AdmittedConversion`，并调用其转换方法。
-该变更移除了能力泄漏，而不是增加一套并行 API，使扩展模型保持唯一且可审计。
-
 ## 运行时描述与能力发现
 
 `DataType` 自身负责稳定名称和不依赖 feature 的语义分类。调用方直接使用
-`DataType::as_str` 和 `DataType::category`。原有 `DataTypeInfo` 包装仅作为已弃用的源码
-兼容层保留，其实现委托给上述方法，不再形成第二套元数据权威。
+`DataType::as_str` 和 `DataType::category`。
 
 转换路径拓扑只保留一份内部规范矩阵。公开的 `ConversionCapabilities` 门面先依据当前
 Cargo features 过滤来源和目标的可用性，再查询该矩阵。这样既保留公开的 feature 能力
