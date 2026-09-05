@@ -7,6 +7,8 @@
 // =============================================================================
 //! Textual and temporal conversion implementations.
 
+use std::borrow::Cow;
+
 #[cfg(feature = "chrono")]
 use chrono::DateTime;
 #[cfg(feature = "chrono")]
@@ -294,17 +296,25 @@ impl BuiltinDataConversionTarget for String {
         if let DataConverter::String(value) = source {
             let normalized = normalize(value.as_ref(), context.policy(), DataType::String)?;
             if normalized.len() == value.len() {
-                let result = value.into_owned();
-                context.admit_output_bytes(result.len())?;
-                return Ok(result);
+                return match value {
+                    Cow::Borrowed(value) => context.write_string(|writer| writer.write_str(value)),
+                    Cow::Owned(value) => {
+                        context.admit_output_bytes(value.len())?;
+                        Ok(value)
+                    }
+                };
             }
             return context.write_string(|writer| writer.write_str(normalized));
         }
         #[cfg(feature = "url")]
         if let DataConverter::Url(value) = source {
-            let result: String = value.into_owned().into();
-            context.admit_output_bytes(result.len())?;
-            return Ok(result);
+            return match value {
+                Cow::Borrowed(value) => context.write_string(|writer| writer.write_str(value.as_str())),
+                Cow::Owned(value) => {
+                    context.admit_output_bytes(value.as_str().len())?;
+                    Ok(value.into())
+                }
+            };
         }
         Self::convert_from(&source, context)
     }

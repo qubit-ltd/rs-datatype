@@ -19,8 +19,6 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use super::DataTypeCategory;
-#[allow(deprecated)]
-use super::DataTypeInfo;
 use super::data_type_parse_error::DataTypeParseError;
 
 /// Universal data type enumeration for cross-module type representation
@@ -175,20 +173,6 @@ impl DataType {
         DataType::StringMap,
         DataType::Json,
     ];
-
-    /// Returns stable descriptive metadata for this runtime data type.
-    ///
-    /// # Returns
-    ///
-    /// A lightweight metadata value containing this type's stable name and
-    /// semantic category.
-    #[deprecated(since = "0.12.0", note = "use DataType::as_str and DataType::category directly")]
-    #[must_use = "the data type metadata is returned"]
-    #[inline(always)]
-    #[allow(deprecated)]
-    pub const fn info(self) -> DataTypeInfo {
-        DataTypeInfo::new(self)
-    }
 
     /// Returns the broad semantic category of this data type.
     ///

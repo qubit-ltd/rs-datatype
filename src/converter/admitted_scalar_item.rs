@@ -17,7 +17,7 @@ use super::error::DataConversionError;
 /// A scalar item whose session item budget has already been admitted.
 ///
 /// Construct this token through
-/// [`crate::ConversionSession::admit_scalar_item`]. Downstream adapters can
+/// [`crate::AdmittedScalarSource::next_item`]. Downstream adapters can
 /// consume it to continue conversion without charging the same item again.
 ///
 /// An admission is a one-use capability and cannot be converted twice:
@@ -30,9 +30,8 @@ use super::error::DataConversionError;
 /// let policy = ConversionPolicy::default();
 /// let limits = ConversionLimits::default();
 /// let mut session = ConversionSession::new(&policy, &limits);
-/// let admission = session
-///     .admit_scalar_item(0, DataConverter::from("42"))
-///     .unwrap();
+/// let mut source = session.admit_scalar_string_source("42").unwrap();
+/// let admission = source.next_item().unwrap().unwrap();
 /// let _: u32 = admission.convert().unwrap();
 /// let _: u32 = admission.convert().unwrap();
 /// ```

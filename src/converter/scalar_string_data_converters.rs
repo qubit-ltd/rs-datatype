@@ -11,12 +11,10 @@
 
 use super::conversion_session::ConversionSession;
 use super::data_conversion_target::DataConversionTarget;
-use super::data_converter::DataConverter;
 use super::error::DataConversionError;
 use super::error::DataListConversionError;
 use super::options::ConversionLimits;
 use super::options::ConversionPolicy;
-use crate::datatype::DataType;
 
 /// Converts a scalar string as a configurable collection source.
 ///
@@ -132,27 +130,16 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         T: DataConversionTarget,
     {
-        self.check_and_charge_source(session)
+        let mut source = session
+            .admit_scalar_string_source(self.source)
             .map_err(|source| DataListConversionError::new(0, source))?;
-        let policy = session.policy();
-        let limits = session.limits();
-        let items = policy.collection().scalar_items(limits.collection(), self.source);
         let mut converted = Vec::new();
-        for item in items {
-            let item = item.map_err(|error| error.into_list_conversion_error(T::DATA_TYPE))?;
-            let source = DataConverter::from(item.value);
-            let admitted = match session.admit_scalar_item(item.source_index, source) {
-                Ok(admitted) => admitted,
-                Err(error) => {
-                    return Err(DataListConversionError::new(item.source_index, error));
-                }
-            };
-            let value = match admitted.convert::<T>() {
-                Ok(value) => value,
-                Err(error) => {
-                    return Err(DataListConversionError::new(item.source_index, error));
-                }
-            };
+        while let Some(item) = source.next_item_for(T::DATA_TYPE) {
+            let admitted = item?;
+            let source_index = admitted.source_index();
+            let value = admitted
+                .convert::<T>()
+                .map_err(|error| DataListConversionError::new(source_index, error))?;
             converted.push(value);
         }
         Ok(converted)
@@ -224,23 +211,12 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         T: DataConversionTarget,
     {
-        self.check_and_charge_source(session)?;
-        let policy = session.policy();
-        let limits = session.limits();
-        let first = policy
-            .collection()
-            .scalar_items(limits.collection(), self.source)
-            .next()
+        let mut source = session.admit_scalar_string_source(self.source)?;
+        let first = source
+            .next_item_for(T::DATA_TYPE)
             .ok_or(DataConversionError::empty_collection(T::DATA_TYPE))?
-            .map_err(|error| error.into_data_conversion_error(T::DATA_TYPE))?;
-        let source = DataConverter::from(first.value);
-        session.admit_scalar_item(first.source_index, source)?.convert::<T>()
-    }
-
-    /// Checks the complete scalar source and charges it once before scanning.
-    #[inline]
-    fn check_and_charge_source(&self, session: &mut ConversionSession<'_>) -> Result<(), DataConversionError> {
-        session.admit_scalar_source(DataType::String, DataType::String, self.source.len())
+            .map_err(DataListConversionError::into_conversion_error)?;
+        first.convert::<T>()
     }
 }
 

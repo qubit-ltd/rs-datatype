@@ -68,8 +68,7 @@ or formatting that map as JSON additionally needs `json`.
 
 `DataType` is a stable vocabulary with parsing, display, Serde, direct
 classification methods, and the exhaustive `DataType::ALL` slice. `DataTypeOf`
-maps supported Rust types to that vocabulary. `DataTypeInfo` remains only as a
-deprecated compatibility wrapper; new code should use `DataType::as_str` and
+maps supported Rust types to that vocabulary. Use `DataType::as_str` and
 `DataType::category` directly.
 Platform-sized `isize` and `usize` are omitted because their representation is
 target-dependent.
@@ -413,10 +412,13 @@ explicit and removes the old unsafe delegation APIs. A custom target can also
 inspect `from_type()`, `to_type()`, and `source()`, or use the wrapper's JSON
 and transactional String helpers when those features are enabled.
 
-For scalar collection adapters, `admit_scalar_item` returns a one-use proof
-that owns both the exact source and its session borrow. Consume that proof with
-`convert` or `convert_with_session`; it cannot be paired with another source or
-reused.
+For scalar collection adapters, `session.admit_scalar_string_source(text)`
+charges the complete input once and returns an `AdmittedScalarSource`.
+Call `source.next_item()` to lazily obtain one-use `AdmittedScalarItem` tokens,
+then consume each token with `convert` or `convert_with_session`. Tokens borrow
+only slices of that admitted source and preserve indices before empty-item
+filtering. Splitting or item-budget errors exhaust the source. Dropping it
+leaves the unconsumed tail unscanned, but retains the full input-byte charge.
 
 ```rust
 use qubit_datatype::{AdmittedConversion, DataConversionError,

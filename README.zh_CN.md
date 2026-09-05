@@ -62,8 +62,8 @@ qubit-datatype = { version = "0.12", default-features = false, features = ["conv
 ## 3. 运行时类型描述
 
 `DataType` 提供稳定类型词汇、解析、显示、Serde、直接分类方法和完整的
-`DataType::ALL`。`DataTypeOf` 把 Rust 类型映射为该词汇。`DataTypeInfo` 仅作为已弃用的
-兼容包装保留；新代码应直接使用 `DataType::as_str` 和 `DataType::category`。平台相关的
+`DataType::ALL`。`DataTypeOf` 把 Rust 类型映射为该词汇。新代码直接使用
+`DataType::as_str` 和 `DataType::category`。平台相关的
 `isize`、`usize` 不提供映射，以免数据表示随目标平台变化。
 
 `DataType::as_str` 返回、Serde 接受且 `DataType::ALL` 列出的全小写拼写属于兼容性
@@ -360,8 +360,11 @@ assert_eq!(values, [1, 2, 3]);
 表达“一次准入、一次来源”的边界，同时移除了旧的不安全委托 API。自定义目标还可以读取
 `from_type()`、`to_type()` 和 `source()`，并在启用相应 feature 时使用 JSON 与事务式 String 辅助方法。
 
-标量集合适配器可通过 `admit_scalar_item` 获得一次性 proof；它同时拥有精确 source 和
-对应 session 借用，只能用 `convert` 或 `convert_with_session` 消费一次，不能换源或复用。
+标量集合适配器通过 `session.admit_scalar_string_source(text)` 一次计费完整输入，
+获得 `AdmittedScalarSource`；调用 `source.next_item()` 惰性获取一次性
+`AdmittedScalarItem`，再通过 `convert` 或 `convert_with_session` 消费。元素只能借用
+该来源的切片，保留过滤空项前的原始索引。分割错误或元素预算错误会终止来源访问；
+提前丢弃来源不会扫描剩余内容，但完整输入字节计费仍保留。
 
 ```rust
 use qubit_datatype::{AdmittedConversion, DataConversionError,

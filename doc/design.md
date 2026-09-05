@@ -27,6 +27,15 @@ The context exposes only operations that are meaningful inside that conversion:
 admission, configuration, and cumulative usage observation. Its raw byte and
 structured-accounting primitives are crate-private.
 
+Scalar collection adapters first call `admit_scalar_string_source`, which
+charges the entire input and returns an `AdmittedScalarSource`. That object
+borrows the session and lazily lends one-use `AdmittedScalarItem` tokens from
+the exact charged text. It preserves pre-filter source indices and never
+allocates item strings. Splitting/admission failures exhaust the source;
+early consumer termination leaves the unvisited tail unscanned. No public
+entry point admits arbitrary replacement item sources independently of their
+source-byte charge.
+
 ## Invariants
 
 1. A top-level converter call charges its item and input before the target runs.
@@ -35,6 +44,8 @@ structured-accounting primitives are crate-private.
 4. Failed String rendering and failed output admission do not commit output
    bytes.
 5. A scalar-item token can be consumed only once and receives a bound context.
+6. Every scalar-item token is derived from a byte-admitted source, and no item
+   can outlive its exclusive session borrow.
 
 ## Compatibility
 
@@ -47,9 +58,7 @@ parallel API, keeping the extension model singular and auditable.
 ## Runtime descriptors and capability discovery
 
 `DataType` owns its stable name and feature-independent semantic category.
-Callers use `DataType::as_str` and `DataType::category` directly. The former
-`DataTypeInfo` wrapper remains deprecated for source compatibility, but it
-delegates to those methods and is not a second metadata authority.
+Callers use `DataType::as_str` and `DataType::category` directly.
 
 Conversion path topology has one internal canonical matrix. The public
 `ConversionCapabilities` facade first filters source and target availability

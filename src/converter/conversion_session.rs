@@ -40,10 +40,9 @@ use serde::de::DeserializeSeed;
 #[cfg(feature = "json")]
 use serde_json::Value;
 
-use super::admitted_scalar_item::AdmittedScalarItem;
+use super::admitted_scalar_source::AdmittedScalarSource;
 use super::conversion_resource::ConversionResource;
 use super::conversion_string_writer::ConversionStringWriter;
-use super::data_converter::DataConverter;
 use super::error::DataConversionError;
 use super::internal::ConversionBudget;
 use super::options::ConversionLimits;
@@ -201,12 +200,7 @@ impl<'a> ConversionSession<'a> {
     ///
     /// Returns a conversion-domain quantity or resource-limit error.
     #[inline]
-    pub fn admit_scalar_source(
-        &mut self,
-        from: DataType,
-        to: DataType,
-        amount: usize,
-    ) -> Result<(), DataConversionError> {
+    fn admit_scalar_source(&mut self, from: DataType, to: DataType, amount: usize) -> Result<(), DataConversionError> {
         self.admit_scalar_source_bytes_usize(amount)
             .map_err(|error| DataConversionError::measured_limit(from, to, error))
     }
@@ -215,17 +209,29 @@ impl<'a> ConversionSession<'a> {
     /// splits it into individually admitted items.
     ///
     /// The complete source is charged once to the cumulative input budget.
-    /// Callers must subsequently use [`Self::admit_scalar_item`] for each
-    /// split item so item accounting remains independent from source
-    /// accounting.
+    /// The returned source lends individually admitted items without charging
+    /// their bytes again. Every item is a slice of this exact source; adapters
+    /// cannot substitute an uncharged source. Splitting is lazy and retains
+    /// original indices even when empty items are skipped.
+    ///
+    /// # Returns
+    ///
+    /// A source-bound capability borrowing this session and the source text.
     ///
     /// # Errors
     ///
     /// Returns a String-to-String conversion-domain quantity or
     /// resource-limit error.
     #[inline]
-    pub fn admit_scalar_string_source(&mut self, source: &str) -> Result<(), DataConversionError> {
-        self.admit_scalar_source(DataType::String, DataType::String, source.len())
+    pub fn admit_scalar_string_source<'session, 'source>(
+        &'session mut self,
+        source: &'source str,
+    ) -> Result<AdmittedScalarSource<'session, 'a, 'source>, DataConversionError>
+    where
+        'a: 'source,
+    {
+        self.admit_scalar_source(DataType::String, DataType::String, source.len())?;
+        Ok(AdmittedScalarSource::new(self, source))
     }
 
     /// Admits one completed output payload measured by a Rust String length.
@@ -295,27 +301,6 @@ impl<'a> ConversionSession<'a> {
     ) -> Result<(), MeasuredBudgetError<ConversionResource, u64>> {
         self.check_collection_source_bytes_usize(amount)?;
         self.consume_input_bytes_usize(amount)
-    }
-
-    /// Consumes one scalar item and returns its one-use admission proof.
-    ///
-    /// Constructed tokens are intended for downstream deserializers that need
-    /// to continue conversion without charging the same item a second time.
-    ///
-    /// # Errors
-    ///
-    /// Returns a conversion-domain resource error when the cumulative item
-    /// limit is exhausted.
-    #[inline]
-    pub fn admit_scalar_item<'session, 'source>(
-        &'session mut self,
-        source_index: usize,
-        source: DataConverter<'source>,
-    ) -> Result<AdmittedScalarItem<'session, 'a, 'source>, DataConversionError> {
-        let source_type = source.data_type();
-        self.consume_item()
-            .map_err(|error| DataConversionError::limit_exceeded(source_type, source_type, error))?;
-        Ok(AdmittedScalarItem::new(self, source_index, source))
     }
 
     /// Consumes input bytes measured by a native Rust string or slice length.

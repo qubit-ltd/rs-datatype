@@ -10,6 +10,8 @@
 //! Tests for the reusable data conversion module.
 
 mod admitted_scalar_item_tests;
+mod admitted_scalar_source_tests;
+mod conversion_allocation_tests;
 mod conversion_capabilities_tests;
 mod conversion_context_tests;
 mod conversion_resource_tests;
