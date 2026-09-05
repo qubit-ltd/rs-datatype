@@ -8,6 +8,14 @@
 //! Resource identities used by conversion limits and budgets.
 
 /// Identifies a measurable resource consumed or checked by conversion.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::ConversionResource;
+///
+/// assert_eq!(ConversionResource::Items, ConversionResource::Items);
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]

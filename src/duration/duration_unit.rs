@@ -20,6 +20,14 @@ use super::DurationParseError;
 /// This enum intentionally defines a closed supported-unit vocabulary.
 /// Exhaustive matching is part of its API contract; adding a variant is a
 /// deliberate breaking change.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::DurationUnit;
+///
+/// assert_eq!(DurationUnit::Milliseconds.symbol(), "ms");
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

@@ -161,6 +161,22 @@ where
     }
 
     /// Converts every source item using an existing conversion session.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Target element type.
+    ///
+    /// # Parameters
+    ///
+    /// * `session` - Session reused for every item and its cumulative budgets.
+    ///
+    /// # Returns
+    ///
+    /// Returns converted values in source order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DataListConversionError`] at the first failed source index.
     pub fn to_vec_in<'a, T>(self, session: &mut ConversionSession<'_>) -> Result<Vec<T>, DataListConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
@@ -258,6 +274,23 @@ where
     }
 
     /// Converts the first source item using an existing conversion session.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Target type.
+    ///
+    /// # Parameters
+    ///
+    /// * `session` - Session reused for the first conversion.
+    ///
+    /// # Returns
+    ///
+    /// Returns the converted first value.
+    ///
+    /// # Errors
+    ///
+    /// Returns an empty-collection error when no source exists, or the
+    /// underlying conversion error for the first source.
     #[inline]
     pub fn to_first_in<'a, T>(self, session: &mut ConversionSession<'_>) -> Result<T, DataConversionError>
     where
