@@ -9,11 +9,11 @@ Those mistakes are easy to compile and difficult to audit from a caller.
 
 ## Decision
 
-The public target-extension boundary is `ConversionContext<'_, '_>`.
+The public target-extension boundary is `AdmittedConversion<'_, '_, '_>`.
 `DataConverter` admits the top-level item and input exactly once, creates a
-context bound to the runtime source and requested target types, and invokes the
-target. An `AdmittedScalarItem` follows the same rule after its one-use token is
-consumed.
+context bound to the runtime source and requested target types, wraps it in an
+`AdmittedConversion`, and invokes the target. An `AdmittedScalarItem` follows
+the same rule after its one-use token is consumed.
 
 The context exposes only operations that are meaningful inside that conversion:
 
@@ -40,9 +40,9 @@ structured-accounting primitives are crate-private.
 
 This is intentionally a breaking API change: downstream
 `DataConversionTarget` implementations must replace their
-`&mut ConversionSession` parameter with `&mut ConversionContext` and call
-context methods. The change removes a capability rather than adding a parallel
-API, keeping the extension model singular and auditable.
+`&mut ConversionSession` parameter with `AdmittedConversion` and call its
+conversion methods. The change removes a capability rather than adding a
+parallel API, keeping the extension model singular and auditable.
 
 ## Runtime descriptors and capability discovery
 

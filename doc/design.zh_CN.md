@@ -8,9 +8,9 @@
 
 ## 决策
 
-公开的目标扩展边界改为 `ConversionContext<'_, '_>`。`DataConverter` 只为顶层条目及其
-输入准入一次，然后创建绑定运行时来源类型和请求目标类型的 context，再调用目标。
-`AdmittedScalarItem` 在消耗一次性 token 后遵循同一规则。
+公开的目标扩展边界改为 `AdmittedConversion<'_, '_, '_>`。`DataConverter` 只为顶层条目及其
+输入准入一次，然后创建绑定运行时来源类型和请求目标类型的 context，包装为
+`AdmittedConversion` 后再调用目标。`AdmittedScalarItem` 在消耗一次性 token 后遵循同一规则。
 
 context 只暴露当前转换中有意义的操作：
 
@@ -33,7 +33,7 @@ context 只暴露当前转换中有意义的操作：
 ## 兼容性
 
 这是有意的破坏性 API 变更：下游 `DataConversionTarget` 实现必须把
-`&mut ConversionSession` 参数替换为 `&mut ConversionContext`，并调用 context 方法。
+`&mut ConversionSession` 参数替换为 `AdmittedConversion`，并调用其转换方法。
 该变更移除了能力泄漏，而不是增加一套并行 API，使扩展模型保持唯一且可审计。
 
 ## 运行时描述与能力发现
