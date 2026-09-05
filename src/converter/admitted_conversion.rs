@@ -64,6 +64,16 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     }
 
     /// Safely delegates the exact admitted source to another target.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Target type that implements the crate's conversion contract.
+    ///
+    /// # Errors
+    ///
+    /// Returns the target's [`DataConversionError`] when the source is missing,
+    /// the source-target pair is unsupported, the value is invalid, or a
+    /// conversion resource limit is exceeded.
     #[inline(always)]
     pub fn convert<T>(self) -> Result<T, DataConversionError>
     where
@@ -73,6 +83,19 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     }
 
     /// Decodes JSON under this conversion's bound resource context.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `'de` - Lifetime of borrowed data returned by the deserializer.
+    /// * `T` - Deserialized output type.
+    ///
+    /// # Parameters
+    ///
+    /// * `input` - UTF-8 JSON bytes to decode.
+    ///
+    /// # Errors
+    ///
+    /// Returns a JSON syntax, deserialization, or structured-resource error.
     #[cfg(feature = "json")]
     #[inline]
     pub fn decode_json<'de, T>(&mut self, input: &'de [u8]) -> Result<T, DataConversionError>
@@ -83,6 +106,15 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     }
 
     /// Accounts a JSON value under this conversion's bound resource context.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Materialized JSON value whose structure is charged.
+    ///
+    /// # Errors
+    ///
+    /// Returns a structured-resource error when accounting exceeds the bound
+    /// conversion limits.
     #[cfg(feature = "json")]
     #[inline]
     pub fn account_json_value(&mut self, value: &serde_json::Value) -> Result<(), DataConversionError> {
@@ -90,6 +122,18 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     }
 
     /// Encodes JSON under this conversion's bound resource context.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Serializable value to encode.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Value to serialize as JSON.
+    ///
+    /// # Errors
+    ///
+    /// Returns a serialization or structured/output-resource error.
     #[cfg(feature = "json")]
     #[inline]
     pub fn encode_json<T>(&mut self, value: &T) -> Result<Vec<u8>, DataConversionError>
@@ -100,6 +144,18 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     }
 
     /// Renders String output transactionally under this conversion's budget.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `F` - Rendering closure that writes to the supplied budgeted writer.
+    ///
+    /// # Parameters
+    ///
+    /// * `render` - Closure that produces the complete String output.
+    ///
+    /// # Errors
+    ///
+    /// Returns the renderer's conversion error or an output-resource error.
     #[inline]
     pub fn write_string<F>(&mut self, render: F) -> Result<String, DataConversionError>
     where
