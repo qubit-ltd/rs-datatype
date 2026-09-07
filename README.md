@@ -20,14 +20,14 @@ The default build has no optional dependencies and provides `DataType`,
 
 ```toml
 [dependencies]
-qubit-datatype = "0.12"
+qubit-datatype = "0.13"
 ```
 
 Enable runtime conversion only with the rich type families your service needs:
 
 ```toml
 [dependencies]
-qubit-datatype = { version = "0.12", default-features = false, features = ["converter", "chrono"] }
+qubit-datatype = { version = "0.13", default-features = false, features = ["converter", "chrono"] }
 ```
 
 | Feature | Adds |
