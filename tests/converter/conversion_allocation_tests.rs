@@ -48,26 +48,29 @@ fn record_allocation(size: usize) {
 unsafe impl GlobalAlloc for TrackingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         record_allocation(layout.size());
-        // SAFETY: The caller provides a valid allocation layout, forwarded unchanged.
+        // SAFETY: The caller provides a valid allocation layout, forwarded
+        // unchanged.
         unsafe { System.alloc(layout) }
     }
 
     unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
         record_allocation(layout.size());
-        // SAFETY: The caller provides a valid allocation layout, forwarded unchanged.
+        // SAFETY: The caller provides a valid allocation layout, forwarded
+        // unchanged.
         unsafe { System.alloc_zeroed(layout) }
     }
 
     unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
         record_allocation(size);
-        // SAFETY: The pointer originates from System and the caller supplies its
-        // original layout and a valid new size, all forwarded unchanged.
+        // SAFETY: The pointer originates from System and the caller supplies
+        // its original layout and a valid new size, all forwarded
+        // unchanged.
         unsafe { System.realloc(pointer, layout, size) }
     }
 
     unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
-        // SAFETY: The pointer originates from System and the caller supplies the
-        // matching layout; this wrapper preserves both values.
+        // SAFETY: The pointer originates from System and the caller supplies
+        // the matching layout; this wrapper preserves both values.
         unsafe { System.dealloc(pointer, layout) }
     }
 }
