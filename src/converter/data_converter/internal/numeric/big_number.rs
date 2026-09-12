@@ -14,10 +14,8 @@ use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 use num_traits::FromPrimitive;
 use qubit_budget::BigIntegerLimits;
-#[cfg(feature = "big-decimal")]
 use qubit_budget::BudgetError;
 use qubit_budget::MeasuredBudgetError;
-#[cfg(feature = "big-decimal")]
 use qubit_budget::Observation;
 use qubit_budget::ResourceLimit;
 
@@ -38,6 +36,58 @@ use crate::converter::FractionalToIntegerPolicy;
 use crate::converter::InvalidValueReason;
 use crate::converter::NumericConversionLimits;
 use crate::datatype::DataType;
+
+/// Checks BigInteger limits using the BigInt version shared by decimal types.
+///
+/// # Parameters
+///
+/// * `limits` - Configured magnitude and significant-digit limits.
+/// * `value` - Integer value to measure.
+///
+/// # Returns
+///
+/// `Ok(())` when all configured limits accept `value`.
+///
+/// # Errors
+///
+/// Returns a measured budget error when a limit rejects the value or a native
+/// measurement cannot fit the budget quantity.
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+#[inline]
+fn check_big_integer_limits(
+    limits: &BigIntegerLimits<crate::converter::ConversionResource>,
+    value: &BigInt,
+) -> Result<(), MeasuredBudgetError<crate::converter::ConversionResource>> {
+    if let Some(limit) = limits.magnitude_bits_limit() {
+        limit.check_u64(value.bits())?;
+    }
+    let Some(limit) = limits.significant_decimal_digits_limit() else {
+        return Ok(());
+    };
+    let magnitude_bits = value.bits();
+    if magnitude_bits == 0 {
+        return Ok(());
+    }
+    let maximum = limit.maximum();
+    let low_bits = maximum
+        .checked_add(maximum)
+        .and_then(|value| value.checked_add(maximum));
+    if low_bits.is_some_and(|low_bits| magnitude_bits <= low_bits) {
+        return Ok(());
+    }
+    let high_bits = low_bits.and_then(|value| value.checked_add(maximum));
+    if high_bits.is_some_and(|high_bits| magnitude_bits > high_bits) {
+        let Some(observed) = maximum.checked_add(1) else {
+            return Ok(());
+        };
+        return Err(MeasuredBudgetError::Budget(BudgetError::LimitExceeded {
+            resource: *limit.resource(),
+            observed: Observation::AtLeast(observed),
+            maximum,
+        }));
+    }
+    limit.check_usize(value.to_str_radix(10).trim_start_matches('-').len())
+}
 
 /// Enforces the configured BigInteger result digit limit.
 ///
@@ -75,19 +125,16 @@ fn enforce_big_integer_digit_limit(
     if u128::from(value.bits()) <= u128::from(maximum_digits) * 3 {
         return Ok(());
     }
-    BigIntegerLimits::builder()
+    let limits = BigIntegerLimits::builder()
         .significant_decimal_digits_limit(ResourceLimit::new(
             crate::converter::ConversionResource::BigIntegerDigits,
             maximum_digits,
         ))
-        .build()
-        .check(value)
-        .map_err(|error| match error {
-            MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(from, to, error),
-            MeasuredBudgetError::Quantity { resource, source } => {
-                DataConversionError::quantity(from, to, resource, source)
-            }
-        })
+        .build();
+    check_big_integer_limits(&limits, value).map_err(|error| match error {
+        MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(from, to, error),
+        MeasuredBudgetError::Quantity { resource, source } => DataConversionError::quantity(from, to, resource, source),
+    })
 }
 
 /// Enforces coefficient and scale bounds before a decimal is consumed.
@@ -274,17 +321,12 @@ pub(super) fn source_to_bigint(
         && let DataConverter::BigInteger(value) = source
     {
         #[cfg(feature = "big-integer")]
-        limits
-            .big_integer()
-            .check(value.as_ref())
-            .map_err(|error| match error {
-                MeasuredBudgetError::Budget(error) => {
-                    DataConversionError::limit_exceeded(DataType::BigInteger, to, error)
-                }
-                MeasuredBudgetError::Quantity { resource, source } => {
-                    DataConversionError::quantity(DataType::BigInteger, to, resource, source)
-                }
-            })?;
+        check_big_integer_limits(limits.big_integer(), value.as_ref()).map_err(|error| match error {
+            MeasuredBudgetError::Budget(error) => DataConversionError::limit_exceeded(DataType::BigInteger, to, error),
+            MeasuredBudgetError::Quantity { resource, source } => {
+                DataConversionError::quantity(DataType::BigInteger, to, resource, source)
+            }
+        })?;
         #[cfg(not(feature = "big-integer"))]
         enforce_big_integer_digit_limit(value.as_ref(), maximum_digits, DataType::BigInteger, to)?;
         return Ok(value.as_ref().clone());
