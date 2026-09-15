@@ -1,0 +1,66 @@
+format = 1
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/boolean_conversion_policy.rs"
+reason = "Keep the boolean policy and its builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/collection_conversion_limits.rs"
+reason = "Keep collection limits and their builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/collection_conversion_policy.rs"
+reason = "Keep collection policy and its builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/conversion_limits.rs"
+reason = "Keep aggregate limits and their builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/conversion_operation_limits.rs"
+reason = "Keep operation limits and their builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/conversion_policy.rs"
+reason = "Keep aggregate policy and its builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/duration_conversion_limits.rs"
+reason = "Keep duration limits and their builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/duration_conversion_policy.rs"
+reason = "Keep duration policy and its builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/numeric_conversion_limits.rs"
+reason = "Keep numeric limits and their builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/numeric_conversion_policy.rs"
+reason = "Keep numeric policy and its builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/string_conversion_policy.rs"
+reason = "Keep string policy and its builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/converter/options/structured_conversion_limits.rs"
+reason = "Keep structured limits and their builder together."
+
+[[exceptions]]
+rule = "public-type-layout"
+path = "src/duration/duration_text_options.rs"
+reason = "Keep duration text options and their builder together."
