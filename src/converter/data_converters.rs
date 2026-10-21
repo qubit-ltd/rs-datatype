@@ -74,7 +74,7 @@ where
     ///
     /// Returns a batch converter that consumes the iterator when conversion is
     /// requested.
-    #[inline(always)]
+    #[inline]
     pub fn from_iterator(sources: I) -> Self {
         Self {
             sources,
@@ -116,7 +116,7 @@ where
     ///
     /// assert_eq!(flags, vec![true, false, true, false]);
     /// ```
-    #[inline(always)]
+    #[inline]
     pub fn to_vec<'a, T>(self) -> Result<Vec<T>, DataListConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
@@ -228,7 +228,7 @@ where
     ///
     /// assert_eq!(first, 42);
     /// ```
-    #[inline(always)]
+    #[inline]
     pub fn to_first<'a, T>(self) -> Result<T, DataConversionError>
     where
         I::Item: Into<DataConverter<'a>>,
@@ -315,7 +315,7 @@ where
     ///
     /// Returns the exact number of items that can still be converted.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub fn len(&self) -> usize {
         self.sources.len()
     }
@@ -326,7 +326,7 @@ where
     ///
     /// Returns `true` when [`Self::len`] is zero.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.sources.len() == 0
     }
@@ -342,7 +342,7 @@ impl<'a, V> From<&'a [V]> for DataConverters<std::slice::Iter<'a, V>> {
     /// # Returns
     ///
     /// A converter iterating over borrowed elements without cloning them.
-    #[inline(always)]
+    #[inline]
     fn from(values: &'a [V]) -> Self {
         Self {
             sources: values.iter(),
@@ -361,7 +361,7 @@ impl<'a, V> From<&'a Vec<V>> for DataConverters<std::slice::Iter<'a, V>> {
     /// # Returns
     ///
     /// A converter iterating over borrowed elements without cloning them.
-    #[inline(always)]
+    #[inline]
     fn from(values: &'a Vec<V>) -> Self {
         Self::from(values.as_slice())
     }

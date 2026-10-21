@@ -183,7 +183,7 @@ impl DataType {
     ///
     /// The semantic category for this data type.
     #[must_use = "the data type category is returned"]
-    #[inline(always)]
+    #[inline]
     pub const fn category(self) -> DataTypeCategory {
         match self {
             DataType::Bool => DataTypeCategory::Boolean,
@@ -210,7 +210,7 @@ impl DataType {
     ///
     /// The stable lowercase serialization and display name.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn as_str(self) -> &'static str {
         match self {
             DataType::Bool => "bool",
@@ -247,7 +247,7 @@ impl DataType {
     ///
     /// `true` for fixed-width integers, primitive floats, and big numbers.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn is_numeric(self) -> bool {
         self.is_integer() || self.is_float() || self.is_big_number()
     }
@@ -258,7 +258,7 @@ impl DataType {
     ///
     /// `true` for signed or unsigned fixed-width integer variants.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn is_integer(self) -> bool {
         self.is_signed_integer() || self.is_unsigned_integer()
     }
@@ -269,7 +269,7 @@ impl DataType {
     ///
     /// `true` for `Int8` through `Int128`.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn is_signed_integer(self) -> bool {
         matches!(
             self,
@@ -283,7 +283,7 @@ impl DataType {
     ///
     /// `true` for `UInt8` through `UInt128`.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn is_unsigned_integer(self) -> bool {
         matches!(
             self,
@@ -297,7 +297,7 @@ impl DataType {
     ///
     /// `true` for [`Self::Float32`] or [`Self::Float64`].
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn is_float(self) -> bool {
         matches!(self, DataType::Float32 | DataType::Float64)
     }
@@ -308,7 +308,7 @@ impl DataType {
     ///
     /// `true` for [`Self::BigInteger`] or [`Self::BigDecimal`].
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn is_big_number(self) -> bool {
         matches!(self, DataType::BigInteger | DataType::BigDecimal)
     }
@@ -316,7 +316,7 @@ impl DataType {
 
 impl Display for DataType {
     /// Writes the stable lowercase type name to the formatter.
-    #[inline(always)]
+    #[inline]
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         formatter.write_str(self.as_str())
     }
@@ -337,7 +337,7 @@ impl FromStr for DataType {
 
 impl From<DataType> for &'static str {
     /// Converts a type descriptor to its stable lowercase name.
-    #[inline(always)]
+    #[inline]
     fn from(value: DataType) -> Self {
         value.as_str()
     }
@@ -345,7 +345,7 @@ impl From<DataType> for &'static str {
 
 impl From<&DataType> for &'static str {
     /// Converts a borrowed type descriptor to its stable lowercase name.
-    #[inline(always)]
+    #[inline]
     fn from(value: &DataType) -> Self {
         value.as_str()
     }

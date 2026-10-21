@@ -16,6 +16,17 @@ mod duration_conversion_limits_builder;
 pub use duration_conversion_limits_builder::DurationConversionLimitsBuilder;
 
 /// Limits the normalized text accepted by one duration conversion.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::DurationConversionLimits;
+///
+/// let limits = DurationConversionLimits::builder()
+///     .max_text_bytes(4_096)
+///     .build();
+/// assert_eq!(limits.max_text_bytes(), 4_096);
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -47,7 +58,7 @@ impl DurationConversionLimits {
     /// # Returns
     ///
     /// Maximum accepted UTF-8 byte length for one duration source.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn max_text_bytes(&self) -> usize {
         self.max_text_bytes
@@ -56,7 +67,7 @@ impl DurationConversionLimits {
 
 impl Default for DurationConversionLimits {
     /// Creates the documented finite duration limits.
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self {
             max_text_bytes: Self::DEFAULT_MAX_TEXT_BYTES,

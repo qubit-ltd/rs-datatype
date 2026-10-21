@@ -10,6 +10,17 @@
 use super::DurationConversionLimits;
 
 /// Builder for [`DurationConversionLimits`].
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::DurationConversionLimits;
+///
+/// let limits = DurationConversionLimits::builder()
+///     .max_text_bytes(4_096)
+///     .build();
+/// assert_eq!(limits.max_text_bytes(), 4_096);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DurationConversionLimitsBuilder {
     /// Duration limits being configured.
@@ -18,6 +29,10 @@ pub struct DurationConversionLimitsBuilder {
 
 impl DurationConversionLimitsBuilder {
     /// Creates a builder initialized with the documented default.
+    ///
+    /// # Returns
+    ///
+    /// A builder configured with the default maximum duration text size.
     #[inline]
     #[must_use]
     pub const fn new() -> Self {
@@ -29,7 +44,15 @@ impl DurationConversionLimitsBuilder {
     }
 
     /// Configures the maximum duration source text size.
-    #[inline(always)]
+    ///
+    /// # Parameters
+    ///
+    /// - `maximum`: Maximum accepted source-text length in UTF-8 bytes.
+    ///
+    /// # Returns
+    ///
+    /// This builder with its maximum source-text length updated.
+    #[inline]
     #[must_use]
     pub const fn max_text_bytes(mut self, maximum: usize) -> Self {
         self.limits.max_text_bytes = maximum;
@@ -37,6 +60,11 @@ impl DurationConversionLimitsBuilder {
     }
 
     /// Builds the configured duration limits.
+    ///
+    /// # Returns
+    ///
+    /// The duration limits assembled from the configured maximum source-text
+    /// length.
     #[inline]
     #[must_use]
     pub const fn build(self) -> DurationConversionLimits {

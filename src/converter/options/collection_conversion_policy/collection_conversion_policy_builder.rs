@@ -28,7 +28,7 @@ impl CollectionConversionPolicyBuilder {
     }
 
     /// Configures scalar string splitting.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn split_scalar_strings(self, enabled: bool) -> Self {
         Self {
@@ -37,7 +37,7 @@ impl CollectionConversionPolicyBuilder {
     }
 
     /// Configures scalar string delimiters.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn delimiters(self, delimiters: impl IntoIterator<Item = char>) -> Self {
         Self {
@@ -46,7 +46,7 @@ impl CollectionConversionPolicyBuilder {
     }
 
     /// Configures item trimming.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn trim_items(self, enabled: bool) -> Self {
         Self {
@@ -55,7 +55,7 @@ impl CollectionConversionPolicyBuilder {
     }
 
     /// Configures empty item handling.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn empty_item_policy(self, policy: EmptyItemPolicy) -> Self {
         Self {

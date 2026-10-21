@@ -10,7 +10,17 @@
 use super::StringConversionPolicy;
 use crate::converter::options::BlankStringPolicy;
 
-/// Builder for [`StringConversionPolicy`].
+/// Builds a [`StringConversionPolicy`] from explicit string-normalization
+/// options.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::StringConversionPolicy;
+///
+/// let policy = StringConversionPolicy::builder().trim(true).build();
+/// assert!(policy.trim());
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StringConversionPolicyBuilder {
     /// String policy being configured.
@@ -19,6 +29,10 @@ pub struct StringConversionPolicyBuilder {
 
 impl StringConversionPolicyBuilder {
     /// Creates a builder initialized with the documented defaults.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing the default string conversion policy.
     #[inline]
     #[must_use]
     pub fn new() -> Self {
@@ -27,8 +41,16 @@ impl StringConversionPolicyBuilder {
         }
     }
 
-    /// Configures trimming.
-    #[inline(always)]
+    /// Configures whether surrounding whitespace is removed before conversion.
+    ///
+    /// # Parameters
+    ///
+    /// * `trim` - Whether to remove surrounding whitespace.
+    ///
+    /// # Returns
+    ///
+    /// The builder with the trimming option updated.
+    #[inline]
     #[must_use]
     pub fn trim(self, trim: bool) -> Self {
         Self {
@@ -36,8 +58,16 @@ impl StringConversionPolicyBuilder {
         }
     }
 
-    /// Configures blank-string handling.
-    #[inline(always)]
+    /// Configures how blank strings are handled after optional trimming.
+    ///
+    /// # Parameters
+    ///
+    /// * `policy` - The behavior applied to strings containing only whitespace.
+    ///
+    /// # Returns
+    ///
+    /// The builder with the blank-string policy updated.
+    #[inline]
     #[must_use]
     pub fn blank_string_policy(self, policy: BlankStringPolicy) -> Self {
         Self {
@@ -46,6 +76,10 @@ impl StringConversionPolicyBuilder {
     }
 
     /// Builds the configured string policy.
+    ///
+    /// # Returns
+    ///
+    /// The configured string conversion policy.
     #[inline]
     #[must_use]
     pub fn build(self) -> StringConversionPolicy {

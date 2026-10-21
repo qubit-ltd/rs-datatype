@@ -7,7 +7,7 @@
 // =============================================================================
 use qubit_datatype::converter::EmptyItemPolicy;
 
-/// Test equality and clone semantics for empty item policies.
+/// Test equality semantics for empty item policies.
 #[test]
 fn test_empty_item_policy_variants_are_distinct() {
     assert_eq!(EmptyItemPolicy::Keep, EmptyItemPolicy::Keep);

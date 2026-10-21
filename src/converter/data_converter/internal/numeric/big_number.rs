@@ -391,7 +391,7 @@ pub(super) fn source_to_bigint(
 /// Returns a precision error when exact conversion would lose a sub-unit
 /// remainder.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-#[inline(always)]
+#[inline]
 pub(super) fn duration_to_bigint(
     duration: Duration,
     options: &ConversionPolicy,
@@ -410,7 +410,7 @@ pub(super) fn duration_to_bigint(
 ///
 /// An invalid-value error targeting [`DataType::BigDecimal`].
 #[cfg(feature = "big-decimal")]
-#[inline(always)]
+#[inline]
 fn non_finite_big_decimal_error(source: &DataConverter<'_>) -> DataConversionError {
     source.invalid(DataType::BigDecimal, InvalidValueReason::NonFinite)
 }
@@ -467,7 +467,7 @@ impl BuiltinDataConversionTarget for BigInt {
     ///
     /// Returns a missing, unsupported, syntax, non-finite, precision, range,
     /// normalization, or digit-limit error.
-    #[inline(always)]
+    #[inline]
     fn convert_from(
         source: &DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,
@@ -587,7 +587,7 @@ impl BuiltinDataConversionTarget for BigDecimal {
     /// # Errors
     ///
     /// Returns the same conversion errors as [`Self::convert_from`].
-    #[inline(always)]
+    #[inline]
     fn convert_owned(
         source: DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,

@@ -59,7 +59,7 @@ impl NumericConversionPolicy {
     /// # Returns
     ///
     /// Options rejecting fractional loss and floating-point rounding.
-    #[inline(always)]
+    #[inline]
     pub fn strict() -> Self {
         Self {
             fractional_to_integer: FractionalToIntegerPolicy::Reject,
@@ -73,7 +73,7 @@ impl NumericConversionPolicy {
     /// # Returns
     ///
     /// Options permitting truncation and nearest-even float rounding.
-    #[inline(always)]
+    #[inline]
     pub fn lossy() -> Self {
         Self {
             fractional_to_integer: FractionalToIntegerPolicy::Truncate,
@@ -87,7 +87,7 @@ impl NumericConversionPolicy {
     /// # Returns
     ///
     /// Options allowing nearest-even rounding only for text-to-float parsing.
-    #[inline(always)]
+    #[inline]
     pub fn env_friendly() -> Self {
         Self {
             fractional_to_integer: FractionalToIntegerPolicy::Reject,
@@ -101,7 +101,7 @@ impl NumericConversionPolicy {
     /// # Returns
     ///
     /// The configured fractional conversion policy.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn fractional_to_integer(&self) -> FractionalToIntegerPolicy {
         self.fractional_to_integer
@@ -116,7 +116,7 @@ impl NumericConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) const fn with_fractional_to_integer(mut self, policy: FractionalToIntegerPolicy) -> Self {
         self.fractional_to_integer = policy;
         self
@@ -127,7 +127,7 @@ impl NumericConversionPolicy {
     /// # Returns
     ///
     /// The rounding policy for typed numeric sources.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn numeric_to_float(&self) -> FloatRoundingPolicy {
         self.numeric_to_float
@@ -142,7 +142,7 @@ impl NumericConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) const fn with_numeric_to_float(mut self, policy: FloatRoundingPolicy) -> Self {
         self.numeric_to_float = policy;
         self
@@ -153,7 +153,7 @@ impl NumericConversionPolicy {
     /// # Returns
     ///
     /// The rounding policy for textual float sources.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn text_to_float(&self) -> FloatRoundingPolicy {
         self.text_to_float
@@ -168,7 +168,7 @@ impl NumericConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) const fn with_text_to_float(mut self, policy: FloatRoundingPolicy) -> Self {
         self.text_to_float = policy;
         self
@@ -181,7 +181,7 @@ impl Default for NumericConversionPolicy {
     /// # Returns
     ///
     /// The strict numeric profile.
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self::strict()
     }

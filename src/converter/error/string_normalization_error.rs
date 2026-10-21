@@ -14,6 +14,15 @@ use super::invalid_value_reason::InvalidValueReason;
 use crate::datatype::DataType;
 
 /// Error returned while normalizing a string source.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::StringNormalizationError;
+///
+/// let error = StringNormalizationError::Missing;
+/// assert!(error.is_missing());
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]
@@ -40,7 +49,7 @@ impl StringNormalizationError {
     /// StringNormalizationError::Missing.is_missing();
     /// ```
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn is_missing(&self) -> bool {
         matches!(self, Self::Missing)
     }
@@ -55,7 +64,7 @@ impl StringNormalizationError {
     ///
     /// A missing-value or rejected-blank conversion error whose source type is
     /// [`DataType::String`] and whose target type is `to`.
-    #[inline(always)]
+    #[inline]
     pub const fn into_data_conversion_error(self, to: DataType) -> DataConversionError {
         match self {
             Self::Missing => DataConversionError::missing(DataType::String, to),

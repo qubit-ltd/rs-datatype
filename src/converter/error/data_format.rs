@@ -17,6 +17,15 @@ use serde::Serialize;
 /// This enum may gain additional formats in future releases. External
 /// matches must include a wildcard arm.
 ///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::DataFormat;
+///
+/// let format = DataFormat::Json;
+/// assert_eq!(format.as_str(), "json");
+/// ```
+///
 /// ```compile_fail
 /// use qubit_datatype::DataFormat;
 ///
@@ -42,7 +51,7 @@ impl DataFormat {
     ///
     /// The stable lowercase serialization name.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn as_str(self) -> &'static str {
         match self {
             DataFormat::Json => "json",

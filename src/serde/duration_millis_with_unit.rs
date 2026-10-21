@@ -45,7 +45,7 @@ use crate::DurationUnit;
 /// match the untrimmed `<integer>ms` grammar, exceeds
 /// [`DurationTextOptions::DEFAULT_MAX_TEXT_BYTES`], exceeds `u128`, or
 /// represents a value outside the range of [`Duration`].
-#[inline(always)]
+#[inline]
 pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
     D: Deserializer<'de>,
@@ -122,7 +122,7 @@ pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
 /// # Errors
 ///
 /// Returns the serializer error if writing the string value fails.
-#[inline(always)]
+#[inline]
 pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,

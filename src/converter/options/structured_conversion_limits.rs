@@ -72,7 +72,7 @@ impl StructuredConversionLimits {
     /// # Returns
     ///
     /// The configured normalized structured text byte limit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_text_bytes(&self) -> u64 {
         self.text.utf8_bytes_limit().map_or(0, |limit| limit.maximum())
@@ -86,7 +86,7 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the structured text resource limit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_text_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         self.text
@@ -103,7 +103,7 @@ impl StructuredConversionLimits {
     /// # Returns
     ///
     /// Updated limits.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_max_text_bytes(mut self, maximum: u64) -> Self {
         self.text = StringLimits::builder()
             .utf8_bytes_limit(ResourceLimit::new(ConversionResource::StructuredTextBytes, maximum))
@@ -124,14 +124,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the configured depth maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_depth(&self) -> u64 {
         self.value.max_depth().expect("structured depth limit is configured")
     }
 
     /// Returns the depth resource limit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_depth_limit(&self) -> ResourceLimit<ConversionResource, u64> {
         self.value
@@ -142,7 +142,7 @@ impl StructuredConversionLimits {
     }
 
     /// Returns a copy with a different depth maximum.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_max_depth(mut self, maximum: u64) -> Self {
         self.value = rebuild_value(
             &self.value,
@@ -159,7 +159,7 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the configured sequence item maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_sequence_items(&self) -> u64 {
         self.value
@@ -168,7 +168,7 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the sequence item resource limit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_sequence_items_limit(&self) -> ResourceLimit<ConversionResource, u64> {
         self.value
@@ -179,7 +179,7 @@ impl StructuredConversionLimits {
     }
 
     /// Returns a copy with a different sequence item maximum.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_max_sequence_items(mut self, maximum: u64) -> Self {
         self.value = rebuild_value(
             &self.value,
@@ -196,7 +196,7 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the configured map entry maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_map_entries(&self) -> u64 {
         self.value
@@ -205,7 +205,7 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the map entry resource limit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_map_entries_limit(&self) -> ResourceLimit<ConversionResource, u64> {
         self.value
@@ -216,7 +216,7 @@ impl StructuredConversionLimits {
     }
 
     /// Returns a copy with a different map entry maximum.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_max_map_entries(mut self, maximum: u64) -> Self {
         self.value = rebuild_value(
             &self.value,
@@ -239,7 +239,7 @@ impl Default for StructuredConversionLimits {
     /// # Returns
     ///
     /// Limits using the documented one-mebibyte text budget.
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self {
             text: StringLimits::builder()

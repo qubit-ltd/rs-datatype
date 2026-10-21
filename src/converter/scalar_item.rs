@@ -16,6 +16,19 @@
 /// # Type Parameters
 ///
 /// * `'a` - Lifetime of the borrowed item text.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::ScalarItem;
+///
+/// let item = ScalarItem {
+///     source_index: 2,
+///     value: " 42 ",
+/// };
+/// assert_eq!(item.source_index, 2);
+/// assert_eq!(item.value, " 42 ");
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[must_use]
 pub struct ScalarItem<'a> {

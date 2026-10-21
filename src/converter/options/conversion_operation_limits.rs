@@ -75,7 +75,7 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the configured item maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn max_items(&self) -> u64 {
         self.items.maximum()
@@ -83,13 +83,13 @@ impl ConversionOperationLimits {
 
     /// Returns the item resource limit.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn items_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.items
     }
 
     /// Returns the configured cumulative input byte maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn max_input_bytes(&self) -> u64 {
         self.input_bytes.maximum()
@@ -97,13 +97,13 @@ impl ConversionOperationLimits {
 
     /// Returns the input byte resource limit.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn input_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.input_bytes
     }
 
     /// Returns the configured cumulative output byte maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn max_output_bytes(&self) -> u64 {
         self.output_bytes.maximum()
@@ -111,13 +111,13 @@ impl ConversionOperationLimits {
 
     /// Returns the output byte resource limit.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn output_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.output_bytes
     }
 
     /// Returns the configured cumulative structured node maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn max_structured_nodes(&self) -> u64 {
         self.structured_nodes.maximum()
@@ -125,13 +125,13 @@ impl ConversionOperationLimits {
 
     /// Returns the structured node resource limit.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn structured_nodes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.structured_nodes
     }
 
     /// Returns the configured cumulative structured payload byte maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn max_structured_payload_bytes(&self) -> u64 {
         self.structured_payload_bytes.maximum()
@@ -139,7 +139,7 @@ impl ConversionOperationLimits {
 
     /// Returns the structured payload byte resource limit.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn structured_payload_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         &self.structured_payload_bytes
     }

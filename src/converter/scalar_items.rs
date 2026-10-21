@@ -26,6 +26,22 @@ use super::scalar_item::ScalarItem;
 /// policy handling. The first retained item beyond the limit produces one
 /// [`ScalarItemError::ItemLimitExceeded`] error and exhausts the iterator.
 ///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{CollectionConversionLimits, CollectionConversionPolicy};
+///
+/// let policy = CollectionConversionPolicy::builder()
+///     .split_scalar_strings(true)
+///     .build();
+/// let limits = CollectionConversionLimits::default();
+/// let items: Vec<_> = policy
+///     .scalar_items(&limits, "red,green")
+///     .map(|item| item.expect("items fit within the default limit").value)
+///     .collect();
+/// assert_eq!(items, ["red", "green"]);
+/// ```
+///
 /// # Type Parameters
 ///
 /// * `'a` - Lifetime shared by the borrowed source text and collection options.

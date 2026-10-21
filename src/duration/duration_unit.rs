@@ -105,7 +105,7 @@ impl DurationUnit {
     /// The preferred suffix, which is `µs` for microseconds and `min` for
     /// minutes.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn symbol(self) -> &'static str {
         match self {
             Self::Nanoseconds => "ns",
@@ -131,7 +131,7 @@ impl DurationUnit {
     /// # Errors
     ///
     /// Returns [`DurationOverflowError`] when the result exceeds Duration.
-    #[inline(always)]
+    #[inline]
     pub fn duration_from_u64(self, value: u64) -> Result<Duration, DurationOverflowError> {
         self.duration_from_u128(u128::from(value))
     }
@@ -211,7 +211,7 @@ impl DurationUnit {
     ///
     /// Nanoseconds per unit.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub(crate) const fn nanos_per_unit(self) -> u128 {
         match self {
             Self::Nanoseconds => 1,
@@ -257,7 +257,7 @@ impl DurationUnit {
     ///
     /// `Some` containing the represented unit and its preferred output symbol
     /// when `symbol` is a Lenient-only alias; otherwise, `None`.
-    #[inline(always)]
+    #[inline]
     fn lenient_alias(symbol: &str) -> Option<(Self, &'static str)> {
         match symbol {
             "m" => Some((Self::Minutes, "min")),

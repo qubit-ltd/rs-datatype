@@ -106,7 +106,7 @@ impl<'session, 'policy: 'source, 'source> AdmittedScalarSource<'session, 'policy
     ///
     /// Returns a list error for a rejected empty item, collection item limit,
     /// or exhausted session item budget. A failure exhausts this source.
-    #[inline(always)]
+    #[inline]
     pub fn next_item(&mut self) -> Option<Result<AdmittedScalarItem<'_, 'policy, 'source>, DataListConversionError>> {
         self.next_item_for(DataType::String)
     }

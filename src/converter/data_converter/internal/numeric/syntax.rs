@@ -49,7 +49,7 @@ use crate::datatype::DataType;
 /// # Errors
 ///
 /// Returns a normalization error or a numeric-text resource limit error.
-#[inline(always)]
+#[inline]
 pub(super) fn normalize_numeric_text<'a>(
     value: &'a str,
     options: &ConversionPolicy,
@@ -200,7 +200,7 @@ fn numeric_syntax(to: DataType) -> &'static str {
 /// # Returns
 ///
 /// A source-value-free invalid-syntax conversion error.
-#[inline(always)]
+#[inline]
 pub(super) fn invalid_numeric_syntax(to: DataType) -> DataConversionError {
     DataConversionError::invalid(
         DataType::String,

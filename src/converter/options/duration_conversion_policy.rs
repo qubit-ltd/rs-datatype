@@ -103,7 +103,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// Environment-friendly duration conversion policy.
-    #[inline(always)]
+    #[inline]
     pub fn env_friendly() -> Self {
         Self::default()
             .with_suffixless_string_policy(SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds))
@@ -115,7 +115,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// The unit used to interpret integer sources.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn numeric_input_unit(&self) -> DurationUnit {
         self.numeric_input_unit
@@ -130,7 +130,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_numeric_input_unit(mut self, unit: DurationUnit) -> Self {
         self.numeric_input_unit = unit;
         self
@@ -141,7 +141,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// The configured suffixless-input policy.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn suffixless_string_policy(&self) -> SuffixlessDurationPolicy {
         self.suffixless_string_policy
@@ -156,7 +156,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_suffixless_string_policy(mut self, policy: SuffixlessDurationPolicy) -> Self {
         self.suffixless_string_policy = policy;
         self
@@ -167,7 +167,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// The configured strict or lenient unit parse mode.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn unit_parse_mode(&self) -> DurationUnitParseMode {
         self.unit_parse_mode
@@ -182,7 +182,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) const fn with_unit_parse_mode(mut self, unit_parse_mode: DurationUnitParseMode) -> Self {
         self.unit_parse_mode = unit_parse_mode;
         self
@@ -193,7 +193,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// The unit used for integer and string output.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn output_unit(&self) -> DurationUnit {
         self.output_unit
@@ -209,7 +209,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_output_unit(mut self, unit: DurationUnit) -> Self {
         self.output_unit = unit;
         self
@@ -228,7 +228,7 @@ impl DurationConversionPolicy {
     /// DurationConversionPolicy::default().append_unit_suffix();
     /// ```
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn append_unit_suffix(&self) -> bool {
         self.append_unit_suffix
     }
@@ -243,7 +243,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_append_unit_suffix(mut self, append_unit_suffix: bool) -> Self {
         self.append_unit_suffix = append_unit_suffix;
         self
@@ -254,7 +254,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// The policy applied when output units have a remainder.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn rounding_policy(&self) -> DurationRoundingPolicy {
         self.rounding_policy
@@ -269,7 +269,7 @@ impl DurationConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) const fn with_rounding_policy(mut self, rounding_policy: DurationRoundingPolicy) -> Self {
         self.rounding_policy = rounding_policy;
         self

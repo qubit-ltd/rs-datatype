@@ -53,7 +53,7 @@ impl BooleanConversionPolicyBuilder {
     }
 
     /// Configures integer-to-boolean conversion.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn numeric_policy(mut self, policy: BooleanNumericPolicy) -> Self {
         self.policy = self.policy.map(|options| options.with_numeric_policy(policy));

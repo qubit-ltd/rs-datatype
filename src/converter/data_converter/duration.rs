@@ -81,7 +81,7 @@ fn integer_to_duration(
 /// # Returns
 ///
 /// Duration text options equivalent to the converter configuration.
-#[inline(always)]
+#[inline]
 fn duration_text_options(options: &ConversionPolicy, limits: &DurationConversionLimits) -> DurationTextOptions {
     DurationTextOptions::builder()
         .suffixless_policy(options.duration().suffixless_string_policy())
@@ -101,6 +101,7 @@ fn duration_text_options(options: &ConversionPolicy, limits: &DurationConversion
 ///
 /// A static grammar distinguishing required and optional suffixes as well as
 /// strict and lenient unit vocabularies.
+#[must_use]
 fn expected_duration_syntax(value: &str, options: &ConversionPolicy) -> &'static str {
     let suffix_required = !value.is_empty()
         && value.bytes().all(|byte| byte.is_ascii_digit())
@@ -186,7 +187,7 @@ fn map_duration_parse_error(error: DurationParseError, value: &str, options: &Co
 ///
 /// Returns contextual conversion errors for normalization, syntax, unit, and
 /// range failures.
-#[inline(always)]
+#[inline]
 fn parse_duration(
     value: &str,
     options: &ConversionPolicy,

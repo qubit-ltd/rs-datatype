@@ -47,7 +47,7 @@ impl ScalarItemError {
     /// # Returns
     ///
     /// An empty-item rejection containing the rejected source position.
-    #[inline(always)]
+    #[inline]
     pub const fn blank_rejected(source_index: usize) -> Self {
         Self::BlankRejected { source_index }
     }
@@ -62,7 +62,7 @@ impl ScalarItemError {
     /// # Returns
     ///
     /// An item-limit error containing the source position and limit.
-    #[inline(always)]
+    #[inline]
     pub(crate) const fn item_limit_exceeded(source_index: usize, maximum: u64) -> Self {
         Self::ItemLimitExceeded { source_index, maximum }
     }
@@ -73,7 +73,7 @@ impl ScalarItemError {
     ///
     /// The original source position of the rejected or excess scalar item.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn source_index(&self) -> usize {
         match *self {
             Self::BlankRejected { source_index } | Self::ItemLimitExceeded { source_index, .. } => source_index,
@@ -87,7 +87,7 @@ impl ScalarItemError {
     /// `Some` with the configured limit for an item-limit error, or `None`
     /// for an empty-item rejection.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn maximum_items(&self) -> Option<u64> {
         match *self {
             Self::BlankRejected { .. } => None,
@@ -105,7 +105,7 @@ impl ScalarItemError {
     ///
     /// A rejected-blank or resource-limit conversion error from
     /// [`DataType::String`] to `to`.
-    #[inline(always)]
+    #[inline]
     pub fn into_data_conversion_error(self, to: DataType) -> DataConversionError {
         match self {
             Self::BlankRejected { .. } => {
@@ -133,7 +133,7 @@ impl ScalarItemError {
     ///
     /// A list conversion error preserving the original source index and
     /// carrying the target-aware rejected-blank or resource-limit error.
-    #[inline(always)]
+    #[inline]
     pub fn into_list_conversion_error(self, to: DataType) -> DataListConversionError {
         let source_index = self.source_index();
         DataListConversionError::new(source_index, self.into_data_conversion_error(to))

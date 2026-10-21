@@ -50,7 +50,7 @@ pub(in crate::numeric) fn finite_parts(value: NumberRef<'_>) -> Option<(bool, u1
 /// # Returns
 ///
 /// Its sign, unsigned magnitude, and zero binary exponent.
-#[inline(always)]
+#[inline]
 fn signed_parts(value: i128) -> Option<(bool, u128, i32)> {
     Some((value.is_negative(), value.unsigned_abs(), 0))
 }

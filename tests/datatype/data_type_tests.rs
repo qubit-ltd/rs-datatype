@@ -221,8 +221,6 @@ fn test_data_type_from_str_case_insensitive_for_all_variants() {
 
 #[test]
 fn test_data_type_deserialize_rejects_non_lowercase_values() {
-    use serde_json;
-
     let cases = [
         "\"Bool\"",
         "\"Int32\"",

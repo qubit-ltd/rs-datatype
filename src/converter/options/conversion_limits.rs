@@ -72,7 +72,7 @@ impl ConversionLimits {
     ///
     /// A process-wide lazily initialized default value.
     #[must_use = "the default conversion limits should be inspected"]
-    #[inline(always)]
+    #[inline]
     pub fn default_ref() -> &'static Self {
         static DEFAULT: LazyLock<ConversionLimits> = LazyLock::new(ConversionLimits::default);
         &DEFAULT
@@ -80,35 +80,35 @@ impl ConversionLimits {
 
     /// Returns the numeric value limits.
     #[must_use = "numeric conversion limits should be inspected"]
-    #[inline(always)]
+    #[inline]
     pub const fn numeric(&self) -> &NumericConversionLimits {
         &self.numeric
     }
 
     /// Returns the scalar collection value limits.
     #[must_use = "collection conversion limits should be inspected"]
-    #[inline(always)]
+    #[inline]
     pub const fn collection(&self) -> &CollectionConversionLimits {
         &self.collection
     }
 
     /// Returns the duration value limits.
     #[must_use = "duration conversion limits should be inspected"]
-    #[inline(always)]
+    #[inline]
     pub const fn duration(&self) -> &DurationConversionLimits {
         &self.duration
     }
 
     /// Returns the structured value limits.
     #[must_use = "structured conversion limits should be inspected"]
-    #[inline(always)]
+    #[inline]
     pub const fn structured(&self) -> &StructuredConversionLimits {
         &self.structured
     }
 
     /// Returns the cumulative operation limits.
     #[must_use = "conversion operation limits should be inspected"]
-    #[inline(always)]
+    #[inline]
     pub const fn operation(&self) -> &ConversionOperationLimits {
         &self.operation
     }
@@ -116,7 +116,7 @@ impl ConversionLimits {
 
 impl Default for ConversionLimits {
     /// Creates the documented finite conversion limits.
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self {
             numeric: NumericConversionLimits::default(),

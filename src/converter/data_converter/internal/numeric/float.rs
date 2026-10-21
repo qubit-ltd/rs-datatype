@@ -194,7 +194,7 @@ impl BuiltinDataConversionTarget for f64 {
     ///
     /// Returns a missing, unsupported, syntax, precision, range, normalization,
     /// or resource-limit error.
-    #[inline(always)]
+    #[inline]
     fn convert_from(
         source: &DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,

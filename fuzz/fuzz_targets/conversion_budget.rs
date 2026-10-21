@@ -20,6 +20,7 @@ use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
+use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConversionErrorKind;
 use qubit_datatype::DataConverter;
 
@@ -93,8 +94,8 @@ fn assert_borrowed_and_owned_map(map: &HashMap<String, String>, policy: &Convers
 
 /// Checks that both conversion modes have the same public outcome class.
 fn assert_equivalent_results(
-    borrowed: &Result<String, qubit_datatype::DataConversionError>,
-    owned: &Result<String, qubit_datatype::DataConversionError>,
+    borrowed: &Result<String, DataConversionError>,
+    owned: &Result<String, DataConversionError>,
 ) {
     match (borrowed, owned) {
         (Ok(left), Ok(right)) => assert_eq!(left, right),
@@ -104,7 +105,7 @@ fn assert_equivalent_results(
 }
 
 /// Verifies output-limit failures retain their complete budget facts.
-fn assert_output_failure(result: &Result<String, qubit_datatype::DataConversionError>) {
+fn assert_output_failure(result: &Result<String, DataConversionError>) {
     if let Err(error) = result
         && error.kind() == DataConversionErrorKind::LimitExceeded
     {

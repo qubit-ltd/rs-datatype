@@ -98,6 +98,12 @@ pub struct BooleanConversionPolicy {
 }
 
 impl BooleanConversionPolicy {
+    /// Text literals accepted as `true` by the strict/default profile.
+    pub const DEFAULT_TRUE_LITERALS: &'static [&'static str] = &["true"];
+
+    /// Text literals accepted as `false` by the strict/default profile.
+    pub const DEFAULT_FALSE_LITERALS: &'static [&'static str] = &["false"];
+
     /// Creates a builder initialized with the strict boolean policy.
     #[inline]
     #[must_use]
@@ -111,11 +117,6 @@ impl BooleanConversionPolicy {
     pub fn into_builder(self) -> BooleanConversionPolicyBuilder {
         BooleanConversionPolicyBuilder { policy: Ok(self) }
     }
-    /// Text literals accepted as `true` by the strict/default profile.
-    pub const DEFAULT_TRUE_LITERALS: &'static [&'static str] = &["true"];
-
-    /// Text literals accepted as `false` by the strict/default profile.
-    pub const DEFAULT_FALSE_LITERALS: &'static [&'static str] = &["false"];
 
     /// Creates validated boolean conversion policy.
     ///
@@ -225,7 +226,7 @@ impl BooleanConversionPolicy {
     ///
     /// A slice of accepted false literals.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub fn false_literals(&self) -> &[String] {
         &self.false_literals
     }
@@ -257,7 +258,7 @@ impl BooleanConversionPolicy {
     ///
     /// `true` when literal matching preserves ASCII case distinctions.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn case_sensitive(&self) -> bool {
         self.case_sensitive
     }
@@ -289,7 +290,7 @@ impl BooleanConversionPolicy {
     ///
     /// The configured numeric boolean policy.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn numeric_policy(&self) -> BooleanNumericPolicy {
         self.numeric_policy
     }
@@ -303,7 +304,7 @@ impl BooleanConversionPolicy {
     /// # Returns
     ///
     /// Returns the updated options value.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_numeric_policy(mut self, numeric_policy: BooleanNumericPolicy) -> Self {
         self.numeric_policy = numeric_policy;
         self

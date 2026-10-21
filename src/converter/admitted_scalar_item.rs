@@ -20,6 +20,20 @@ use super::error::DataConversionError;
 /// [`crate::AdmittedScalarSource::next_item`]. Downstream adapters can
 /// consume it to continue conversion without charging the same item again.
 ///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{ConversionLimits, ConversionPolicy, ConversionSession};
+///
+/// let policy = ConversionPolicy::default();
+/// let limits = ConversionLimits::default();
+/// let mut session = ConversionSession::new(&policy, &limits);
+/// let mut source = session.admit_scalar_string_source("42")?;
+/// let admission = source.next_item().expect("one scalar item")?;
+/// assert_eq!(admission.convert::<u32>()?, 42);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+///
 /// An admission is a one-use capability and cannot be converted twice:
 ///
 /// ```compile_fail
@@ -62,8 +76,8 @@ impl<'session, 'policy, 'source> AdmittedScalarItem<'session, 'policy, 'source> 
     }
 
     /// Returns the original source index of the admitted item.
-    #[inline(always)]
     #[must_use]
+    #[inline]
     pub const fn source_index(&self) -> usize {
         self.source_index
     }
@@ -77,7 +91,7 @@ impl<'session, 'policy, 'source> AdmittedScalarItem<'session, 'policy, 'source> 
     /// # Errors
     ///
     /// Returns the conversion-domain error produced by the requested target.
-    #[inline(always)]
+    #[inline]
     pub fn convert<T>(self) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,

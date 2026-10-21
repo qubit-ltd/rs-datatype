@@ -92,6 +92,7 @@ impl CollectionConversionPolicy {
     pub fn into_builder(self) -> CollectionConversionPolicyBuilder {
         CollectionConversionPolicyBuilder { policy: self }
     }
+
     /// Creates options suitable for environment-variable lists.
     ///
     /// The profile splits comma-separated scalar strings, trims each item,
@@ -116,7 +117,7 @@ impl CollectionConversionPolicy {
     /// # Returns
     ///
     /// `true` when scalar strings are split using configured delimiters.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn split_scalar_strings(&self) -> bool {
         self.split_scalar_strings
@@ -131,7 +132,7 @@ impl CollectionConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_split_scalar_strings(mut self, split_scalar_strings: bool) -> Self {
         self.split_scalar_strings = split_scalar_strings;
         self
@@ -150,7 +151,7 @@ impl CollectionConversionPolicy {
     /// CollectionConversionPolicy::default().delimiters();
     /// ```
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub fn delimiters(&self) -> &[char] {
         &self.delimiters
     }
@@ -177,7 +178,7 @@ impl CollectionConversionPolicy {
     /// # Returns
     ///
     /// `true` when each split item is trimmed.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn trim_items(&self) -> bool {
         self.trim_items
@@ -192,7 +193,7 @@ impl CollectionConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_trim_items(mut self, trim_items: bool) -> Self {
         self.trim_items = trim_items;
         self
@@ -204,7 +205,7 @@ impl CollectionConversionPolicy {
     ///
     /// The policy applied to empty items after optional trimming.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn empty_item_policy(&self) -> EmptyItemPolicy {
         self.empty_item_policy
     }
@@ -218,7 +219,7 @@ impl CollectionConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_empty_item_policy(mut self, policy: EmptyItemPolicy) -> Self {
         self.empty_item_policy = policy;
         self
@@ -235,7 +236,7 @@ impl CollectionConversionPolicy {
     ///
     /// A lazy iterator borrowing the policy and source text.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub fn scalar_items<'a>(&'a self, limits: &CollectionConversionLimits, value: &'a str) -> ScalarItems<'a> {
         ScalarItems::new(self, limits.max_items(), value)
     }

@@ -277,7 +277,7 @@ impl<'source> DataConverter<'source> {
     ///
     /// Returns a structured error when the value is missing, the type pair is
     /// unsupported, or the source value violates the target contract.
-    #[inline(always)]
+    #[inline]
     pub fn to<T>(&self) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
@@ -305,7 +305,7 @@ impl<'source> DataConverter<'source> {
     ///
     /// Returns a structured error containing source type, target type, and a
     /// value-free rejection reason.
-    #[inline(always)]
+    #[inline]
     pub fn to_with<T>(&self, policy: &ConversionPolicy, limits: &ConversionLimits) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
@@ -331,7 +331,7 @@ impl<'source> DataConverter<'source> {
     /// # Errors
     ///
     /// Returns a structured error under the same conditions as [`Self::to`].
-    #[inline(always)]
+    #[inline]
     pub fn to_in<T>(&self, session: &mut ConversionSession<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
@@ -362,7 +362,7 @@ impl<'source> DataConverter<'source> {
     /// # Errors
     ///
     /// Returns a structured error under the same conditions as [`Self::to`].
-    #[inline(always)]
+    #[inline]
     pub fn into_target<T>(self) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
@@ -391,7 +391,7 @@ impl<'source> DataConverter<'source> {
     ///
     /// Returns a structured error containing source type, target type, and a
     /// value-free rejection reason.
-    #[inline(always)]
+    #[inline]
     pub fn into_target_with<T>(
         self,
         policy: &ConversionPolicy,
@@ -421,7 +421,7 @@ impl<'source> DataConverter<'source> {
     /// # Errors
     ///
     /// Returns a structured error under the same conditions as [`Self::to`].
-    #[inline(always)]
+    #[inline]
     pub fn into_target_in<T>(self, session: &mut ConversionSession<'_>) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
@@ -433,6 +433,20 @@ impl<'source> DataConverter<'source> {
         self.charge_input_for_target(T::DATA_TYPE, session)?;
         let context = ConversionContext::new(session, from, T::DATA_TYPE);
         T::convert(AdmittedConversion::new(self, context))
+    }
+
+    /// Returns the runtime type of the wrapped source.
+    ///
+    /// For [`Self::Unset`], this returns the declared type stored in the
+    /// variant rather than a generic missing-value type.
+    ///
+    /// # Returns
+    ///
+    /// Returns the [`DataType`] corresponding to this enum variant.
+    #[must_use = "the source data type is returned"]
+    #[inline]
+    pub const fn data_type(&self) -> DataType {
+        for_each_data_type_mapping!(data_converter_data_type_match, self)
     }
 
     /// Charges textual input and supported structured values before a target
@@ -467,7 +481,7 @@ impl<'source> DataConverter<'source> {
     }
 
     /// Reborrows heap-backed storage while copying only scalar values.
-    #[inline(always)]
+    #[inline]
     fn borrowed<'borrowed>(&'borrowed self) -> DataConverter<'borrowed>
     where
         'source: 'borrowed,
@@ -510,20 +524,6 @@ impl<'source> DataConverter<'source> {
         }
     }
 
-    /// Returns the runtime type of the wrapped source.
-    ///
-    /// For [`Self::Unset`], this returns the declared type stored in the
-    /// variant rather than a generic missing-value type.
-    ///
-    /// # Returns
-    ///
-    /// Returns the [`DataType`] corresponding to this enum variant.
-    #[must_use = "the source data type is returned"]
-    #[inline(always)]
-    pub const fn data_type(&self) -> DataType {
-        for_each_data_type_mapping!(data_converter_data_type_match, self)
-    }
-
     /// Builds a missing-value error for this source and target.
     ///
     /// # Parameters
@@ -533,7 +533,7 @@ impl<'source> DataConverter<'source> {
     /// # Returns
     ///
     /// A missing-value error whose source type comes from [`Self::data_type`].
-    #[inline(always)]
+    #[inline]
     fn missing(&self, to: DataType) -> DataConversionError {
         DataConversionError::missing(self.data_type(), to)
     }
@@ -548,7 +548,7 @@ impl<'source> DataConverter<'source> {
     ///
     /// An unsupported-pair error whose source type comes from
     /// [`Self::data_type`].
-    #[inline(always)]
+    #[inline]
     fn unsupported(&self, to: DataType) -> DataConversionError {
         DataConversionError::unsupported(self.data_type(), to)
     }
@@ -563,7 +563,7 @@ impl<'source> DataConverter<'source> {
     /// # Returns
     ///
     /// An invalid-value error recording this source's runtime type.
-    #[inline(always)]
+    #[inline]
     fn invalid(&self, to: DataType, reason: InvalidValueReason) -> DataConversionError {
         DataConversionError::invalid(self.data_type(), to, reason)
     }

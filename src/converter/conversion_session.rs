@@ -89,13 +89,13 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns the immutable conversion policy associated with this session.
-    #[inline(always)]
+    #[inline]
     pub const fn policy(&self) -> &'a ConversionPolicy {
         self.policy
     }
 
     /// Returns the immutable conversion limits associated with this session.
-    #[inline(always)]
+    #[inline]
     pub const fn limits(&self) -> &'a ConversionLimits {
         self.limits
     }
@@ -337,97 +337,97 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns remaining top-level item capacity.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn items_remaining(&self) -> u64 {
         self.budget.remaining_items()
     }
 
     /// Returns the configured cumulative item limit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn items_limit(&self) -> u64 {
         self.limits.operation().max_items()
     }
 
     /// Returns the configured cumulative input-byte limit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn input_bytes_limit(&self) -> u64 {
         self.limits.operation().max_input_bytes()
     }
 
     /// Returns the configured cumulative output-byte limit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn output_bytes_limit(&self) -> u64 {
         self.limits.operation().max_output_bytes()
     }
 
     /// Returns the configured cumulative structured-node limit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn structured_nodes_limit(&self) -> u64 {
         self.limits.operation().max_structured_nodes()
     }
 
     /// Returns the configured cumulative structured-payload limit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn structured_payload_bytes_limit(&self) -> u64 {
         self.limits.operation().max_structured_payload_bytes()
     }
 
     /// Returns remaining cumulative item capacity for internal adapters.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn remaining_items(&self) -> u64 {
         self.items_remaining()
     }
 
     /// Returns cumulative converted items already consumed.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn items_used(&self) -> u64 {
         self.budget.items_used()
     }
 
     /// Returns cumulative input bytes already consumed.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn input_bytes_used(&self) -> u64 {
         self.budget.input_bytes_used()
     }
 
     /// Returns remaining cumulative input-byte capacity.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn input_bytes_remaining(&self) -> u64 {
         self.budget.input_bytes_remaining()
     }
 
     /// Returns cumulative output bytes already consumed.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn output_bytes_used(&self) -> u64 {
         self.budget.output_bytes_used()
     }
 
     /// Returns remaining cumulative output-byte capacity.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn output_bytes_remaining(&self) -> u64 {
         self.budget.output_bytes_remaining()
     }
 
     /// Returns cumulative structured nodes already consumed.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn structured_nodes_used(&self) -> u64 {
         self.budget.structured_nodes_used()
     }
 
     /// Returns cumulative structured payload bytes already consumed.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn structured_payload_bytes_used(&self) -> u64 {
         self.budget.structured_payload_bytes_used()

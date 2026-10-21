@@ -16,6 +16,15 @@ use super::data_format::DataFormat;
 /// Reasons contain only structural context such as an expected grammar or data
 /// format. They never contain the original source value. This keeps matching
 /// predictable for callers and avoids accidental disclosure in logs.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::InvalidValueReason;
+///
+/// let reason = InvalidValueReason::InvalidSyntax { expected: "integer" };
+/// assert_eq!(reason.to_string(), "invalid syntax; expected integer");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[must_use]
 #[non_exhaustive]

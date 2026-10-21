@@ -7,7 +7,7 @@
 // =============================================================================
 use qubit_datatype::converter::BlankStringPolicy;
 
-/// Test equality and clone semantics for blank string policies.
+/// Test equality and inequality semantics for blank string policies.
 #[test]
 fn test_blank_string_policy_variants_are_distinct() {
     assert_eq!(BlankStringPolicy::Preserve, BlankStringPolicy::Preserve);

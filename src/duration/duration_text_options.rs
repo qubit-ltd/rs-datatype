@@ -39,19 +39,6 @@ pub struct DurationTextOptions {
 }
 
 impl DurationTextOptions {
-    /// Creates a builder initialized with the default text options.
-    #[inline]
-    #[must_use]
-    pub fn builder() -> DurationTextOptionsBuilder {
-        DurationTextOptionsBuilder::new()
-    }
-
-    /// Converts these options into a builder for explicit customization.
-    #[inline]
-    #[must_use]
-    pub fn into_builder(self) -> DurationTextOptionsBuilder {
-        DurationTextOptionsBuilder { options: self }
-    }
     /// Default maximum accepted Duration source text length in bytes.
     pub const DEFAULT_MAX_TEXT_BYTES: usize = 256;
 
@@ -65,7 +52,7 @@ impl DurationTextOptions {
     /// # Returns
     ///
     /// The configured options.
-    #[inline(always)]
+    #[inline]
     pub const fn new(suffixless_policy: SuffixlessDurationPolicy, unit_parse_mode: DurationUnitParseMode) -> Self {
         Self {
             suffixless_policy,
@@ -74,12 +61,26 @@ impl DurationTextOptions {
         }
     }
 
+    /// Creates a builder initialized with the default text options.
+    #[inline]
+    #[must_use]
+    pub fn builder() -> DurationTextOptionsBuilder {
+        DurationTextOptionsBuilder::new()
+    }
+
+    /// Converts these options into a builder for explicit customization.
+    #[inline]
+    #[must_use]
+    pub fn into_builder(self) -> DurationTextOptionsBuilder {
+        DurationTextOptionsBuilder { options: self }
+    }
+
     /// Returns the policy applied when text omits a unit suffix.
     ///
     /// # Returns
     ///
     /// The configured suffixless-input policy.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn suffixless_policy(&self) -> SuffixlessDurationPolicy {
         self.suffixless_policy
@@ -94,7 +95,7 @@ impl DurationTextOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) const fn with_suffixless_policy(mut self, suffixless_policy: SuffixlessDurationPolicy) -> Self {
         self.suffixless_policy = suffixless_policy;
         self
@@ -105,7 +106,7 @@ impl DurationTextOptions {
     /// # Returns
     ///
     /// The configured strict or lenient unit parse mode.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn unit_parse_mode(&self) -> DurationUnitParseMode {
         self.unit_parse_mode
@@ -120,7 +121,7 @@ impl DurationTextOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) const fn with_unit_parse_mode(mut self, unit_parse_mode: DurationUnitParseMode) -> Self {
         self.unit_parse_mode = unit_parse_mode;
         self
@@ -139,7 +140,7 @@ impl DurationTextOptions {
     /// DurationTextOptions::default().max_text_bytes();
     /// ```
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn max_text_bytes(&self) -> usize {
         self.max_text_bytes
     }
@@ -153,7 +154,7 @@ impl DurationTextOptions {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) const fn with_max_text_bytes(mut self, maximum: usize) -> Self {
         self.max_text_bytes = maximum;
         self

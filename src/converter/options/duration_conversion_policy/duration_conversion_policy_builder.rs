@@ -31,7 +31,7 @@ impl DurationConversionPolicyBuilder {
     }
 
     /// Configures the numeric input unit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn numeric_input_unit(self, unit: DurationUnit) -> Self {
         Self {
@@ -40,7 +40,7 @@ impl DurationConversionPolicyBuilder {
     }
 
     /// Configures suffixless string handling.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn suffixless_string_policy(self, policy: SuffixlessDurationPolicy) -> Self {
         Self {
@@ -49,7 +49,7 @@ impl DurationConversionPolicyBuilder {
     }
 
     /// Configures explicit unit parsing.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn unit_parse_mode(self, mode: DurationUnitParseMode) -> Self {
         Self {
@@ -58,7 +58,7 @@ impl DurationConversionPolicyBuilder {
     }
 
     /// Configures the output unit.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn output_unit(self, unit: DurationUnit) -> Self {
         Self {
@@ -67,7 +67,7 @@ impl DurationConversionPolicyBuilder {
     }
 
     /// Configures whether formatted output includes a unit suffix.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn append_unit_suffix(self, enabled: bool) -> Self {
         Self {
@@ -76,7 +76,7 @@ impl DurationConversionPolicyBuilder {
     }
 
     /// Configures duration rounding.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn rounding_policy(self, policy: DurationRoundingPolicy) -> Self {
         Self {

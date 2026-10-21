@@ -40,7 +40,7 @@ impl ConversionCapabilities {
     ///
     /// A zero-sized value that queries the active Cargo feature combination.
     #[must_use = "the active conversion capabilities are returned"]
-    #[inline(always)]
+    #[inline]
     pub const fn current() -> Self {
         Self { private: () }
     }

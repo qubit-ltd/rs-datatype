@@ -41,31 +41,25 @@ pub(crate) struct ConversionContext<'session, 'policy> {
 
 impl<'session, 'policy> ConversionContext<'session, 'policy> {
     /// Creates a context for a source that has completed top-level admission.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn new(session: &'session mut ConversionSession<'policy>, from: DataType, to: DataType) -> Self {
         Self { session, from, to }
     }
 
     /// Returns the policy shared by the active conversion.
-    #[inline(always)]
+    #[inline]
     pub const fn policy(&self) -> &'policy ConversionPolicy {
         self.session.policy()
     }
 
     /// Returns the resource limits shared by the active conversion.
-    #[inline(always)]
+    #[inline]
     pub const fn limits(&self) -> &'policy ConversionLimits {
         self.session.limits()
     }
 
-    /// Returns the runtime type of the admitted source.
-    #[inline(always)]
-    pub(crate) const fn source_type(&self) -> DataType {
-        self.from
-    }
-
     /// Returns the runtime type requested by the active target conversion.
-    #[inline(always)]
+    #[inline]
     pub const fn to_type(&self) -> DataType {
         self.to
     }
@@ -141,6 +135,12 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
         F: FnOnce(&mut ConversionStringWriter<'_>) -> Result<(), DataConversionError>,
     {
         self.session.write_string(self.from, self.to, render)
+    }
+
+    /// Returns the runtime type of the admitted source.
+    #[inline]
+    pub(crate) const fn source_type(&self) -> DataType {
+        self.from
     }
 
     /// Admits built-in owned String output without allocating another buffer.

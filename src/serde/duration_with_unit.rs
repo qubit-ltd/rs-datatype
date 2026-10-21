@@ -47,7 +47,7 @@ const DURATION_TEXT_OPTIONS: DurationTextOptions =
 /// # Errors
 ///
 /// Returns the serializer error if writing the string value fails.
-#[inline(always)]
+#[inline]
 pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -79,7 +79,7 @@ where
 /// [`DurationParseError::NonCanonicalUnit`],
 /// [`DurationParseError::UnsupportedUnit`], or
 /// [`DurationParseError::OutOfRange`].
-#[inline(always)]
+#[inline]
 pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
     D: Deserializer<'de>,
@@ -97,7 +97,7 @@ where
 ///
 /// A preferred unit-suffixed string. Zero is formatted as `0ms`.
 #[must_use]
-#[inline(always)]
+#[inline]
 pub fn format(duration: &Duration) -> String {
     format_duration_exact(*duration)
 }
@@ -137,7 +137,7 @@ pub fn format(duration: &Duration) -> String {
 ///     Ok(Duration::from_micros(42))
 /// );
 /// ```
-#[inline(always)]
+#[inline]
 pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
     parse_duration_text(text, &DURATION_TEXT_OPTIONS)
 }

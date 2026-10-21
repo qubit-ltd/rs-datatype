@@ -36,7 +36,7 @@ use crate::datatype::DataType;
 /// # Returns
 ///
 /// Whether `value` is negative and its unsigned absolute magnitude.
-#[inline(always)]
+#[inline]
 #[must_use]
 pub(super) fn signed_magnitude(value: i128) -> (bool, u128) {
     (value.is_negative(), value.unsigned_abs())
@@ -396,7 +396,7 @@ macro_rules! impl_signed_target {
             ///
             /// Returns a missing, unsupported, syntax, non-finite, precision,
             /// range, normalization, or resource-limit error.
-            #[inline(always)]
+            #[inline]
             fn convert_from(
                 source: &DataConverter<'_>,
                 context: &mut ConversionContext<'_, '_>,
@@ -429,7 +429,7 @@ macro_rules! impl_unsigned_target {
             ///
             /// Returns a missing, unsupported, syntax, non-finite, precision,
             /// range, normalization, or resource-limit error.
-            #[inline(always)]
+            #[inline]
             fn convert_from(
                 source: &DataConverter<'_>,
                 context: &mut ConversionContext<'_, '_>,

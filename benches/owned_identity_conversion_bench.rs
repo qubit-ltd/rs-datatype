@@ -13,11 +13,13 @@ use std::hint::black_box;
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
 use criterion::BatchSize;
+use criterion::BenchmarkGroup;
 use criterion::BenchmarkId;
 use criterion::Criterion;
 use criterion::Throughput;
 use criterion::criterion_group;
 use criterion::criterion_main;
+use criterion::measurement::WallTime;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use qubit_datatype::DataConversionError;
@@ -77,12 +79,8 @@ where
 /// * `case_name` - Payload-size label.
 /// * `payload_bytes` - Logical payload size used for throughput reporting.
 /// * `value` - Representative value cloned by untimed setup closures.
-fn benchmark_identity_case<T>(
-    group: &mut criterion::BenchmarkGroup<'_, criterion::measurement::WallTime>,
-    case_name: &str,
-    payload_bytes: usize,
-    value: T,
-) where
+fn benchmark_identity_case<T>(group: &mut BenchmarkGroup<'_, WallTime>, case_name: &str, payload_bytes: usize, value: T)
+where
     T: Clone + DataConversionTarget + 'static,
     DataConverter<'static>: From<T>,
     for<'a> DataConverter<'a>: From<&'a T>,

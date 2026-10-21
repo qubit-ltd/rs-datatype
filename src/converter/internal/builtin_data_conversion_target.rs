@@ -24,7 +24,7 @@ pub(crate) trait BuiltinDataConversionTarget: DataTypeOf + Sized {
     ///
     /// The default implementation borrows the consumed source. Targets that
     /// can reuse an owned source allocation may override this method.
-    #[inline(always)]
+    #[inline]
     fn convert_owned(
         source: DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,
@@ -45,7 +45,7 @@ impl<T> DataConversionTarget for T
 where
     T: BuiltinDataConversionTarget,
 {
-    #[inline(always)]
+    #[inline]
     fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
         let (source, mut context) = input.into_parts();
         if matches!(&source, DataConverter::Unset(_)) {

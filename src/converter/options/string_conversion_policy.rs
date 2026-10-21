@@ -95,25 +95,10 @@ impl StringConversionPolicy {
     /// # Returns
     ///
     /// `true` when surrounding whitespace is removed.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn trim(&self) -> bool {
         self.trim
-    }
-
-    /// Returns a copy with string trimming enabled or disabled.
-    ///
-    /// # Parameters
-    ///
-    /// * `trim` - Whether strings should be trimmed.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    #[inline(always)]
-    pub(crate) fn with_trim(mut self, trim: bool) -> Self {
-        self.trim = trim;
-        self
     }
 
     /// Returns the blank string policy.
@@ -121,25 +106,10 @@ impl StringConversionPolicy {
     /// # Returns
     ///
     /// The policy applied after optional trimming.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn blank_string_policy(&self) -> BlankStringPolicy {
         self.blank_string_policy
-    }
-
-    /// Returns a copy with a different blank string policy.
-    ///
-    /// # Parameters
-    ///
-    /// * `policy` - New blank string policy.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    #[inline(always)]
-    pub(crate) fn with_blank_string_policy(mut self, policy: BlankStringPolicy) -> Self {
-        self.blank_string_policy = policy;
-        self
     }
 
     /// Normalizes a string source according to these options.
@@ -200,5 +170,35 @@ impl StringConversionPolicy {
             Err(StringNormalizationError::Missing) => Ok(None),
             Err(error) => Err(error),
         }
+    }
+
+    /// Returns a copy with string trimming enabled or disabled.
+    ///
+    /// # Parameters
+    ///
+    /// * `trim` - Whether strings should be trimmed.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline]
+    pub(crate) fn with_trim(mut self, trim: bool) -> Self {
+        self.trim = trim;
+        self
+    }
+
+    /// Returns a copy with a different blank string policy.
+    ///
+    /// # Parameters
+    ///
+    /// * `policy` - New blank string policy.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline]
+    pub(crate) fn with_blank_string_policy(mut self, policy: BlankStringPolicy) -> Self {
+        self.blank_string_policy = policy;
+        self
     }
 }

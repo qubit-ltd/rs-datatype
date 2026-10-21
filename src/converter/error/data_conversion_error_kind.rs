@@ -10,6 +10,15 @@
 //! Defines stable classifications for data conversion errors.
 
 /// Stable classification of a [`super::DataConversionError`].
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{DataConversionErrorKind, DataConverter};
+///
+/// let error = DataConverter::from("not-a-number").to::<u32>().unwrap_err();
+/// assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+/// ```
 #[must_use]
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

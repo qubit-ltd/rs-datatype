@@ -14,6 +14,19 @@ mod collection_conversion_limits_builder;
 pub use collection_conversion_limits_builder::CollectionConversionLimitsBuilder;
 
 /// Limits the source and retained items of one collection conversion.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::CollectionConversionLimits;
+///
+/// let limits = CollectionConversionLimits::builder()
+///     .max_source_bytes(4_096)
+///     .max_items(128)
+///     .build();
+/// assert_eq!(limits.max_source_bytes(), 4_096);
+/// assert_eq!(limits.max_items(), 128);
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -51,7 +64,7 @@ impl CollectionConversionLimits {
     /// # Returns
     ///
     /// Maximum accepted UTF-8 byte length for one scalar collection source.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn max_source_bytes(&self) -> u64 {
         self.max_source_bytes
@@ -62,7 +75,7 @@ impl CollectionConversionLimits {
     /// # Returns
     ///
     /// Maximum items retained after empty-item policy handling.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn max_items(&self) -> u64 {
         self.max_items
@@ -71,7 +84,7 @@ impl CollectionConversionLimits {
 
 impl Default for CollectionConversionLimits {
     /// Creates the documented finite collection limits.
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self {
             max_source_bytes: Self::DEFAULT_MAX_SOURCE_BYTES,

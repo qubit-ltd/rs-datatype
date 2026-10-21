@@ -32,7 +32,7 @@ impl ConversionLimitsBuilder {
     }
 
     /// Configures numeric value limits.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn numeric_limits(mut self, limits: NumericConversionLimits) -> Self {
         self.limits.numeric = limits;
@@ -40,7 +40,7 @@ impl ConversionLimitsBuilder {
     }
 
     /// Configures scalar collection value limits.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn collection_limits(mut self, limits: CollectionConversionLimits) -> Self {
         self.limits.collection = limits;
@@ -48,7 +48,7 @@ impl ConversionLimitsBuilder {
     }
 
     /// Configures duration value limits.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn duration_limits(mut self, limits: DurationConversionLimits) -> Self {
         self.limits.duration = limits;
@@ -56,7 +56,7 @@ impl ConversionLimitsBuilder {
     }
 
     /// Configures structured value limits.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn structured_limits(mut self, limits: StructuredConversionLimits) -> Self {
         self.limits.structured = limits;
@@ -64,7 +64,7 @@ impl ConversionLimitsBuilder {
     }
 
     /// Configures cumulative operation limits.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn operation_limits(mut self, limits: ConversionOperationLimits) -> Self {
         self.limits.operation = limits;

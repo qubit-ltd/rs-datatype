@@ -31,7 +31,7 @@ use crate::datatype::DataType;
 ///
 /// Returns the corresponding [`DataConversionError`] for missing or rejected
 /// blank input.
-#[inline(always)]
+#[inline]
 pub(super) fn normalize<'a>(
     value: &'a str,
     options: &ConversionPolicy,

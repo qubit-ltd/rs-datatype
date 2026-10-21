@@ -19,14 +19,22 @@ use qubit_datatype::ConversionLimits;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::ConversionPolicy;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use qubit_datatype::DataConversionErrorKind;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use qubit_datatype::DataConverter;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use qubit_datatype::InvalidValueReason;
 
 /// Verifies that BigInt-to-f32 conversion applies the target precision policy.
 #[cfg(feature = "big-integer")]
 #[test]
 fn test_bigint_to_f32_applies_target_width_precision() {
     let value = BigInt::from(16_777_217_u32);
-    assert!(DataConverter::from(&value).to::<f32>().is_err());
+    let error = DataConverter::from(&value)
+        .to::<f32>()
+        .expect_err("strict conversion must reject target-width precision loss");
+    assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+    assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
     assert_eq!(
         DataConverter::from(&value).to_with::<f32>(&ConversionPolicy::lossy(), ConversionLimits::default_ref()),
         Ok(16_777_216.0),
@@ -38,5 +46,9 @@ fn test_bigint_to_f32_applies_target_width_precision() {
 #[test]
 fn test_big_decimal_to_f32_rejects_precision_loss() {
     let value = BigDecimal::from_str("0.1").expect("test decimal");
-    assert!(DataConverter::from(&value).to::<f32>().is_err());
+    let error = DataConverter::from(&value)
+        .to::<f32>()
+        .expect_err("strict conversion must reject target-width precision loss");
+    assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+    assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
 }

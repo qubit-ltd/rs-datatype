@@ -114,7 +114,7 @@ fn string_to_bool(
 ///
 /// Returns an invalid-Boolean error when the policy rejects `value`.
 #[cfg(feature = "big-integer")]
-#[inline(always)]
+#[inline]
 fn big_integer_to_bool(value: &BigInt, options: &ConversionPolicy) -> Result<bool, DataConversionError> {
     integer_to_bool(
         value.is_zero(),

@@ -35,7 +35,7 @@ use crate::DurationPrecisionLossError;
 ///
 /// Returns the deserializer error when the input is not a string or does not
 /// match the strict `<integer>ms` grammar and Duration range.
-#[inline(always)]
+#[inline]
 pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
     D: Deserializer<'de>,
@@ -53,7 +53,7 @@ where
 ///
 /// Returns [`DurationParseError`] when the input exceeds the default text
 /// limit, has invalid syntax, or cannot fit in [`Duration`].
-#[inline(always)]
+#[inline]
 pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
     super::duration_millis_with_unit::parse(text)
 }

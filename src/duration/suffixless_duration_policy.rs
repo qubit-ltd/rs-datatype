@@ -46,7 +46,7 @@ impl Default for SuffixlessDurationPolicy {
     /// # Returns
     ///
     /// [`Self::Reject`].
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self::Reject
     }

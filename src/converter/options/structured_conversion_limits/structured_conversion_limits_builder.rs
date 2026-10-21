@@ -27,7 +27,7 @@ impl StructuredConversionLimitsBuilder {
     }
 
     /// Configures the normalized text byte maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_text_bytes(self, maximum: u64) -> Self {
         Self {
@@ -36,7 +36,7 @@ impl StructuredConversionLimitsBuilder {
     }
 
     /// Configures the depth maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_depth(self, maximum: u64) -> Self {
         Self {
@@ -45,7 +45,7 @@ impl StructuredConversionLimitsBuilder {
     }
 
     /// Configures the sequence item maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_sequence_items(self, maximum: u64) -> Self {
         Self {
@@ -54,7 +54,7 @@ impl StructuredConversionLimitsBuilder {
     }
 
     /// Configures the map entry maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_map_entries(self, maximum: u64) -> Self {
         Self {

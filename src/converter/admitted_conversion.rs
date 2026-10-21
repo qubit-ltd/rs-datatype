@@ -30,35 +30,35 @@ pub struct AdmittedConversion<'session, 'policy, 'source> {
 
 impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> {
     /// Creates an admitted conversion after framework-owned resource charging.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn new(source: DataConverter<'source>, context: ConversionContext<'session, 'policy>) -> Self {
         Self { source, context }
     }
 
     /// Returns the source bound to this conversion.
     #[must_use = "the admitted source reference is returned"]
-    #[inline(always)]
+    #[inline]
     pub const fn source(&self) -> &DataConverter<'source> {
         &self.source
     }
 
     /// Returns the runtime type of the bound source.
     #[must_use = "the bound source data type is returned"]
-    #[inline(always)]
+    #[inline]
     pub const fn from_type(&self) -> DataType {
         self.context.source_type()
     }
 
     /// Returns the runtime type requested by the active target.
     #[must_use = "the bound target data type is returned"]
-    #[inline(always)]
+    #[inline]
     pub const fn to_type(&self) -> DataType {
         self.context.to_type()
     }
 
     /// Produces an unsupported-pair error for the bound source and target.
     #[must_use = "the bound unsupported-pair error is returned"]
-    #[inline(always)]
+    #[inline]
     pub const fn unsupported(&self) -> DataConversionError {
         DataConversionError::unsupported(self.from_type(), self.to_type())
     }
@@ -74,7 +74,7 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     /// Returns the target's [`DataConversionError`] when the source is missing,
     /// the source-target pair is unsupported, the value is invalid, or a
     /// conversion resource limit is exceeded.
-    #[inline(always)]
+    #[inline]
     pub fn convert<T>(self) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
@@ -166,7 +166,7 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
 
     /// Unpacks the admitted source and its conversion context for built-in
     /// targets.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn into_parts(self) -> (DataConverter<'source>, ConversionContext<'session, 'policy>) {
         (self.source, self.context)
     }

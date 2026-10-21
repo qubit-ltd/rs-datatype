@@ -11,7 +11,7 @@
 
 mod internal;
 
-pub mod duration_millis_tests;
-pub mod duration_millis_with_unit_exact_tests;
-pub mod duration_millis_with_unit_tests;
-pub mod duration_with_unit_tests;
+mod duration_millis_tests;
+mod duration_millis_with_unit_exact_tests;
+mod duration_millis_with_unit_tests;
+mod duration_with_unit_tests;

@@ -77,6 +77,7 @@ impl ConversionPolicy {
     pub fn into_builder(self) -> ConversionPolicyBuilder {
         ConversionPolicyBuilder { policy: self }
     }
+
     /// Creates the strict conversion profile used by [`Default`].
     ///
     /// The profile requires exact numeric and duration conversions, preserves
@@ -177,7 +178,7 @@ impl ConversionPolicy {
     /// policy.duration();
     /// ```
     #[must_use = "the default conversion policy should be inspected"]
-    #[inline(always)]
+    #[inline]
     pub fn default_ref() -> &'static Self {
         static DEFAULT: LazyLock<ConversionPolicy> = LazyLock::new(ConversionPolicy::default);
         &DEFAULT
@@ -189,9 +190,53 @@ impl ConversionPolicy {
     ///
     /// A shared reference to the numeric policy group.
     #[must_use = "numeric conversion policy should be inspected"]
-    #[inline(always)]
+    #[inline]
     pub const fn numeric(&self) -> &NumericConversionPolicy {
         &self.numeric
+    }
+
+    /// Returns the string conversion policy.
+    ///
+    /// # Returns
+    ///
+    /// A shared reference to the string normalization policies.
+    #[must_use = "string conversion policy should be inspected"]
+    #[inline]
+    pub const fn string(&self) -> &StringConversionPolicy {
+        &self.string
+    }
+
+    /// Returns the Boolean conversion policy.
+    ///
+    /// # Returns
+    ///
+    /// A shared reference to the Boolean conversion policies.
+    #[must_use = "Boolean conversion policy should be inspected"]
+    #[inline]
+    pub const fn boolean(&self) -> &BooleanConversionPolicy {
+        &self.boolean
+    }
+
+    /// Returns the collection conversion policy.
+    ///
+    /// # Returns
+    ///
+    /// A shared reference to the scalar collection policies.
+    #[must_use = "collection conversion policy should be inspected"]
+    #[inline]
+    pub const fn collection(&self) -> &CollectionConversionPolicy {
+        &self.collection
+    }
+
+    /// Returns the Duration conversion policy.
+    ///
+    /// # Returns
+    ///
+    /// A shared reference to the Duration conversion policies.
+    #[must_use = "Duration conversion policy should be inspected"]
+    #[inline]
+    pub const fn duration(&self) -> &DurationConversionPolicy {
+        &self.duration
     }
 
     /// Returns a copy with different numeric conversion policy.
@@ -203,21 +248,10 @@ impl ConversionPolicy {
     /// # Returns
     ///
     /// Returns the updated options value.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_numeric_policy(mut self, numeric: NumericConversionPolicy) -> Self {
         self.numeric = numeric;
         self
-    }
-
-    /// Returns the string conversion policy.
-    ///
-    /// # Returns
-    ///
-    /// A shared reference to the string normalization policies.
-    #[must_use = "string conversion policy should be inspected"]
-    #[inline(always)]
-    pub const fn string(&self) -> &StringConversionPolicy {
-        &self.string
     }
 
     /// Returns a copy with different string conversion policy.
@@ -229,7 +263,7 @@ impl ConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_string_policy(mut self, string: StringConversionPolicy) -> Self {
         self.string = string;
         self
@@ -250,17 +284,6 @@ impl ConversionPolicy {
         self
     }
 
-    /// Returns the Boolean conversion policy.
-    ///
-    /// # Returns
-    ///
-    /// A shared reference to the Boolean conversion policies.
-    #[must_use = "Boolean conversion policy should be inspected"]
-    #[inline(always)]
-    pub const fn boolean(&self) -> &BooleanConversionPolicy {
-        &self.boolean
-    }
-
     /// Returns a copy with different Boolean conversion policy.
     ///
     /// # Parameters
@@ -276,17 +299,6 @@ impl ConversionPolicy {
         self
     }
 
-    /// Returns the collection conversion policy.
-    ///
-    /// # Returns
-    ///
-    /// A shared reference to the scalar collection policies.
-    #[must_use = "collection conversion policy should be inspected"]
-    #[inline(always)]
-    pub const fn collection(&self) -> &CollectionConversionPolicy {
-        &self.collection
-    }
-
     /// Returns a copy with different collection conversion policy.
     ///
     /// # Parameters
@@ -296,7 +308,7 @@ impl ConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_collection_policy(mut self, collection: CollectionConversionPolicy) -> Self {
         self.collection = collection;
         self
@@ -311,21 +323,10 @@ impl ConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_empty_item_policy(mut self, policy: EmptyItemPolicy) -> Self {
         self.collection = self.collection.with_empty_item_policy(policy);
         self
-    }
-
-    /// Returns the Duration conversion policy.
-    ///
-    /// # Returns
-    ///
-    /// A shared reference to the Duration conversion policies.
-    #[must_use = "Duration conversion policy should be inspected"]
-    #[inline(always)]
-    pub const fn duration(&self) -> &DurationConversionPolicy {
-        &self.duration
     }
 
     /// Returns a copy with different duration conversion policy.
@@ -337,7 +338,7 @@ impl ConversionPolicy {
     /// # Returns
     ///
     /// Updated options.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn with_duration_policy(mut self, duration: DurationConversionPolicy) -> Self {
         self.duration = duration;
         self
@@ -350,7 +351,7 @@ impl Default for ConversionPolicy {
     /// # Returns
     ///
     /// The strict conversion profile.
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         Self::strict()
     }

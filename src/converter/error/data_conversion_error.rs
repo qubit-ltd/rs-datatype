@@ -60,7 +60,7 @@ impl DataConversionError {
     /// # Returns
     ///
     /// A missing-value conversion error.
-    #[inline(always)]
+    #[inline]
     pub const fn missing(from: DataType, to: DataType) -> Self {
         Self {
             inner: DataConversionErrorInner::Missing { from, to },
@@ -76,7 +76,7 @@ impl DataConversionError {
     /// # Returns
     ///
     /// An empty-collection conversion error.
-    #[inline(always)]
+    #[inline]
     pub const fn empty_collection(to: DataType) -> Self {
         Self {
             inner: DataConversionErrorInner::EmptyCollection { to },
@@ -93,7 +93,7 @@ impl DataConversionError {
     /// # Returns
     ///
     /// An unsupported-conversion error.
-    #[inline(always)]
+    #[inline]
     pub const fn unsupported(from: DataType, to: DataType) -> Self {
         Self {
             inner: DataConversionErrorInner::Unsupported { from, to },
@@ -111,7 +111,7 @@ impl DataConversionError {
     /// # Returns
     ///
     /// An invalid-value conversion error.
-    #[inline(always)]
+    #[inline]
     pub const fn invalid(from: DataType, to: DataType, reason: InvalidValueReason) -> Self {
         Self {
             inner: DataConversionErrorInner::InvalidValue { from, to, reason },
@@ -129,7 +129,7 @@ impl DataConversionError {
     /// # Returns
     ///
     /// A resource-limit conversion error.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn limit_exceeded(from: DataType, to: DataType, source: BudgetError<ConversionResource, u64>) -> Self {
         Self {
             inner: DataConversionErrorInner::LimitExceeded { from, to, source },
@@ -148,7 +148,7 @@ impl DataConversionError {
     /// # Returns
     ///
     /// A conversion measurement error distinct from a budget-limit violation.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn quantity(
         from: DataType,
         to: DataType,
@@ -166,7 +166,7 @@ impl DataConversionError {
     }
 
     /// Maps native measurement accounting into a public conversion error.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn measured_limit(
         from: DataType,
         to: DataType,
@@ -183,7 +183,7 @@ impl DataConversionError {
     /// # Returns
     ///
     /// The conversion error kind.
-    #[inline(always)]
+    #[inline]
     pub const fn kind(&self) -> DataConversionErrorKind {
         match &self.inner {
             DataConversionErrorInner::Missing { .. } => DataConversionErrorKind::Missing,
@@ -209,7 +209,7 @@ impl DataConversionError {
     /// error.is_missing();
     /// ```
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn is_missing(&self) -> bool {
         matches!(&self.inner, DataConversionErrorInner::Missing { .. })
     }
@@ -220,7 +220,7 @@ impl DataConversionError {
     ///
     /// `Some` with the source type for value-based errors, or `None` for an
     /// empty-collection error because no source value exists.
-    #[inline(always)]
+    #[inline]
     pub const fn from_type(&self) -> Option<DataType> {
         match &self.inner {
             DataConversionErrorInner::Missing { from, .. }
@@ -237,7 +237,7 @@ impl DataConversionError {
     /// # Returns
     ///
     /// The target type recorded by this error.
-    #[inline(always)]
+    #[inline]
     pub const fn to_type(&self) -> DataType {
         match &self.inner {
             DataConversionErrorInner::Missing { to, .. }
@@ -255,7 +255,7 @@ impl DataConversionError {
     ///
     /// `Some` with the rejection reason for an invalid-value error, or `None`
     /// for all other error kinds.
-    #[inline(always)]
+    #[inline]
     pub const fn reason(&self) -> Option<&InvalidValueReason> {
         match &self.inner {
             DataConversionErrorInner::InvalidValue { reason, .. } => Some(reason),
@@ -270,7 +270,7 @@ impl DataConversionError {
     /// `Some` for resource-limit and native-measurement failures, or `None`
     /// for conversion errors unrelated to resource accounting.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn resource(&self) -> Option<ConversionResource> {
         match &self.inner {
             DataConversionErrorInner::LimitExceeded { source, .. } => Some(*source.resource()),
@@ -286,7 +286,7 @@ impl DataConversionError {
     /// `Some` with the point maximum or cumulative limit for a
     /// resource-limit error, or `None` for every other error kind.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn configured_limit(&self) -> Option<u64> {
         match &self.inner {
             DataConversionErrorInner::LimitExceeded { source, .. } => Some(source.configured_limit()),
@@ -301,7 +301,7 @@ impl DataConversionError {
     /// `Some` for a point-limit failure, including inexact observations, or
     /// `None` for cumulative and non-budget failures.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn observed_lower_bound(&self) -> Option<u64> {
         match &self.inner {
             DataConversionErrorInner::LimitExceeded { source, .. } => source.observed_lower_bound(),
@@ -317,7 +317,7 @@ impl DataConversionError {
     /// lower-bound observation, or `None` when the error is not a point-limit
     /// failure.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn observation_is_exact(&self) -> Option<bool> {
         match &self.inner {
             DataConversionErrorInner::LimitExceeded { source, .. } => match source.observation() {
@@ -336,7 +336,7 @@ impl DataConversionError {
     /// `Some` for an insufficient cumulative budget, or `None` for point-limit
     /// and non-budget failures.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub fn used(&self) -> Option<u64> {
         match &self.inner {
             DataConversionErrorInner::LimitExceeded { source, .. } => source.used(),
@@ -351,7 +351,7 @@ impl DataConversionError {
     /// `Some` for an insufficient cumulative budget, or `None` for point-limit
     /// and non-budget failures.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn remaining(&self) -> Option<u64> {
         match &self.inner {
             DataConversionErrorInner::LimitExceeded { source, .. } => source.remaining(),
@@ -366,7 +366,7 @@ impl DataConversionError {
     /// `Some` for an insufficient cumulative budget, or `None` for point-limit
     /// and non-budget failures.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn requested(&self) -> Option<u64> {
         match &self.inner {
             DataConversionErrorInner::LimitExceeded { source, .. } => source.requested(),
@@ -376,7 +376,7 @@ impl DataConversionError {
 
     /// Returns the resource whose native measurement could not fit `u64`.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn quantity_resource(&self) -> Option<ConversionResource> {
         match &self.inner {
             DataConversionErrorInner::Quantity { resource, .. } => Some(*resource),

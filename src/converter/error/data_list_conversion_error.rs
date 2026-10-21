@@ -17,6 +17,17 @@ use super::data_conversion_error::DataConversionError;
 /// including positions skipped by collection policies.
 /// [`Self::conversion_error`] returns the complete single-value conversion
 /// error, which is also exposed as the standard error source.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{DataConversionError, DataListConversionError, DataType};
+///
+/// let cause = DataConversionError::missing(DataType::String, DataType::Bool);
+/// let error = DataListConversionError::new(2, cause);
+/// assert_eq!(error.source_index(), 2);
+/// assert_eq!(error.conversion_error().kind(), qubit_datatype::DataConversionErrorKind::Missing);
+/// ```
 #[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("Data conversion failed at source index {source_index}: {source}")]
@@ -39,7 +50,7 @@ impl DataListConversionError {
     /// # Returns
     ///
     /// A list conversion error containing the failed position and cause.
-    #[inline(always)]
+    #[inline]
     pub const fn new(source_index: usize, source: DataConversionError) -> Self {
         Self { source_index, source }
     }
@@ -50,7 +61,7 @@ impl DataListConversionError {
     ///
     /// The position in the original source, before any items were skipped.
     #[must_use]
-    #[inline(always)]
+    #[inline]
     pub const fn source_index(&self) -> usize {
         self.source_index
     }
@@ -76,7 +87,7 @@ impl DataListConversionError {
     /// error.conversion_error();
     /// ```
     #[must_use = "the conversion error should be inspected"]
-    #[inline(always)]
+    #[inline]
     pub const fn conversion_error(&self) -> &DataConversionError {
         &self.source
     }
@@ -86,7 +97,7 @@ impl DataListConversionError {
     /// # Returns
     ///
     /// The owned underlying conversion error.
-    #[inline(always)]
+    #[inline]
     pub fn into_conversion_error(self) -> DataConversionError {
         self.source
     }
@@ -96,7 +107,7 @@ impl DataListConversionError {
     /// # Returns
     ///
     /// The original zero-based source position and owned conversion error.
-    #[inline(always)]
+    #[inline]
     pub fn into_parts(self) -> (usize, DataConversionError) {
         (self.source_index, self.source)
     }

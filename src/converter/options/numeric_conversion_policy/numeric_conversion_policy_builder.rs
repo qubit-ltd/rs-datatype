@@ -12,6 +12,23 @@ use crate::converter::options::FloatRoundingPolicy;
 use crate::converter::options::FractionalToIntegerPolicy;
 
 /// Builder for [`NumericConversionPolicy`].
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::FloatRoundingPolicy;
+/// use qubit_datatype::NumericConversionPolicy;
+/// use qubit_datatype::NumericConversionPolicyBuilder;
+///
+/// let policy = NumericConversionPolicyBuilder::new()
+///     .numeric_to_float(FloatRoundingPolicy::NearestEven)
+///     .build();
+/// assert_eq!(policy.numeric_to_float(), FloatRoundingPolicy::NearestEven);
+/// assert_eq!(
+///     NumericConversionPolicy::builder().build(),
+///     NumericConversionPolicy::default(),
+/// );
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NumericConversionPolicyBuilder {
     /// Numeric policy being configured.
@@ -29,7 +46,7 @@ impl NumericConversionPolicyBuilder {
     }
 
     /// Configures fractional-to-integer conversion.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn fractional_to_integer(self, policy: FractionalToIntegerPolicy) -> Self {
         Self {
@@ -38,7 +55,7 @@ impl NumericConversionPolicyBuilder {
     }
 
     /// Configures numeric-to-float conversion.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn numeric_to_float(self, policy: FloatRoundingPolicy) -> Self {
         Self {
@@ -47,7 +64,7 @@ impl NumericConversionPolicyBuilder {
     }
 
     /// Configures text-to-float conversion.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn text_to_float(self, policy: FloatRoundingPolicy) -> Self {
         Self {
@@ -57,7 +74,6 @@ impl NumericConversionPolicyBuilder {
 
     /// Builds the configured numeric policy.
     #[inline]
-    #[must_use]
     pub const fn build(self) -> NumericConversionPolicy {
         self.policy
     }

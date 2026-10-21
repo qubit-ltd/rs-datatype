@@ -34,7 +34,7 @@ impl ConversionPolicyBuilder {
     }
 
     /// Configures numeric conversion policy.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn numeric_policy(self, policy: NumericConversionPolicy) -> Self {
         Self {
@@ -43,7 +43,7 @@ impl ConversionPolicyBuilder {
     }
 
     /// Configures string conversion policy.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn string_policy(self, policy: StringConversionPolicy) -> Self {
         Self {
@@ -70,7 +70,7 @@ impl ConversionPolicyBuilder {
     }
 
     /// Configures collection conversion policy.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn collection_policy(self, policy: CollectionConversionPolicy) -> Self {
         Self {
@@ -88,7 +88,7 @@ impl ConversionPolicyBuilder {
     }
 
     /// Configures duration conversion policy.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn duration_policy(self, policy: DurationConversionPolicy) -> Self {
         Self {

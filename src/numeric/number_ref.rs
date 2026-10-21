@@ -150,7 +150,7 @@ macro_rules! impl_from_copy {
             /// # Returns
             ///
             /// A numeric view owning the copied scalar representation.
-            #[inline(always)]
+            #[inline]
             fn from(value: $source) -> Self {
                 Self {
                     inner: NumberRepr::$variant(value),
@@ -174,7 +174,7 @@ macro_rules! impl_from_ref {
             /// # Returns
             ///
             /// A numeric view borrowing the source for its lifetime.
-            #[inline(always)]
+            #[inline]
             fn from(value: &'a $source) -> Self {
                 Self {
                     inner: NumberRepr::$variant(value),
@@ -229,7 +229,7 @@ impl<'a> NumberRef<'a> {
     /// # Returns
     ///
     /// `true` for `f32` and `f64` values.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn is_float(self) -> bool {
         matches!(self.inner, NumberRepr::Float32(_) | NumberRepr::Float64(_))
@@ -241,7 +241,7 @@ impl<'a> NumberRef<'a> {
     ///
     /// `true` for `BigInt` values when the `big-integer` feature is enabled;
     /// otherwise, `false`.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn is_big_integer(self) -> bool {
         #[cfg(feature = "big-integer")]
@@ -260,7 +260,7 @@ impl<'a> NumberRef<'a> {
     ///
     /// `true` for `BigDecimal` values when the `big-decimal` feature is
     /// enabled; otherwise, `false`.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn is_big_decimal(self) -> bool {
         #[cfg(feature = "big-decimal")]
@@ -309,7 +309,7 @@ impl<'a> NumberRef<'a> {
     ///
     /// `true` for all integers, arbitrary-precision values, and finite
     /// primitive floats; otherwise, `false`.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn is_finite(self) -> bool {
         !self.is_nan() && !self.is_infinite()
@@ -476,7 +476,7 @@ impl<'a> NumberRef<'a> {
     /// # Returns
     ///
     /// The crate-private `NumberRepr` payload borrowed or copied by this value.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub(in crate::numeric) const fn inner(self) -> NumberRepr<'a> {
         self.inner
@@ -551,7 +551,7 @@ impl<'a> NumberRef<'a> {
     /// Their mathematical ordering, or `None` when either operand is
     /// non-finite.
     #[cfg(feature = "big-decimal")]
-    #[inline(always)]
+    #[inline]
     #[must_use]
     fn compare_exact_decimal(self, right: NumberRef<'_>) -> Option<Ordering> {
         Some(self.to_exact_decimal()?.cmp(&right.to_exact_decimal()?))

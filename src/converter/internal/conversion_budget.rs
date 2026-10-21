@@ -97,7 +97,7 @@ impl ConversionBudget {
     }
 
     /// Returns the remaining item capacity for internal allocation planning.
-    #[inline(always)]
+    #[inline]
     pub(crate) const fn remaining_items(&self) -> u64 {
         self.items.remaining()
     }
@@ -138,14 +138,14 @@ impl ConversionBudget {
     }
 
     /// Starts an all-or-nothing transaction over the shared structured budget.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn structured_transaction(&mut self) -> JsonValueTransaction<'_, ConversionResource, u64> {
         self.structured.transaction()
     }
 
     /// Returns shared structured accounting for JSON sessions.
     #[cfg(feature = "json")]
-    #[inline(always)]
+    #[inline]
     pub(crate) fn structured_mut(&mut self) -> &mut JsonValueBudget<ConversionResource, u64> {
         &mut self.structured
     }

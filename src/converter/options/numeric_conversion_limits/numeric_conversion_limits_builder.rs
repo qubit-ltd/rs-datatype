@@ -27,7 +27,7 @@ impl NumericConversionLimitsBuilder {
     }
 
     /// Configures the numeric text byte maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_text_bytes(self, maximum: u64) -> Self {
         Self {
@@ -36,7 +36,7 @@ impl NumericConversionLimitsBuilder {
     }
 
     /// Configures the BigInt digit maximum.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn max_big_integer_digits(self, maximum: u64) -> Self {
         Self {

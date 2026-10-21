@@ -585,7 +585,7 @@ impl BuiltinDataConversionTarget for Url {
     /// # Errors
     ///
     /// Returns the same conversion errors as [`Self::convert_from`].
-    #[inline(always)]
+    #[inline]
     fn convert_owned(
         source: DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,

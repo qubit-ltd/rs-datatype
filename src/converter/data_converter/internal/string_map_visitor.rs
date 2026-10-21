@@ -59,7 +59,7 @@ impl<'de> Visitor<'de> for StringMapVisitor {
     /// # Returns
     ///
     /// The formatter result after writing the JSON object requirement.
-    #[inline(always)]
+    #[inline]
     fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a JSON object with unique keys and string values")
     }

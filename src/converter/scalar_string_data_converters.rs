@@ -64,7 +64,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// Returns a converter that can split the scalar source when requested by
     /// collection options.
-    #[inline(always)]
+    #[inline]
     pub const fn new(source: &'a str) -> Self {
         Self { source }
     }
@@ -83,7 +83,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     ///
     /// Returns [`DataListConversionError`] when the scalar string cannot be
     /// normalized, split, or converted to the requested element type.
-    #[inline(always)]
+    #[inline]
     pub fn to_vec<T>(self) -> Result<Vec<T>, DataListConversionError>
     where
         T: DataConversionTarget,
@@ -178,7 +178,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     /// Returns a missing-value [`DataConversionError`] when normalization
     /// treats the scalar as missing, an empty-collection error when
     /// splitting yields no retained item, or the underlying conversion error.
-    #[inline(always)]
+    #[inline]
     pub fn to_first<T>(self) -> Result<T, DataConversionError>
     where
         T: DataConversionTarget,
@@ -264,7 +264,7 @@ impl<'a> From<&'a str> for ScalarStringDataConverters<'a> {
     /// # Returns
     ///
     /// A converter borrowing the source for its lifetime.
-    #[inline(always)]
+    #[inline]
     fn from(source: &'a str) -> Self {
         Self::new(source)
     }

@@ -29,7 +29,7 @@ impl DurationTextOptionsBuilder {
     }
 
     /// Configures suffixless input handling.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn suffixless_policy(self, policy: SuffixlessDurationPolicy) -> Self {
         Self {
@@ -38,7 +38,7 @@ impl DurationTextOptionsBuilder {
     }
 
     /// Configures explicit unit parsing.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn unit_parse_mode(self, mode: DurationUnitParseMode) -> Self {
         Self {
@@ -47,7 +47,7 @@ impl DurationTextOptionsBuilder {
     }
 
     /// Configures the maximum text size.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub const fn max_text_bytes(self, maximum: usize) -> Self {
         Self {

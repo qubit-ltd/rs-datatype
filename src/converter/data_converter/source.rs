@@ -25,7 +25,7 @@ macro_rules! impl_from_copy {
             /// # Returns
             ///
             /// A converter owning the copied scalar representation.
-            #[inline(always)]
+            #[inline]
             fn from(value: $source) -> Self {
                 Self::$variant(value)
             }
@@ -40,7 +40,7 @@ macro_rules! impl_from_copy {
             /// # Returns
             ///
             /// A converter owning the copied scalar representation.
-            #[inline(always)]
+            #[inline]
             fn from(value: &'a $source) -> Self {
                 Self::$variant(*value)
             }
@@ -61,7 +61,7 @@ macro_rules! impl_from_cow {
             /// # Returns
             ///
             /// A converter owning the source value.
-            #[inline(always)]
+            #[inline]
             fn from(value: $source) -> Self {
                 Self::$variant(Cow::Owned(value))
             }
@@ -76,7 +76,7 @@ macro_rules! impl_from_cow {
             /// # Returns
             ///
             /// A converter borrowing the source without cloning it.
-            #[inline(always)]
+            #[inline]
             fn from(value: &'a $source) -> Self {
                 Self::$variant(Cow::Borrowed(value))
             }
@@ -97,7 +97,7 @@ macro_rules! impl_from_string {
             /// # Returns
             ///
             /// A converter owning the string storage.
-            #[inline(always)]
+            #[inline]
             fn from(value: $source) -> Self {
                 Self::$variant(Cow::Owned(value))
             }
@@ -112,7 +112,7 @@ macro_rules! impl_from_string {
             /// # Returns
             ///
             /// A converter borrowing the string storage.
-            #[inline(always)]
+            #[inline]
             fn from(value: &'a $source) -> Self {
                 Self::$variant(Cow::Borrowed(value))
             }
@@ -155,7 +155,7 @@ impl<'a> From<&'a str> for DataConverter<'a> {
     /// # Returns
     ///
     /// A converter borrowing the string slice.
-    #[inline(always)]
+    #[inline]
     fn from(value: &'a str) -> Self {
         Self::String(Cow::Borrowed(value))
     }

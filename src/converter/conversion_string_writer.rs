@@ -45,7 +45,7 @@ impl<'writer> ConversionStringWriter<'writer> {
     /// # Returns
     ///
     /// A writer borrowing the supplied sink for the duration of the render.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn new<'budget>(
         inner: &'writer mut BudgetedStringWriter<'budget, ConversionResource>,
         from: DataType,

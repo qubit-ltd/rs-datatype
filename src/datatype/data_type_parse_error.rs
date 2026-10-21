@@ -10,6 +10,15 @@
 //! Provides the error returned when parsing `DataType` from text fails.
 
 /// Error returned when parsing a `DataType` from text fails.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::DataType;
+///
+/// let error = "unknown".parse::<DataType>().unwrap_err();
+/// assert!(error.to_string().contains("unknown"));
+/// ```
 #[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("invalid data type: {input}")]
@@ -31,7 +40,7 @@ impl DataTypeParseError {
     /// # Returns
     ///
     /// A parse error owning a copy of `input`.
-    #[inline(always)]
+    #[inline]
     pub(crate) fn new(input: &str) -> Self {
         Self {
             input: input.to_string(),

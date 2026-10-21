@@ -29,7 +29,7 @@ use crate::DurationUnit;
 ///
 /// The rounded millisecond count.
 #[must_use]
-#[inline(always)]
+#[inline]
 pub(super) fn rounded_millis(duration: Duration) -> u128 {
     DurationUnit::Milliseconds.rounded_units(duration)
 }
@@ -81,7 +81,7 @@ where
 /// # Errors
 ///
 /// Returns the deserializer error when the input is not a valid `u64`.
-#[inline(always)]
+#[inline]
 pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
 where
     D: Deserializer<'de>,

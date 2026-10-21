@@ -7,6 +7,8 @@
 // =============================================================================
 
 use std::cmp::Ordering;
+#[cfg(feature = "big-number")]
+use std::str::FromStr;
 
 #[cfg(feature = "big-number")]
 use bigdecimal::BigDecimal;
@@ -26,9 +28,6 @@ use qubit_datatype::NumericComparisonPolicy;
 fn compare_numbers(left: NumberRef<'_>, right: NumberRef<'_>, policy: NumericComparisonPolicy) -> Option<Ordering> {
     left.compare(right, policy)
 }
-#[cfg(feature = "big-number")]
-use std::str::FromStr;
-
 /// Asserts an exact ordering and its reverse-direction symmetry.
 fn assert_exact(left: NumberRef<'_>, right: NumberRef<'_>, expected: Option<Ordering>) {
     assert_eq!(compare_numbers(left, right, NumericComparisonPolicy::Exact), expected);
