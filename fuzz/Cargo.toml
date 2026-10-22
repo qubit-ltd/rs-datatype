@@ -8,13 +8,13 @@ edition = "2024"
 cargo-fuzz = true
 
 [dependencies]
-bigdecimal = "0.4"
-chrono = { version = "0.4", default-features = false, features = ["std"] }
-libfuzzer-sys = "0.4"
-num-bigint = "0.4"
+bigdecimal = "^0.4"
+chrono = { version = "^0.4", default-features = false, features = ["std"] }
+libfuzzer-sys = "^0.4"
+num-bigint = "^0.4"
 qubit-datatype = { version = "0.14", path = "..", features = ["all"] }
-serde_json = "1.0"
-url = "2.5"
+serde_json = "^1.0"
+url = "^2.5"
 
 [[bin]]
 name = "conversion_text"
