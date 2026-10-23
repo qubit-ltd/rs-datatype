@@ -26,7 +26,12 @@ impl NumericConversionLimitsBuilder {
         }
     }
 
-    /// Configures the numeric text byte maximum.
+    /// Sets the maximum UTF-8 byte length of normalized numeric text.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum number of bytes accepted after string
+    ///   normalization.
     #[inline]
     #[must_use]
     pub fn max_text_bytes(self, maximum: u64) -> Self {
@@ -35,7 +40,13 @@ impl NumericConversionLimitsBuilder {
         }
     }
 
-    /// Configures the BigInt digit maximum.
+    /// Sets the maximum number of significant decimal digits materialized for a
+    /// `BigInt`.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum number of significant result digits; leading zeros
+    ///   do not count.
     #[inline]
     #[must_use]
     pub fn max_big_integer_digits(self, maximum: u64) -> Self {
@@ -44,7 +55,12 @@ impl NumericConversionLimitsBuilder {
         }
     }
 
-    /// Configures the BigDecimal coefficient digit maximum.
+    /// Sets the maximum number of significant decimal digits in a `BigDecimal`
+    /// coefficient.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum number of significant coefficient digits.
     #[inline]
     #[must_use]
     pub fn max_big_decimal_coefficient_digits(self, maximum: u64) -> Self {
@@ -53,7 +69,11 @@ impl NumericConversionLimitsBuilder {
         }
     }
 
-    /// Configures the BigDecimal scale magnitude maximum.
+    /// Sets the maximum absolute scale magnitude accepted for a `BigDecimal`.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum absolute value of the decimal scale.
     #[inline]
     #[must_use]
     pub fn max_big_decimal_scale_magnitude(self, maximum: u64) -> Self {
@@ -64,7 +84,6 @@ impl NumericConversionLimitsBuilder {
 
     /// Builds the configured numeric limits.
     #[inline]
-    #[must_use]
     pub fn build(self) -> NumericConversionLimits {
         self.limits
     }

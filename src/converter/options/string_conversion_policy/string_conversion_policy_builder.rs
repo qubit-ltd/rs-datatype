@@ -81,7 +81,6 @@ impl StringConversionPolicyBuilder {
     ///
     /// The configured string conversion policy.
     #[inline]
-    #[must_use]
     pub fn build(self) -> StringConversionPolicy {
         self.policy
     }

@@ -24,6 +24,9 @@ use qubit_datatype::converter::InvalidValueReason;
 /// Test the conversion error constructors and accessors.
 #[test]
 fn test_data_conversion_error_constructors_and_accessors() {
+    let missing = DataConversionError::missing(DataType::String, DataType::Bool);
+    assert_eq!(missing.kind(), DataConversionErrorKind::Missing);
+
     let reason = InvalidValueReason::OutOfRange;
     let error = DataConversionError::invalid(DataType::Int64, DataType::UInt8, reason.clone());
     assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);

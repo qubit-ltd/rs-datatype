@@ -45,6 +45,15 @@ pub struct StructuredConversionLimits {
 }
 
 impl StructuredConversionLimits {
+    /// Default maximum normalized structured text length in bytes.
+    pub const DEFAULT_MAX_TEXT_BYTES: u64 = 1_048_576;
+    /// Default maximum root-inclusive depth.
+    pub const DEFAULT_MAX_DEPTH: u64 = 128;
+    /// Default maximum sequence item count.
+    pub const DEFAULT_MAX_SEQUENCE_ITEMS: u64 = 65_536;
+    /// Default maximum map entry count.
+    pub const DEFAULT_MAX_MAP_ENTRIES: u64 = 65_536;
+
     /// Creates a builder initialized with the default structured limits.
     #[inline]
     #[must_use]
@@ -58,14 +67,6 @@ impl StructuredConversionLimits {
     pub fn into_builder(self) -> StructuredConversionLimitsBuilder {
         StructuredConversionLimitsBuilder { limits: self }
     }
-    /// Default maximum normalized structured text length in bytes.
-    pub const DEFAULT_MAX_TEXT_BYTES: u64 = 1_048_576;
-    /// Default maximum root-inclusive depth.
-    pub const DEFAULT_MAX_DEPTH: u64 = 128;
-    /// Default maximum sequence item count.
-    pub const DEFAULT_MAX_SEQUENCE_ITEMS: u64 = 65_536;
-    /// Default maximum map entry count.
-    pub const DEFAULT_MAX_MAP_ENTRIES: u64 = 65_536;
 
     /// Returns the maximum normalized structured text length in bytes.
     ///
@@ -94,28 +95,6 @@ impl StructuredConversionLimits {
             .expect("structured text limit is configured")
     }
 
-    /// Returns a copy with a different structured text byte limit.
-    ///
-    /// # Parameters
-    ///
-    /// * `maximum` - New normalized structured text byte limit.
-    ///
-    /// # Returns
-    ///
-    /// Updated limits.
-    #[inline]
-    pub(crate) fn with_max_text_bytes(mut self, maximum: u64) -> Self {
-        self.text = StringLimits::builder()
-            .utf8_bytes_limit(ResourceLimit::new(ConversionResource::StructuredTextBytes, maximum))
-            .build();
-        self.value = rebuild_value(
-            &self.value,
-            rebuild_structure(self.value.structure_limits(), None, None, None, None),
-            Some(ResourceLimit::new(ConversionResource::StructuredTextBytes, maximum)),
-        );
-        self
-    }
-
     /// Returns the composed JSON value limits used by structured traversal.
     #[inline]
     #[must_use]
@@ -141,23 +120,6 @@ impl StructuredConversionLimits {
             .expect("structured depth limit is configured")
     }
 
-    /// Returns a copy with a different depth maximum.
-    #[inline]
-    pub(crate) fn with_max_depth(mut self, maximum: u64) -> Self {
-        self.value = rebuild_value(
-            &self.value,
-            rebuild_structure(
-                self.value.structure_limits(),
-                Some(ResourceLimit::new(ConversionResource::StructuredDepth, maximum)),
-                None,
-                None,
-                None,
-            ),
-            None,
-        );
-        self
-    }
-
     /// Returns the configured sequence item maximum.
     #[inline]
     #[must_use]
@@ -178,23 +140,6 @@ impl StructuredConversionLimits {
             .expect("structured sequence-item limit is configured")
     }
 
-    /// Returns a copy with a different sequence item maximum.
-    #[inline]
-    pub(crate) fn with_max_sequence_items(mut self, maximum: u64) -> Self {
-        self.value = rebuild_value(
-            &self.value,
-            rebuild_structure(
-                self.value.structure_limits(),
-                None,
-                Some(ResourceLimit::new(ConversionResource::SequenceItems, maximum)),
-                None,
-                None,
-            ),
-            None,
-        );
-        self
-    }
-
     /// Returns the configured map entry maximum.
     #[inline]
     #[must_use]
@@ -213,6 +158,62 @@ impl StructuredConversionLimits {
             .map_entries_limit()
             .cloned()
             .expect("structured map-entry limit is configured")
+    }
+
+    /// Returns a copy with a different structured text byte limit.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - New normalized structured text byte limit.
+    ///
+    /// # Returns
+    ///
+    /// Updated limits.
+    #[inline]
+    pub(crate) fn with_max_text_bytes(mut self, maximum: u64) -> Self {
+        self.text = StringLimits::builder()
+            .utf8_bytes_limit(ResourceLimit::new(ConversionResource::StructuredTextBytes, maximum))
+            .build();
+        self.value = rebuild_value(
+            &self.value,
+            rebuild_structure(self.value.structure_limits(), None, None, None, None),
+            Some(ResourceLimit::new(ConversionResource::StructuredTextBytes, maximum)),
+        );
+        self
+    }
+
+    /// Returns a copy with a different depth maximum.
+    #[inline]
+    pub(crate) fn with_max_depth(mut self, maximum: u64) -> Self {
+        self.value = rebuild_value(
+            &self.value,
+            rebuild_structure(
+                self.value.structure_limits(),
+                Some(ResourceLimit::new(ConversionResource::StructuredDepth, maximum)),
+                None,
+                None,
+                None,
+            ),
+            None,
+        );
+        self
+    }
+
+    /// Returns a copy with a different sequence item maximum.
+    #[inline]
+    pub(crate) fn with_max_sequence_items(mut self, maximum: u64) -> Self {
+        self.value = rebuild_value(
+            &self.value,
+            rebuild_structure(
+                self.value.structure_limits(),
+                None,
+                Some(ResourceLimit::new(ConversionResource::SequenceItems, maximum)),
+                None,
+                None,
+            ),
+            None,
+        );
+        self
     }
 
     /// Returns a copy with a different map entry maximum.

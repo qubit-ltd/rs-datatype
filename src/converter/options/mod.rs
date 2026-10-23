@@ -7,7 +7,7 @@
 // =============================================================================
 //! Policies and option groups used by data conversions.
 
-#![allow(clippy::double_must_use, clippy::new_without_default)]
+#![allow(clippy::new_without_default)]
 
 mod blank_string_policy;
 mod boolean_conversion_policy;

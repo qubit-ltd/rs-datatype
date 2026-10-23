@@ -41,24 +41,48 @@ pub(crate) struct ConversionContext<'session, 'policy> {
 
 impl<'session, 'policy> ConversionContext<'session, 'policy> {
     /// Creates a context for a source that has completed top-level admission.
+    ///
+    /// # Parameters
+    ///
+    /// * `session` - Mutable accounting session backing this conversion.
+    /// * `from` - Runtime type of the admitted source value.
+    /// * `to` - Runtime type requested by the active target conversion.
+    ///
+    /// # Returns
+    ///
+    /// A context that binds the session budget to the source and target types.
     #[inline]
     pub(crate) fn new(session: &'session mut ConversionSession<'policy>, from: DataType, to: DataType) -> Self {
         Self { session, from, to }
     }
 
     /// Returns the policy shared by the active conversion.
+    ///
+    /// # Returns
+    ///
+    /// The immutable policy governing this conversion.
+    #[must_use = "the conversion policy should be inspected"]
     #[inline]
     pub const fn policy(&self) -> &'policy ConversionPolicy {
         self.session.policy()
     }
 
     /// Returns the resource limits shared by the active conversion.
+    ///
+    /// # Returns
+    ///
+    /// The immutable resource limits governing this conversion.
+    #[must_use = "the conversion limits should be inspected"]
     #[inline]
     pub const fn limits(&self) -> &'policy ConversionLimits {
         self.session.limits()
     }
 
     /// Returns the runtime type requested by the active target conversion.
+    ///
+    /// # Returns
+    ///
+    /// The requested target data type.
     #[inline]
     pub const fn to_type(&self) -> DataType {
         self.to
@@ -70,6 +94,18 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
     ///
     /// Returns a JSON syntax, deserialization, or resource-limit error whose
     /// type context is bound to this conversion.
+    ///
+    /// # Returns
+    ///
+    /// The deserialized value when decoding succeeds.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Rust value type produced by deserialization.
+    ///
+    /// # Parameters
+    ///
+    /// * `input` - UTF-8 JSON bytes to deserialize under the shared budget.
     #[cfg(feature = "json")]
     #[inline]
     pub fn decode_json<'de, T>(&mut self, input: &'de [u8]) -> Result<T, DataConversionError>
@@ -85,6 +121,19 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
     ///
     /// Returns a JSON syntax, deserialization, or resource-limit error whose
     /// type context is bound to this conversion.
+    ///
+    /// # Returns
+    ///
+    /// The value constructed by the seed when decoding succeeds.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `S` - Seed type that determines the deserialized value type.
+    ///
+    /// # Parameters
+    ///
+    /// * `seed` - Deserializer seed that constructs the requested value.
+    /// * `input` - UTF-8 JSON bytes to deserialize under the shared budget.
     #[cfg(feature = "json")]
     #[inline]
     pub fn decode_json_seed<'de, S>(&mut self, seed: S, input: &'de [u8]) -> Result<S::Value, DataConversionError>
@@ -101,6 +150,14 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
     ///
     /// Returns a structured resource-limit error whose type context is bound
     /// to this conversion.
+    ///
+    /// # Returns
+    ///
+    /// `()` when the JSON value fits within the structured budget.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Materialized JSON value to account against the budget.
     #[cfg(feature = "json")]
     #[inline]
     pub fn account_json_value(&mut self, value: &Value) -> Result<(), DataConversionError> {
@@ -113,6 +170,19 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
     ///
     /// Returns a serialization or resource-limit error whose type context is
     /// bound to this conversion.
+    ///
+    /// # Returns
+    ///
+    /// The serialized JSON bytes when encoding succeeds.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Serializable Rust value type.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Value to serialize under the shared structured and output
+    ///   budgets.
     #[cfg(feature = "json")]
     #[inline]
     pub fn encode_json<T>(&mut self, value: &T) -> Result<Vec<u8>, DataConversionError>
@@ -129,6 +199,18 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
     ///
     /// Returns the renderer's conversion error or an output resource error;
     /// failed rendering does not consume output bytes.
+    ///
+    /// # Returns
+    ///
+    /// The rendered String when rendering succeeds.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `F` - Renderer closure type.
+    ///
+    /// # Parameters
+    ///
+    /// * `render` - Closure that writes the output using the bounded writer.
     #[inline]
     pub fn write_string<F>(&mut self, render: F) -> Result<String, DataConversionError>
     where
@@ -138,6 +220,10 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
     }
 
     /// Returns the runtime type of the admitted source.
+    ///
+    /// # Returns
+    ///
+    /// The admitted source data type.
     #[inline]
     pub(crate) const fn source_type(&self) -> DataType {
         self.from
@@ -149,6 +235,14 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
     ///
     /// Returns an output resource error whose type context is bound to this
     /// conversion.
+    ///
+    /// # Returns
+    ///
+    /// `()` when the requested output bytes are admitted.
+    ///
+    /// # Parameters
+    ///
+    /// * `amount` - Number of output bytes to admit.
     #[inline]
     pub(crate) fn admit_output_bytes(&mut self, amount: usize) -> Result<(), DataConversionError> {
         self.session.admit_output_bytes(self.from, self.to, amount)

@@ -79,6 +79,15 @@ pub struct AdmittedScalarSource<'session, 'policy, 'source> {
 
 impl<'session, 'policy: 'source, 'source> AdmittedScalarSource<'session, 'policy, 'source> {
     /// Binds splitting to a source whose byte admission has already succeeded.
+    ///
+    /// # Parameters
+    ///
+    /// * `session` - Session that has already admitted the source bytes.
+    /// * `source` - Scalar collection text borrowed for lazy item iteration.
+    ///
+    /// # Returns
+    ///
+    /// A source iterator that yields items charged to `session` one at a time.
     #[inline]
     pub(crate) fn new(session: &'session mut ConversionSession<'policy>, source: &'source str) -> Self {
         let items = session
@@ -112,6 +121,27 @@ impl<'session, 'policy: 'source, 'source> AdmittedScalarSource<'session, 'policy
     }
 
     /// Admits an item with the target context known by built-in batch callers.
+    ///
+    /// # Parameters
+    ///
+    /// * `target` - Conversion destination used when reporting admission
+    ///   errors.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some(Ok(item))` for the next item, `Some(Err(error))` when
+    /// splitting or the session item budget rejects it, and `None` after
+    /// exhaustion. Admission errors retain the original source index and use
+    /// `target` as their conversion destination; a failure exhausts this
+    /// source.
+    ///
+    /// # Errors
+    ///
+    /// The `Some(Err(error))` variant contains a list error for a rejected
+    /// empty item, collection item limit, or exhausted session item budget.
+    ///
+    /// The target is supplied by the built-in batch caller so errors identify
+    /// the conversion that requested this item.
     pub(crate) fn next_item_for(
         &mut self,
         target: DataType,

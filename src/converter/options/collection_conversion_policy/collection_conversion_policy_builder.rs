@@ -19,6 +19,10 @@ pub struct CollectionConversionPolicyBuilder {
 
 impl CollectionConversionPolicyBuilder {
     /// Creates a builder initialized with the documented defaults.
+    ///
+    /// # Returns
+    ///
+    /// A builder configured with the default collection policy.
     #[inline]
     #[must_use]
     pub fn new() -> Self {
@@ -28,6 +32,14 @@ impl CollectionConversionPolicyBuilder {
     }
 
     /// Configures scalar string splitting.
+    ///
+    /// # Parameters
+    ///
+    /// * `enabled` - Whether scalar strings are split into collection items.
+    ///
+    /// # Returns
+    ///
+    /// The builder with scalar string splitting updated.
     #[inline]
     #[must_use]
     pub fn split_scalar_strings(self, enabled: bool) -> Self {
@@ -37,6 +49,15 @@ impl CollectionConversionPolicyBuilder {
     }
 
     /// Configures scalar string delimiters.
+    ///
+    /// # Parameters
+    ///
+    /// * `delimiters` - Characters used to split scalar strings when splitting
+    ///   is enabled.
+    ///
+    /// # Returns
+    ///
+    /// The builder with the delimiter sequence replaced.
     #[inline]
     #[must_use]
     pub fn delimiters(self, delimiters: impl IntoIterator<Item = char>) -> Self {
@@ -46,6 +67,14 @@ impl CollectionConversionPolicyBuilder {
     }
 
     /// Configures item trimming.
+    ///
+    /// # Parameters
+    ///
+    /// * `enabled` - Whether split items are trimmed before conversion.
+    ///
+    /// # Returns
+    ///
+    /// The builder with item trimming updated.
     #[inline]
     #[must_use]
     pub fn trim_items(self, enabled: bool) -> Self {
@@ -55,6 +84,14 @@ impl CollectionConversionPolicyBuilder {
     }
 
     /// Configures empty item handling.
+    ///
+    /// # Parameters
+    ///
+    /// * `policy` - How empty items are handled after optional trimming.
+    ///
+    /// # Returns
+    ///
+    /// The builder with empty item handling updated.
     #[inline]
     #[must_use]
     pub fn empty_item_policy(self, policy: EmptyItemPolicy) -> Self {
@@ -64,8 +101,11 @@ impl CollectionConversionPolicyBuilder {
     }
 
     /// Builds the configured collection policy.
+    ///
+    /// # Returns
+    ///
+    /// The collection policy assembled from this builder's settings.
     #[inline]
-    #[must_use]
     pub fn build(self) -> CollectionConversionPolicy {
         self.policy
     }

@@ -17,6 +17,16 @@ use crate::converter::ConversionResource;
 use crate::datatype::DataType;
 
 /// Target-independent error discovered while iterating scalar items.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::ScalarItemError;
+///
+/// let error = ScalarItemError::blank_rejected(3);
+/// assert_eq!(error.source_index(), 3);
+/// assert_eq!(error.maximum_items(), None);
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]

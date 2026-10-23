@@ -155,7 +155,6 @@ impl ConversionOperationLimitsBuilder {
     ///
     /// The operation limits assembled from the builder's configured maxima.
     #[inline]
-    #[must_use]
     pub const fn build(self) -> ConversionOperationLimits {
         self.limits
     }

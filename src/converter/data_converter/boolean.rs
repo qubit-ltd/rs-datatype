@@ -42,6 +42,7 @@ use crate::datatype::DataType;
 ///
 /// Returns an invalid-value [`DataConversionError`] when `policy` rejects the
 /// integer.
+#[inline]
 fn integer_to_bool(
     zero: bool,
     one: bool,

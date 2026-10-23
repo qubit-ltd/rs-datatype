@@ -7,7 +7,10 @@
 // =============================================================================
 //! Numeric conversion tests.
 
-#[cfg(feature = "big-number")]
+#[cfg(any(
+    feature = "big-number",
+    all(feature = "big-decimal", feature = "chrono", feature = "url", feature = "json")
+))]
 use std::collections::HashMap;
 #[cfg(feature = "big-decimal")]
 use std::str::FromStr;
@@ -338,14 +341,26 @@ fn test_data_converter_float_targets_accept_supported_sources() {
     #[cfg(feature = "big-integer")]
     {
         let huge = create_huge_bigint();
-        assert!(DataConverter::from(&huge).to::<f32>().is_err());
-        assert!(DataConverter::from(&huge).to::<f64>().is_err());
+        assert!(matches!(
+            DataConverter::from(&huge).to::<f32>(),
+            Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
+        ));
+        assert!(matches!(
+            DataConverter::from(&huge).to::<f64>(),
+            Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
+        ));
     }
     #[cfg(feature = "big-number")]
     {
         let huge_decimal = BigDecimal::from(create_huge_bigint());
-        assert!(DataConverter::from(&huge_decimal).to::<f32>().is_err());
-        assert!(DataConverter::from(&huge_decimal).to::<f64>().is_err());
+        assert!(matches!(
+            DataConverter::from(&huge_decimal).to::<f32>(),
+            Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
+        ));
+        assert!(matches!(
+            DataConverter::from(&huge_decimal).to::<f64>(),
+            Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
+        ));
     }
 }
 
@@ -680,14 +695,38 @@ proptest! {
 /// Test numeric parsing and narrowing boundary branches.
 #[test]
 fn test_data_converter_numeric_boundary_branches() {
-    assert!(DataConverter::from(i16::MAX).to::<i8>().is_err());
-    assert!(DataConverter::from(i32::MAX).to::<i16>().is_err());
-    assert!(DataConverter::from(i64::MAX).to::<i32>().is_err());
-    assert!(DataConverter::from(i128::MAX).to::<i64>().is_err());
-    assert!(DataConverter::from(u16::MAX).to::<u8>().is_err());
-    assert!(DataConverter::from(u32::MAX).to::<u16>().is_err());
-    assert!(DataConverter::from(u64::MAX).to::<u32>().is_err());
-    assert!(DataConverter::from(u128::MAX).to::<u64>().is_err());
+    assert!(matches!(
+        DataConverter::from(i16::MAX).to::<i8>(),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange))
+    ));
+    assert!(matches!(
+        DataConverter::from(i32::MAX).to::<i16>(),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange))
+    ));
+    assert!(matches!(
+        DataConverter::from(i64::MAX).to::<i32>(),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange))
+    ));
+    assert!(matches!(
+        DataConverter::from(i128::MAX).to::<i64>(),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange))
+    ));
+    assert!(matches!(
+        DataConverter::from(u16::MAX).to::<u8>(),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange))
+    ));
+    assert!(matches!(
+        DataConverter::from(u32::MAX).to::<u16>(),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange))
+    ));
+    assert!(matches!(
+        DataConverter::from(u64::MAX).to::<u32>(),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange))
+    ));
+    assert!(matches!(
+        DataConverter::from(u128::MAX).to::<u64>(),
+        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::OutOfRange))
+    ));
 
     assert!(
         DataConverter::from("nan")
@@ -759,14 +798,38 @@ fn test_data_converter_big_decimal_rejects_rich_non_numeric_sources() {
     let url = Url::parse("https://example.com").expect("URL fixture should parse");
     let map = HashMap::from([("k".to_string(), "v".to_string())]);
     let json = serde_json::json!({"k": "v"});
-    assert!(DataConverter::from(date).to::<BigDecimal>().is_err());
-    assert!(DataConverter::from(time).to::<BigDecimal>().is_err());
-    assert!(DataConverter::from(datetime).to::<BigDecimal>().is_err());
-    assert!(DataConverter::from(instant).to::<BigDecimal>().is_err());
-    assert!(DataConverter::from(Duration::from_secs(1)).to::<BigDecimal>().is_err());
-    assert!(DataConverter::from(&url).to::<BigDecimal>().is_err());
-    assert!(DataConverter::from(&map).to::<BigDecimal>().is_err());
-    assert!(DataConverter::from(&json).to::<BigDecimal>().is_err());
+    assert!(matches!(
+        DataConverter::from(date).to::<BigDecimal>(),
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
+    ));
+    assert!(matches!(
+        DataConverter::from(time).to::<BigDecimal>(),
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
+    ));
+    assert!(matches!(
+        DataConverter::from(datetime).to::<BigDecimal>(),
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
+    ));
+    assert!(matches!(
+        DataConverter::from(instant).to::<BigDecimal>(),
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
+    ));
+    assert!(matches!(
+        DataConverter::from(Duration::from_secs(1)).to::<BigDecimal>(),
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
+    ));
+    assert!(matches!(
+        DataConverter::from(&url).to::<BigDecimal>(),
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
+    ));
+    assert!(matches!(
+        DataConverter::from(&map).to::<BigDecimal>(),
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
+    ));
+    assert!(matches!(
+        DataConverter::from(&json).to::<BigDecimal>(),
+        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
+    ));
 }
 
 /// Test numeric text byte limits after string normalization.

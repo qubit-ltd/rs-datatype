@@ -31,6 +31,20 @@ use crate::converter::StructuredConversionLimits;
 use crate::datatype::DataType;
 
 /// Accounts one string map and its payload against a conversion session.
+///
+/// # Parameters
+///
+/// * `value` - Map whose keys and values are admitted to the structured budget.
+/// * `depth` - Nesting depth of the map in the structured value.
+/// * `session` - Conversion session whose budget is updated transactionally.
+///
+/// # Returns
+///
+/// `Ok(())` after all map entries are admitted and committed.
+///
+/// # Errors
+///
+/// Returns the first budget error; failed admission does not commit the map.
 pub(super) fn account_string_map_structure(
     value: &HashMap<String, String>,
     depth: usize,
@@ -53,6 +67,21 @@ pub(super) fn account_string_map_structure(
 }
 
 /// Accounts a materialized JSON value through rs-budget's canonical traversal.
+///
+/// # Parameters
+///
+/// * `value` - JSON value whose structure is admitted.
+/// * `source` - Runtime source type retained in a budget error.
+/// * `target` - Requested target type retained in a budget error.
+/// * `session` - Conversion session whose budget is updated.
+///
+/// # Returns
+///
+/// `Ok(())` after the complete JSON structure is accounted.
+///
+/// # Errors
+///
+/// Returns a structured resource-limit error when accounting exceeds a limit.
 #[cfg(feature = "json")]
 pub(super) fn account_json_structure(
     value: &Value,
@@ -70,7 +99,7 @@ pub(super) fn account_json_structure(
 /// * `value` - Normalized text whose byte length is checked.
 /// * `from` - Source data type retained in a limit error.
 /// * `to` - Target data type retained in a limit error.
-/// * `options` - Structured conversion limits.
+/// * `limits` - Structured conversion limits.
 ///
 /// # Returns
 ///
@@ -95,7 +124,16 @@ pub(super) fn check_structured_text_limit(
 }
 
 /// Converts a borrowed string map to a JSON object with canonical key order.
+///
+/// # Parameters
+///
+/// * `value` - String map to clone into the JSON object.
+///
+/// # Returns
+///
+/// A JSON object with entries in canonical key order.
 #[cfg(feature = "json")]
+#[must_use]
 pub(super) fn string_map_to_json(value: &HashMap<String, String>) -> Value {
     Value::Object(
         sorted_string_map_entries(value)
@@ -106,7 +144,16 @@ pub(super) fn string_map_to_json(value: &HashMap<String, String>) -> Value {
 }
 
 /// Converts an owned string map to a JSON object with canonical key order.
+///
+/// # Parameters
+///
+/// * `value` - String map whose owned entries are moved into the JSON object.
+///
+/// # Returns
+///
+/// A JSON object with entries in canonical key order.
 #[cfg(feature = "json")]
+#[must_use]
 fn string_map_into_json(value: HashMap<String, String>) -> Value {
     let mut entries = value.into_iter().collect::<Vec<_>>();
     // A borrowed sort key cannot outlive this closure, so compare directly.
@@ -127,7 +174,8 @@ impl BuiltinDataConversionTarget for Value {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `options` - String normalization and structured text-limit policies.
+    /// * `context` - Conversion policy and resource limits shared with the
+    ///   active conversion.
     ///
     /// # Returns
     ///
@@ -162,7 +210,8 @@ impl BuiltinDataConversionTarget for Value {
     /// # Parameters
     ///
     /// * `source` - Runtime value to consume.
-    /// * `options` - String normalization and structured text-limit policies.
+    /// * `context` - Conversion policy and resource limits shared with the
+    ///   active conversion.
     ///
     /// # Returns
     ///
@@ -191,7 +240,8 @@ impl BuiltinDataConversionTarget for HashMap<String, String> {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `options` - String normalization and structured text-limit policies.
+    /// * `context` - Conversion policy and resource limits shared with the
+    ///   active conversion.
     ///
     /// # Returns
     ///
@@ -230,7 +280,8 @@ impl BuiltinDataConversionTarget for HashMap<String, String> {
     /// # Parameters
     ///
     /// * `source` - Runtime value to consume.
-    /// * `options` - String normalization and structured text-limit policies.
+    /// * `context` - Conversion policy and resource limits shared with the
+    ///   active conversion.
     ///
     /// # Returns
     ///

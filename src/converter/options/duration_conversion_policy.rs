@@ -116,7 +116,6 @@ impl DurationConversionPolicy {
     ///
     /// The unit used to interpret integer sources.
     #[inline]
-    #[must_use]
     pub const fn numeric_input_unit(&self) -> DurationUnit {
         self.numeric_input_unit
     }
@@ -142,7 +141,6 @@ impl DurationConversionPolicy {
     ///
     /// The configured suffixless-input policy.
     #[inline]
-    #[must_use]
     pub const fn suffixless_string_policy(&self) -> SuffixlessDurationPolicy {
         self.suffixless_string_policy
     }
@@ -168,7 +166,6 @@ impl DurationConversionPolicy {
     ///
     /// The configured strict or lenient unit parse mode.
     #[inline]
-    #[must_use]
     pub const fn unit_parse_mode(&self) -> DurationUnitParseMode {
         self.unit_parse_mode
     }
@@ -194,7 +191,6 @@ impl DurationConversionPolicy {
     ///
     /// The unit used for integer and string output.
     #[inline]
-    #[must_use]
     pub const fn output_unit(&self) -> DurationUnit {
         self.output_unit
     }
@@ -255,7 +251,6 @@ impl DurationConversionPolicy {
     ///
     /// The policy applied when output units have a remainder.
     #[inline]
-    #[must_use]
     pub const fn rounding_policy(&self) -> DurationRoundingPolicy {
         self.rounding_policy
     }

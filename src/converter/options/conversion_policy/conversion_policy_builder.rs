@@ -98,7 +98,6 @@ impl ConversionPolicyBuilder {
 
     /// Builds the configured conversion policy.
     #[inline]
-    #[must_use]
     pub fn build(self) -> ConversionPolicy {
         self.policy
     }

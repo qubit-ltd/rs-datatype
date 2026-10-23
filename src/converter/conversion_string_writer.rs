@@ -24,6 +24,45 @@ use crate::datatype::DataType;
 /// the complete rendering operation succeeds.
 ///
 /// [`AdmittedConversion::write_string`]: super::AdmittedConversion::write_string
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::AdmittedConversion;
+/// use qubit_datatype::ConversionLimits;
+/// use qubit_datatype::ConversionPolicy;
+/// use qubit_datatype::ConversionSession;
+/// use qubit_datatype::DataConversionError;
+/// use qubit_datatype::DataConversionTarget;
+/// use qubit_datatype::DataConverter;
+/// use qubit_datatype::DataType;
+/// use qubit_datatype::DataTypeOf;
+///
+/// struct Rendered(String);
+///
+/// impl DataTypeOf for Rendered {
+///     const DATA_TYPE: DataType = DataType::String;
+/// }
+///
+/// impl DataConversionTarget for Rendered {
+///     fn convert(mut input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+///         let output = input.write_string(|writer| {
+///             writer.write_str("value=")?;
+///             writer.write_display(&42)
+///         })?;
+///         Ok(Self(output))
+///     }
+/// }
+///
+/// let policy = ConversionPolicy::default();
+/// let limits = ConversionLimits::default();
+/// let mut session = ConversionSession::new(&policy, &limits);
+/// let rendered = DataConverter::from("input")
+///     .to_in::<Rendered>(&mut session)?;
+/// assert_eq!(rendered.0, "value=42");
+/// # Ok::<(), DataConversionError>(())
+/// ```
+#[must_use]
 pub struct ConversionStringWriter<'writer> {
     /// Type-erased budgeted output sink receiving rendered bytes.
     inner: &'writer mut dyn ConversionStringSink,
@@ -60,6 +99,10 @@ impl<'writer> ConversionStringWriter<'writer> {
     ///
     /// * `value` - UTF-8 text appended to the current output.
     ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` after the text is accepted by the output sink.
+    ///
     /// # Errors
     ///
     /// Returns an invalid-value error if the underlying formatter rejects the
@@ -80,6 +123,10 @@ impl<'writer> ConversionStringWriter<'writer> {
     ///
     /// * `value` - Character appended to the current output.
     ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` after the character is accepted by the output sink.
+    ///
     /// # Errors
     ///
     /// Returns the same errors as [`Self::write_str`].
@@ -95,6 +142,11 @@ impl<'writer> ConversionStringWriter<'writer> {
     /// # Parameters
     ///
     /// * `arguments` - Formatting arguments rendered into the current output.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` after the formatted text is accepted by the output
+    /// sink.
     ///
     /// # Errors
     ///
@@ -115,6 +167,10 @@ impl<'writer> ConversionStringWriter<'writer> {
     /// # Parameters
     ///
     /// * `value` - Value rendered into the current output.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` after the value is rendered into the output sink.
     ///
     /// # Errors
     ///

@@ -20,8 +20,12 @@ use crate::DataTypeOf;
 /// # Examples
 ///
 /// ```
-/// use qubit_datatype::{AdmittedConversion, DataConversionError,
-///     DataConversionTarget, DataConverter, DataType, DataTypeOf};
+/// use qubit_datatype::AdmittedConversion;
+/// use qubit_datatype::DataConversionError;
+/// use qubit_datatype::DataConversionTarget;
+/// use qubit_datatype::DataConverter;
+/// use qubit_datatype::DataType;
+/// use qubit_datatype::DataTypeOf;
 ///
 /// struct Port(u16);
 ///

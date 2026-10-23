@@ -457,7 +457,7 @@ impl BuiltinDataConversionTarget for BigInt {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `session` - Conversion policy, limits, and remaining operation budget.
+    /// * `context` - Conversion policy, limits, and remaining operation budget.
     ///
     /// # Returns
     ///
@@ -483,7 +483,7 @@ impl BuiltinDataConversionTarget for BigInt {
     /// # Parameters
     ///
     /// * `source` - Runtime value to consume.
-    /// * `session` - Conversion policy, limits, and remaining operation budget.
+    /// * `context` - Conversion policy, limits, and remaining operation budget.
     ///
     /// # Returns
     ///

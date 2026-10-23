@@ -10,9 +10,27 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
+#[cfg(feature = "big-decimal")]
+use bigdecimal::BigDecimal;
+#[cfg(feature = "chrono")]
+use chrono::DateTime;
+#[cfg(feature = "chrono")]
+use chrono::NaiveDate;
+#[cfg(feature = "chrono")]
+use chrono::NaiveDateTime;
+#[cfg(feature = "chrono")]
+use chrono::NaiveTime;
+#[cfg(feature = "chrono")]
+use chrono::Utc;
+#[cfg(feature = "big-integer")]
+use num_bigint::BigInt;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
 use qubit_datatype::DataTypeOf;
+#[cfg(feature = "json")]
+use serde_json::json;
+#[cfg(feature = "url")]
+use url::Url;
 
 /// Asserts that compile-time and runtime source mappings agree.
 fn assert_mapping<T>(value: T, expected: DataType)
@@ -53,12 +71,6 @@ fn test_data_type_mapping_base_consumers_agree() {
 #[test]
 #[cfg(feature = "chrono")]
 fn test_data_type_mapping_chrono_consumers_agree() {
-    use chrono::DateTime;
-    use chrono::NaiveDate;
-    use chrono::NaiveDateTime;
-    use chrono::NaiveTime;
-    use chrono::Utc;
-
     let date = NaiveDate::from_ymd_opt(2026, 7, 20).expect("test date should be valid");
     let time = NaiveTime::from_hms_opt(12, 0, 0).expect("test time should be valid");
     let date_time = NaiveDateTime::new(date, time);
@@ -74,21 +86,21 @@ fn test_data_type_mapping_chrono_consumers_agree() {
 #[test]
 #[cfg(feature = "big-integer")]
 fn test_data_type_mapping_big_integer_consumers_agree() {
-    assert_mapping(num_bigint::BigInt::from(1), DataType::BigInteger);
+    assert_mapping(BigInt::from(1), DataType::BigInteger);
 }
 
 /// Tests arbitrary-precision decimal mappings when the feature is enabled.
 #[test]
 #[cfg(feature = "big-decimal")]
 fn test_data_type_mapping_big_decimal_consumers_agree() {
-    assert_mapping(bigdecimal::BigDecimal::from(1), DataType::BigDecimal);
+    assert_mapping(BigDecimal::from(1), DataType::BigDecimal);
 }
 
 /// Tests URL mappings when the feature is enabled.
 #[test]
 #[cfg(feature = "url")]
 fn test_data_type_mapping_url_consumers_agree() {
-    let url = url::Url::parse("https://example.com").expect("test URL should parse");
+    let url = Url::parse("https://example.com").expect("test URL should parse");
     assert_mapping(url, DataType::Url);
 }
 
@@ -96,5 +108,5 @@ fn test_data_type_mapping_url_consumers_agree() {
 #[test]
 #[cfg(feature = "json")]
 fn test_data_type_mapping_json_consumers_agree() {
-    assert_mapping(serde_json::json!({"key": "value"}), DataType::Json);
+    assert_mapping(json!({"key": "value"}), DataType::Json);
 }

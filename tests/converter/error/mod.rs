@@ -13,7 +13,6 @@ mod data_conversion_error_kind_tests;
 mod data_conversion_error_tests;
 mod data_format_tests;
 mod data_list_conversion_error_tests;
-mod internal;
 mod invalid_value_reason_tests;
 mod scalar_item_error_tests;
 mod string_normalization_error_tests;

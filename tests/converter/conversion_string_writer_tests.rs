@@ -54,11 +54,11 @@ fn test_write_string_commits_successful_output() {
     let limits = ConversionLimits::default();
     let mut session = ConversionSession::new(&policy, &limits);
 
-    let output = DataConverter::from(42_i32)
+    let Rendered(output) = DataConverter::from(42_i32)
         .to_in::<Rendered<0>>(&mut session)
         .expect("bounded output should render");
 
-    assert_eq!(output.0, "value=42");
+    assert_eq!(output, "value=42");
     assert_eq!(session.output_bytes_used(), 8);
 }
 

@@ -14,6 +14,7 @@ mod collection_conversion_limits_tests;
 mod collection_conversion_policy_tests;
 mod conversion_limits_tests;
 mod conversion_operation_limits_tests;
+mod conversion_operation_limits_wire_tests;
 mod conversion_policy_tests;
 mod duration_conversion_limits_tests;
 mod duration_conversion_policy_tests;

@@ -20,6 +20,10 @@ pub struct DurationTextOptionsBuilder {
 
 impl DurationTextOptionsBuilder {
     /// Creates a builder initialized with the documented defaults.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing the default duration text options.
     #[inline]
     #[must_use]
     pub fn new() -> Self {
@@ -29,6 +33,14 @@ impl DurationTextOptionsBuilder {
     }
 
     /// Configures suffixless input handling.
+    ///
+    /// # Parameters
+    ///
+    /// * `policy` - Policy to apply when duration text omits a unit suffix.
+    ///
+    /// # Returns
+    ///
+    /// The builder with the suffixless-input policy updated.
     #[inline]
     #[must_use]
     pub const fn suffixless_policy(self, policy: SuffixlessDurationPolicy) -> Self {
@@ -38,6 +50,14 @@ impl DurationTextOptionsBuilder {
     }
 
     /// Configures explicit unit parsing.
+    ///
+    /// # Parameters
+    ///
+    /// * `mode` - Strictness to apply when parsing explicit duration units.
+    ///
+    /// # Returns
+    ///
+    /// The builder with the explicit-unit parse mode updated.
     #[inline]
     #[must_use]
     pub const fn unit_parse_mode(self, mode: DurationUnitParseMode) -> Self {
@@ -47,6 +67,14 @@ impl DurationTextOptionsBuilder {
     }
 
     /// Configures the maximum text size.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum source text length in bytes.
+    ///
+    /// # Returns
+    ///
+    /// The builder with the source text byte limit updated.
     #[inline]
     #[must_use]
     pub const fn max_text_bytes(self, maximum: usize) -> Self {
@@ -56,6 +84,10 @@ impl DurationTextOptionsBuilder {
     }
 
     /// Builds the configured text options.
+    ///
+    /// # Returns
+    ///
+    /// The configured duration text options.
     #[inline]
     #[must_use]
     pub const fn build(self) -> DurationTextOptions {

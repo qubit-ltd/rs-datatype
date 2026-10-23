@@ -84,7 +84,6 @@ impl CollectionConversionLimitsBuilder {
     ///
     /// The collection limits assembled from the builder's configured values.
     #[inline]
-    #[must_use]
     pub const fn build(self) -> CollectionConversionLimits {
         self.limits
     }

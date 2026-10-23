@@ -8,6 +8,19 @@
 //! Error returned by Duration text parsing.
 
 /// Error returned when parsing Duration text.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::DurationParseError;
+/// use qubit_datatype::DurationTextOptions;
+/// use qubit_datatype::parse_duration_text;
+///
+/// assert_eq!(
+///     parse_duration_text("", &DurationTextOptions::default()),
+///     Err(DurationParseError::InvalidSyntax),
+/// );
+/// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 #[non_exhaustive]

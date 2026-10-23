@@ -496,22 +496,16 @@ fn test_data_converter_consuming_string_identity_reuses_owned_storage() {
 }
 
 /// Verifies StringMap text conversion emits JSON members in canonical key
-/// order even when the JSON dependency preserves insertion order.
+/// order.
 #[test]
 #[cfg(feature = "json")]
 fn test_data_converter_string_map_to_string_orders_keys() {
-    let source = (0..64)
-        .find_map(|_| {
-            let source = HashMap::from([
-                ("zeta".to_owned(), "last".to_owned()),
-                ("alpha".to_owned(), "first".to_owned()),
-                ("omega".to_owned(), "middle".to_owned()),
-                ("beta".to_owned(), "second".to_owned()),
-            ]);
-            let keys = source.keys().map(String::as_str).collect::<Vec<_>>();
-            (!keys.is_sorted()).then_some(source)
-        })
-        .expect("randomized HashMap iteration should produce a noncanonical order");
+    let source = HashMap::from([
+        ("zeta".to_owned(), "last".to_owned()),
+        ("alpha".to_owned(), "first".to_owned()),
+        ("omega".to_owned(), "middle".to_owned()),
+        ("beta".to_owned(), "second".to_owned()),
+    ]);
 
     let converted = DataConverter::from(&source)
         .to::<String>()

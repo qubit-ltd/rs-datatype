@@ -5,12 +5,14 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Numeric wire coverage is provided by public options tests.
+//! Tests numeric limit deserialization through the public API.
 
 use qubit_datatype::NumericConversionLimits;
+use serde_json::from_str;
 
 #[test]
-fn test_numeric_wire_is_covered_by_public_options_contract() {
-    let limits = NumericConversionLimits::default();
-    assert_eq!(limits.max_text_bytes(), NumericConversionLimits::DEFAULT_MAX_TEXT_BYTES);
+fn test_numeric_wire_deserialization_uses_defaults() {
+    let limits = from_str::<NumericConversionLimits>("{}").expect("omitted numeric limits should use their defaults");
+
+    assert_eq!(limits, NumericConversionLimits::default());
 }

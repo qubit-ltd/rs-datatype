@@ -15,6 +15,15 @@ use crate::converter::options::NumericConversionLimits;
 use crate::converter::options::StructuredConversionLimits;
 
 /// Builder for [`ConversionLimits`].
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::ConversionLimitsBuilder;
+///
+/// let limits = ConversionLimitsBuilder::new().build();
+/// assert!(limits.operation().max_items() > 0);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConversionLimitsBuilder {
     /// Aggregate limits being configured.
@@ -73,7 +82,6 @@ impl ConversionLimitsBuilder {
 
     /// Builds the configured conversion limits.
     #[inline]
-    #[must_use]
     pub fn build(self) -> ConversionLimits {
         self.limits
     }

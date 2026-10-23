@@ -66,9 +66,7 @@ thiserror = "^2.0"
 url = { version = "^2.5", optional = true }
 
 qubit-budget = { path = "../rs-budget", version = "0.9.1", features = ["json"], optional = true }
-
 qubit-json = { path = "../rs-json", version = "0.12", optional = true }
-
 
 [dev-dependencies]
 criterion = { version = "^0.8", default-features = false }

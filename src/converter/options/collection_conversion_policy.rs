@@ -204,7 +204,7 @@ impl CollectionConversionPolicy {
     /// # Returns
     ///
     /// The policy applied to empty items after optional trimming.
-    #[must_use]
+    #[must_use = "apply the returned policy when converting empty collection items"]
     #[inline]
     pub const fn empty_item_policy(&self) -> EmptyItemPolicy {
         self.empty_item_policy
@@ -235,7 +235,7 @@ impl CollectionConversionPolicy {
     /// # Returns
     ///
     /// A lazy iterator borrowing the policy and source text.
-    #[must_use]
+    #[must_use = "iterate over the returned items to perform the scalar conversion"]
     #[inline]
     pub fn scalar_items<'a>(&'a self, limits: &CollectionConversionLimits, value: &'a str) -> ScalarItems<'a> {
         ScalarItems::new(self, limits.max_items(), value)

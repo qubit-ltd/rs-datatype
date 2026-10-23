@@ -23,7 +23,9 @@ use super::error::DataConversionError;
 /// # Examples
 ///
 /// ```
-/// use qubit_datatype::{ConversionLimits, ConversionPolicy, ConversionSession};
+/// use qubit_datatype::ConversionLimits;
+/// use qubit_datatype::ConversionPolicy;
+/// use qubit_datatype::ConversionSession;
 ///
 /// let policy = ConversionPolicy::default();
 /// let limits = ConversionLimits::default();
@@ -37,9 +39,10 @@ use super::error::DataConversionError;
 /// An admission is a one-use capability and cannot be converted twice:
 ///
 /// ```compile_fail
-/// use qubit_datatype::{
-///     ConversionLimits, ConversionPolicy, ConversionSession, DataConverter,
-/// };
+/// use qubit_datatype::ConversionLimits;
+/// use qubit_datatype::ConversionPolicy;
+/// use qubit_datatype::ConversionSession;
+/// use qubit_datatype::DataConverter;
 ///
 /// let policy = ConversionPolicy::default();
 /// let limits = ConversionLimits::default();
@@ -62,6 +65,17 @@ pub struct AdmittedScalarItem<'session, 'policy, 'source> {
 
 impl<'session, 'policy, 'source> AdmittedScalarItem<'session, 'policy, 'source> {
     /// Creates an admitted scalar item after the session budget succeeds.
+    ///
+    /// # Parameters
+    ///
+    /// * `session` - Session whose item budget admitted this scalar.
+    /// * `source_index` - Zero-based position of the scalar in its source.
+    /// * `source` - Source value to convert using this admission.
+    ///
+    /// # Returns
+    ///
+    /// A token that can convert the admitted source without charging its item
+    /// budget again.
     #[inline]
     pub(crate) const fn new(
         session: &'session mut ConversionSession<'policy>,
@@ -76,6 +90,10 @@ impl<'session, 'policy, 'source> AdmittedScalarItem<'session, 'policy, 'source> 
     }
 
     /// Returns the original source index of the admitted item.
+    ///
+    /// # Returns
+    ///
+    /// The zero-based position in the original collection.
     #[must_use]
     #[inline]
     pub const fn source_index(&self) -> usize {
@@ -87,6 +105,10 @@ impl<'session, 'policy, 'source> AdmittedScalarItem<'session, 'policy, 'source> 
     /// # Type Parameters
     ///
     /// * `T` - Target type that implements the crate's conversion contract.
+    ///
+    /// # Returns
+    ///
+    /// The converted target value.
     ///
     /// # Errors
     ///
@@ -109,6 +131,10 @@ impl<'session, 'policy, 'source> AdmittedScalarItem<'session, 'policy, 'source> 
     /// # Type Parameters
     ///
     /// * `T` - Target type that implements the crate's conversion contract.
+    ///
+    /// # Returns
+    ///
+    /// The converted target value and the original mutable session borrow.
     ///
     /// # Errors
     ///

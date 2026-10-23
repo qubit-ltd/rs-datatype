@@ -289,7 +289,6 @@ impl BooleanConversionPolicy {
     /// # Returns
     ///
     /// The configured numeric boolean policy.
-    #[must_use]
     #[inline]
     pub const fn numeric_policy(&self) -> BooleanNumericPolicy {
         self.numeric_policy
@@ -320,7 +319,6 @@ impl BooleanConversionPolicy {
     ///
     /// Returns `Some(bool)` when the literal is recognized, or `None`
     /// otherwise.
-    #[must_use]
     pub fn parse(&self, value: &str) -> Option<bool> {
         if self.case_sensitive {
             if self.true_literals.iter().any(|literal| literal == value) {

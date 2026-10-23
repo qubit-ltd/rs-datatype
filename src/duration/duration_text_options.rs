@@ -81,24 +81,8 @@ impl DurationTextOptions {
     ///
     /// The configured suffixless-input policy.
     #[inline]
-    #[must_use]
     pub const fn suffixless_policy(&self) -> SuffixlessDurationPolicy {
         self.suffixless_policy
-    }
-
-    /// Returns a copy with a different suffixless-input policy.
-    ///
-    /// # Parameters
-    ///
-    /// * `suffixless_policy` - Replacement suffixless-input policy.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    #[inline]
-    pub(crate) const fn with_suffixless_policy(mut self, suffixless_policy: SuffixlessDurationPolicy) -> Self {
-        self.suffixless_policy = suffixless_policy;
-        self
     }
 
     /// Returns the strictness applied to explicit unit symbols.
@@ -110,21 +94,6 @@ impl DurationTextOptions {
     #[must_use]
     pub const fn unit_parse_mode(&self) -> DurationUnitParseMode {
         self.unit_parse_mode
-    }
-
-    /// Returns a copy with a different unit parse mode.
-    ///
-    /// # Parameters
-    ///
-    /// * `unit_parse_mode` - Replacement unit parse mode.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    #[inline]
-    pub(crate) const fn with_unit_parse_mode(mut self, unit_parse_mode: DurationUnitParseMode) -> Self {
-        self.unit_parse_mode = unit_parse_mode;
-        self
     }
 
     /// Returns the maximum accepted source text length in bytes.
@@ -143,6 +112,36 @@ impl DurationTextOptions {
     #[inline]
     pub const fn max_text_bytes(&self) -> usize {
         self.max_text_bytes
+    }
+
+    /// Returns a copy with a different suffixless-input policy.
+    ///
+    /// # Parameters
+    ///
+    /// * `suffixless_policy` - Replacement suffixless-input policy.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline]
+    pub(crate) const fn with_suffixless_policy(mut self, suffixless_policy: SuffixlessDurationPolicy) -> Self {
+        self.suffixless_policy = suffixless_policy;
+        self
+    }
+
+    /// Returns a copy with a different unit parse mode.
+    ///
+    /// # Parameters
+    ///
+    /// * `unit_parse_mode` - Replacement unit parse mode.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline]
+    pub(crate) const fn with_unit_parse_mode(mut self, unit_parse_mode: DurationUnitParseMode) -> Self {
+        self.unit_parse_mode = unit_parse_mode;
+        self
     }
 
     /// Returns a copy with a different source text byte limit.

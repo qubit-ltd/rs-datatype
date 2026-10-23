@@ -5,12 +5,12 @@
 //
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
-//! Conversion operation limit wire coverage is provided by public tests.
+//! Conversion operation limit defaults are covered through the public API.
 
 use qubit_datatype::ConversionOperationLimits;
 
 #[test]
-fn test_conversion_operation_limits_wire_is_covered_by_public_contract() {
+fn test_conversion_operation_limits_default_output_bytes_match_public_constant() {
     let limits = ConversionOperationLimits::default();
     assert_eq!(
         limits.max_output_bytes(),

@@ -14,6 +14,19 @@ use crate::duration::DurationUnitParseMode;
 use crate::duration::SuffixlessDurationPolicy;
 
 /// Builder for [`DurationConversionPolicy`].
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{DurationConversionPolicyBuilder, DurationUnit};
+///
+/// let policy = DurationConversionPolicyBuilder::new()
+///     .numeric_input_unit(DurationUnit::Seconds)
+///     .output_unit(DurationUnit::Milliseconds)
+///     .build();
+/// assert_eq!(policy.numeric_input_unit(), DurationUnit::Seconds);
+/// assert_eq!(policy.output_unit(), DurationUnit::Milliseconds);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DurationConversionPolicyBuilder {
     /// Duration policy being configured.
@@ -85,8 +98,12 @@ impl DurationConversionPolicyBuilder {
     }
 
     /// Builds the configured duration policy.
+    ///
+    /// # Returns
+    ///
+    /// The duration policy assembled from the configured input and output
+    /// behavior.
     #[inline]
-    #[must_use]
     pub fn build(self) -> DurationConversionPolicy {
         self.policy
     }

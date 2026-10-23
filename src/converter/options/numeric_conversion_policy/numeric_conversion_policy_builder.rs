@@ -46,6 +46,15 @@ impl NumericConversionPolicyBuilder {
     }
 
     /// Configures fractional-to-integer conversion.
+    ///
+    /// # Parameters
+    ///
+    /// * `policy` - Policy applied when fractional numeric values are converted
+    ///   to integer targets.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing the configured fractional conversion policy.
     #[inline]
     #[must_use]
     pub const fn fractional_to_integer(self, policy: FractionalToIntegerPolicy) -> Self {
@@ -55,6 +64,15 @@ impl NumericConversionPolicyBuilder {
     }
 
     /// Configures numeric-to-float conversion.
+    ///
+    /// # Parameters
+    ///
+    /// * `policy` - Rounding policy applied to existing numeric values
+    ///   converted to floating-point targets.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing the configured numeric-to-float policy.
     #[inline]
     #[must_use]
     pub const fn numeric_to_float(self, policy: FloatRoundingPolicy) -> Self {
@@ -64,6 +82,15 @@ impl NumericConversionPolicyBuilder {
     }
 
     /// Configures text-to-float conversion.
+    ///
+    /// # Parameters
+    ///
+    /// * `policy` - Rounding policy applied to text parsed into floating-point
+    ///   targets.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing the configured text-to-float policy.
     #[inline]
     #[must_use]
     pub const fn text_to_float(self, policy: FloatRoundingPolicy) -> Self {

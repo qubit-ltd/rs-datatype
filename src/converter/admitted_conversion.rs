@@ -20,6 +20,35 @@ use crate::datatype::DataType;
 /// charged the top-level item and input resources. Consuming this value with
 /// [`Self::convert`] safely delegates the same admitted source to another
 /// target without charging it a second time.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{
+///     AdmittedConversion,
+///     DataConversionError,
+///     DataConversionTarget,
+///     DataConverter,
+///     DataType,
+///     DataTypeOf,
+/// };
+///
+/// struct Port(u16);
+///
+/// impl DataTypeOf for Port {
+///     const DATA_TYPE: DataType = DataType::UInt16;
+/// }
+///
+/// impl DataConversionTarget for Port {
+///     fn convert(input: AdmittedConversion<'_, '_, '_>)
+///         -> Result<Self, DataConversionError> {
+///         input.convert::<u16>().map(Self)
+///     }
+/// }
+///
+/// let port = DataConverter::from("8080").to::<Port>().unwrap();
+/// assert_eq!(port.0, 8080);
+/// ```
 #[must_use]
 pub struct AdmittedConversion<'session, 'policy, 'source> {
     /// The sole source admitted for this conversion.
@@ -36,6 +65,10 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     }
 
     /// Returns the source bound to this conversion.
+    ///
+    /// # Returns
+    ///
+    /// The source value admitted for this conversion.
     #[must_use = "the admitted source reference is returned"]
     #[inline]
     pub const fn source(&self) -> &DataConverter<'source> {
@@ -43,21 +76,30 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     }
 
     /// Returns the runtime type of the bound source.
-    #[must_use = "the bound source data type is returned"]
+    ///
+    /// # Returns
+    ///
+    /// The data type of the admitted source.
     #[inline]
     pub const fn from_type(&self) -> DataType {
         self.context.source_type()
     }
 
     /// Returns the runtime type requested by the active target.
-    #[must_use = "the bound target data type is returned"]
+    ///
+    /// # Returns
+    ///
+    /// The data type requested by the active target.
     #[inline]
     pub const fn to_type(&self) -> DataType {
         self.context.to_type()
     }
 
     /// Produces an unsupported-pair error for the bound source and target.
-    #[must_use = "the bound unsupported-pair error is returned"]
+    ///
+    /// # Returns
+    ///
+    /// An error describing the bound source and target types as unsupported.
     #[inline]
     pub const fn unsupported(&self) -> DataConversionError {
         DataConversionError::unsupported(self.from_type(), self.to_type())
@@ -74,6 +116,10 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     /// Returns the target's [`DataConversionError`] when the source is missing,
     /// the source-target pair is unsupported, the value is invalid, or a
     /// conversion resource limit is exceeded.
+    ///
+    /// # Returns
+    ///
+    /// The converted target value when conversion succeeds.
     #[inline]
     pub fn convert<T>(self) -> Result<T, DataConversionError>
     where

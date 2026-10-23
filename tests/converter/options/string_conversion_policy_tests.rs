@@ -30,7 +30,7 @@ fn test_string_conversion_policy_reject_unknown_fields() {
     assert!(error.to_string().contains("unknown field `unexpected`"));
 }
 
-/// Test string policy policy branches.
+/// Test string policy branches.
 #[test]
 fn test_string_conversion_policy_cover_policy_branches() {
     let preserved = StringConversionPolicy::builder()

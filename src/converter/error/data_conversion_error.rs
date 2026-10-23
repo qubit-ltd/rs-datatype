@@ -166,6 +166,16 @@ impl DataConversionError {
     }
 
     /// Maps native measurement accounting into a public conversion error.
+    ///
+    /// # Parameters
+    ///
+    /// * `from` - Declared source data type.
+    /// * `to` - Requested target data type.
+    /// * `error` - Budget or native quantity measurement failure.
+    ///
+    /// # Returns
+    ///
+    /// The corresponding resource-limit or quantity conversion error.
     #[inline]
     pub(crate) fn measured_limit(
         from: DataType,
@@ -375,6 +385,11 @@ impl DataConversionError {
     }
 
     /// Returns the resource whose native measurement could not fit `u64`.
+    ///
+    /// # Returns
+    ///
+    /// `Some` with the resource for a native-measurement failure, or `None`
+    /// for every other error kind.
     #[must_use]
     #[inline]
     pub const fn quantity_resource(&self) -> Option<ConversionResource> {

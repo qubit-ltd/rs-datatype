@@ -66,7 +66,6 @@ impl DurationConversionLimitsBuilder {
     /// The duration limits assembled from the configured maximum source-text
     /// length.
     #[inline]
-    #[must_use]
     pub const fn build(self) -> DurationConversionLimits {
         self.limits
     }

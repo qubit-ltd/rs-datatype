@@ -64,7 +64,6 @@ impl StructuredConversionLimitsBuilder {
 
     /// Builds the configured structured limits.
     #[inline]
-    #[must_use]
     pub fn build(self) -> StructuredConversionLimits {
         self.limits
     }

@@ -207,6 +207,7 @@ impl<'a> NumberRef<'a> {
     /// # Returns
     ///
     /// `true` for fixed-width integer values.
+    #[inline]
     #[must_use]
     pub fn is_integer(self) -> bool {
         matches!(

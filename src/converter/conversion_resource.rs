@@ -14,7 +14,7 @@
 /// ```
 /// use qubit_datatype::ConversionResource;
 ///
-/// assert_eq!(ConversionResource::Items, ConversionResource::Items);
+/// assert_ne!(ConversionResource::Items, ConversionResource::InputBytes);
 /// ```
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

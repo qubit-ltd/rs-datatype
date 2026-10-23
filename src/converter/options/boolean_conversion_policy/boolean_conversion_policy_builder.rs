@@ -11,7 +11,23 @@ use super::BooleanConversionPolicy;
 use crate::converter::BooleanLiteralConflictError;
 use crate::converter::options::BooleanNumericPolicy;
 
-/// Builder for [`BooleanConversionPolicy`].
+/// Configures and validates a [`BooleanConversionPolicy`].
+///
+/// Literal conflicts are retained by the builder and reported when it is
+/// built, so chained configuration remains available after a conflict.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::{BooleanConversionPolicyBuilder, BooleanNumericPolicy};
+///
+/// let policy = BooleanConversionPolicyBuilder::new()
+///     .true_literal("enabled")
+///     .numeric_policy(BooleanNumericPolicy::Reject)
+///     .build()
+///     .expect("the true literal does not conflict with the defaults");
+/// assert_eq!(policy.parse("enabled"), Some(true));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BooleanConversionPolicyBuilder {
     /// Validated policy or the first literal-conflict error encountered.
@@ -61,8 +77,17 @@ impl BooleanConversionPolicyBuilder {
     }
 
     /// Builds the configured policy and validates literal conflicts.
+    ///
+    /// # Returns
+    ///
+    /// The configured policy when all literals are disjoint under the
+    /// selected case-sensitivity rule.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`BooleanLiteralConflictError`] if a prior literal
+    /// configuration introduced an overlap between the true and false sets.
     #[inline]
-    #[must_use]
     pub fn build(self) -> Result<BooleanConversionPolicy, BooleanLiteralConflictError> {
         self.policy
     }

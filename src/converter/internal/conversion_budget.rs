@@ -97,42 +97,57 @@ impl ConversionBudget {
     }
 
     /// Returns the remaining item capacity for internal allocation planning.
+    #[must_use]
     #[inline]
     pub(crate) const fn remaining_items(&self) -> u64 {
         self.items.remaining()
     }
 
     /// Returns cumulative converted items already consumed.
+    #[must_use]
+    #[inline]
     pub(crate) fn items_used(&self) -> u64 {
         self.items.used()
     }
 
     /// Returns remaining cumulative input-byte capacity.
+    #[must_use]
+    #[inline]
     pub(crate) fn input_bytes_remaining(&self) -> u64 {
         self.input_bytes.remaining()
     }
 
     /// Returns remaining cumulative output-byte capacity.
+    #[must_use]
+    #[inline]
     pub(crate) fn output_bytes_remaining(&self) -> u64 {
         self.output_bytes.remaining()
     }
 
     /// Returns cumulative input bytes already consumed.
+    #[must_use]
+    #[inline]
     pub(crate) fn input_bytes_used(&self) -> u64 {
         self.input_bytes.used()
     }
 
     /// Returns cumulative output bytes already consumed.
+    #[must_use]
+    #[inline]
     pub(crate) fn output_bytes_used(&self) -> u64 {
         self.output_bytes.used()
     }
 
     /// Returns cumulative structured nodes already consumed.
+    #[must_use]
+    #[inline]
     pub(crate) fn structured_nodes_used(&self) -> u64 {
         self.structured.used_nodes().unwrap_or(0)
     }
 
     /// Returns cumulative structured payload bytes already consumed.
+    #[must_use]
+    #[inline]
     pub(crate) fn structured_payload_bytes_used(&self) -> u64 {
         self.structured.used_payload_bytes().unwrap_or(0)
     }

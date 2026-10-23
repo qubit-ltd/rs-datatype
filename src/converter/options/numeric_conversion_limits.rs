@@ -106,6 +106,10 @@ impl NumericConversionLimits {
     }
 
     /// Returns the numeric text resource limit.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the numeric text limit invariant is broken.
     #[inline]
     #[must_use]
     pub fn max_text_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
@@ -145,7 +149,13 @@ impl NumericConversionLimits {
     /// # Returns
     ///
     /// The configured BigInteger digit limit.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the BigInteger digit limit invariant is broken while the
+    /// `big-integer` feature is enabled.
     #[inline]
+    #[must_use]
     pub fn max_big_integer_digits_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
         #[cfg(feature = "big-integer")]
         {
@@ -258,6 +268,11 @@ impl NumericConversionLimits {
     /// # Returns
     ///
     /// Updated limits.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the BigDecimal scale limit invariant is broken while the
+    /// `big-decimal` feature is enabled.
     #[inline]
     pub(crate) fn with_max_big_decimal_coefficient_digits(mut self, maximum: u64) -> Self {
         #[cfg(feature = "big-decimal")]

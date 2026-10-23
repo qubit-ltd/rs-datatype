@@ -121,6 +121,7 @@ fn format_display_source(
 ///
 /// `true` when the source has a canonical direct display representation;
 /// otherwise, `false` when conversion requires normalization or validation.
+#[must_use]
 fn is_display_source(source: &DataConverter<'_>) -> bool {
     match source {
         DataConverter::Bool(_)
@@ -185,7 +186,7 @@ impl BuiltinDataConversionTarget for char {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `options` - String normalization policies.
+    /// * `context` - String normalization policies and conversion limits.
     ///
     /// # Returns
     ///
@@ -226,7 +227,7 @@ impl BuiltinDataConversionTarget for String {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to format.
-    /// * `session` - Shared conversion policies and output budget.
+    /// * `context` - Shared conversion policies and output budget.
     ///
     /// # Returns
     ///
@@ -331,7 +332,7 @@ macro_rules! impl_text_or_copy_target {
             /// # Parameters
             ///
             /// * `source` - Borrowed runtime value to convert.
-            /// * `options` - String normalization policies.
+            /// * `context` - String normalization policies and conversion limits.
             ///
             /// # Returns
             ///
@@ -494,7 +495,7 @@ impl BuiltinDataConversionTarget for DateTime<Utc> {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `options` - String normalization policies.
+    /// * `context` - String normalization policies and conversion limits.
     ///
     /// # Returns
     ///
@@ -535,7 +536,7 @@ impl BuiltinDataConversionTarget for Url {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `options` - String normalization and structured text-limit policies.
+    /// * `context` - String normalization and structured text-limit policies.
     ///
     /// # Returns
     ///
@@ -576,7 +577,7 @@ impl BuiltinDataConversionTarget for Url {
     /// # Parameters
     ///
     /// * `source` - Runtime value to consume.
-    /// * `options` - String normalization and structured text-limit policies.
+    /// * `context` - String normalization and structured text-limit policies.
     ///
     /// # Returns
     ///

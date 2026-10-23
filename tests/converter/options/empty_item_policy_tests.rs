@@ -10,8 +10,7 @@ use qubit_datatype::converter::EmptyItemPolicy;
 /// Test equality semantics for empty item policies.
 #[test]
 fn test_empty_item_policy_variants_are_distinct() {
-    assert_eq!(EmptyItemPolicy::Keep, EmptyItemPolicy::Keep);
-    assert_eq!(EmptyItemPolicy::Skip, EmptyItemPolicy::Skip);
-    assert_eq!(EmptyItemPolicy::Reject, EmptyItemPolicy::Reject);
+    assert_ne!(EmptyItemPolicy::Keep, EmptyItemPolicy::Skip);
     assert_ne!(EmptyItemPolicy::Keep, EmptyItemPolicy::Reject);
+    assert_ne!(EmptyItemPolicy::Skip, EmptyItemPolicy::Reject);
 }
