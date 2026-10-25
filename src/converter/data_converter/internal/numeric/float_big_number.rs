@@ -11,7 +11,9 @@
 use bigdecimal::BigDecimal;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_traits::FromPrimitive;
+#[cfg(feature = "big-integer")]
 use num_traits::ToPrimitive;
 
 use crate::converter::DataConversionError;
@@ -131,7 +133,9 @@ pub(super) fn decimal_to_f64(
     from: DataType,
     to: DataType,
 ) -> Result<f64, DataConversionError> {
-    let converted = value.to_f64().unwrap_or(f64::INFINITY);
+    let converted = decimal_float_text(value)
+        .parse::<f64>()
+        .map_err(|_| DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange))?;
     if !converted.is_finite() {
         return Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange));
     }
@@ -170,7 +174,9 @@ pub(super) fn decimal_to_f32(
     from: DataType,
     to: DataType,
 ) -> Result<f32, DataConversionError> {
-    let converted = value.to_f32().unwrap_or(f32::INFINITY);
+    let converted = decimal_float_text(value)
+        .parse::<f32>()
+        .map_err(|_| DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange))?;
     if !converted.is_finite() {
         return Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange));
     }
@@ -183,4 +189,20 @@ pub(super) fn decimal_to_f32(
     } else {
         Ok(converted)
     }
+}
+
+/// Formats a decimal coefficient and scale as bounded-size float parser input.
+///
+/// # Parameters
+///
+/// * `value` - Decimal whose exact coefficient and scale are preserved.
+///
+/// # Returns
+///
+/// A coefficient-and-exponent string whose length depends on the coefficient
+/// and exponent digits, not on the scale magnitude.
+#[cfg(feature = "big-decimal")]
+fn decimal_float_text(value: &BigDecimal) -> String {
+    let (coefficient, scale) = value.as_bigint_and_scale();
+    format!("{coefficient}e{}", -i128::from(scale))
 }
