@@ -7,13 +7,12 @@
 // =============================================================================
 //! Textual and temporal conversion tests.
 
-#[cfg(feature = "json")]
 use std::collections::HashMap;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use std::str::FromStr;
 use std::time::Duration;
 
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
 #[cfg(feature = "chrono")]
 use chrono::DateTime;
@@ -25,7 +24,7 @@ use chrono::NaiveDateTime;
 use chrono::NaiveTime;
 #[cfg(feature = "chrono")]
 use chrono::Utc;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
@@ -73,14 +72,18 @@ fn assert_non_canonical_year_rejected(result: Result<String, DataConversionError
 
 /// Test the canonical textual formats for rich target types.
 #[test]
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
-fn test_data_converter_rich_targets_use_canonical_text_formats() {
+fn test_data_converter_canonical_char_without_optional_features() {
     assert_eq!(
         DataConverter::from("汉")
             .to::<char>()
             .expect("one Unicode scalar should parse"),
         '汉',
     );
+}
+
+#[test]
+#[cfg(feature = "chrono")]
+fn test_data_converter_canonical_temporal_text_formats() {
     assert_eq!(
         DataConverter::from("2026-07-12")
             .to::<NaiveDate>()
@@ -109,30 +112,55 @@ fn test_data_converter_rich_targets_use_canonical_text_formats() {
             .to_rfc3339(),
         "2026-07-12T10:11:12+00:00",
     );
+}
+
+#[test]
+#[cfg(feature = "big-integer")]
+fn test_data_converter_canonical_big_integer_text() {
     assert_eq!(
         DataConverter::from("+12345678901234567890")
             .to::<BigInt>()
             .expect("signed decimal BigInt should parse"),
         BigInt::from_str("12345678901234567890").expect("expected BigInt should parse"),
     );
+}
+
+#[test]
+#[cfg(feature = "big-decimal")]
+fn test_data_converter_canonical_big_decimal_text() {
     assert_eq!(
         DataConverter::from("1.25e3")
             .to::<BigDecimal>()
             .expect("exponent BigDecimal should parse"),
         BigDecimal::from(1_250),
     );
+}
+
+#[test]
+#[cfg(feature = "url")]
+fn test_data_converter_canonical_url_text() {
     assert_eq!(
         DataConverter::from("https://example.com/path")
             .to::<Url>()
             .expect("absolute URL should parse"),
         Url::parse("https://example.com/path").expect("expected URL should parse"),
     );
+}
+
+#[test]
+#[cfg(feature = "json")]
+fn test_data_converter_canonical_json_text() {
     assert_eq!(
         DataConverter::from("[1,true,null]")
             .to::<serde_json::Value>()
             .expect("any JSON value should parse"),
         serde_json::json!([1, true, null]),
     );
+}
+
+#[test]
+#[cfg(feature = "json")]
+fn test_data_converter_canonical_string_map_json_text() {
     assert_eq!(
         DataConverter::from(r#"{"key":"value"}"#)
             .to::<HashMap<String, String>>()
@@ -140,6 +168,10 @@ fn test_data_converter_rich_targets_use_canonical_text_formats() {
             .get("key"),
         Some(&"value".to_string()),
     );
+}
+
+#[test]
+fn test_data_converter_canonical_duration_text() {
     assert_eq!(
         DataConverter::from("1s")
             .to::<Duration>()
@@ -201,7 +233,7 @@ fn test_data_converter_default_does_not_trim_any_text_parser() {
     assert_invalid_syntax(
         DataConverter::from(" 1s ").to::<Duration>(),
         DataType::Duration,
-        "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)?",
+        "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)",
     );
 }
 
@@ -225,22 +257,10 @@ fn test_data_converter_char_target_conversions() {
     ));
 }
 
-/// Test string target conversion for every supported source variant.
+/// Test string target conversion from core scalar sources.
 #[test]
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
-fn test_data_converter_string_target_accepts_all_value_sources() {
-    let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
-    let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
-    let datetime = NaiveDateTime::new(date, time);
-    let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
-    let big_int = BigInt::from(18);
-    let big_decimal = BigDecimal::from_str("19.5").expect("test BigDecimal should parse");
-    let url = Url::parse("https://example.com").expect("test URL should parse");
-    let mut map = HashMap::new();
-    map.insert("k".to_string(), "v".to_string());
-    let json = serde_json::json!({"k": "v"});
-
-    let sources = [
+fn test_data_converter_string_target_accepts_core_value_sources() {
+    for source in [
         DataConverter::from("text"),
         DataConverter::from(true),
         DataConverter::from('A'),
@@ -256,19 +276,8 @@ fn test_data_converter_string_target_accepts_all_value_sources() {
         DataConverter::from(10u128),
         DataConverter::from(13.5f32),
         DataConverter::from(14.5f64),
-        DataConverter::from(&big_int),
-        DataConverter::from(&big_decimal),
-        DataConverter::from(date),
-        DataConverter::from(time),
-        DataConverter::from(datetime),
-        DataConverter::from(instant),
         DataConverter::from(Duration::from_millis(1)),
-        DataConverter::from(&url),
-        DataConverter::from(&map),
-        DataConverter::from(&json),
-    ];
-
-    for source in sources {
+    ] {
         assert!(
             !source
                 .to::<String>()
@@ -276,25 +285,91 @@ fn test_data_converter_string_target_accepts_all_value_sources() {
                 .is_empty()
         );
     }
-
     assert!(matches!(
         DataConverter::Unset(DataType::String).to::<String>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
 }
 
-/// Test direct strict conversions for non-numeric target types.
 #[test]
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
-fn test_data_converter_strict_targets_cover_success_and_errors() {
+#[cfg(feature = "chrono")]
+fn test_data_converter_string_target_accepts_chrono_sources() {
     let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
     let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
-    let big_int = BigInt::from(18);
-    let big_decimal = BigDecimal::from(19);
-    let mut map = HashMap::new();
-    map.insert("k".to_string(), "v".to_string());
+    for source in [
+        DataConverter::from(date).to::<String>().unwrap(),
+        DataConverter::from(time).to::<String>().unwrap(),
+        DataConverter::from(datetime).to::<String>().unwrap(),
+        DataConverter::from(instant).to::<String>().unwrap(),
+    ] {
+        assert!(!source.is_empty());
+    }
+}
+
+#[test]
+#[cfg(feature = "big-integer")]
+fn test_data_converter_string_target_accepts_big_integer_source() {
+    assert!(
+        !DataConverter::from(BigInt::from(18))
+            .to::<String>()
+            .expect("BigInt should convert")
+            .is_empty()
+    );
+}
+
+#[test]
+#[cfg(feature = "big-decimal")]
+fn test_data_converter_string_target_accepts_big_decimal_source() {
+    let value = BigDecimal::from_str("19.5").expect("test decimal should parse");
+    assert!(
+        !DataConverter::from(value)
+            .to::<String>()
+            .expect("BigDecimal should convert")
+            .is_empty()
+    );
+}
+
+#[test]
+#[cfg(feature = "url")]
+fn test_data_converter_string_target_accepts_url_source() {
+    let value = Url::parse("https://example.com").expect("test URL should parse");
+    assert!(
+        !DataConverter::from(&value)
+            .to::<String>()
+            .expect("URL should convert")
+            .is_empty()
+    );
+}
+
+#[test]
+#[cfg(feature = "json")]
+fn test_data_converter_string_target_accepts_json_and_map_sources() {
+    let map = HashMap::from([("k".to_owned(), "v".to_owned())]);
+    let json = serde_json::json!({"k": "v"});
+    assert!(
+        !DataConverter::from(&map)
+            .to::<String>()
+            .expect("map should convert")
+            .is_empty()
+    );
+    assert!(
+        !DataConverter::from(&json)
+            .to::<String>()
+            .expect("JSON should convert")
+            .is_empty()
+    );
+}
+
+/// Test direct strict conversions for chrono target types.
+#[test]
+#[cfg(feature = "chrono")]
+fn test_data_converter_strict_chrono_targets_cover_success_and_errors() {
+    let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
+    let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
+    let datetime = NaiveDateTime::new(date, time);
+    let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
 
     assert_eq!(
         DataConverter::from(date)
@@ -320,35 +395,11 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
             .expect("UTC date-time conversion should succeed"),
         instant
     );
-    assert_eq!(
-        DataConverter::from(&big_int)
-            .to::<BigInt>()
-            .expect("BigInt conversion should succeed"),
-        big_int
-    );
-    assert_eq!(
-        DataConverter::from(&big_decimal)
-            .to::<BigDecimal>()
-            .expect("BigDecimal conversion should succeed"),
-        big_decimal
-    );
-    assert_eq!(
-        DataConverter::from(&map)
-            .to::<HashMap<String, String>>()
-            .expect("string map conversion should succeed"),
-        map
-    );
-
     assert!(matches!(
         DataConverter::Unset(DataType::Date).to::<NaiveDate>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
     ));
     assert_eq!(DataConverter::from("2026-05-01").to::<NaiveDate>(), Ok(date));
-    assert!(matches!(
-        DataConverter::Unset(DataType::BigInteger).to::<BigInt>(),
-        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
-    ));
-    assert_eq!(DataConverter::from(1i32).to::<BigInt>(), Ok(BigInt::from(1)));
     assert!(matches!(
         DataConverter::Unset(DataType::Time).to::<NaiveTime>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
@@ -373,25 +424,45 @@ fn test_data_converter_strict_targets_cover_success_and_errors() {
         DataConverter::from(1i32).to::<DateTime<Utc>>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
-    assert!(matches!(
-        DataConverter::Unset(DataType::BigDecimal).to::<BigDecimal>(),
-        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
-    ));
-    assert_eq!(DataConverter::from(1i32).to::<BigDecimal>(), Ok(BigDecimal::from(1)),);
-    assert!(matches!(
-        DataConverter::Unset(DataType::StringMap)
-            .to::<HashMap<String, String>>(),
-        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
-    ));
-    assert!(matches!(
-        DataConverter::from(1i32).to::<HashMap<String, String>>(),
-        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
-    ));
 }
 
-/// Test temporal and complex conversions with strict target behavior.
 #[test]
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "big-integer")]
+fn test_data_converter_strict_big_integer_target() {
+    let big_int = BigInt::from(18);
+    assert_eq!(DataConverter::from(&big_int).to::<BigInt>(), Ok(big_int));
+    assert!(
+        matches!(DataConverter::Unset(DataType::BigInteger).to::<BigInt>(), Err(error) if error.kind() == DataConversionErrorKind::Missing)
+    );
+    assert_eq!(DataConverter::from(1i32).to::<BigInt>(), Ok(BigInt::from(1)));
+}
+
+#[test]
+#[cfg(feature = "big-decimal")]
+fn test_data_converter_strict_big_decimal_target() {
+    let value = BigDecimal::from(19);
+    assert_eq!(DataConverter::from(&value).to::<BigDecimal>(), Ok(value));
+    assert!(
+        matches!(DataConverter::Unset(DataType::BigDecimal).to::<BigDecimal>(), Err(error) if error.kind() == DataConversionErrorKind::Missing)
+    );
+    assert_eq!(DataConverter::from(1i32).to::<BigDecimal>(), Ok(BigDecimal::from(1)));
+}
+
+#[test]
+fn test_data_converter_strict_string_map_target() {
+    let map = HashMap::from([("k".to_owned(), "v".to_owned())]);
+    assert_eq!(DataConverter::from(&map).to::<HashMap<String, String>>(), Ok(map));
+    assert!(
+        matches!(DataConverter::Unset(DataType::StringMap).to::<HashMap<String, String>>(), Err(error) if error.kind() == DataConversionErrorKind::Missing)
+    );
+    assert!(
+        matches!(DataConverter::from(1i32).to::<HashMap<String, String>>(), Err(error) if error.kind() == DataConversionErrorKind::Unsupported)
+    );
+}
+
+/// Test temporal conversions with strict target behavior.
+#[test]
+#[cfg(feature = "chrono")]
 fn test_data_converter_temporal_and_complex_conversions() {
     let date = NaiveDate::from_ymd_opt(2026, 5, 1).expect("test date should be valid");
     let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");

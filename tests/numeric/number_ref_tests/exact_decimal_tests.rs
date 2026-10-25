@@ -7,20 +7,20 @@
 // =============================================================================
 //! Exact decimal comparison tests.
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use std::cmp::Ordering;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use std::str::FromStr;
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use qubit_datatype::NumberRef;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use qubit_datatype::NumericComparisonPolicy;
 
 /// Verifies decimal scale does not change exact mathematical equality.
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 #[test]
 fn test_exact_decimal_ignores_redundant_scale() {
     let decimal = BigDecimal::from_str("1.00").expect("test decimal");

@@ -8,22 +8,22 @@
 //! Structured conversion tests.
 
 use std::collections::HashMap;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "duration")]
 use std::time::Duration;
 
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "chrono")]
 use chrono::DateTime;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "chrono")]
 use chrono::NaiveDate;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "chrono")]
 use chrono::NaiveDateTime;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "chrono")]
 use chrono::NaiveTime;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "chrono")]
 use chrono::Utc;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 #[cfg(any(feature = "json", feature = "url"))]
 use qubit_datatype::ConversionLimits;
@@ -35,14 +35,11 @@ use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 #[cfg(feature = "json")]
 use qubit_datatype::ConversionSession;
-#[cfg(any(feature = "json", feature = "url"))]
 use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConverter;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(feature = "json")]
 use qubit_datatype::DataFormat;
-#[cfg(any(feature = "json", feature = "url"))]
 use qubit_datatype::DataType;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
 use qubit_datatype::InvalidValueReason;
 #[cfg(any(feature = "json", feature = "url"))]
 use qubit_datatype::StructuredConversionLimits;
@@ -52,7 +49,6 @@ use qubit_datatype::converter::DataConversionErrorKind;
 use url::Url;
 
 /// Assert an invalid-syntax error with exact source and target types.
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
 fn assert_invalid_syntax<T>(result: Result<T, DataConversionError>, to: DataType, expected: &'static str) {
     let matches_expected = matches!(
         &result,
@@ -68,7 +64,7 @@ fn assert_invalid_syntax<T>(result: Result<T, DataConversionError>, to: DataType
 }
 
 /// Assert an invalid error with exact source type, target type, and reason.
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(any(feature = "big-integer", feature = "json", feature = "duration"))]
 fn assert_invalid_reason<T>(result: Result<T, DataConversionError>, to: DataType, expected_reason: InvalidValueReason) {
     assert!(matches!(
         result,
@@ -286,10 +282,9 @@ fn test_data_converter_rejects_oversize_url_text() {
     assert_eq!(error.observed_lower_bound(), Some(16));
 }
 
-/// Test rejection boundaries for every canonical rich textual format.
+/// Test rejection boundaries for char text independent of optional features.
 #[test]
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
-fn test_data_converter_rich_targets_reject_noncanonical_text() {
+fn test_data_converter_char_rejects_noncanonical_text() {
     for value in ["", "ab"] {
         assert_invalid_syntax(
             DataConverter::from(value).to::<char>(),
@@ -297,6 +292,11 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
             "one Unicode scalar value",
         );
     }
+}
+
+#[test]
+#[cfg(feature = "chrono")]
+fn test_data_converter_chrono_targets_reject_noncanonical_text() {
     assert_invalid_syntax(
         DataConverter::from("2026/07/12").to::<NaiveDate>(),
         DataType::Date,
@@ -317,21 +317,41 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
         DataType::Instant,
         "RFC 3339 timestamp with offset",
     );
+}
+
+#[test]
+#[cfg(feature = "big-integer")]
+fn test_data_converter_big_integer_rejects_fractional_text() {
     assert_invalid_reason(
         DataConverter::from("1.5").to::<BigInt>(),
         DataType::BigInteger,
         InvalidValueReason::PrecisionLoss,
     );
+}
+
+#[test]
+#[cfg(feature = "big-decimal")]
+fn test_data_converter_big_decimal_rejects_malformed_text() {
     assert_invalid_syntax(
         DataConverter::from("1.2.3").to::<BigDecimal>(),
         DataType::BigDecimal,
         "decimal number with optional exponent",
     );
+}
+
+#[test]
+#[cfg(feature = "url")]
+fn test_data_converter_url_rejects_noncanonical_text() {
     assert_invalid_syntax(
         DataConverter::from("relative/path").to::<Url>(),
         DataType::Url,
         "absolute URL",
     );
+}
+
+#[test]
+#[cfg(feature = "json")]
+fn test_data_converter_json_targets_reject_noncanonical_text() {
     assert_invalid_reason(
         DataConverter::from("{").to::<serde_json::Value>(),
         DataType::Json,
@@ -362,11 +382,15 @@ fn test_data_converter_rich_targets_reject_noncanonical_text() {
             format: DataFormat::Json,
         },
     );
+}
+
+#[test]
+fn test_data_converter_duration_rejects_noncanonical_text() {
     for value in [" 1s", "+1s", "1.5s"] {
         assert_invalid_syntax(
             DataConverter::from(value).to::<Duration>(),
             DataType::Duration,
-            "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)?",
+            "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)",
         );
     }
     assert_invalid_reason(
