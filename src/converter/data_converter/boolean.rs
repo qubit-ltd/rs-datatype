@@ -66,7 +66,8 @@ fn integer_to_bool(
 /// # Parameters
 ///
 /// * `value` - Source string before configured normalization.
-/// * `options` - String, Boolean literal, numeric policy, and text limits.
+/// * `options` - String normalization and Boolean literal and numeric policies.
+/// * `limits` - Numeric text byte limit applied before parsing.
 ///
 /// # Returns
 ///
@@ -131,7 +132,8 @@ impl BuiltinDataConversionTarget for bool {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `options` - String normalization and Boolean conversion policies.
+    /// * `context` - Shared conversion session binding policies and resource
+    ///   limits to this target conversion.
     ///
     /// # Returns
     ///

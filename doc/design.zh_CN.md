@@ -22,6 +22,12 @@ context 只暴露当前转换中有意义的操作：
 `ConversionSession` 仍公开构造、复用、标量条目准入、配置和累计用量观察。原始字节和
 结构记账原语改为 crate 私有。
 
+标量集合适配器先调用 `admit_scalar_string_source`，为整个输入记账，并返回
+`AdmittedScalarSource`。该对象借用 session，并从已记账的原始文本中惰性地产生一次性
+`AdmittedScalarItem` token。它保留过滤前的原始来源索引，且不会分配条目字符串。拆分或准入
+失败会耗尽该来源；消费者提前结束时，尚未访问的尾部不会被扫描。没有公开入口可以脱离
+来源字节记账，单独准入任意替代条目来源。
+
 ## 不变量
 
 1. 顶层 converter 调用在目标执行前为条目和输入记账。
@@ -29,6 +35,13 @@ context 只暴露当前转换中有意义的操作：
 3. 每个 context 预算错误都携带当前来源和目标类型。
 4. String 渲染或输出准入失败不会提交输出字节。
 5. 标量条目 token 只能消耗一次，并且获得已绑定的 context。
+6. 每个标量条目 token 都源自已按字节准入的来源，且条目不能超出其对 session 的独占借用。
+
+## 兼容性
+
+这是有意做出的破坏性 API 变更：下游 `DataConversionTarget` 实现必须将参数从
+`&mut ConversionSession` 改为 `AdmittedConversion`，并调用其转换方法。这一变更移除一种
+能力，而不是再增加一套并行 API，使扩展模型保持单一且可审计。
 
 ## 运行时描述与能力发现
 

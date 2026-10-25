@@ -40,6 +40,7 @@ use crate::datatype::DataType;
 ///
 /// * `value` - Raw textual source.
 /// * `options` - String and numeric conversion options.
+/// * `limits` - Numeric text byte limit applied after normalization.
 /// * `to` - Numeric target type retained in conversion errors.
 ///
 /// # Returns
@@ -66,7 +67,8 @@ pub(super) fn normalize_numeric_text<'a>(
 /// # Parameters
 ///
 /// * `value` - Normalized numeric text whose byte length is checked.
-/// * `options` - Numeric resource limits.
+/// * `limits` - Numeric resource limits used to check the normalized text byte
+///   count.
 /// * `to` - Target type retained in a limit error.
 ///
 /// # Returns

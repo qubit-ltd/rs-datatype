@@ -298,6 +298,7 @@ fn float_to_bigint(
 ///
 /// * `source` - Borrowed source representation to convert.
 /// * `options` - Decimal, float, string, and duration conversion policies.
+/// * `limits` - Numeric text, integer digit, and decimal coefficient limits.
 /// * `to` - Final target type retained in conversion errors.
 ///
 /// # Returns
@@ -421,7 +422,8 @@ fn non_finite_big_decimal_error(source: &DataConverter<'_>) -> DataConversionErr
 ///
 /// * `source` - Source converter used to retain error context.
 /// * `value` - Raw text to normalize and parse.
-/// * `options` - Conversion policies and resource limits.
+/// * `options` - String normalization and numeric parsing policies.
+/// * `limits` - Numeric text, digit, and decimal-coefficient limits.
 ///
 /// # Returns
 ///
@@ -457,7 +459,8 @@ impl BuiltinDataConversionTarget for BigInt {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `context` - Conversion policy, limits, and remaining operation budget.
+    /// * `context` - Shared conversion session binding numeric policies and
+    ///   limits; nested conversions share its operation budget.
     ///
     /// # Returns
     ///
@@ -483,7 +486,8 @@ impl BuiltinDataConversionTarget for BigInt {
     /// # Parameters
     ///
     /// * `source` - Runtime value to consume.
-    /// * `context` - Conversion policy, limits, and remaining operation budget.
+    /// * `context` - Shared conversion session binding numeric policies and
+    ///   limits; nested conversions share its operation budget.
     ///
     /// # Returns
     ///
@@ -521,7 +525,8 @@ impl BuiltinDataConversionTarget for BigDecimal {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `options` - Numeric syntax, rounding, and resource policies.
+    /// * `context` - Shared conversion session binding numeric policies and
+    ///   limits to this target conversion.
     ///
     /// # Returns
     ///
@@ -578,7 +583,8 @@ impl BuiltinDataConversionTarget for BigDecimal {
     /// # Parameters
     ///
     /// * `source` - Runtime value to consume.
-    /// * `options` - Numeric syntax, rounding, and resource policies.
+    /// * `context` - Shared conversion session binding decimal policies and
+    ///   numeric limits to this target conversion.
     ///
     /// # Returns
     ///

@@ -139,6 +139,8 @@ fn integer_to_f32(
 ///
 /// * `source` - Borrowed source representation to convert.
 /// * `options` - Numeric and string conversion policies.
+/// * `limits` - Numeric text and numeric materialization limits for string and
+///   big-number sources.
 /// * `to` - Eventual floating-point target type.
 ///
 /// # Returns
@@ -184,7 +186,8 @@ impl BuiltinDataConversionTarget for f64 {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `options` - Numeric syntax, rounding, and resource policies.
+    /// * `context` - Shared conversion session binding numeric policies and
+    ///   text limits to this target conversion.
     ///
     /// # Returns
     ///
@@ -211,7 +214,8 @@ impl BuiltinDataConversionTarget for f32 {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `options` - Numeric syntax, rounding, and resource policies.
+    /// * `context` - Shared conversion session binding numeric policies and
+    ///   text limits to this target conversion.
     ///
     /// # Returns
     ///

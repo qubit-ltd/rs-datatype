@@ -28,8 +28,9 @@
 //! `DataConversionErrorKind::Unsupported`.
 //!
 //! `NumericConversionPolicy` configures fractional-to-integer conversion,
-//! existing-numeric-to-float rounding, text-to-float rounding, and resource
-//! limits independently. The strict/default profile rejects truncation and
+//! numeric-to-float rounding, and text-to-float rounding independently.
+//! `NumericConversionLimits` and `ConversionLimits` bound resource usage
+//! separately. The strict/default profile rejects truncation and
 //! precision loss. `ConversionPolicy::lossy` permits finite
 //! decimal/float truncation toward zero, IEEE nearest-even float rounding, and
 //! Duration half-up rounding. Duration-to-integer and Duration-to-String

@@ -129,6 +129,7 @@ fn float_to_integer(
 ///
 /// * `source` - Borrowed source representation to convert.
 /// * `options` - Numeric, string, and duration conversion policies.
+/// * `limits` - Numeric text and big-integer limits applied during extraction.
 /// * `to` - Final integer target type.
 ///
 /// # Returns
@@ -386,7 +387,8 @@ macro_rules! impl_signed_target {
             /// # Parameters
             ///
             /// * `source` - Borrowed runtime value to convert.
-            /// * `options` - Numeric syntax, rounding, and resource policies.
+            /// * `context` - Shared conversion session binding numeric policies and
+            ///   limits to this target conversion.
             ///
             /// # Returns
             ///
@@ -419,7 +421,8 @@ macro_rules! impl_unsigned_target {
             /// # Parameters
             ///
             /// * `source` - Borrowed runtime value to convert.
-            /// * `options` - Numeric syntax, rounding, and resource policies.
+            /// * `context` - Shared conversion session binding numeric policies and
+            ///   limits to this target conversion.
             ///
             /// # Returns
             ///

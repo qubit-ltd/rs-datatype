@@ -77,7 +77,9 @@ fn validate_canonical_temporal_year(source: &DataConverter<'_>, year: i32) -> Re
 ///
 /// # Returns
 ///
-/// The formatted value for a directly displayable source, otherwise `None`.
+/// Returns `Ok(true)` after writing a directly displayable source, `Ok(false)`
+/// when another conversion path must handle it, or a resource-limit error when
+/// writing exceeds the output budget.
 fn format_display_source(
     source: &DataConverter<'_>,
     writer: &mut ConversionStringWriter<'_>,
@@ -186,7 +188,8 @@ impl BuiltinDataConversionTarget for char {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `context` - String normalization policies and conversion limits.
+    /// * `context` - Shared conversion session supplying string normalization
+    ///   policies for this target conversion.
     ///
     /// # Returns
     ///
@@ -227,7 +230,8 @@ impl BuiltinDataConversionTarget for String {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to format.
-    /// * `context` - Shared conversion policies and output budget.
+    /// * `context` - Shared conversion session binding formatting policies,
+    ///   structured limits, and output budget to this target conversion.
     ///
     /// # Returns
     ///
@@ -332,7 +336,8 @@ macro_rules! impl_text_or_copy_target {
             /// # Parameters
             ///
             /// * `source` - Borrowed runtime value to convert.
-            /// * `context` - String normalization policies and conversion limits.
+            /// * `context` - Shared conversion session supplying temporal string
+            ///   policies for this target conversion.
             ///
             /// # Returns
             ///
@@ -495,7 +500,8 @@ impl BuiltinDataConversionTarget for DateTime<Utc> {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `context` - String normalization policies and conversion limits.
+    /// * `context` - Shared conversion session supplying temporal string
+    ///   policies for this target conversion.
     ///
     /// # Returns
     ///
@@ -536,7 +542,8 @@ impl BuiltinDataConversionTarget for Url {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `context` - String normalization and structured text-limit policies.
+    /// * `context` - Shared conversion session binding string policies and
+    ///   structured text limits to this target conversion.
     ///
     /// # Returns
     ///
@@ -577,7 +584,8 @@ impl BuiltinDataConversionTarget for Url {
     /// # Parameters
     ///
     /// * `source` - Runtime value to consume.
-    /// * `context` - String normalization and structured text-limit policies.
+    /// * `context` - Shared conversion session binding string policies and
+    ///   structured text limits to this target conversion.
     ///
     /// # Returns
     ///
