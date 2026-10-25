@@ -77,6 +77,7 @@ fn integer_to_duration(
 /// # Parameters
 ///
 /// * `options` - Conversion policies supplying suffix and text-limit rules.
+/// * `limits` - Maximum duration-text byte count applied before parsing.
 ///
 /// # Returns
 ///
@@ -94,18 +95,15 @@ fn duration_text_options(options: &ConversionPolicy, limits: &DurationConversion
 ///
 /// # Parameters
 ///
-/// * `value` - Normalized duration text that failed parsing.
 /// * `options` - Duration suffix and unit parsing policies.
 ///
 /// # Returns
 ///
-/// A static grammar distinguishing required and optional suffixes as well as
-/// strict and lenient unit vocabularies.
+/// A static grammar reflecting whether suffixless strings are rejected and
+/// whether lenient unit aliases are accepted.
 #[must_use]
-fn expected_duration_syntax(value: &str, options: &ConversionPolicy) -> &'static str {
-    let suffix_required = !value.is_empty()
-        && value.bytes().all(|byte| byte.is_ascii_digit())
-        && options.duration().suffixless_string_policy() == SuffixlessDurationPolicy::Reject;
+fn expected_duration_syntax(options: &ConversionPolicy) -> &'static str {
+    let suffix_required = options.duration().suffixless_string_policy() == SuffixlessDurationPolicy::Reject;
     match (suffix_required, options.duration().unit_parse_mode()) {
         (true, DurationUnitParseMode::Strict) => "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)",
         (true, DurationUnitParseMode::Lenient) => "[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)",
@@ -155,7 +153,7 @@ fn map_duration_parse_error(error: DurationParseError, value: &str, options: &Co
             DataType::String,
             to,
             InvalidValueReason::InvalidSyntax {
-                expected: expected_duration_syntax(value, options),
+                expected: expected_duration_syntax(options),
             },
         ),
         DurationParseError::NonCanonicalUnit { canonical } => DataConversionError::invalid(
@@ -204,7 +202,8 @@ impl BuiltinDataConversionTarget for Duration {
     /// # Parameters
     ///
     /// * `source` - Borrowed runtime value to convert.
-    /// * `options` - String, numeric-unit, and duration parsing policies.
+    /// * `context` - Shared conversion session binding duration policies and
+    ///   parser limits to this target conversion.
     ///
     /// # Returns
     ///

@@ -18,6 +18,7 @@ use proptest::prop_oneof;
 use proptest::proptest;
 use proptest::strategy::Just;
 use proptest::strategy::Strategy;
+use qubit_datatype::BlankStringPolicy;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
@@ -163,14 +164,26 @@ fn test_data_converter_duration_string_conversion() {
         DataConverter::from("badns").to::<Duration>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
     ));
-    assert!(matches!(
-        DataConverter::from("").to::<Duration>(),
-        Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::InvalidValue
-    ));
-    assert!(matches!(
-        DataConverter::from("10fortnights").to::<Duration>(),
-        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::UnsupportedDurationUnit)
-    )));
+    let blank_policy = ConversionPolicy::builder()
+        .blank_string_policy(BlankStringPolicy::Reject)
+        .build();
+    let blank = DataConverter::from("")
+        .to_with::<Duration>(&blank_policy, ConversionLimits::default_ref())
+        .expect_err("blank duration should be rejected");
+    assert_eq!(blank.kind(), DataConversionErrorKind::InvalidValue);
+    assert_eq!(blank.reason(), Some(&InvalidValueReason::BlankRejected));
+    assert_eq!(blank.from_type(), Some(DataType::String));
+    assert_eq!(blank.to_type(), DataType::Duration);
+    let unsupported_unit = DataConverter::from("10fortnights")
+        .to::<Duration>()
+        .expect_err("unknown duration unit should be rejected");
+    assert_eq!(
+        unsupported_unit.reason(),
+        Some(&InvalidValueReason::UnsupportedDurationUnit),
+    );
+    assert_eq!(unsupported_unit.from_type(), Some(DataType::String));
+    assert_eq!(unsupported_unit.to_type(), DataType::Duration);
+    assert!(!unsupported_unit.to_string().contains("10fortnights"));
     let overflowing_duration = format!("{}ns", (u64::MAX as u128 + 1) * 1_000_000_000);
     assert!(matches!(
         DataConverter::from(overflowing_duration).to::<Duration>(),
@@ -189,6 +202,51 @@ fn test_data_converter_duration_string_conversion() {
         DataConverter::from(1i32).to::<Duration>(),
         Ok(duration) if duration == Duration::from_millis(1)
     ));
+}
+
+/// Invalid duration guidance follows the configured suffix and unit policies.
+#[test]
+fn test_duration_syntax_guidance_uses_policy() {
+    let cases = [
+        (
+            SuffixlessDurationPolicy::Reject,
+            DurationUnitParseMode::Strict,
+            "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)",
+        ),
+        (
+            SuffixlessDurationPolicy::Reject,
+            DurationUnitParseMode::Lenient,
+            "[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)",
+        ),
+        (
+            SuffixlessDurationPolicy::Assume(DurationUnit::Seconds),
+            DurationUnitParseMode::Strict,
+            "[0-9]+(ns|us|µs|μs|ms|s|min|h|d)?",
+        ),
+        (
+            SuffixlessDurationPolicy::Assume(DurationUnit::Seconds),
+            DurationUnitParseMode::Lenient,
+            "[0-9]+(ns|us|µs|μs|ms|s|min|m|h|d)?",
+        ),
+    ];
+
+    for (suffixless_policy, unit_parse_mode, expected) in cases {
+        let policy = ConversionPolicy::builder()
+            .duration_policy(
+                DurationConversionPolicy::builder()
+                    .suffixless_string_policy(suffixless_policy)
+                    .unit_parse_mode(unit_parse_mode)
+                    .build(),
+            )
+            .build();
+        let error = DataConverter::from("badns")
+            .to_with::<Duration>(&policy, ConversionLimits::default_ref())
+            .expect_err("malformed duration should report syntax guidance");
+        assert_eq!(error.reason(), Some(&InvalidValueReason::InvalidSyntax { expected }),);
+        assert_eq!(error.from_type(), Some(DataType::String));
+        assert_eq!(error.to_type(), DataType::Duration);
+        assert!(!error.to_string().contains("badns"));
+    }
 }
 
 /// Test that converter-level duration parsing exposes its resource limit.
