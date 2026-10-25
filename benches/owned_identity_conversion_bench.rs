@@ -22,10 +22,15 @@ use criterion::criterion_main;
 use criterion::measurement::WallTime;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
+use qubit_datatype::ConversionLimits;
+#[cfg(feature = "big-decimal")]
+use qubit_datatype::ConversionPolicy;
 use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConversionTarget;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataConverters;
+#[cfg(feature = "big-decimal")]
+use qubit_datatype::NumericConversionLimits;
 #[cfg(feature = "json")]
 use serde_json::Value as JsonValue;
 #[cfg(feature = "url")]
@@ -71,6 +76,26 @@ where
     DataConverter::from(value).to::<T>()
 }
 
+/// Converts an identity source using the supplied benchmark limits.
+#[cfg(feature = "big-decimal")]
+fn convert_with_limits<T>(value: T, limits: &ConversionLimits) -> Result<T, DataConversionError>
+where
+    T: DataConversionTarget,
+    DataConverter<'static>: From<T>,
+{
+    DataConverter::from(value).into_target_with(&ConversionPolicy::strict(), limits)
+}
+
+/// Converts a borrowed identity source using the supplied benchmark limits.
+#[cfg(feature = "big-decimal")]
+fn convert_borrowed_with_limits<T>(value: &T, limits: &ConversionLimits) -> Result<T, DataConversionError>
+where
+    T: DataConversionTarget,
+    for<'a> DataConverter<'a>: From<&'a T>,
+{
+    DataConverter::from(value).to_with(&ConversionPolicy::strict(), limits)
+}
+
 /// Registers borrowed, owned, and direct-move measurements for one value.
 ///
 /// # Parameters
@@ -79,23 +104,63 @@ where
 /// * `case_name` - Payload-size label.
 /// * `payload_bytes` - Logical payload size used for throughput reporting.
 /// * `value` - Representative value cloned by untimed setup closures.
-fn benchmark_identity_case<T>(group: &mut BenchmarkGroup<'_, WallTime>, case_name: &str, payload_bytes: usize, value: T)
-where
+/// * `limits` - Optional conversion limits for identity values with larger
+///   coefficients.
+///
+/// Each case uses `iter_batched` so reference acquisition or source cloning is
+/// setup work, while the returned conversion result or moved value is dropped
+/// outside the measured routine.
+fn benchmark_identity_case<T>(
+    group: &mut BenchmarkGroup<'_, WallTime>,
+    case_name: &str,
+    payload_bytes: usize,
+    value: T,
+    limits: Option<&ConversionLimits>,
+) where
     T: Clone + DataConversionTarget + 'static,
     DataConverter<'static>: From<T>,
     for<'a> DataConverter<'a>: From<&'a T>,
 {
-    convert_borrowed(&value).expect("borrowed identity benchmark fixture should convert");
-    convert_owned(value.clone()).expect("owned identity benchmark fixture should convert");
+    #[cfg(not(feature = "big-decimal"))]
+    let _ = limits;
+
+    #[cfg(feature = "big-decimal")]
+    let (borrowed, owned) = match limits {
+        Some(limits) => (
+            convert_borrowed_with_limits(&value, limits),
+            convert_with_limits(value.clone(), limits),
+        ),
+        None => (convert_borrowed(&value), convert_owned(value.clone())),
+    };
+    #[cfg(not(feature = "big-decimal"))]
+    let (borrowed, owned) = (convert_borrowed(&value), convert_owned(value.clone()));
+    borrowed.expect("borrowed identity benchmark fixture should convert");
+    owned.expect("owned identity benchmark fixture should convert");
 
     group.throughput(Throughput::Bytes(payload_bytes as u64));
-    group.bench_with_input(BenchmarkId::new("borrowed_to_target", case_name), &value, |b, value| {
-        b.iter(|| black_box(convert_borrowed::<T>(black_box(value))))
+    group.bench_function(BenchmarkId::new("borrowed_to_target", case_name), |b| {
+        b.iter_batched(
+            || &value,
+            |value| {
+                #[cfg(feature = "big-decimal")]
+                if let Some(limits) = limits {
+                    return black_box(convert_borrowed_with_limits::<T>(black_box(value), limits));
+                }
+                black_box(convert_borrowed::<T>(black_box(value)))
+            },
+            BatchSize::LargeInput,
+        )
     });
     group.bench_function(BenchmarkId::new("owned_to_target", case_name), |b| {
         b.iter_batched(
             || value.clone(),
-            |value| black_box(convert_owned::<T>(black_box(value))),
+            |value| {
+                #[cfg(feature = "big-decimal")]
+                if let Some(limits) = limits {
+                    return black_box(convert_with_limits::<T>(black_box(value), limits));
+                }
+                black_box(convert_owned::<T>(black_box(value)))
+            },
             BatchSize::LargeInput,
         );
     });
@@ -125,7 +190,7 @@ fn string_map_payload(payload_bytes: usize) -> HashMap<String, String> {
 fn benchmark_string_identity(c: &mut Criterion) {
     let mut group = c.benchmark_group("identity_string");
     for (name, bytes) in TEXT_SIZES {
-        benchmark_identity_case(&mut group, name, bytes, "x".repeat(bytes));
+        benchmark_identity_case(&mut group, name, bytes, "x".repeat(bytes), None);
     }
     group.finish();
 }
@@ -134,7 +199,7 @@ fn benchmark_string_identity(c: &mut Criterion) {
 fn benchmark_string_map_identity(c: &mut Criterion) {
     let mut group = c.benchmark_group("identity_string_map");
     for (name, bytes) in TEXT_SIZES {
-        benchmark_identity_case(&mut group, name, bytes, string_map_payload(bytes));
+        benchmark_identity_case(&mut group, name, bytes, string_map_payload(bytes), None);
     }
     group.finish();
 }
@@ -152,13 +217,13 @@ fn benchmark_string_batch_identity(c: &mut Criterion) {
             .expect("owned batch identity benchmark fixture should convert");
 
         group.throughput(Throughput::Elements(item_count as u64));
-        group.bench_with_input(
-            BenchmarkId::new("borrowed_to_target", item_count),
-            values.as_slice(),
-            |b, values| {
-                b.iter(|| black_box(DataConverters::from(black_box(values)).to_vec::<String>()));
-            },
-        );
+        group.bench_function(BenchmarkId::new("borrowed_to_target", item_count), |b| {
+            b.iter_batched(
+                || values.as_slice(),
+                |values| black_box(DataConverters::from(black_box(values)).to_vec::<String>()),
+                BatchSize::LargeInput,
+            );
+        });
         group.bench_function(BenchmarkId::new("owned_to_target", item_count), |b| {
             b.iter_batched(
                 || values.clone(),
@@ -178,7 +243,7 @@ fn benchmark_string_batch_identity(c: &mut Criterion) {
 fn benchmark_json_identity(c: &mut Criterion) {
     let mut group = c.benchmark_group("identity_json");
     for (name, bytes) in TEXT_SIZES {
-        benchmark_identity_case(&mut group, name, bytes, JsonValue::String("x".repeat(bytes)));
+        benchmark_identity_case(&mut group, name, bytes, JsonValue::String("x".repeat(bytes)), None);
     }
     group.finish();
 }
@@ -198,8 +263,12 @@ fn benchmark_string_map_to_json(c: &mut Criterion) {
         black_box((borrowed, owned));
 
         group.throughput(Throughput::Bytes(bytes as u64));
-        group.bench_with_input(BenchmarkId::new("borrowed_to_json", name), &value, |b, value| {
-            b.iter(|| black_box(DataConverter::from(black_box(value)).to::<JsonValue>()))
+        group.bench_function(BenchmarkId::new("borrowed_to_json", name), |b| {
+            b.iter_batched(
+                || &value,
+                |value| black_box(DataConverter::from(black_box(value)).to::<JsonValue>()),
+                BatchSize::LargeInput,
+            )
         });
         group.bench_function(BenchmarkId::new("owned_to_json", name), |b| {
             b.iter_batched(
@@ -227,8 +296,12 @@ fn benchmark_string_map_to_string(c: &mut Criterion) {
         black_box((borrowed, owned));
 
         group.throughput(Throughput::Bytes(bytes as u64));
-        group.bench_with_input(BenchmarkId::new("borrowed_to_string", name), &value, |b, value| {
-            b.iter(|| black_box(DataConverter::from(black_box(value)).to::<String>()))
+        group.bench_function(BenchmarkId::new("borrowed_to_string", name), |b| {
+            b.iter_batched(
+                || &value,
+                |value| black_box(DataConverter::from(black_box(value)).to::<String>()),
+                BatchSize::LargeInput,
+            )
         });
         group.bench_function(BenchmarkId::new("owned_to_string", name), |b| {
             b.iter_batched(
@@ -248,7 +321,7 @@ fn benchmark_url_identity(c: &mut Criterion) {
     for (name, bytes) in TEXT_SIZES {
         let source = format!("https://example.com/{}", "x".repeat(bytes));
         let value = Url::parse(&source).expect("benchmark URL should parse");
-        benchmark_identity_case(&mut group, name, source.len(), value);
+        benchmark_identity_case(&mut group, name, source.len(), value, None);
     }
     group.finish();
 }
@@ -269,8 +342,12 @@ fn benchmark_url_to_string(c: &mut Criterion) {
         black_box((borrowed, owned));
 
         group.throughput(Throughput::Bytes(source.len() as u64));
-        group.bench_with_input(BenchmarkId::new("borrowed_to_string", name), &value, |b, value| {
-            b.iter(|| black_box(DataConverter::from(black_box(value)).to::<String>()))
+        group.bench_function(BenchmarkId::new("borrowed_to_string", name), |b| {
+            b.iter_batched(
+                || &value,
+                |value| black_box(DataConverter::from(black_box(value)).to::<String>()),
+                BatchSize::LargeInput,
+            )
         });
         group.bench_function(BenchmarkId::new("owned_to_string", name), |b| {
             b.iter_batched(
@@ -289,7 +366,7 @@ fn benchmark_big_integer_identity(c: &mut Criterion) {
     let mut group = c.benchmark_group("identity_big_integer");
     for (name, digits) in BIG_NUMBER_DIGITS {
         let value = BigInt::parse_bytes("9".repeat(digits).as_bytes(), 10).expect("benchmark BigInt should parse");
-        benchmark_identity_case(&mut group, name, digits, value);
+        benchmark_identity_case(&mut group, name, digits, value, None);
     }
     group.finish();
 }
@@ -302,7 +379,14 @@ fn benchmark_big_decimal_identity(c: &mut Criterion) {
     for (name, digits) in BIG_NUMBER_DIGITS {
         let source = format!("{}.{}", "9".repeat(digits), "5".repeat(digits));
         let value = source.parse::<BigDecimal>().expect("benchmark BigDecimal should parse");
-        benchmark_identity_case(&mut group, name, source.len(), value);
+        let limits = ConversionLimits::builder()
+            .numeric_limits(
+                NumericConversionLimits::builder()
+                    .max_big_decimal_coefficient_digits(u64::try_from(digits.saturating_mul(2)).unwrap())
+                    .build(),
+            )
+            .build();
+        benchmark_identity_case(&mut group, name, source.len(), value, Some(&limits));
     }
     group.finish();
 }

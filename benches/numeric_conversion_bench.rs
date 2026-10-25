@@ -16,6 +16,7 @@ use criterion::criterion_main;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::DataConverter;
+use qubit_datatype::InvalidValueReason;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use qubit_datatype::NumericConversionLimits;
 
@@ -73,22 +74,28 @@ fn benchmark_lossy_integer_text(c: &mut Criterion) {
 /// Benchmarks exact text-to-f64 conversion paths.
 fn benchmark_exact_float_text(c: &mut Criterion) {
     let unbounded_exact = "340282366920938463463374607431768211456";
-    let long_coefficient = "5".repeat(4096);
-    let long_inexact = format!("{long_coefficient}e-{}", long_coefficient.len().saturating_sub(1));
-    let sources = [
-        ("bounded_exact", "0.5".to_string()),
-        ("unbounded_exact", unbounded_exact.to_string()),
-        ("long_inexact_coefficient", long_inexact),
-    ];
+    let sources = [("bounded_exact", "0.5"), ("unbounded_exact", unbounded_exact)];
     let mut group = c.benchmark_group("numeric_text_to_f64_exact");
     for (name, source) in &sources {
-        DataConverter::from(source.as_str())
+        DataConverter::from(*source)
             .to::<f64>()
             .expect("exact float benchmark fixture should convert");
         group.bench_with_input(BenchmarkId::from_parameter(name), source, |b, source| {
-            b.iter(|| black_box(DataConverter::from(black_box(source.as_str())).to::<f64>()));
+            b.iter(|| black_box(DataConverter::from(black_box(*source)).to::<f64>()));
         });
     }
+    group.finish();
+
+    let long_coefficient = "5".repeat(4096);
+    let long_inexact = format!("{long_coefficient}e-{}", long_coefficient.len().saturating_sub(1));
+    let error = DataConverter::from(long_inexact.as_str())
+        .to::<f64>()
+        .expect_err("long inexact benchmark fixture should be rejected");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
+    let mut group = c.benchmark_group("numeric_text_to_f64_rejected");
+    group.bench_function("long_inexact_coefficient", |b| {
+        b.iter(|| black_box(DataConverter::from(black_box(long_inexact.as_str())).to::<f64>()));
+    });
     group.finish();
 }
 
@@ -138,7 +145,7 @@ fn benchmark_big_decimal_text(c: &mut Criterion) {
                 .numeric_limits(
                     NumericConversionLimits::builder()
                         .max_text_bytes(u64::try_from(digits).unwrap())
-                        .max_big_integer_digits(u64::try_from(digits).unwrap())
+                        .max_big_decimal_coefficient_digits(u64::try_from(digits).unwrap())
                         .build(),
                 )
                 .build();
