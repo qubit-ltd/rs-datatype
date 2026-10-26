@@ -660,3 +660,61 @@ fn test_number_ref_comparison_big_integer_fixed_boundaries() {
         Some(Ordering::Less),
     );
 }
+
+/// Covers exact decimal comparisons on both sides of the materialization
+/// threshold.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_number_ref_exact_scale_boundary_primitive() {
+    for k in [4096_u32, 4097] {
+        let power = BigInt::from(10_u8).pow(k);
+        for (delta, expected) in [(-1_i32, Ordering::Less), (0, Ordering::Equal), (1, Ordering::Greater)] {
+            let coefficient = &power + BigInt::from(delta);
+            let positive = BigDecimal::new(coefficient.clone(), i64::from(k));
+            let negative = BigDecimal::new(-coefficient, i64::from(k));
+            for right in [NumberRef::from(1_i32), NumberRef::from(1_f64)] {
+                assert_exact(NumberRef::from(&positive), right, Some(expected));
+            }
+            for right in [NumberRef::from(-1_i32), NumberRef::from(-1_f64)] {
+                assert_exact(NumberRef::from(&negative), right, Some(expected.reverse()));
+            }
+        }
+    }
+}
+
+/// Covers exact decimal and BigInteger comparisons across both scale branches.
+#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
+#[test]
+fn test_number_ref_exact_scale_boundary_big_integer() {
+    for k in [4096_u32, 4097] {
+        let power = BigInt::from(10_u8).pow(k);
+        let one = BigInt::from(1_u8);
+        for (delta, expected) in [(-1_i32, Ordering::Less), (0, Ordering::Equal), (1, Ordering::Greater)] {
+            let coefficient = &power + BigInt::from(delta);
+            let positive = BigDecimal::new(coefficient.clone(), i64::from(k));
+            let negative = BigDecimal::new(-coefficient, i64::from(k));
+            assert_exact(NumberRef::from(&positive), NumberRef::from(&one), Some(expected));
+            let minus_one = -one.clone();
+            assert_exact(
+                NumberRef::from(&negative),
+                NumberRef::from(&minus_one),
+                Some(expected.reverse()),
+            );
+
+            let positive_integer_decimal = BigDecimal::new(one.clone(), -i64::from(k));
+            let negative_integer_decimal = BigDecimal::new(-one.clone(), -i64::from(k));
+            let neighbor = &power + BigInt::from(delta);
+            let negative_neighbor = -neighbor.clone();
+            assert_exact(
+                NumberRef::from(&positive_integer_decimal),
+                NumberRef::from(&neighbor),
+                Some(expected.reverse()),
+            );
+            assert_exact(
+                NumberRef::from(&negative_integer_decimal),
+                NumberRef::from(&negative_neighbor),
+                Some(expected),
+            );
+        }
+    }
+}
