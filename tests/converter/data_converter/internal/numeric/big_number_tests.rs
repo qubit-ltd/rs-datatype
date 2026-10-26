@@ -99,6 +99,66 @@ fn test_bigint_to_bigint_enforces_result_digit_limit() {
     assert_eq!(error.observed_lower_bound(), Some(4));
 }
 
+/// Verifies clearly oversized positive borrowed integers retain a conservative
+/// observation.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_large_borrowed_bigint_reports_lower_bound() {
+    let source = BigInt::from(1_u8) << 99_usize;
+    let limits = limits_with_big_integer_digit_limit(3);
+    let error = DataConverter::from(&source)
+        .to_with::<BigInt>(&ConversionPolicy::strict(), &limits)
+        .expect_err("a 30-digit integer must exceed a three-digit limit");
+
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
+    assert_eq!(error.observation_is_exact(), Some(false));
+}
+
+/// Verifies clearly oversized owned negative integers retain a conservative
+/// observation.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_large_owned_negative_bigint_reports_lower_bound() {
+    let source = -(BigInt::from(1_u8) << 99_usize);
+    let limits = limits_with_big_integer_digit_limit(3);
+    let error = DataConverter::from(source)
+        .to_with::<BigInt>(&ConversionPolicy::strict(), &limits)
+        .expect_err("a negative 30-digit integer must exceed a three-digit limit");
+
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
+    assert_eq!(error.observation_is_exact(), Some(false));
+}
+
+/// Verifies zero and the decimal limit boundary are handled correctly.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_bigint_zero_and_decimal_limit_boundary() {
+    let limits = limits_with_big_integer_digit_limit(3);
+    assert_eq!(
+        DataConverter::from(BigInt::from(0_u8)).to_with::<BigInt>(&ConversionPolicy::strict(), &limits),
+        Ok(BigInt::from(0_u8)),
+    );
+    assert_eq!(
+        DataConverter::from(BigInt::from(999_u16)).to_with::<BigInt>(&ConversionPolicy::strict(), &limits),
+        Ok(BigInt::from(999_u16)),
+    );
+
+    let error = DataConverter::from(BigInt::from(1_000_u16))
+        .to_with::<BigInt>(&ConversionPolicy::strict(), &limits)
+        .expect_err("1000 must exceed a three-digit limit");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
+    assert_eq!(error.observation_is_exact(), Some(true));
+}
+
 /// Verifies positive-scale decimals enforce the truncated result digit limit.
 #[cfg(all(feature = "big-integer", feature = "big-decimal"))]
 #[test]

@@ -58,35 +58,27 @@ fn check_big_integer_limits(
     limits: &BigIntegerLimits<crate::converter::ConversionResource>,
     value: &BigInt,
 ) -> Result<(), MeasuredBudgetError<crate::converter::ConversionResource>> {
-    if let Some(limit) = limits.magnitude_bits_limit() {
-        limit.check_u64(value.bits())?;
-    }
-    let Some(limit) = limits.significant_decimal_digits_limit() else {
-        return Ok(());
-    };
-    let magnitude_bits = value.bits();
-    if magnitude_bits == 0 {
-        return Ok(());
-    }
-    let maximum = limit.maximum();
-    let low_bits = maximum
-        .checked_add(maximum)
-        .and_then(|value| value.checked_add(maximum));
-    if low_bits.is_some_and(|low_bits| magnitude_bits <= low_bits) {
-        return Ok(());
-    }
-    let high_bits = low_bits.and_then(|value| value.checked_add(maximum));
-    if high_bits.is_some_and(|high_bits| magnitude_bits > high_bits) {
-        let Some(observed) = maximum.checked_add(1) else {
-            return Ok(());
-        };
-        return Err(MeasuredBudgetError::Budget(BudgetError::LimitExceeded {
-            resource: *limit.resource(),
-            observed: Observation::AtLeast(observed),
+    limits.check(value).map_err(|error| match error {
+        MeasuredBudgetError::Budget(BudgetError::LimitExceeded {
+            resource,
+            observed: Observation::AtLeast(_),
             maximum,
-        }));
-    }
-    limit.check_usize(value.to_str_radix(10).trim_start_matches('-').len())
+        }) if limits
+            .significant_decimal_digits_limit()
+            .is_some_and(|limit| *limit.resource() == resource && limit.maximum() == maximum) =>
+        {
+            // A failing lower bound guarantees maximum is below u64::MAX.
+            let observed = maximum
+                .checked_add(1)
+                .expect("a rejected lower bound exceeds the limit");
+            MeasuredBudgetError::Budget(BudgetError::LimitExceeded {
+                resource,
+                observed: Observation::AtLeast(observed),
+                maximum,
+            })
+        }
+        error => error,
+    })
 }
 
 /// Enforces the configured BigInteger result digit limit.
