@@ -256,6 +256,11 @@ For a limit failure, inspect `resource()`, `configured_limit()`,
 applicable. Batch APIs return `DataListConversionError`, which retains the
 original `source_index` alongside the conversion error.
 
+`requested()` describes the rejected cumulative request. It may be a
+conservative minimum reservation or one formatter write, rather than the exact
+final text size. Resource failures also expose their underlying cause through
+`std::error::Error::source`; use the stable accessors for classification.
+
 For custom scalar-list adapters, call
 `session.admit_scalar_string_source(text)` and use the returned
 `AdmittedScalarSource::next_item` to borrow one admitted item at a time.

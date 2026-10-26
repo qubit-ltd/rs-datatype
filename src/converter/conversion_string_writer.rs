@@ -137,7 +137,11 @@ impl<'writer> ConversionStringWriter<'writer> {
             .map_err(|_| DataConversionError::invalid(self.from, self.to, InvalidValueReason::OutOfRange))
     }
 
-    /// Writes pre-built formatting arguments without an intermediate String.
+    /// Writes pre-built formatting arguments directly into the budgeted
+    /// output, without creating an intermediate String in this writer.
+    ///
+    /// A `Display` implementation may still allocate or buffer internally;
+    /// this writer only accounts for bytes written to its output sink.
     ///
     /// # Parameters
     ///
@@ -158,7 +162,12 @@ impl<'writer> ConversionStringWriter<'writer> {
             .map_err(|_| DataConversionError::invalid(self.from, self.to, InvalidValueReason::OutOfRange))
     }
 
-    /// Formats a displayable value without an intermediate String.
+    /// Formats a displayable value directly into the budgeted output, without
+    /// creating an intermediate String in this writer.
+    ///
+    /// The value's `Display` implementation may still allocate or buffer
+    /// internally; the output-byte budget does not constrain those temporary
+    /// allocations.
     ///
     /// # Type Parameters
     ///

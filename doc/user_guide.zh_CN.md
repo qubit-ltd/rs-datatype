@@ -223,6 +223,10 @@ assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
 `requested()`。批量 API 返回 `DataListConversionError`，其中保留原始 `source_index` 和
 转换错误。
 
+`requested()` 表示被拒绝的累计请求，可能是保守的最低预留量或格式化器的一次写入量，
+而不是最终完整文本的精确长度。资源失败还可通过 `std::error::Error::source` 访问底层原因；
+稳定分类仍应优先使用现有访问器。
+
 自定义标量列表适配器应调用 `session.admit_scalar_string_source(text)`，通过返回的
 `AdmittedScalarSource::next_item` 逐项借用已准入元素，再用 `convert` 或
 `convert_with_session` 消费。该接口保留原始索引，完整来源字节只计费一次；未访问的元素

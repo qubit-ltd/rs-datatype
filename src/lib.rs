@@ -18,14 +18,21 @@
 //!
 //! # Conversion contract
 //!
-//! With `converter`, strings can target fixed-width numeric, boolean,
-//! character, and Duration values. Fixed-width integers can target numeric,
-//! boolean, and Duration values; floats can target fixed-width numeric values;
-//! Duration can target fixed-width integers and String. `chrono`,
-//! `big-integer`, `big-decimal`, `url`, and `json` add their corresponding
-//! source and target conversions when combined with `converter`; JSON also
-//! enables StringMap parsing and formatting. Other type pairs return
-//! `DataConversionErrorKind::Unsupported`.
+//! With `converter`, representative paths include strings to numeric,
+//! boolean, character, and Duration values; core scalars to String; integers
+//! to numeric, boolean, and Duration values; and Duration to integers and
+//! String. Boolean and character sources also have numeric paths. A path's
+//! implementation does not guarantee that every value is accepted: the
+//! selected policy and target range still apply. `chrono`, `big-integer`,
+//! `big-decimal`, `url`, and `json` add their documented paths when combined
+//! with `converter`; JSON also enables StringMap parsing and formatting.
+//! Discover paths compiled into the current build with
+//! [`ConversionCapabilities::supports`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.ConversionCapabilities.html#method.supports)
+//! and
+//! [`ConversionCapabilities::supported_targets`](https://docs.rs/qubit-datatype/latest/qubit_datatype/struct.ConversionCapabilities.html#method.supported_targets).
+//! These APIs are available with `converter`.
+//! Other pairs return `DataConversionErrorKind::Unsupported`, and conversions
+//! are not chained implicitly.
 //!
 //! `NumericConversionPolicy` configures fractional-to-integer conversion,
 //! numeric-to-float rounding, and text-to-float rounding independently.
@@ -71,6 +78,25 @@
 //!     Ok(3),
 //! );
 //! # }
+//! ```
+//!
+//! The example below checks both the compiled capability and the result of a
+//! conversion. It is available when the `converter` feature is enabled.
+//!
+//! ```
+//! # #[cfg(feature = "converter")]
+//! # fn example() -> Result<(), qubit_datatype::DataConversionError> {
+//! use qubit_datatype::ConversionCapabilities;
+//! use qubit_datatype::DataConverter;
+//! use qubit_datatype::DataType;
+//!
+//! let capabilities = ConversionCapabilities::current();
+//! assert!(capabilities.supports(DataType::Int32, DataType::String));
+//! assert_eq!(DataConverter::from(42_i32).to::<String>()?, "42");
+//! # Ok(())
+//! # }
+//! # #[cfg(feature = "converter")]
+//! # example().unwrap();
 //! ```
 
 #![deny(missing_docs)]
