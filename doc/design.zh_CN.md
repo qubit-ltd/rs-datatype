@@ -29,6 +29,15 @@ context 还提供直接访问 `policy()`、`limits()` 和 JSON `decode_json_seed
 失败会耗尽该来源；消费者提前结束时，尚未访问的尾部不会被扫描。没有公开入口可以脱离
 来源字节记账，单独准入任意替代条目来源。
 
+`StructuredConversionLimits::value()` 是可复用的值限额模板：其中字符串字节限额与
+`max_text_bytes` 相同，直接使用模板的消费者会执行该限额。内置转换会话只选取模板的结构限额，
+并叠加累计操作预算，不应用该字符串字节限额。`BooleanConversionPolicyBuilder` 会保留尚未验证的
+字段，直到 `build()` 时统一验证最终组合，因此构建结果不依赖 setter 顺序。
+
+原始 `ScalarItems` 迭代器在拒绝空条目后仍可继续，并按原始来源索引报告错误；超过保留条目数时只
+报错一次，随后耗尽。`AdmittedScalarSource` 则在拆分或条目准入错误（包括拒绝空条目）后耗尽。
+已经准入条目后发生的目标转换失败属于后续独立操作。
+
 ## 不变量
 
 1. 顶层 converter 调用在目标执行前为条目和输入记账。

@@ -37,6 +37,20 @@ early consumer termination leaves the unvisited tail unscanned. No public
 entry point admits arbitrary replacement item sources independently of their
 source-byte charge.
 
+`StructuredConversionLimits::value()` is a reusable value-limit template:
+its string-byte limit matches `max_text_bytes`, and direct template consumers
+enforce it. Built-in conversion sessions select the template's structure
+limits and add cumulative operation budgets without applying that string-byte
+limit. `BooleanConversionPolicyBuilder` keeps unvalidated fields until
+`build()` validates their final combination, so its result does not depend on
+setter order.
+
+The raw `ScalarItems` iterator can continue after a rejected empty item and
+reports it at its original source index; it errors once when the retained-item
+limit is exceeded, then exhausts. `AdmittedScalarSource` instead exhausts on
+splitting or item-admission errors, including rejected empty items. A later
+target-conversion failure for an already admitted item is a separate step.
+
 ## Invariants
 
 1. A top-level converter call charges its item and input before the target runs.

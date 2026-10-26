@@ -260,10 +260,19 @@ fn main() {
 来源已经是 `serde_json::Value` 时也执行相同检查。深度上限为零时，深度为 1 的根标量也会
 被拒绝；数组或对象的子项上限为零时，只有空容器可以通过。
 
+`max_text_bytes` 限制受支持文本转换路径中的规范化来源文本，不是已物化 JSON 值的单字符串
+限额。可复用的 `value()` 模板也携带相同最大值的字符串字节限额，直接应用该模板的使用者会
+执行此检查。内置转换会话从模板中选取结构限额，并叠加累计节点和 payload 预算；不会应用模板
+的字符串字节限额。因此，该模板不是会话最终生效预算的快照。
+
 ### 理解策略 builder 的调用顺序
 
 `string_policy` 这样的组 setter 会替换整组策略；`blank_string_policy` 这样的叶 setter 只修改
 当前组中的一个字段。设置会按调用顺序生效，因此后调用的组 setter 会重置此前设置的叶字段：
+
+`BooleanConversionPolicy` 的 builder 会收集字面量列表和标量设置，并在 `build()` 时验证最终组合。
+因此，先设置 `case_sensitive` 还是先设置字面量不会改变构建结果；同一标量字段重复设置时以后一次
+为准。这不改变 `string_policy` 等组 setter 的整组替换行为。
 
 ```rust
 use qubit_datatype::{

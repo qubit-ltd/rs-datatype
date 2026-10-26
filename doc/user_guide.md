@@ -251,6 +251,14 @@ separately for each container, rather than summing all entries in the tree.
 The cumulative `max_structured_nodes` operation limit is a separate session
 budget.
 
+`max_text_bytes` bounds normalized source text on supported text conversion
+paths. It is not a per-string limit for an already materialized JSON value.
+The reusable `value()` template also carries a string-byte limit with the same
+maximum, which consumers that apply the template directly enforce. Built-in
+conversion sessions select its structure limits and add cumulative node and
+payload budgets; they do not apply its string-byte limit. The template is not
+a snapshot of a session's effective budgets.
+
 This example requires the `json` feature in addition to `converter`, and a direct dependency on `serde_json`. Use the following dependency configuration:
 
 ```toml
@@ -304,6 +312,12 @@ Group setters such as `string_policy` replace the whole policy group. Leaf
 setters such as `blank_string_policy` update one field in the current group.
 Calls take effect in order, so a later group setter resets an earlier leaf
 override:
+
+`BooleanConversionPolicy`'s builder collects literal lists and scalar settings
+and validates their final combination at `build()`. Its result therefore does
+not depend on whether `case_sensitive` or a literal setter is called first.
+Repeated settings of the same scalar field use the last value. This does not
+change the replacement behavior of group setters such as `string_policy`.
 
 ```rust
 use qubit_datatype::{
