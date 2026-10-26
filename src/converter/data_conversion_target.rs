@@ -16,6 +16,9 @@ use crate::DataTypeOf;
 ///
 /// Implementing the trait on the target makes the API extensible for
 /// downstream-owned newtypes without lifetime-wide bounds on the source.
+/// A target that delegates through [`AdmittedConversion::convert`] must use
+/// the same [`DataType`](crate::DataType) as that active conversion; delegating
+/// to a different data type is rejected before the delegated target runs.
 ///
 /// # Examples
 ///
@@ -59,5 +62,8 @@ pub trait DataConversionTarget: DataTypeOf + Sized {
     ///
     /// Returns [`DataConversionError`] when the source is missing, the source
     /// and target are unsupported, or the value violates a conversion policy.
+    /// Delegation to a different data type through
+    /// [`AdmittedConversion::convert`] returns `Unsupported` before the
+    /// delegated target runs, with the error bound to the active outer target.
     fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError>;
 }

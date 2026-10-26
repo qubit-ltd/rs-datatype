@@ -19,7 +19,7 @@ use crate::datatype::DataType;
 /// Instances are constructed only by the conversion framework after it has
 /// charged the top-level item and input resources. Consuming this value with
 /// [`Self::convert`] safely delegates the same admitted source to another
-/// target without charging it a second time.
+/// target with the same [`DataType`], without charging it a second time.
 ///
 /// # Examples
 ///
@@ -105,7 +105,13 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
         DataConversionError::unsupported(self.from_type(), self.to_type())
     }
 
-    /// Safely delegates the exact admitted source to another target.
+    /// Safely delegates the exact admitted source to a target with the same
+    /// [`DataType`] as the active target.
+    ///
+    /// A different target data type is rejected before the delegated target is
+    /// called. The returned [`DataConversionError`] retains the original source
+    /// and active outer target types. Top-level item and input charges remain
+    /// consumed; no second admission or structured-resource charge is made.
     ///
     /// # Type Parameters
     ///
@@ -113,9 +119,11 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     ///
     /// # Errors
     ///
-    /// Returns the target's [`DataConversionError`] when the source is missing,
-    /// the source-target pair is unsupported, the value is invalid, or a
-    /// conversion resource limit is exceeded.
+    /// Returns [`DataConversionError`] when the delegated target has a
+    /// different data type, the source is missing, the source-target pair is
+    /// unsupported, the value is invalid, or a conversion resource limit is
+    /// exceeded. A descriptor mismatch is reported against the active outer
+    /// target before the delegated target runs.
     ///
     /// # Returns
     ///
@@ -125,6 +133,9 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     where
         T: DataConversionTarget,
     {
+        if T::DATA_TYPE != self.to_type() {
+            return Err(self.unsupported());
+        }
         T::convert(self)
     }
 
