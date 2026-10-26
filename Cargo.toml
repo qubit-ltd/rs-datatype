@@ -18,6 +18,7 @@ include = [
     "/README.md",
     "/README.zh_CN.md",
     "/src/**",
+    "/examples/**",
     "/doc/**",
     "/tests/**",
     "/benches/**",
@@ -98,3 +99,7 @@ required-features = ["converter"]
 name = "string_output_bench"
 harness = false
 required-features = ["converter", "json", "chrono"]
+
+[[example]]
+name = "deployment_lists"
+required-features = ["converter"]

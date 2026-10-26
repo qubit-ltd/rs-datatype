@@ -112,6 +112,10 @@ Read the [English user guide](doc/user_guide.md) or the
 sessions, diagnostics, Duration text, and troubleshooting. See the
 [design note](doc/design.md), [中文设计说明](doc/design.zh_CN.md), and
 [API documentation](https://docs.rs/qubit-datatype) for further detail.
+For a runnable scalar-string-to-list example covering skipped entries,
+original error indices, and a shared item budget, see
+[Read a deployment port list](doc/user_guide.md#read-a-deployment-port-list)
+or run `cargo run --example deployment_lists --features converter`.
 
 ## Testing
 

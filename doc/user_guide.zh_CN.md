@@ -81,6 +81,56 @@ assert_eq!(retry, Duration::from_millis(1500));
 
 ## 进阶用法
 
+### 读取部署端口列表
+
+对于 `PORTS=8080,, 8443;9000` 这样的标量配置，应显式设置拆分、分隔符、trim 和空项策略。
+[可运行的 `deployment_lists` 示例](../examples/deployment_lists.rs)可通过
+`cargo run --example deployment_lists --features converter` 执行，下面展示相同的核心调用：
+
+```rust
+use qubit_datatype::{
+    CollectionConversionPolicy, ConversionLimits, ConversionPolicy,
+    DataConversionErrorKind, EmptyItemPolicy, ScalarStringDataConverters,
+};
+
+let collection = CollectionConversionPolicy::builder()
+    .split_scalar_strings(true)
+    .delimiters([',', ';'])
+    .trim_items(true)
+    .empty_item_policy(EmptyItemPolicy::Skip)
+    .build();
+let policy = ConversionPolicy::builder().collection_policy(collection).build();
+let limits = ConversionLimits::default();
+let ports = ScalarStringDataConverters::from("8080,, 8443;9000")
+    .to_vec_with::<u16>(&policy, &limits)
+    .expect("所有端口都应有效");
+assert_eq!(ports, vec![8080, 8443, 9000]);
+
+let error = ScalarStringDataConverters::from("8080,,bad")
+    .to_vec_with::<u16>(&policy, &limits)
+    .expect_err("第三项无效");
+assert_eq!(error.source_index(), 2);
+assert_eq!(error.conversion_error().kind(), DataConversionErrorKind::InvalidValue);
+assert_eq!(
+    ScalarStringDataConverters::from("8080,,bad").to_first_with::<u16>(&policy, &limits)
+        .expect("第一项有效"),
+    8080,
+);
+```
+
+`source_index()` 是原始输入中的零起始索引。跳过空项不会重新编号，因此 `bad` 仍是索引 `2`。
+`to_first_with` 只转换首项，不验证尚未访问的尾部内容；若必须确认整个配置有效后才能应用，
+请使用 `to_vec_with`。对于已经物化的列表，应改用 `DataConverters`，不需要再次拆分每个字符串元素。
+
+如果多次转换属于同一操作，应复用一个 `ConversionSession`。示例设置两条目的操作上限，
+尝试转换三个端口，并在原始索引 `2` 观察到 `ConversionResource::Items`。整个标量来源先准入
+并计入字节预算，随后按访问顺序累计条目预算；转换失败不会退还已经扣除的来源字节或条目。
+只有全量转换成功后才应用部署配置；拒绝时可报告索引和错误分类，不要记录可能包含机密的原始配置值。
+
+在更底层的迭代接口中，`ScalarItems` 遇到被拒绝的空项后仍可继续读取，但条目上限错误会耗尽该迭代器。
+`AdmittedScalarSource::next_item` 遇到拆分或条目准入错误后会耗尽来源；之后的目标转换错误本身不会耗尽来源。
+普通应用可使用 `ScalarStringDataConverters`，由适配器处理这些迭代细节。
+
 ### 在一个逻辑操作内共享预算
 
 当整个请求而非单个字段需要共享条目或字节预算时，构造 `ConversionSession`。下面的配置

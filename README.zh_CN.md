@@ -98,6 +98,9 @@ assert_eq!(retry, Duration::from_millis(1500));
 [English user guide](doc/user_guide.md) 或[中文用户手册](doc/user_guide.zh_CN.md)。
 更多设计细节请参阅 [English design note](doc/design.md)、[中文设计说明](doc/design.zh_CN.md)
 和 [API 文档](https://docs.rs/qubit-datatype)。
+标量字符串转列表的可运行示例涵盖跳过空项、原始错误索引和共享条目预算，详见
+[读取部署端口列表](doc/user_guide.zh_CN.md#读取部署端口列表)，或运行
+`cargo run --example deployment_lists --features converter`。
 
 ## 测试
 

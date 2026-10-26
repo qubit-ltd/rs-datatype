@@ -92,6 +92,68 @@ calling `to_with` is sufficient because each call creates a fresh session.
 
 ## Advanced usage
 
+### Read a deployment port list
+
+For a scalar setting such as `PORTS=8080,, 8443;9000`, configure splitting,
+delimiters, trimming, and empty-item handling explicitly. The
+[`deployment_lists` example](../examples/deployment_lists.rs) is runnable with
+`cargo run --example deployment_lists --features converter` and exercises the
+same calls below:
+
+```rust
+use qubit_datatype::{
+    CollectionConversionPolicy, ConversionLimits, ConversionPolicy,
+    DataConversionErrorKind, EmptyItemPolicy, ScalarStringDataConverters,
+};
+
+let collection = CollectionConversionPolicy::builder()
+    .split_scalar_strings(true)
+    .delimiters([',', ';'])
+    .trim_items(true)
+    .empty_item_policy(EmptyItemPolicy::Skip)
+    .build();
+let policy = ConversionPolicy::builder().collection_policy(collection).build();
+let limits = ConversionLimits::default();
+let ports = ScalarStringDataConverters::from("8080,, 8443;9000")
+    .to_vec_with::<u16>(&policy, &limits)
+    .expect("all configured ports should be valid");
+assert_eq!(ports, vec![8080, 8443, 9000]);
+
+let error = ScalarStringDataConverters::from("8080,,bad")
+    .to_vec_with::<u16>(&policy, &limits)
+    .expect_err("the third item is invalid");
+assert_eq!(error.source_index(), 2);
+assert_eq!(error.conversion_error().kind(), DataConversionErrorKind::InvalidValue);
+assert_eq!(
+    ScalarStringDataConverters::from("8080,,bad").to_first_with::<u16>(&policy, &limits)
+        .expect("the first item is valid"),
+    8080,
+);
+```
+
+`source_index()` is zero-based in the original input. Skipping the empty item
+does not renumber `bad`, so its index remains `2`. `to_first_with` converts only
+the first item and does not validate unvisited trailing items; use
+`to_vec_with` when the entire setting must be valid before applying it. For an
+already materialized list, use `DataConverters` instead of splitting each
+string element again.
+
+When several conversions belong to one operation, reuse one
+`ConversionSession`. The example sets a two-item operation limit, attempts a
+three-port list, and observes `ConversionResource::Items` at source index `2`.
+The complete scalar source is admitted for its byte budget first, then item
+budget is charged as items are visited. A failed conversion does not refund
+input bytes or items already charged. Apply a deployment update only after the
+full-list conversion succeeds; on rejection, report its index and error kind,
+not the original configuration value, which may contain a secret.
+
+At the lower-level iterator boundary, `ScalarItems` remains usable after a
+rejected empty item, while its item-limit error exhausts that iterator.
+`AdmittedScalarSource::next_item` exhausts its source after any splitting or
+item-admission error; a later target-conversion error does not itself exhaust
+the source. Ordinary applications can use `ScalarStringDataConverters` and
+leave these lower-level iteration details to the adapter.
+
 ### Share a budget across a logical operation
 
 Build a `ConversionSession` when a whole request, rather than each field,
