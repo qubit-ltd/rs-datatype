@@ -214,6 +214,14 @@ Serde 字段应按 wire contract 选择适配器：
 每个值的规模。深度从根值开始计数，根值深度为 1。数组和对象的上限分别按各自的直接
 子项统计，不会把整棵树的条目相加。整个会话累计的 `max_structured_nodes` 是另一项预算。
 
+此示例除 `converter` 外还需要启用 `json` feature，并直接依赖 `serde_json`。使用以下依赖配置：
+
+```toml
+[dependencies]
+qubit-datatype = { version = "0.15", default-features = false, features = ["converter", "json"] }
+serde_json = "1.0"
+```
+
 ```rust
 use qubit_datatype::{
     ConversionLimits, ConversionPolicy, ConversionResource, DataConverter,

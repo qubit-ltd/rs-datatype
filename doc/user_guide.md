@@ -251,6 +251,14 @@ separately for each container, rather than summing all entries in the tree.
 The cumulative `max_structured_nodes` operation limit is a separate session
 budget.
 
+This example requires the `json` feature in addition to `converter`, and a direct dependency on `serde_json`. Use the following dependency configuration:
+
+```toml
+[dependencies]
+qubit-datatype = { version = "0.15", default-features = false, features = ["converter", "json"] }
+serde_json = "1.0"
+```
+
 ```rust
 use qubit_datatype::{
     ConversionLimits, ConversionPolicy, ConversionResource, DataConverter,
