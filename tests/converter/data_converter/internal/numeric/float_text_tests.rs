@@ -149,11 +149,23 @@ fn test_exact_float_text_rejects_half_minimum_f64_subnormal() {
 /// Verifies zero remains exact even when its exponent exceeds integer bounds.
 #[test]
 fn test_exact_float_text_accepts_zero_with_unbounded_exponent() {
-    assert_eq!(DataConverter::from("0e999999999999999999999999").to::<f64>(), Ok(0.0),);
-    assert_eq!(
-        DataConverter::from("-0e-999999999999999999999999").to::<f32>(),
-        Ok(-0.0),
-    );
+    for (text, negative) in [
+        ("0", false),
+        ("0.0", false),
+        ("+0.0", false),
+        ("-0", true),
+        ("-0.0", true),
+        ("-0e0", true),
+        ("-0e-999999999999999999999999", true),
+        ("-0e999999999999999999999999", true),
+    ] {
+        let actual32 = DataConverter::from(text).to::<f32>().expect("zero is exact");
+        let actual64 = DataConverter::from(text).to::<f64>().expect("zero is exact");
+        let expected32 = if negative { -0.0_f32 } else { 0.0_f32 };
+        let expected64 = if negative { -0.0_f64 } else { 0.0_f64 };
+        assert_eq!(actual32.to_bits(), expected32.to_bits(), "f32 source {text}");
+        assert_eq!(actual64.to_bits(), expected64.to_bits(), "f64 source {text}");
+    }
 }
 
 /// Verifies f32 text conversion distinguishes range and precision failures.
