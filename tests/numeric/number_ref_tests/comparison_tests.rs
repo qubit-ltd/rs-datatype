@@ -10,9 +10,9 @@ use std::cmp::Ordering;
 #[cfg(feature = "big-number")]
 use std::str::FromStr;
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-#[cfg(any(feature = "big-integer", feature = "big-number"))]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_bigint::BigInt;
 #[cfg(feature = "big-number")]
 use num_rational::BigRational;
@@ -250,6 +250,37 @@ fn test_number_ref_comparison_approximate_policy() {
             compare_numbers(value, NumberRef::from(0.0_f64), NumericComparisonPolicy::Approximate,),
             Some(Ordering::Equal)
         );
+    }
+}
+
+/// Verifies extreme decimal scales safely fall back to exact comparison.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_number_ref_approximate_extreme_scale() {
+    let coefficient = BigInt::from(10_u8).pow(50);
+    let cases = [
+        (coefficient.clone(), i64::MIN, Ordering::Greater),
+        (-coefficient.clone(), i64::MIN, Ordering::Less),
+        (coefficient.clone(), i64::MIN + 19, Ordering::Greater),
+        (coefficient, i64::MAX, Ordering::Less),
+        (BigInt::from(0_u8), i64::MIN, Ordering::Less),
+    ];
+    for (coefficient, scale, expected) in cases {
+        let decimal = BigDecimal::new(coefficient, scale);
+        let left = NumberRef::from(&decimal);
+        let right = NumberRef::from(1.0_f64);
+        for policy in [NumericComparisonPolicy::Approximate, NumericComparisonPolicy::Exact] {
+            assert_eq!(
+                left.compare(right, policy),
+                Some(expected),
+                "scale={scale}, policy={policy:?}"
+            );
+            assert_eq!(
+                right.compare(left, policy),
+                Some(expected.reverse()),
+                "scale={scale}, policy={policy:?}"
+            );
+        }
     }
 }
 

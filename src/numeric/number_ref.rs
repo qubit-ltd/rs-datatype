@@ -590,12 +590,13 @@ impl<'a> NumberRef<'a> {
     /// Fixed-width integers and primitive floats convert by widening or
     /// casting. Arbitrary-precision values use `ToPrimitive::to_f64`, which
     /// may lose precision or return `None` when the magnitude cannot be
-    /// represented.
+    /// represented or a decimal scale cannot be safely projected.
     ///
     /// # Returns
     ///
     /// The approximate `f64` projection, or `None` when an arbitrary-precision
-    /// value cannot be represented as `f64`.
+    /// value cannot be represented as `f64` or a decimal scale cannot be
+    /// safely projected.
     #[must_use]
     fn to_approximate_f64(self) -> Option<f64> {
         match self.inner {
@@ -614,7 +615,13 @@ impl<'a> NumberRef<'a> {
             #[cfg(feature = "big-integer")]
             NumberRepr::BigInteger(value) => value.to_f64(),
             #[cfg(feature = "big-decimal")]
-            NumberRepr::BigDecimal(value) => value.to_f64(),
+            NumberRepr::BigDecimal(value) => {
+                let (coefficient, scale) = value.as_bigint_and_scale();
+                // The coefficient bit count bounds the scale reduction conservatively.
+                let max_scale_reduction = i64::try_from(coefficient.bits()).ok()?;
+                scale.checked_sub(max_scale_reduction)?;
+                value.to_f64()
+            }
             #[cfg(not(any(feature = "big-integer", feature = "big-decimal")))]
             NumberRepr::Lifetime(_, impossible) => match impossible {},
         }
