@@ -225,7 +225,14 @@ impl CollectionConversionPolicy {
         self
     }
 
-    /// Splits and normalizes a scalar string under explicit value limits.
+    /// Lazily splits and normalizes a scalar string, applying `max_items`.
+    ///
+    /// This raw iterator does not check `max_source_bytes` or consume a
+    /// conversion session's cumulative budgets. The caller already holds the
+    /// source text. Use
+    /// [`crate::ConversionSession::admit_scalar_string_source`]
+    /// or [`crate::ScalarStringDataConverters`] when source-byte admission and
+    /// operation-level accounting are required.
     ///
     /// # Parameters
     ///

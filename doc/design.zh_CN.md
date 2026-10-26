@@ -12,12 +12,13 @@
 输入准入一次，然后创建绑定运行时来源类型和请求目标类型的 context，包装为
 `AdmittedConversion` 后再调用目标。`AdmittedScalarItem` 在消耗一次性 token 后遵循同一规则。
 
-context 只暴露当前转换中有意义的操作：
-
-- 借用和拥有形式的嵌套委托；
-- 策略、限制和已绑定类型的访问器；
-- 启用 `json` 时的 JSON 解码、seed 解码、值记账和编码；
-- 事务式 String 渲染。
+下游目标收到的是公开封装 `AdmittedConversion`，而不是内部
+`ConversionContext`。封装公开 `source()`、`from_type()`、`to_type()`、
+`unsupported()`、消费式同描述符 `convert()`，启用 `json` 时的
+`decode_json()`、`account_json_value()`、`encode_json()`，以及事务式
+`write_string()`。这些操作仍使用框架选定的策略和同一累计会话预算。内部
+context 还提供直接访问 `policy()`、`limits()` 和 JSON `decode_json_seed()` 的方法；
+下游目标不能调用这些 context 方法。
 
 `ConversionSession` 仍公开构造、复用、标量条目准入、配置和累计用量观察。原始字节和
 结构记账原语改为 crate 私有。

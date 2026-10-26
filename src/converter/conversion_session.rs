@@ -8,8 +8,9 @@
 //! Reusable accounting session for one or more data conversions.
 //!
 //! `ConversionSession` owns cumulative limits and observability. Target
-//! implementations receive [`super::ConversionContext`] instead, so every
-//! budgeted operation is bound to the active source and target type pair.
+//! implementations receive [`super::AdmittedConversion`] instead; its
+//! operations use an internal context bound to the active source and target
+//! type pair while keeping raw policy and budget access internal.
 
 use qubit_budget::BudgetError;
 use qubit_budget::BudgetedStringError;

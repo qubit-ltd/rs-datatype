@@ -15,13 +15,14 @@ context bound to the runtime source and requested target types, wraps it in an
 `AdmittedConversion`, and invokes the target. An `AdmittedScalarItem` follows
 the same rule after its one-use token is consumed.
 
-The context exposes only operations that are meaningful inside that conversion:
-
-- nested borrowed and owned delegation;
-- policy, limits, and bound type accessors;
-- JSON decode, seed decode, value accounting, and encode when `json` is
-  enabled;
-- transactional String rendering.
+The downstream target receives the public `AdmittedConversion` wrapper, not
+the internal `ConversionContext`. The wrapper exposes `source()`, `from_type()`,
+`to_type()`, `unsupported()`, same-descriptor consuming `convert()`, JSON
+`decode_json()`, `account_json_value()`, and `encode_json()` when `json` is
+enabled, plus transactional `write_string()`. These operations retain the
+policy and cumulative session budget selected by the framework. The internal
+context additionally provides direct `policy()` and `limits()` accessors and
+JSON `decode_json_seed()`; downstream targets cannot call those context methods.
 
 `ConversionSession` remains public for construction, reuse, scalar-item
 admission, configuration, and cumulative usage observation. Its raw byte and

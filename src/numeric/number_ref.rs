@@ -408,6 +408,14 @@ impl<'a> NumberRef<'a> {
 
     /// Compares this value with `right` under an explicit numeric policy.
     ///
+    /// Fixed-width comparisons do not require heap allocation. Some paths
+    /// involving `BigInt` or `BigDecimal` may clone coefficients or construct
+    /// exact rational or decimal values, with cost depending on the operand
+    /// representations. Direct comparisons between some large-number
+    /// representations avoid that work. Conversion limits and session budgets
+    /// do not apply to this independent comparison; constrain untrusted number
+    /// representations at the input boundary when their size must be bounded.
+    ///
     /// # Parameters
     ///
     /// * `right` - Right numeric operand.

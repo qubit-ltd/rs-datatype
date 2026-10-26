@@ -203,6 +203,14 @@ assert_eq!(
 
 NaN is unordered and signed zeroes compare equal.
 
+Fixed-width comparisons need no heap allocation. Some paths involving
+`BigInt` or `BigDecimal` may clone coefficients or construct exact rational or
+decimal values, so their cost can grow with the number representation; some
+large-number pairs have direct comparison paths. `ConversionLimits` and
+`ConversionSession` govern conversions and do not budget this independent
+comparison. If numbers come from untrusted input, bound their representation
+size at the input boundary.
+
 ### Parse standalone Duration text
 
 When runtime conversion is unnecessary, enable `duration` and call the
