@@ -45,22 +45,22 @@ fn test_number_ref_fixed_width_properties() {
 #[test]
 fn test_number_ref_all_primitive_property_paths() {
     let values = [
-        NumberRef::from(-1_i8),
-        NumberRef::from(-1_i16),
-        NumberRef::from(-1_i32),
-        NumberRef::from(-1_i64),
-        NumberRef::from(-1_i128),
-        NumberRef::from(1_u8),
-        NumberRef::from(1_u16),
-        NumberRef::from(1_u32),
-        NumberRef::from(1_u64),
-        NumberRef::from(1_u128),
-        NumberRef::from(1.0_f32),
-        NumberRef::from(1.0_f64),
+        ("i8", NumberRef::from(-1_i8), true, false),
+        ("i16", NumberRef::from(-1_i16), true, false),
+        ("i32", NumberRef::from(-1_i32), true, false),
+        ("i64", NumberRef::from(-1_i64), true, false),
+        ("i128", NumberRef::from(-1_i128), true, false),
+        ("u8", NumberRef::from(1_u8), true, true),
+        ("u16", NumberRef::from(1_u16), true, true),
+        ("u32", NumberRef::from(1_u32), true, true),
+        ("u64", NumberRef::from(1_u64), true, true),
+        ("u128", NumberRef::from(1_u128), true, true),
+        ("f32", NumberRef::from(1.0_f32), false, true),
+        ("f64", NumberRef::from(1.0_f64), false, true),
     ];
 
-    for value in values {
-        let _ = (
+    for (label, value, integer, positive) in values {
+        let actual = (
             value.is_integer(),
             value.is_float(),
             value.is_big_integer(),
@@ -72,6 +72,10 @@ fn test_number_ref_all_primitive_property_paths() {
             value.is_positive(),
             value.is_negative(),
         );
+        let expected = (
+            integer, !integer, false, false, false, false, true, false, positive, !positive,
+        );
+        assert_eq!(actual, expected, "primitive representation: {label}");
     }
 
     let zeros = [

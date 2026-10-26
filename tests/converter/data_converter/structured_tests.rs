@@ -43,7 +43,7 @@ use qubit_datatype::DataType;
 use qubit_datatype::InvalidValueReason;
 #[cfg(any(feature = "json", feature = "url"))]
 use qubit_datatype::StructuredConversionLimits;
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
+#[cfg(any(feature = "url", feature = "json"))]
 use qubit_datatype::converter::DataConversionErrorKind;
 #[cfg(feature = "url")]
 use url::Url;
@@ -519,10 +519,10 @@ fn test_data_converter_consuming_structured_non_identity_sources() {
     assert_eq!(map.get("key").map(String::as_str), Some("value"));
 }
 
-/// Test URL and JSON conversion behavior.
+/// Test URL conversion behavior.
 #[test]
-#[cfg(all(feature = "big-number", feature = "chrono", feature = "url", feature = "json"))]
-fn test_data_converter_url_and_json_conversions() {
+#[cfg(feature = "url")]
+fn test_data_converter_url_conversions() {
     let url: Url = DataConverter::from("https://example.com/path")
         .to()
         .expect("URL string should parse");
@@ -543,7 +543,12 @@ fn test_data_converter_url_and_json_conversions() {
         DataConverter::from(1i32).to::<Url>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Unsupported
     ));
+}
 
+/// Test JSON conversion behavior.
+#[test]
+#[cfg(feature = "json")]
+fn test_data_converter_json_conversions() {
     let json: serde_json::Value = DataConverter::from(r#"{"answer":42}"#)
         .to()
         .expect("JSON string should parse");

@@ -275,6 +275,48 @@ fn test_data_converter_float_targets_accept_supported_sources() {
         DataConverter::from(13u128),
         DataConverter::from("15.5"),
     ];
+    let f32_expected = [
+        1.0_f32,
+        2.0,
+        1.0,
+        65.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        9.0,
+        10.0,
+        11.0,
+        12.0,
+        13.0,
+        15.5,
+        #[cfg(feature = "big-integer")]
+        20.0,
+        #[cfg(feature = "big-decimal")]
+        21.5,
+    ];
+    let f64_expected = [
+        1.0_f64,
+        2.0,
+        0.0,
+        66.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0,
+        9.0,
+        10.0,
+        11.0,
+        12.0,
+        13.0,
+        15.5,
+        #[cfg(feature = "big-integer")]
+        20.0,
+        #[cfg(feature = "big-decimal")]
+        21.5,
+    ];
     #[cfg(feature = "big-integer")]
     let big_int = BigInt::from(20);
     #[cfg(feature = "big-integer")]
@@ -299,12 +341,16 @@ fn test_data_converter_float_targets_accept_supported_sources() {
         .into_iter()
         .chain([DataConverter::from(&big_decimal)])
         .collect::<Vec<_>>();
-    for source in f32_sources {
-        assert!(source.to::<f32>().expect("source should convert to f32").is_finite());
+    assert_eq!(f32_sources.len(), f32_expected.len(), "f32 fixture length");
+    assert_eq!(f64_sources.len(), f64_expected.len(), "f64 fixture length");
+    for (index, (source, expected)) in f32_sources.into_iter().zip(f32_expected).enumerate() {
+        let actual = source.to::<f32>().expect("source should convert to f32");
+        assert_eq!(actual, expected, "f32 case {index}, source={:?}", source.data_type());
     }
 
-    for source in f64_sources {
-        assert!(source.to::<f64>().expect("source should convert to f64").is_finite());
+    for (index, (source, expected)) in f64_sources.into_iter().zip(f64_expected).enumerate() {
+        let actual = source.to::<f64>().expect("source should convert to f64");
+        assert_eq!(actual, expected, "f64 case {index}, source={:?}", source.data_type());
     }
 
     assert!(

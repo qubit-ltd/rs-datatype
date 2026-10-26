@@ -97,11 +97,22 @@ fn test_data_conversion_error_quantity_contract() {
 #[test]
 fn test_data_conversion_error_does_not_contain_source_value() {
     let secret = "secret-marker-9271";
-    let error = DataConversionError::invalid(
-        DataType::String,
-        DataType::Json,
-        InvalidValueReason::InvalidSyntax { expected: "JSON" },
-    );
+    let error = DataConverter::from(secret)
+        .to::<u16>()
+        .expect_err("the secret marker is not a valid integer");
+
+    assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
     assert!(!error.to_string().contains(secret));
     assert!(!format!("{error:?}").contains(secret));
+
+    #[cfg(feature = "json")]
+    {
+        let error = DataConverter::from(secret)
+            .to::<serde_json::Value>()
+            .expect_err("the secret marker is not valid JSON");
+
+        assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+        assert!(!error.to_string().contains(secret));
+        assert!(!format!("{error:?}").contains(secret));
+    }
 }
