@@ -10,6 +10,30 @@
 use super::StructuredConversionLimits;
 
 /// Builder for [`StructuredConversionLimits`].
+///
+/// `max_depth` counts the root value as depth one. `max_sequence_items` and
+/// `max_map_entries` each limit the direct contents of every individual
+/// container. Zero sequence and map maxima accept only empty containers; a
+/// zero depth maximum rejects every root value. These limits apply to each
+/// converted value, while cumulative structured-node accounting is configured
+/// separately through [`ConversionOperationLimits`].
+///
+/// [`ConversionOperationLimits`]: crate::converter::ConversionOperationLimits
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::StructuredConversionLimits;
+///
+/// let limits = StructuredConversionLimits::builder()
+///     .max_depth(3)
+///     .max_sequence_items(2)
+///     .max_map_entries(1)
+///     .build();
+/// assert_eq!(limits.max_depth(), 3);
+/// assert_eq!(limits.max_sequence_items(), 2);
+/// assert_eq!(limits.max_map_entries(), 1);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StructuredConversionLimitsBuilder {
     /// Structured limits being configured.
@@ -35,7 +59,8 @@ impl StructuredConversionLimitsBuilder {
         }
     }
 
-    /// Configures the depth maximum.
+    /// Configures the maximum depth, counting the root value as one. A zero
+    /// maximum rejects every root value.
     #[inline]
     #[must_use]
     pub fn max_depth(self, maximum: u64) -> Self {
@@ -44,7 +69,8 @@ impl StructuredConversionLimitsBuilder {
         }
     }
 
-    /// Configures the sequence item maximum.
+    /// Configures the maximum number of direct items in each sequence. Zero
+    /// permits only empty sequences.
     #[inline]
     #[must_use]
     pub fn max_sequence_items(self, maximum: u64) -> Self {
@@ -53,7 +79,8 @@ impl StructuredConversionLimitsBuilder {
         }
     }
 
-    /// Configures the map entry maximum.
+    /// Configures the maximum number of direct entries in each map. Zero
+    /// permits only empty maps.
     #[inline]
     #[must_use]
     pub fn max_map_entries(self, maximum: u64) -> Self {

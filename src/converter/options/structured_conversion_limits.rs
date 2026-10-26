@@ -26,6 +26,12 @@ pub use structured_conversion_limits_builder::StructuredConversionLimitsBuilder;
 ///
 /// The text limit applies to UTF-8 bytes after configured string normalization
 /// and covers JSON values, JSON objects converted to string maps, and URLs.
+/// Depth includes the root value as depth one. Sequence and map limits apply
+/// independently to the direct items or entries of each container. A zero
+/// container limit permits only empty containers; a zero depth limit rejects
+/// every root value. These per-value limits are separate from the cumulative
+/// structured-node budget configured on
+/// [`ConversionOperationLimits`](crate::converter::ConversionOperationLimits).
 ///
 /// # Examples
 ///
@@ -47,11 +53,11 @@ pub struct StructuredConversionLimits {
 impl StructuredConversionLimits {
     /// Default maximum normalized structured text length in bytes.
     pub const DEFAULT_MAX_TEXT_BYTES: u64 = 1_048_576;
-    /// Default maximum root-inclusive depth.
+    /// Default maximum depth including the root value, which has depth one.
     pub const DEFAULT_MAX_DEPTH: u64 = 128;
-    /// Default maximum sequence item count.
+    /// Default maximum direct item count for each sequence.
     pub const DEFAULT_MAX_SEQUENCE_ITEMS: u64 = 65_536;
-    /// Default maximum map entry count.
+    /// Default maximum direct entry count for each map.
     pub const DEFAULT_MAX_MAP_ENTRIES: u64 = 65_536;
 
     /// Creates a builder initialized with the default structured limits.
@@ -102,7 +108,7 @@ impl StructuredConversionLimits {
         &self.value
     }
 
-    /// Returns the configured depth maximum.
+    /// Returns the configured maximum depth, counting the root value as one.
     #[inline]
     #[must_use]
     pub fn max_depth(&self) -> u64 {
@@ -120,7 +126,7 @@ impl StructuredConversionLimits {
             .expect("structured depth limit is configured")
     }
 
-    /// Returns the configured sequence item maximum.
+    /// Returns the maximum number of direct items allowed in each sequence.
     #[inline]
     #[must_use]
     pub fn max_sequence_items(&self) -> u64 {
@@ -140,7 +146,7 @@ impl StructuredConversionLimits {
             .expect("structured sequence-item limit is configured")
     }
 
-    /// Returns the configured map entry maximum.
+    /// Returns the maximum number of direct entries allowed in each map.
     #[inline]
     #[must_use]
     pub fn max_map_entries(&self) -> u64 {

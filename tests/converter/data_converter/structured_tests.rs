@@ -84,6 +84,31 @@ fn assert_budget_resource<T>(result: Result<T, DataConversionError>, expected: C
     assert_eq!(error.resource(), Some(expected));
 }
 
+#[cfg(feature = "json")]
+fn assert_json_structure_case(
+    text: &str,
+    value: serde_json::Value,
+    structured_limits: StructuredConversionLimits,
+    expected_resource: Option<ConversionResource>,
+) {
+    let policy = ConversionPolicy::strict();
+    let limits = ConversionLimits::builder().structured_limits(structured_limits).build();
+    let text_result = DataConverter::from(text).to_with::<serde_json::Value>(&policy, &limits);
+    let value_result = DataConverter::from(&value).to_with::<serde_json::Value>(&policy, &limits);
+
+    for result in [text_result, value_result] {
+        match expected_resource {
+            Some(resource) => {
+                let error = result.expect_err("the configured structural limit should reject the value");
+                assert_eq!(error.resource(), Some(resource));
+            }
+            None => {
+                assert!(result.is_ok(), "the value should fit its structural limits: {result:?}");
+            }
+        }
+    }
+}
+
 /// Tests that structured text conversions enforce the configured byte limit.
 #[cfg(feature = "json")]
 #[test]
@@ -149,6 +174,90 @@ fn test_data_converter_rejects_json_text_exceeding_structure_limits() {
     assert_budget_resource(
         DataConverter::from(r#"{"first":"1","second":"2"}"#).to_with::<HashMap<String, String>>(&policy, &map_limits),
         ConversionResource::MapEntries,
+    );
+}
+
+#[cfg(feature = "json")]
+#[test]
+fn test_data_converter_structure_limit_root_container_and_zero_boundaries() {
+    let nested = serde_json::json!([[1], [2]]);
+    assert_json_structure_case(
+        "[[1],[2]]",
+        nested.clone(),
+        StructuredConversionLimits::builder()
+            .max_depth(3)
+            .max_sequence_items(2)
+            .build(),
+        None,
+    );
+    assert_json_structure_case(
+        "[[1],[2]]",
+        nested.clone(),
+        StructuredConversionLimits::builder()
+            .max_depth(2)
+            .max_sequence_items(2)
+            .build(),
+        Some(ConversionResource::StructuredDepth),
+    );
+    assert_json_structure_case(
+        "[[1],[2]]",
+        nested,
+        StructuredConversionLimits::builder()
+            .max_depth(3)
+            .max_sequence_items(1)
+            .build(),
+        Some(ConversionResource::SequenceItems),
+    );
+
+    assert_json_structure_case(
+        "1",
+        serde_json::json!(1),
+        StructuredConversionLimits::builder().max_depth(1).build(),
+        None,
+    );
+    assert_json_structure_case(
+        "1",
+        serde_json::json!(1),
+        StructuredConversionLimits::builder().max_depth(0).build(),
+        Some(ConversionResource::StructuredDepth),
+    );
+
+    assert_json_structure_case(
+        "[]",
+        serde_json::json!([]),
+        StructuredConversionLimits::builder()
+            .max_depth(1)
+            .max_sequence_items(0)
+            .build(),
+        None,
+    );
+    assert_json_structure_case(
+        "[1]",
+        serde_json::json!([1]),
+        StructuredConversionLimits::builder()
+            .max_depth(2)
+            .max_sequence_items(0)
+            .build(),
+        Some(ConversionResource::SequenceItems),
+    );
+
+    assert_json_structure_case(
+        "{}",
+        serde_json::json!({}),
+        StructuredConversionLimits::builder()
+            .max_depth(1)
+            .max_map_entries(0)
+            .build(),
+        None,
+    );
+    assert_json_structure_case(
+        "{\"key\":0}",
+        serde_json::json!({"key": 0}),
+        StructuredConversionLimits::builder()
+            .max_depth(2)
+            .max_map_entries(0)
+            .build(),
+        Some(ConversionResource::MapEntries),
     );
 }
 
@@ -315,7 +424,7 @@ fn test_data_converter_chrono_targets_reject_noncanonical_text() {
     assert_invalid_syntax(
         DataConverter::from("2026-07-12T10:11:12").to::<DateTime<Utc>>(),
         DataType::Instant,
-        "RFC 3339 timestamp with offset",
+        "RFC 3339 timestamp with offset and at most nine fractional digits",
     );
 }
 

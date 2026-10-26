@@ -203,6 +203,89 @@ Serde 字段应按 wire contract 选择适配器：
 | `duration_millis_with_unit_exact` | `"<integer>ms"` | 拒绝亚毫秒值 |
 | `duration_with_unit` | 规范化单位字符串 | 精确 |
 
+### 限制结构化输入
+
+读取配置或协议中的嵌套 JSON 时，可用 `StructuredConversionLimits` 在构造目标值前限制
+每个值的规模。深度从根值开始计数，根值深度为 1。数组和对象的上限分别按各自的直接
+子项统计，不会把整棵树的条目相加。整个会话累计的 `max_structured_nodes` 是另一项预算。
+
+```rust
+use qubit_datatype::{
+    ConversionLimits, ConversionPolicy, ConversionResource, DataConverter,
+    StructuredConversionLimits,
+};
+
+fn main() {
+    let policy = ConversionPolicy::strict();
+    let limits = ConversionLimits::builder()
+        .structured_limits(
+            StructuredConversionLimits::builder()
+                .max_depth(3)
+                .max_sequence_items(2)
+                .max_map_entries(1)
+                .build(),
+        )
+        .build();
+    let value = DataConverter::from("[[1],[2]]")
+        .to_with::<serde_json::Value>(&policy, &limits)
+        .expect("嵌套值的深度不超过 3");
+    assert_eq!(value, serde_json::json!([[1], [2]]));
+
+    let zero_items = ConversionLimits::builder()
+        .structured_limits(StructuredConversionLimits::builder().max_sequence_items(0).build())
+        .build();
+    assert!(DataConverter::from("[]")
+        .to_with::<serde_json::Value>(&policy, &zero_items)
+        .is_ok());
+    let error = DataConverter::from("[1]")
+        .to_with::<serde_json::Value>(&policy, &zero_items)
+        .expect_err("数组上限为零时应拒绝非空数组");
+    assert_eq!(error.resource(), Some(ConversionResource::SequenceItems));
+}
+```
+
+来源已经是 `serde_json::Value` 时也执行相同检查。深度上限为零时，深度为 1 的根标量也会
+被拒绝；数组或对象的子项上限为零时，只有空容器可以通过。
+
+### 理解策略 builder 的调用顺序
+
+`string_policy` 这样的组 setter 会替换整组策略；`blank_string_policy` 这样的叶 setter 只修改
+当前组中的一个字段。设置会按调用顺序生效，因此后调用的组 setter 会重置此前设置的叶字段：
+
+```rust
+use qubit_datatype::{
+    BlankStringPolicy, CollectionConversionPolicy, ConversionPolicy,
+    EmptyItemPolicy, StringConversionPolicy,
+};
+
+fn main() {
+    let leaf_last = ConversionPolicy::builder()
+        .string_policy(StringConversionPolicy::default())
+        .blank_string_policy(BlankStringPolicy::Reject)
+        .build();
+    assert_eq!(leaf_last.string().blank_string_policy(), BlankStringPolicy::Reject);
+
+    let group_last = ConversionPolicy::builder()
+        .blank_string_policy(BlankStringPolicy::Reject)
+        .string_policy(StringConversionPolicy::default())
+        .build();
+    assert_eq!(group_last.string().blank_string_policy(), BlankStringPolicy::Preserve);
+
+    let collection = ConversionPolicy::builder()
+        .empty_item_policy(EmptyItemPolicy::Reject)
+        .collection_policy(CollectionConversionPolicy::default())
+        .build();
+    assert_eq!(collection.collection().empty_item_policy(), EmptyItemPolicy::Keep);
+}
+```
+
+### 精确处理 Instant 文本
+
+启用 `chrono` 后，RFC 3339 Instant 文本的小数部分最多允许 9 位。所有转换策略都遵守这一
+规则，超出的位数即使全是尾随零也会被拒绝。例如，`.123456789Z` 可以解析，
+`.1234567890Z` 则不可以。上游数据若带有更高精度，应先按领域规则明确舍入或截断，再进行
+转换；也可以直接传入已经构造好的 `DateTime<Utc>`。
+
 ## 错误与诊断
 
 应按稳定的 `DataConversionErrorKind` 处理 `DataConversionError`，不要依赖格式化后的错误

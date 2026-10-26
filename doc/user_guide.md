@@ -234,6 +234,97 @@ For Serde fields, select the adapter from the wire contract:
 | `duration_millis_with_unit_exact` | `"<integer>ms"` | Rejects submillisecond values |
 | `duration_with_unit` | Canonical unit string | Exact |
 
+### Bound structured input
+
+When configuration or protocol input contains nested JSON, use
+`StructuredConversionLimits` to bound each value before it is materialized.
+Depth counts the root as one. Sequence and map maxima count direct children
+separately for each container, rather than summing all entries in the tree.
+The cumulative `max_structured_nodes` operation limit is a separate session
+budget.
+
+```rust
+use qubit_datatype::{
+    ConversionLimits, ConversionPolicy, ConversionResource, DataConverter,
+    StructuredConversionLimits,
+};
+
+fn main() {
+    let policy = ConversionPolicy::strict();
+    let limits = ConversionLimits::builder()
+        .structured_limits(
+            StructuredConversionLimits::builder()
+                .max_depth(3)
+                .max_sequence_items(2)
+                .max_map_entries(1)
+                .build(),
+        )
+        .build();
+    let value = DataConverter::from("[[1],[2]]")
+        .to_with::<serde_json::Value>(&policy, &limits)
+        .expect("the nested value fits depth three");
+    assert_eq!(value, serde_json::json!([[1], [2]]));
+
+    let zero_items = ConversionLimits::builder()
+        .structured_limits(StructuredConversionLimits::builder().max_sequence_items(0).build())
+        .build();
+    assert!(DataConverter::from("[]")
+        .to_with::<serde_json::Value>(&policy, &zero_items)
+        .is_ok());
+    let error = DataConverter::from("[1]")
+        .to_with::<serde_json::Value>(&policy, &zero_items)
+        .expect_err("a zero item limit rejects a non-empty sequence");
+    assert_eq!(error.resource(), Some(ConversionResource::SequenceItems));
+}
+```
+
+The same checks apply when the source is already a materialized
+`serde_json::Value`. A zero depth limit rejects even a root scalar because its
+depth is one; zero sequence or map limits accept only empty containers.
+
+### Control policy builder order
+
+Group setters such as `string_policy` replace the whole policy group. Leaf
+setters such as `blank_string_policy` update one field in the current group.
+Calls take effect in order, so a later group setter resets an earlier leaf
+override:
+
+```rust
+use qubit_datatype::{
+    BlankStringPolicy, CollectionConversionPolicy, ConversionPolicy,
+    EmptyItemPolicy, StringConversionPolicy,
+};
+
+fn main() {
+    let leaf_last = ConversionPolicy::builder()
+        .string_policy(StringConversionPolicy::default())
+        .blank_string_policy(BlankStringPolicy::Reject)
+        .build();
+    assert_eq!(leaf_last.string().blank_string_policy(), BlankStringPolicy::Reject);
+
+    let group_last = ConversionPolicy::builder()
+        .blank_string_policy(BlankStringPolicy::Reject)
+        .string_policy(StringConversionPolicy::default())
+        .build();
+    assert_eq!(group_last.string().blank_string_policy(), BlankStringPolicy::Preserve);
+
+    let collection = ConversionPolicy::builder()
+        .empty_item_policy(EmptyItemPolicy::Reject)
+        .collection_policy(CollectionConversionPolicy::default())
+        .build();
+    assert_eq!(collection.collection().empty_item_policy(), EmptyItemPolicy::Keep);
+}
+```
+
+### Parse Instant text precisely
+
+With the `chrono` feature, RFC 3339 Instant text may contain at most nine
+fractional digits. Every conversion profile enforces this limit, including
+when excess digits are trailing zeroes. For example, `.123456789Z` is accepted
+but `.1234567890Z` is rejected. If an upstream source supplies finer
+precision, apply the domain's explicit rounding or truncation rule before
+conversion, or pass an already constructed `DateTime<Utc>`.
+
 ## Errors and diagnostics
 
 Handle `DataConversionError` by its stable `DataConversionErrorKind`, not by
