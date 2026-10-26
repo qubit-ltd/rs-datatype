@@ -24,12 +24,19 @@ mod numeric_conversion_limits_builder;
 
 pub use numeric_conversion_limits_builder::NumericConversionLimitsBuilder;
 
-/// Bounds allocations and work introduced by numeric conversion.
+/// Bounds resources at the numeric conversion stages named by each limit.
 ///
 /// The text limit applies to UTF-8 bytes after configured string
-/// normalization. The digit limit applies to the significant decimal digits
-/// of a `BigInt` result that conversion would materialize; leading zeros and a
-/// zero result do not consume that budget.
+/// normalization when parsing numeric text. The BigInt digit limit applies to
+/// a `BigInt` result that conversion would materialize; leading zeros and a
+/// zero result do not consume that budget. The BigDecimal coefficient and
+/// scale limits apply when `BigDecimal` is the conversion target, including
+/// when an existing value is copied to that target.
+///
+/// These stage-specific limits do not cap every temporary allocation made
+/// while converting an already-constructed numeric value. In particular,
+/// converting an existing `BigDecimal` to a float formats its coefficient as
+/// parser input, and that temporary text is not bounded by these limits.
 ///
 /// # Examples
 ///
