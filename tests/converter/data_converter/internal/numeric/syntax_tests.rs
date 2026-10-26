@@ -51,11 +51,10 @@ fn test_numeric_text_limit_preserves_conversion_limit_fact() {
     assert_eq!(error.observed_lower_bound(), Some(4));
 }
 
-/// Verifies grouped decimal parsing across chunk boundaries and both entry
-/// paths.
+/// Verifies decimal parsing at digit boundaries across both entry paths.
 #[cfg(feature = "big-integer")]
 #[test]
-fn test_big_integer_text_chunk_boundaries_preserve_exact_values() {
+fn test_big_integer_text_decimal_boundaries_preserve_exact_values() {
     for digits_count in [8_usize, 9, 10, 17, 18, 19, 4096] {
         let digits = "9".repeat(digits_count);
         let expected = BigInt::from(10_u8).pow(u32::try_from(digits_count).unwrap()) - BigInt::from(1_u8);
@@ -70,10 +69,10 @@ fn test_big_integer_text_chunk_boundaries_preserve_exact_values() {
     }
 }
 
-/// Verifies the integer-number path preserves values across parser chunks.
+/// Verifies integer-number text preserves exact values at digit boundaries.
 #[cfg(feature = "big-decimal")]
 #[test]
-fn test_big_decimal_integer_text_chunk_boundaries_preserve_exact_values() {
+fn test_big_decimal_integer_text_decimal_boundaries_preserve_exact_values() {
     for digits_count in [8_usize, 9, 10, 17, 18, 19, 4096] {
         let digits = "9".repeat(digits_count);
         let expected = BigDecimal::from_str(&digits).expect("the expected integer should parse");

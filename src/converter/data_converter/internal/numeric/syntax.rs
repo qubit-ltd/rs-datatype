@@ -115,7 +115,9 @@ pub(super) fn parse_number(value: &str, to: DataType) -> Result<ParsedNumber, Da
     if is_integer_syntax(value) {
         let negative = value.starts_with('-');
         let digits = value.strip_prefix(['+', '-']).unwrap_or(value);
-        let integer = parse_decimal_digits(digits.bytes());
+        let integer = digits
+            .bytes()
+            .fold(BigInt::from(0u8), |value, digit| value * 10u8 + (digit - b'0'));
         return Ok(ParsedNumber::Integer(if negative { -integer } else { integer }));
     }
     match BigDecimal::from_str(value) {
@@ -128,36 +130,6 @@ pub(super) fn parse_number(value: &str, to: DataType) -> Result<ParsedNumber, Da
             },
         )),
     }
-}
-
-/// Parses already validated ASCII decimal digits in groups of at most nine.
-///
-/// # Parameters
-///
-/// * `digits` - Iterator over ASCII digit bytes only.
-///
-/// # Returns
-///
-/// The exact non-negative integer represented by the digits, or zero for an
-/// empty iterator.
-#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-fn parse_decimal_digits(digits: impl Iterator<Item = u8>) -> BigInt {
-    let mut value = BigInt::from(0_u8);
-    let mut chunk = 0_u32;
-    let mut length = 0_u32;
-    for digit in digits {
-        chunk = chunk * 10 + u32::from(digit - b'0');
-        length += 1;
-        if length == 9 {
-            value = value * 1_000_000_000_u32 + chunk;
-            chunk = 0;
-            length = 0;
-        }
-    }
-    if length != 0 {
-        value = value * 10_u32.pow(length) + chunk;
-    }
-    value
 }
 
 /// Parses a case-insensitive non-finite numeric spelling.
@@ -558,7 +530,11 @@ pub(super) fn parse_text_bigint(
             },
         ));
     }
-    let mut integer = parse_decimal_digits(mantissa.bytes().filter(u8::is_ascii_digit).take(integer_digit_count));
+    let mut integer = mantissa
+        .bytes()
+        .filter(u8::is_ascii_digit)
+        .take(integer_digit_count)
+        .fold(BigInt::from(0_u8), |value, digit| value * 10_u8 + (digit - b'0'));
     if appended_zeros > 0 && integer != BigInt::from(0_u8) {
         let exponent = u32::try_from(appended_zeros)
             .map_err(|_| DataConversionError::invalid(DataType::String, to, InvalidValueReason::OutOfRange))?;
