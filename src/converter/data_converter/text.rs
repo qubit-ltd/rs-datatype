@@ -484,6 +484,29 @@ fn parse_datetime(value: &str) -> Option<NaiveDateTime> {
     Some(NaiveDateTime::new(parse_date(date)?, parse_time(time)?))
 }
 
+/// Parses an RFC 3339 instant while enforcing nanosecond text precision.
+///
+/// # Parameters
+///
+/// * `value` - RFC 3339 timestamp text with an explicit offset.
+///
+/// # Returns
+///
+/// `Some` for a valid timestamp with at most nine fractional second digits,
+/// normalized to UTC; otherwise `None`.
+#[cfg(feature = "chrono")]
+fn parse_instant(value: &str) -> Option<DateTime<Utc>> {
+    if value
+        .split_once('.')
+        .is_some_and(|(_, fraction)| fraction.bytes().take_while(u8::is_ascii_digit).count() > 9)
+    {
+        return None;
+    }
+    DateTime::parse_from_rfc3339(value)
+        .ok()
+        .map(|value| value.with_timezone(&Utc))
+}
+
 #[cfg(feature = "chrono")]
 impl_text_or_copy_target!(NaiveDate, Date, DataType::Date, "YYYY-MM-DD", parse_date);
 #[cfg(feature = "chrono")]
@@ -523,12 +546,12 @@ impl BuiltinDataConversionTarget for DateTime<Utc> {
             DataConverter::Instant(value) => Ok(*value),
             DataConverter::String(value) => {
                 let value = normalize(value, options, DataType::Instant)?;
-                match DateTime::parse_from_rfc3339(value) {
-                    Ok(value) => Ok(value.with_timezone(&Utc)),
-                    Err(_) => Err(source.invalid(
+                match parse_instant(value) {
+                    Some(value) => Ok(value),
+                    None => Err(source.invalid(
                         DataType::Instant,
                         InvalidValueReason::InvalidSyntax {
-                            expected: "RFC 3339 timestamp with offset",
+                            expected: "RFC 3339 timestamp with offset and at most nine fractional digits",
                         },
                     )),
                 }

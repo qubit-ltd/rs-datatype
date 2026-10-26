@@ -115,6 +115,67 @@ fn test_data_converter_canonical_temporal_text_formats() {
 }
 
 #[test]
+#[cfg(feature = "chrono")]
+fn test_instant_fraction_precision_boundary() {
+    let profiles = [
+        ConversionPolicy::default(),
+        ConversionPolicy::lossy(),
+        ConversionPolicy::env_friendly(),
+    ];
+    let accepted = [
+        ("2026-07-12T10:11:12Z", 0),
+        ("2026-07-12T10:11:12.1Z", 100_000_000),
+        ("2026-07-12T10:11:12.123456789Z", 123_456_789),
+        ("2026-07-12T10:11:12.123456789+08:00", 123_456_789),
+    ];
+    for (text, nanos) in accepted {
+        for policy in &profiles {
+            for converted in [
+                DataConverter::from(text)
+                    .to_with::<DateTime<Utc>>(policy, ConversionLimits::default_ref())
+                    .expect("up to nine fractional digits should parse"),
+                DataConverter::from(text)
+                    .into_target_with::<DateTime<Utc>>(policy, ConversionLimits::default_ref())
+                    .expect("consuming parse should accept up to nine fractional digits"),
+            ] {
+                assert_eq!(converted.timestamp_subsec_nanos(), nanos, "{text}");
+                assert_eq!(converted.offset(), &Utc, "{text}");
+                if text.ends_with("+08:00") {
+                    assert_eq!(converted.to_rfc3339(), "2026-07-12T02:11:12.123456789+00:00");
+                }
+            }
+        }
+    }
+
+    let rejected = [
+        "2026-07-12T10:11:12.1234567899Z",
+        "2026-07-12T10:11:12.1234567890Z",
+        "2026-07-12T10:11:12.0000000000Z",
+        "2026-07-12T10:11:12.Z",
+    ];
+    for text in rejected {
+        for policy in &profiles {
+            for result in [
+                DataConverter::from(text).to_with::<DateTime<Utc>>(policy, ConversionLimits::default_ref()),
+                DataConverter::from(text).into_target_with::<DateTime<Utc>>(policy, ConversionLimits::default_ref()),
+            ] {
+                assert!(
+                    matches!(
+                        result,
+                        Err(ref error)
+                            if error.kind() == DataConversionErrorKind::InvalidValue
+                                && error.from_type() == Some(DataType::String)
+                                && error.to_type() == DataType::Instant
+                                && matches!(error.reason(), Some(InvalidValueReason::InvalidSyntax { .. }))
+                    ),
+                    "unexpected result for {text}: {result:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
 #[cfg(feature = "big-integer")]
 fn test_data_converter_canonical_big_integer_text() {
     assert_eq!(

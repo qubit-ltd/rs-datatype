@@ -95,6 +95,12 @@ rounding, and inexact Duration output. `ConversionPolicy::lossy()` and
 stable kind and type context, but not source values, so the crate does not
 expose secrets such as environment-variable contents.
 
+Text converted to `chrono::DateTime<Utc>` must use RFC 3339 with an explicit
+offset and at most nine fractional second digits. Inputs with more digits are
+rejected, including trailing zeros, under every conversion policy. Apply any
+domain-specific rounding before conversion, or pass an already constructed
+`DateTime<Utc>`.
+
 `DataType`'s lowercase spellings, returned by `as_str`, accepted by Serde, and
 listed in `DataType::ALL`, are a compatibility surface. Platform-sized `isize`
 and `usize` are intentionally omitted because their representation is target-dependent.
