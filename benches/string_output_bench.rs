@@ -6,6 +6,11 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 //! Benchmarks single-pass String rendering under a cumulative output budget.
+//!
+//! `iter_batched` keeps borrowed fixture lookup and owned fixture cloning in
+//! setup, outside the measured routine. Session construction and conversion
+//! are measured on both sides; Criterion drops each returned conversion
+//! result after the routine, outside the measured interval.
 
 use std::collections::HashMap;
 use std::hint::black_box;
@@ -36,11 +41,27 @@ fn benchmark_scalar_string_output(c: &mut Criterion) {
                     .build(),
             )
             .build();
+        let borrowed = {
+            let mut session = ConversionSession::new(&policy, &limits);
+            DataConverter::from(source.as_str()).to_in::<String>(&mut session)
+        }
+        .expect("borrowed string output benchmark fixture should convert");
+        assert_eq!(borrowed, source);
+        let owned = {
+            let mut session = ConversionSession::new(&policy, &limits);
+            DataConverter::from(source.clone()).into_target_in::<String>(&mut session)
+        }
+        .expect("owned string output benchmark fixture should convert");
+        assert_eq!(owned, source);
         group.bench_with_input(BenchmarkId::new("borrowed_identity", size), &source, |bench, source| {
-            bench.iter(|| {
-                let mut session = ConversionSession::new(&policy, &limits);
-                black_box(DataConverter::from(black_box(source.as_str())).to_in::<String>(&mut session))
-            });
+            bench.iter_batched(
+                || source.as_str(),
+                |source| {
+                    let mut session = ConversionSession::new(&policy, &limits);
+                    black_box(DataConverter::from(black_box(source)).to_in::<String>(&mut session))
+                },
+                BatchSize::LargeInput,
+            );
         });
         group.bench_with_input(BenchmarkId::new("owned_identity", size), &source, |bench, source| {
             bench.iter_batched(
@@ -68,11 +89,28 @@ fn benchmark_string_map_output(c: &mut Criterion) {
     let limits = ConversionLimits::builder()
         .operation_limits(ConversionOperationLimits::builder().max_output_bytes(32).build())
         .build();
+    let expected = r#"{"a":"1","b":"2","c":"3"}"#;
+    let borrowed = {
+        let mut session = ConversionSession::new(&policy, &limits);
+        DataConverter::from(&map).to_in::<String>(&mut session)
+    }
+    .expect("borrowed string map output benchmark fixture should convert");
+    assert_eq!(borrowed, expected);
+    let owned = {
+        let mut session = ConversionSession::new(&policy, &limits);
+        DataConverter::from(map.clone()).into_target_in::<String>(&mut session)
+    }
+    .expect("owned string map output benchmark fixture should convert");
+    assert_eq!(owned, expected);
     group.bench_function("borrowed", |bench| {
-        bench.iter(|| {
-            let mut session = ConversionSession::new(&policy, &limits);
-            black_box(DataConverter::from(black_box(&map)).to_in::<String>(&mut session))
-        });
+        bench.iter_batched(
+            || &map,
+            |map| {
+                let mut session = ConversionSession::new(&policy, &limits);
+                black_box(DataConverter::from(black_box(map)).to_in::<String>(&mut session))
+            },
+            BatchSize::SmallInput,
+        );
     });
     group.bench_function("owned", |bench| {
         bench.iter_batched(
