@@ -45,9 +45,10 @@ qubit-datatype = { version = "0.15", default-features = false, features = ["conv
 ```rust
 use std::time::Duration;
 
-use qubit_datatype::{ConversionLimits, ConversionPolicy, DataConverter};
+use qubit_datatype::{ConversionLimits, ConversionPolicy, DataConversionError, DataConverter};
 
-let policy = ConversionPolicy::env_friendly();
+fn main() -> Result<(), DataConversionError> {
+    let policy = ConversionPolicy::env_friendly();
 let limits = ConversionLimits::default();
 
 let port = DataConverter::from("8080").to_with::<u16>(&policy, &limits)?;
@@ -57,7 +58,8 @@ let retry = DataConverter::from("1500ms").to_with::<Duration>(&policy, &limits)?
 assert_eq!(port, 8080);
 assert!(admin);
 assert_eq!(retry, Duration::from_millis(1500));
-# Ok::<(), qubit_datatype::DataConversionError>(())
+    Ok(())
+}
 ```
 
 结果可直接验证：三个值都成为声明的目标类型，而且 trim、布尔字面量、舍入和 Duration

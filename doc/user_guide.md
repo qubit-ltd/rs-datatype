@@ -69,8 +69,9 @@ conversions. An environment-style input normally benefits from the explicit
 ```rust
 use std::time::Duration;
 
-use qubit_datatype::{ConversionLimits, ConversionPolicy, DataConverter};
+use qubit_datatype::{ConversionLimits, ConversionPolicy, DataConversionError, DataConverter};
 
+fn main() -> Result<(), DataConversionError> {
 let policy = ConversionPolicy::env_friendly();
 let limits = ConversionLimits::default();
 
@@ -81,7 +82,8 @@ let retry = DataConverter::from("1500ms").to_with::<Duration>(&policy, &limits)?
 assert_eq!(port, 8080);
 assert!(admin);
 assert_eq!(retry, Duration::from_millis(1500));
-# Ok::<(), qubit_datatype::DataConversionError>(())
+    Ok(())
+}
 ```
 
 The result is observable: the values have their requested Rust types, and no
@@ -99,9 +101,10 @@ items and rejects the third.
 ```rust
 use qubit_datatype::{
     ConversionLimits, ConversionOperationLimits, ConversionPolicy,
-    ConversionSession, DataConverter,
+    ConversionSession, DataConversionError, DataConverter,
 };
 
+fn main() -> Result<(), DataConversionError> {
 let policy = ConversionPolicy::strict();
 let limits = ConversionLimits::builder()
     .operation_limits(ConversionOperationLimits::builder().max_items(2).build())
@@ -111,7 +114,8 @@ let mut session = ConversionSession::new(&policy, &limits);
 assert_eq!(DataConverter::from("1").to_in::<u16>(&mut session)?, 1);
 assert_eq!(DataConverter::from("2").to_in::<u16>(&mut session)?, 2);
 assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
-# Ok::<(), qubit_datatype::DataConversionError>(())
+    Ok(())
+}
 ```
 
 An attempt that has passed the item-budget check retains that item charge if
@@ -149,8 +153,10 @@ impl DataConversionTarget for Port {
     }
 }
 
-assert_eq!(DataConverter::from("8080").to::<Port>()?.0, 8080);
-# Ok::<(), qubit_datatype::DataConversionError>(())
+fn main() -> Result<(), DataConversionError> {
+    assert_eq!(DataConverter::from("8080").to::<Port>()?.0, 8080);
+    Ok(())
+}
 ```
 
 `input.convert::<u16>()` consumes the admitted wrapper and delegates the same
@@ -158,6 +164,20 @@ source; it does not create a second top-level conversion. The wrapper also
 provides `from_type()`, `to_type()`, `source()`, JSON helpers (with `json`), and
 transactional `write_string`. The old unsafe delegation methods are no longer
 part of the API, and raw admission/accounting operations remain internal.
+
+Delegation is limited to a target whose `DataType` matches the outer target bound
+to this context. A different descriptor is rejected with `Unsupported` before
+the delegated target runs; the error retains the original source and the outer
+target type. The top-level item and successfully charged input bytes remain
+used, but the rejected delegation adds no further charges and does not roll
+back those earlier charges.
+
+This tightens behavior for custom targets that previously delegated across
+descriptors: such a chain may now return `Unsupported`. If the newtype only adds
+a domain constraint, give it the wrapped type's `DataType`, delegate, then check
+the domain rule. For genuinely different semantics, implement the range check and
+mapping from `source()` in the custom target and use the existing budget helpers
+for output. Do not create another session to avoid cumulative limits.
 
 ### Compare mixed numeric values
 
@@ -171,12 +191,14 @@ use std::cmp::Ordering;
 
 use qubit_datatype::{NumberRef, NumericComparisonPolicy};
 
+fn main() {
 let integer = NumberRef::from((1_u64 << 53) + 1);
 let float = NumberRef::from((1_u64 << 53) as f64);
 assert_eq!(
     integer.compare(float, NumericComparisonPolicy::Exact),
     Some(Ordering::Greater),
 );
+}
 ```
 
 NaN is unordered and signed zeroes compare equal.
@@ -192,10 +214,12 @@ use std::time::Duration;
 
 use qubit_datatype::{parse_duration_text, DurationTextOptions};
 
+fn main() -> Result<(), qubit_datatype::DurationParseError> {
 let value = parse_duration_text("1500ms", &DurationTextOptions::default())?;
 assert_eq!(value, Duration::from_millis(1500));
 assert!(parse_duration_text("1500", &DurationTextOptions::default()).is_err());
-# Ok::<(), qubit_datatype::DurationParseError>(())
+    Ok(())
+}
 ```
 
 Strict mode accepts `us`, `µs`, and `μs` for microseconds. It rejects the
@@ -220,8 +244,10 @@ native measurement could not fit the configured resource quantity.
 ```rust
 use qubit_datatype::{DataConversionErrorKind, DataConverter};
 
+fn main() {
 let error = DataConverter::from("3.9").to::<i32>().unwrap_err();
 assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+}
 ```
 
 For an invalid value, inspect `reason()` when the caller needs a stable reason.

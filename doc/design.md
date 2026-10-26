@@ -46,6 +46,11 @@ source-byte charge.
 5. A scalar-item token can be consumed only once and receives a bound context.
 6. Every scalar-item token is derived from a byte-admitted source, and no item
    can outlive its exclusive session borrow.
+7. Delegation is allowed only when the delegated target has the same `DataType`
+   as the outer target bound to the context. A mismatch returns `Unsupported`
+   before the delegated target runs; the error keeps the original source and
+   outer target types. Existing item and successfully charged input usage is not
+   rolled back, and the rejected delegation adds no charges or output.
 
 ## Compatibility
 
@@ -54,6 +59,13 @@ This is intentionally a breaking API change: downstream
 `&mut ConversionSession` parameter with `AdmittedConversion` and call its
 conversion methods. The change removes a capability rather than adding a
 parallel API, keeping the extension model singular and auditable.
+
+The same-`DataType` delegation rule also tightens behavior: custom targets that
+previously delegated across descriptors may now receive `Unsupported`. A newtype
+that only adds a domain constraint should use the wrapped type's descriptor,
+delegate, and then validate that constraint. For genuinely different semantics,
+implement the check and mapping from `source()` and use existing budget helpers
+for output; do not create a new session to bypass cumulative limits.
 
 ## Runtime descriptors and capability discovery
 

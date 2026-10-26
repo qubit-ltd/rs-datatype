@@ -59,8 +59,9 @@ Duration 转换。处理环境变量风格的输入时，通常应明确选用 `
 ```rust
 use std::time::Duration;
 
-use qubit_datatype::{ConversionLimits, ConversionPolicy, DataConverter};
+use qubit_datatype::{ConversionLimits, ConversionPolicy, DataConversionError, DataConverter};
 
+fn main() -> Result<(), DataConversionError> {
 let policy = ConversionPolicy::env_friendly();
 let limits = ConversionLimits::default();
 
@@ -71,7 +72,8 @@ let retry = DataConverter::from("1500ms").to_with::<Duration>(&policy, &limits)?
 assert_eq!(port, 8080);
 assert!(admin);
 assert_eq!(retry, Duration::from_millis(1500));
-# Ok::<(), qubit_datatype::DataConversionError>(())
+    Ok(())
+}
 ```
 
 执行结果可以直接观察：三个值都已成为目标 Rust 类型，而且没有隐式选择转换规则。各次
@@ -87,9 +89,10 @@ assert_eq!(retry, Duration::from_millis(1500));
 ```rust
 use qubit_datatype::{
     ConversionLimits, ConversionOperationLimits, ConversionPolicy,
-    ConversionSession, DataConverter,
+    ConversionSession, DataConversionError, DataConverter,
 };
 
+fn main() -> Result<(), DataConversionError> {
 let policy = ConversionPolicy::strict();
 let limits = ConversionLimits::builder()
     .operation_limits(ConversionOperationLimits::builder().max_items(2).build())
@@ -99,7 +102,8 @@ let mut session = ConversionSession::new(&policy, &limits);
 assert_eq!(DataConverter::from("1").to_in::<u16>(&mut session)?, 1);
 assert_eq!(DataConverter::from("2").to_in::<u16>(&mut session)?, 2);
 assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
-# Ok::<(), qubit_datatype::DataConversionError>(())
+    Ok(())
+}
 ```
 
 条目预算检查通过后，即使后续输入检查或目标转换失败，已扣除的条目额度仍会保留；
@@ -132,13 +136,19 @@ impl DataConversionTarget for Port {
     }
 }
 
-assert_eq!(DataConverter::from("8080").to::<Port>()?.0, 8080);
-# Ok::<(), qubit_datatype::DataConversionError>(())
+fn main() -> Result<(), DataConversionError> {
+    assert_eq!(DataConverter::from("8080").to::<Port>()?.0, 8080);
+    Ok(())
+}
 ```
 
 `input.convert::<u16>()` 会消费已准入封装，并把同一个来源交给内置目标，不会产生第二次顶层转换。
 封装还提供 `from_type()`、`to_type()`、`source()`，以及 JSON 辅助方法（启用 `json` 时）和事务式
 `write_string`。旧的不安全委托方法已不再属于 API，原始准入和记账操作仍保持内部可见。
+
+委托目标的 `DataType` 必须与这个 context 绑定的外层目标一致。描述符不同，框架会在调用被委托目标前返回 `Unsupported`；错误仍保留原始来源类型和外层目标类型。顶层条目及已成功扣除的输入字节继续计入会话；这次拒绝不会增加其他扣减，也不会退回此前用量。
+
+这会收紧此前可能成功的跨描述符自定义委托，调用结果可能改为 `Unsupported`。如果 newtype 只是给内置类型增加领域约束，应声明与被包装类型相同的 `DataType`，委托转换后再检查领域规则。若语义确实不同，可在自定义目标中通过 `source()` 检查并映射来源值；生成文本或结构化输出时使用现有预算辅助方法。不要另建会话来绕开累计限制。
 
 ### 比较不同数值表示
 
@@ -151,12 +161,14 @@ use std::cmp::Ordering;
 
 use qubit_datatype::{NumberRef, NumericComparisonPolicy};
 
+fn main() {
 let integer = NumberRef::from((1_u64 << 53) + 1);
 let float = NumberRef::from((1_u64 << 53) as f64);
 assert_eq!(
     integer.compare(float, NumericComparisonPolicy::Exact),
     Some(Ordering::Greater),
 );
+}
 ```
 
 NaN 没有顺序；正零和负零相等。
@@ -171,10 +183,12 @@ use std::time::Duration;
 
 use qubit_datatype::{parse_duration_text, DurationTextOptions};
 
+fn main() -> Result<(), qubit_datatype::DurationParseError> {
 let value = parse_duration_text("1500ms", &DurationTextOptions::default())?;
 assert_eq!(value, Duration::from_millis(1500));
 assert!(parse_duration_text("1500", &DurationTextOptions::default()).is_err());
-# Ok::<(), qubit_datatype::DurationParseError>(())
+    Ok(())
+}
 ```
 
 严格模式接受 `us`、`µs` 和 `μs` 三种微秒拼写，但拒绝仅在宽松模式中接受的分钟别名
@@ -198,8 +212,10 @@ Serde 字段应按 wire contract 选择适配器：
 ```rust
 use qubit_datatype::{DataConversionErrorKind, DataConverter};
 
+fn main() {
 let error = DataConverter::from("3.9").to::<i32>().unwrap_err();
 assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+}
 ```
 
 处理无效值时，如需稳定的拒绝原因，可检查 `reason()`。资源限制失败时，可按需检查

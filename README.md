@@ -49,9 +49,10 @@ convert each value to its requested Rust type:
 ```rust
 use std::time::Duration;
 
-use qubit_datatype::{ConversionLimits, ConversionPolicy, DataConverter};
+use qubit_datatype::{ConversionLimits, ConversionPolicy, DataConversionError, DataConverter};
 
-let policy = ConversionPolicy::env_friendly();
+fn main() -> Result<(), DataConversionError> {
+    let policy = ConversionPolicy::env_friendly();
 let limits = ConversionLimits::default();
 
 let port = DataConverter::from("8080").to_with::<u16>(&policy, &limits)?;
@@ -61,7 +62,8 @@ let retry = DataConverter::from("1500ms").to_with::<Duration>(&policy, &limits)?
 assert_eq!(port, 8080);
 assert!(admin);
 assert_eq!(retry, Duration::from_millis(1500));
-# Ok::<(), qubit_datatype::DataConversionError>(())
+    Ok(())
+}
 ```
 
 The result is observable: each value has its requested type, and no trimming,
