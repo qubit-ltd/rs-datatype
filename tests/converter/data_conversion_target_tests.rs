@@ -7,6 +7,7 @@
 // =============================================================================
 //! Tests for downstream conversion targets and shared sessions.
 
+use qubit_datatype::AdmittedConversion;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
@@ -30,6 +31,47 @@ struct CrossNumeric;
 
 impl DataTypeOf for CrossNumeric {
     const DATA_TYPE: DataType = DataType::String;
+}
+
+#[derive(Debug)]
+struct DirectU32 {
+    _value: u32,
+}
+
+impl DataTypeOf for DirectU32 {
+    const DATA_TYPE: DataType = DataType::UInt16;
+}
+
+#[derive(Debug)]
+struct DirectU16(u16);
+
+impl DataTypeOf for DirectU16 {
+    const DATA_TYPE: DataType = DataType::UInt16;
+}
+
+impl DataConversionTarget for DirectU16 {
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        <u16 as DataConversionTarget>::convert(input).map(Self)
+    }
+}
+
+impl DataConversionTarget for DirectU32 {
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        <u32 as DataConversionTarget>::convert(input).map(|value| Self { _value: value })
+    }
+}
+
+#[derive(Debug)]
+struct DirectBool;
+
+impl DataTypeOf for DirectBool {
+    const DATA_TYPE: DataType = DataType::Bool;
+}
+
+impl DataConversionTarget for DirectBool {
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        <String as DataConversionTarget>::convert(input).map(|_| Self)
+    }
 }
 
 impl DataConversionTarget for CrossNumeric {
@@ -90,6 +132,60 @@ fn test_delegate_rejects_different_data_type() {
         assert_eq!(session.input_bytes_used(), 2);
         assert_eq!(session.output_bytes_used(), 0);
     }
+}
+
+#[test]
+fn test_builtin_target_direct_call_rejects_descriptor_mismatch_before_work() {
+    for consume in [false, true] {
+        let policy = ConversionPolicy::strict();
+        let limits = ConversionLimits::default();
+        let mut session = ConversionSession::new(&policy, &limits);
+        let source = DataConverter::from("70000");
+        let result = if consume {
+            source.into_target_in::<DirectU32>(&mut session)
+        } else {
+            source.to_in::<DirectU32>(&mut session)
+        };
+        let error = result.expect_err("direct built-in delegation must reject mismatched descriptors");
+        assert_eq!(error.kind(), DataConversionErrorKind::Unsupported);
+        assert_eq!(error.from_type(), Some(DataType::String));
+        assert_eq!(error.to_type(), DataType::UInt16);
+        assert_eq!(session.items_used(), 1);
+        assert_eq!(session.input_bytes_used(), 5);
+        assert_eq!(session.output_bytes_used(), 0);
+    }
+}
+
+#[test]
+fn test_builtin_target_direct_call_rejects_descriptor_mismatch_before_output() {
+    let policy = ConversionPolicy::strict();
+    let limits = ConversionLimits::default();
+    let mut session = ConversionSession::new(&policy, &limits);
+    let error = DataConverter::from("42")
+        .to_in::<DirectBool>(&mut session)
+        .expect_err("direct String conversion must not run for a Bool target");
+    assert_eq!(error.kind(), DataConversionErrorKind::Unsupported);
+    assert_eq!(error.from_type(), Some(DataType::String));
+    assert_eq!(error.to_type(), DataType::Bool);
+    assert_eq!(session.output_bytes_used(), 0);
+}
+
+#[test]
+fn test_builtin_target_direct_call_checks_mismatch_before_unset_handling() {
+    let error = DataConverter::Unset(DataType::String)
+        .to::<DirectU32>()
+        .expect_err("descriptor mismatch must take precedence over Unset handling");
+    assert_eq!(error.kind(), DataConversionErrorKind::Unsupported);
+    assert_eq!(error.from_type(), Some(DataType::String));
+    assert_eq!(error.to_type(), DataType::UInt16);
+}
+
+#[test]
+fn test_builtin_target_direct_call_accepts_same_descriptor_newtype() {
+    let value = DataConverter::from("42")
+        .to::<DirectU16>()
+        .expect("same-descriptor delegation remains supported");
+    assert_eq!(value.0, 42);
 }
 
 #[cfg(feature = "json")]

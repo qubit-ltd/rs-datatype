@@ -47,6 +47,9 @@ where
 {
     #[inline]
     fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+        if T::DATA_TYPE != input.to_type() {
+            return Err(input.unsupported());
+        }
         let (source, mut context) = input.into_parts();
         if matches!(&source, DataConverter::Unset(_)) {
             return T::convert_owned(source, &mut context);

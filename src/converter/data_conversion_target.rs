@@ -16,6 +16,10 @@ use crate::DataTypeOf;
 ///
 /// Implementing the trait on the target makes the API extensible for
 /// downstream-owned newtypes without lifetime-wide bounds on the source.
+/// Both ordinary delegation and direct calls to built-in target implementations
+/// reject a descriptor mismatch before the delegated target runs. Custom
+/// implementations remain responsible for their own behavior and cannot be
+/// isolated by this framework boundary.
 /// A target that delegates through [`AdmittedConversion::convert`] must use
 /// the same [`DataType`](crate::DataType) as that active conversion; delegating
 /// to a different data type is rejected before the delegated target runs.

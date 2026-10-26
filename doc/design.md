@@ -51,6 +51,11 @@ source-byte charge.
    before the delegated target runs; the error keeps the original source and
    outer target types. Existing item and successfully charged input usage is not
    rolled back, and the rejected delegation adds no charges or output.
+8. Built-in target implementations enforce the same descriptor check at their
+   direct trait entry, before consuming the admitted conversion or performing
+   any conversion work. This protects direct trait calls as well as ordinary
+   delegation. Custom downstream implementations still own their behavior;
+   the framework does not isolate arbitrary downstream code.
 
 ## Compatibility
 
