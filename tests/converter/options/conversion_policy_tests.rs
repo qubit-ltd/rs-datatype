@@ -113,3 +113,33 @@ fn test_conversion_policy_individual_builder_overrides() {
         .build();
     assert_eq!(policy.collection().empty_item_policy(), EmptyItemPolicy::Skip);
 }
+
+#[test]
+fn test_conversion_policy_string_builder_override_order() {
+    let leaf_last = ConversionPolicy::builder()
+        .string_policy(StringConversionPolicy::default())
+        .blank_string_policy(BlankStringPolicy::Reject)
+        .build();
+    let group_last = ConversionPolicy::builder()
+        .blank_string_policy(BlankStringPolicy::Reject)
+        .string_policy(StringConversionPolicy::default())
+        .build();
+
+    assert_eq!(leaf_last.string().blank_string_policy(), BlankStringPolicy::Reject);
+    assert_eq!(group_last.string().blank_string_policy(), BlankStringPolicy::Preserve);
+}
+
+#[test]
+fn test_conversion_policy_collection_builder_override_order() {
+    let leaf_last = ConversionPolicy::builder()
+        .collection_policy(CollectionConversionPolicy::default())
+        .empty_item_policy(EmptyItemPolicy::Reject)
+        .build();
+    let group_last = ConversionPolicy::builder()
+        .empty_item_policy(EmptyItemPolicy::Reject)
+        .collection_policy(CollectionConversionPolicy::default())
+        .build();
+
+    assert_eq!(leaf_last.collection().empty_item_policy(), EmptyItemPolicy::Reject);
+    assert_eq!(group_last.collection().empty_item_policy(), EmptyItemPolicy::Keep);
+}

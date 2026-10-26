@@ -17,6 +17,28 @@ use crate::converter::options::NumericConversionPolicy;
 use crate::converter::options::StringConversionPolicy;
 
 /// Builder for [`ConversionPolicy`].
+///
+/// Group setters replace the complete policy group, while leaf setters update
+/// only the named setting within the current group. When setters address the
+/// same setting, the last call takes effect. Choose a group first, then apply
+/// any leaf overrides:
+///
+/// ```
+/// use qubit_datatype::{
+///     BlankStringPolicy, CollectionConversionPolicy, ConversionPolicy,
+///     EmptyItemPolicy, StringConversionPolicy,
+/// };
+///
+/// let policy = ConversionPolicy::builder()
+///     .string_policy(StringConversionPolicy::default())
+///     .blank_string_policy(BlankStringPolicy::Reject)
+///     .collection_policy(CollectionConversionPolicy::default())
+///     .empty_item_policy(EmptyItemPolicy::Reject)
+///     .build();
+///
+/// assert_eq!(policy.string().blank_string_policy(), BlankStringPolicy::Reject);
+/// assert_eq!(policy.collection().empty_item_policy(), EmptyItemPolicy::Reject);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConversionPolicyBuilder {
     /// Conversion policy being configured.
@@ -42,7 +64,11 @@ impl ConversionPolicyBuilder {
         }
     }
 
-    /// Configures string conversion policy.
+    /// Replaces the complete string conversion policy group.
+    ///
+    /// This also replaces its blank-string setting. A later
+    /// [`blank_string_policy`](Self::blank_string_policy) call overrides only
+    /// that setting.
     #[inline]
     #[must_use]
     pub fn string_policy(self, policy: StringConversionPolicy) -> Self {
@@ -51,7 +77,10 @@ impl ConversionPolicyBuilder {
         }
     }
 
-    /// Configures blank string handling.
+    /// Overrides blank-string handling in the current string policy group.
+    ///
+    /// A later [`string_policy`](Self::string_policy) call replaces the group
+    /// and therefore its blank-string setting.
     #[inline]
     #[must_use]
     pub fn blank_string_policy(self, policy: BlankStringPolicy) -> Self {
@@ -69,7 +98,11 @@ impl ConversionPolicyBuilder {
         }
     }
 
-    /// Configures collection conversion policy.
+    /// Replaces the complete collection conversion policy group.
+    ///
+    /// This also replaces its empty-item setting. A later
+    /// [`empty_item_policy`](Self::empty_item_policy) call overrides only that
+    /// setting.
     #[inline]
     #[must_use]
     pub fn collection_policy(self, policy: CollectionConversionPolicy) -> Self {
@@ -78,7 +111,10 @@ impl ConversionPolicyBuilder {
         }
     }
 
-    /// Configures empty collection item handling.
+    /// Overrides empty-item handling in the current collection policy group.
+    ///
+    /// A later [`collection_policy`](Self::collection_policy) call replaces
+    /// the group and therefore its empty-item setting.
     #[inline]
     #[must_use]
     pub fn empty_item_policy(self, policy: EmptyItemPolicy) -> Self {
