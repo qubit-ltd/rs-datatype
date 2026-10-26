@@ -7,6 +7,13 @@
 // =============================================================================
 //! Numeric syntax validation tests.
 
+#[cfg(feature = "big-decimal")]
+use std::str::FromStr;
+
+#[cfg(feature = "big-decimal")]
+use bigdecimal::BigDecimal;
+#[cfg(feature = "big-integer")]
+use num_bigint::BigInt;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
@@ -42,4 +49,34 @@ fn test_numeric_text_limit_preserves_conversion_limit_fact() {
     assert_eq!(error.resource(), Some(ConversionResource::NumericTextBytes));
     assert_eq!(error.configured_limit(), Some(3));
     assert_eq!(error.observed_lower_bound(), Some(4));
+}
+
+/// Verifies grouped decimal parsing across chunk boundaries and both entry
+/// paths.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_big_integer_text_chunk_boundaries_preserve_exact_values() {
+    for digits_count in [8_usize, 9, 10, 17, 18, 19, 4096] {
+        let digits = "9".repeat(digits_count);
+        let expected = BigInt::from(10_u8).pow(u32::try_from(digits_count).unwrap()) - BigInt::from(1_u8);
+        assert_eq!(
+            DataConverter::from(digits.as_str()).to::<BigInt>(),
+            Ok(expected.clone())
+        );
+        assert_eq!(
+            DataConverter::from(format!("{digits}.000")).to::<BigInt>(),
+            Ok(expected)
+        );
+    }
+}
+
+/// Verifies the integer-number path preserves values across parser chunks.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_big_decimal_integer_text_chunk_boundaries_preserve_exact_values() {
+    for digits_count in [8_usize, 9, 10, 17, 18, 19, 4096] {
+        let digits = "9".repeat(digits_count);
+        let expected = BigDecimal::from_str(&digits).expect("the expected integer should parse");
+        assert_eq!(DataConverter::from(digits.as_str()).to::<BigDecimal>(), Ok(expected),);
+    }
 }

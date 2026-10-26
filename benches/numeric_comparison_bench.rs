@@ -71,6 +71,61 @@ fn benchmark_big_integer(c: &mut Criterion) {
     group.finish();
 }
 
+/// Benchmarks exact comparisons between large integers and finite floats.
+fn benchmark_big_integer_float(c: &mut Criterion) {
+    let policy = NumericComparisonPolicy::Exact;
+    let floats = [
+        ("f32_one", NumberRef::from(1.0_f32)),
+        ("f32_negative_one", NumberRef::from(-1.0_f32)),
+        ("f64_one", NumberRef::from(1.0_f64)),
+        ("f64_negative_one", NumberRef::from(-1.0_f64)),
+        ("f32_zero", NumberRef::from(0.0_f32)),
+        ("f64_zero", NumberRef::from(-0.0_f64)),
+    ];
+    let positive_infinity = NumberRef::from(f64::INFINITY);
+    let negative_infinity = NumberRef::from(f64::NEG_INFINITY);
+    let nan = NumberRef::from(f64::NAN);
+    let mut group = c.benchmark_group("bigint_float_exact");
+    group.sample_size(30);
+    group.warm_up_time(std::time::Duration::from_millis(500));
+    group.measurement_time(std::time::Duration::from_secs(1));
+
+    for bits in [63_u64, 1023, 4095, 65535] {
+        let positive = BigInt::from(1_u8) << bits;
+        let negative = -&positive;
+        assert_eq!(positive.bits(), bits + 1);
+        assert_eq!(negative.bits(), bits + 1);
+
+        for (sign, integer, expected) in [
+            ("positive", &positive, Ordering::Greater),
+            ("negative", &negative, Ordering::Less),
+        ] {
+            for (float_name, float) in floats {
+                let integer_ref = NumberRef::from(integer);
+                assert_eq!(integer_ref.compare(float, policy), Some(expected));
+                assert_eq!(float.compare(integer_ref, policy), Some(expected.reverse()));
+                assert_eq!(integer_ref.compare(positive_infinity, policy), Some(Ordering::Less));
+                assert_eq!(positive_infinity.compare(integer_ref, policy), Some(Ordering::Greater));
+                assert_eq!(integer_ref.compare(negative_infinity, policy), Some(Ordering::Greater));
+                assert_eq!(negative_infinity.compare(integer_ref, policy), Some(Ordering::Less));
+                assert_eq!(integer_ref.compare(nan, policy), None);
+                assert_eq!(nan.compare(integer_ref, policy), None);
+
+                for (direction, left, right, ordering) in [
+                    ("bigint_vs_float", integer_ref, float, expected),
+                    ("float_vs_bigint", float, integer_ref, expected.reverse()),
+                ] {
+                    group.bench_function(format!("{bits}_bits/{sign}/{float_name}/{direction}"), |b| {
+                        b.iter(|| black_box(black_box(left).compare(black_box(right), black_box(policy))));
+                    });
+                    assert_eq!(left.compare(right, policy), Some(ordering));
+                }
+            }
+        }
+    }
+    group.finish();
+}
+
 /// Benchmarks exact comparison between decimal and binary representations of
 /// one tenth.
 fn benchmark_big_decimal(c: &mut Criterion) {
@@ -248,6 +303,7 @@ criterion_group!(
     benchmark_u64_f64_boundary,
     benchmark_fixed_width_extremes,
     benchmark_big_integer,
+    benchmark_big_integer_float,
     benchmark_big_decimal,
     benchmark_big_integer_decimal_pairs,
     benchmark_big_numeric_membership,

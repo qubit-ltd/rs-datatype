@@ -661,6 +661,51 @@ fn test_number_ref_comparison_big_integer_fixed_boundaries() {
     );
 }
 
+/// Covers exact BigInteger/float ordering around the binary64 exponent limit.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_number_ref_comparison_large_big_integer_floats() {
+    for shift in [1023_u64, 1024, 4095, 65535] {
+        let positive = BigInt::from(1_u8) << shift;
+        let negative = -&positive;
+        for (float, positive_ordering) in [
+            (NumberRef::from(f32::MAX), Ordering::Greater),
+            (
+                NumberRef::from(f64::MAX),
+                if shift == 1023 {
+                    Ordering::Less
+                } else {
+                    Ordering::Greater
+                },
+            ),
+            (NumberRef::from(1.0_f32), Ordering::Greater),
+            (NumberRef::from(-1.0_f64), Ordering::Greater),
+            (NumberRef::from(0.0_f32), Ordering::Greater),
+            (NumberRef::from(-0.0_f64), Ordering::Greater),
+        ] {
+            assert_exact(NumberRef::from(&positive), float, Some(positive_ordering));
+            assert_exact(NumberRef::from(&negative), float, Some(Ordering::Less));
+        }
+
+        let positive_ref = NumberRef::from(&positive);
+        let negative_ref = NumberRef::from(&negative);
+        assert_exact(positive_ref, NumberRef::from(f64::INFINITY), Some(Ordering::Less));
+        assert_exact(
+            positive_ref,
+            NumberRef::from(f64::NEG_INFINITY),
+            Some(Ordering::Greater),
+        );
+        assert_exact(negative_ref, NumberRef::from(f64::INFINITY), Some(Ordering::Less));
+        assert_exact(
+            negative_ref,
+            NumberRef::from(f64::NEG_INFINITY),
+            Some(Ordering::Greater),
+        );
+        assert_exact(positive_ref, NumberRef::from(f64::NAN), None);
+        assert_exact(negative_ref, NumberRef::from(f64::NAN), None);
+    }
+}
+
 /// Covers exact decimal comparisons on both sides of the materialization
 /// threshold.
 #[cfg(feature = "big-decimal")]
