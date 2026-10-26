@@ -24,6 +24,8 @@ use qubit_datatype::ConversionSession;
 use qubit_datatype::DataConverter;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::NumericConversionLimits;
+use qubit_datatype::converter::CollectionConversionLimits;
+use qubit_datatype::converter::CollectionConversionPolicy;
 #[cfg(feature = "url")]
 use url::Url;
 
@@ -127,6 +129,28 @@ fn test_borrowed_string_rejection_does_not_copy_payload() {
         assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
         assert_eq!(session.output_bytes_used(), 0);
         assert!(maximum < 4096, "rejected String allocated {maximum} bytes");
+    }
+}
+
+#[test]
+fn test_unsplit_scalar_items_skip_delimiter_index_allocation() {
+    let policy = CollectionConversionPolicy::builder()
+        .split_scalar_strings(false)
+        .delimiters(['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬'])
+        .build();
+    let limits = CollectionConversionLimits::default();
+    let input = "one完整输入";
+    let ((items, cloned), maximum) = measure(|| {
+        let items = policy.scalar_items(&limits, input);
+        (items.clone(), items)
+    });
+    assert_eq!(maximum, 0, "unsplit construction requested {maximum} bytes");
+
+    for mut iterator in [items, cloned] {
+        let item = iterator.next().expect("one item").expect("valid item");
+        assert_eq!(item.source_index, 0);
+        assert_eq!(item.value, input);
+        assert!(iterator.next().is_none());
     }
 }
 

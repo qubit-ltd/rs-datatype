@@ -112,11 +112,13 @@ impl<'a> ScalarItems<'a> {
     ///
     /// # Returns
     ///
-    /// An iterator borrowing both inputs and deferring all processing until
-    /// iteration.
+    /// An iterator borrowing both inputs and deferring item processing until
+    /// iteration. Large delimiter lookup indexes are prepared only when
+    /// splitting is enabled.
     pub(super) fn new(policy: &'a CollectionConversionPolicy, max_items: u64, value: &'a str) -> Self {
         let delimiters = policy.delimiters();
-        let (ascii_delimiters, non_ascii_delimiters) = if delimiters.len() > 8 {
+        let split_scalar_strings = policy.split_scalar_strings();
+        let (ascii_delimiters, non_ascii_delimiters) = if split_scalar_strings && delimiters.len() > 8 {
             let mut ascii = [false; 128];
             let mut non_ascii = Vec::new();
             for &delimiter in delimiters {
@@ -137,7 +139,7 @@ impl<'a> ScalarItems<'a> {
             delimiters,
             ascii_delimiters,
             non_ascii_delimiters,
-            split_scalar_strings: policy.split_scalar_strings(),
+            split_scalar_strings,
             trim_items: policy.trim_items(),
             empty_item_policy: policy.empty_item_policy(),
             max_items,
