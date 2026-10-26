@@ -75,6 +75,54 @@ fn test_boolean_conversion_policy_builders_preserve_literal_invariant() {
     );
 }
 
+#[test]
+fn test_boolean_conversion_policy_final_validation_is_order_independent() {
+    let literal_first = BooleanConversionPolicy::builder()
+        .false_literal("TRUE")
+        .case_sensitive(true)
+        .build()
+        .expect("the final case-sensitive sets are disjoint");
+    let case_first = BooleanConversionPolicy::builder()
+        .case_sensitive(true)
+        .false_literal("TRUE")
+        .build()
+        .expect("the same final configuration is valid");
+    assert_eq!(literal_first, case_first);
+    assert_eq!(literal_first.parse("true"), Some(true));
+    assert_eq!(literal_first.parse("TRUE"), Some(false));
+    assert!(literal_first.into_builder().case_sensitive(false).build().is_err());
+}
+
+#[test]
+fn test_boolean_conversion_policy_final_validation_preserves_builder_fields() {
+    let original = BooleanConversionPolicy::env_friendly();
+    let policy = original
+        .clone()
+        .into_builder()
+        .false_literal("TRUE")
+        .numeric_policy(BooleanNumericPolicy::Reject)
+        .case_sensitive(true)
+        .build()
+        .expect("final literals are disjoint");
+    assert_eq!(policy.true_literals(), original.true_literals());
+    assert_eq!(
+        &policy.false_literals()[..original.false_literals().len()],
+        original.false_literals()
+    );
+    assert_eq!(policy.false_literals().last().map(String::as_str), Some("TRUE"));
+    assert_eq!(policy.numeric_policy(), BooleanNumericPolicy::Reject);
+    assert!(
+        policy
+            .clone()
+            .into_builder()
+            .case_sensitive(false)
+            .case_sensitive(true)
+            .build()
+            .is_ok()
+    );
+    assert!(policy.into_builder().case_sensitive(false).build().is_err());
+}
+
 /// Test validated construction and Serde rejection of literal conflicts.
 #[test]
 fn test_boolean_conversion_policy_reject_literal_conflicts() {

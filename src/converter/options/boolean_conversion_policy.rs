@@ -67,8 +67,10 @@ fn ascii_case_insensitive_literals_overlap(true_literals: &[String], false_liter
 /// Validated rules for textual and numeric boolean conversion.
 ///
 /// True and false literal sets must remain disjoint under the selected
-/// case-sensitivity rule. Constructors and fallible builder methods validate
-/// that invariant, and deserialization validates it before returning a value.
+/// case-sensitivity rule. Constructors and deserialization validate that
+/// invariant before returning a value. Builder setters collect configuration;
+/// `build` validates the final literal sets under the final case-sensitivity
+/// rule.
 /// Numeric handling is independent from textual literal matching.
 ///
 /// # Examples
@@ -115,7 +117,12 @@ impl BooleanConversionPolicy {
     #[inline]
     #[must_use]
     pub fn into_builder(self) -> BooleanConversionPolicyBuilder {
-        BooleanConversionPolicyBuilder { policy: Ok(self) }
+        BooleanConversionPolicyBuilder {
+            true_literals: self.true_literals,
+            false_literals: self.false_literals,
+            case_sensitive: self.case_sensitive,
+            numeric_policy: self.numeric_policy,
+        }
     }
 
     /// Creates validated boolean conversion policy.
@@ -199,27 +206,6 @@ impl BooleanConversionPolicy {
         &self.true_literals
     }
 
-    /// Returns a copy that accepts an additional true literal.
-    ///
-    /// # Parameters
-    ///
-    /// * `literal` - Literal to parse as `true`.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
-    /// false literal under the configured case-sensitivity rule.
-    #[inline]
-    pub(crate) fn with_true_literal(mut self, literal: &str) -> Result<Self, BooleanLiteralConflictError> {
-        self.true_literals.push(literal.to_string());
-        self.validate()?;
-        Ok(self)
-    }
-
     /// Gets the accepted false literals.
     ///
     /// # Returns
@@ -229,27 +215,6 @@ impl BooleanConversionPolicy {
     #[inline]
     pub fn false_literals(&self) -> &[String] {
         &self.false_literals
-    }
-
-    /// Returns a copy that accepts an additional false literal.
-    ///
-    /// # Parameters
-    ///
-    /// * `literal` - Literal to parse as `false`.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`BooleanLiteralConflictError`] if the new literal overlaps a
-    /// true literal under the configured case-sensitivity rule.
-    #[inline]
-    pub(crate) fn with_false_literal(mut self, literal: &str) -> Result<Self, BooleanLiteralConflictError> {
-        self.false_literals.push(literal.to_string());
-        self.validate()?;
-        Ok(self)
     }
 
     /// Returns whether literal matching is case-sensitive.
@@ -263,27 +228,6 @@ impl BooleanConversionPolicy {
         self.case_sensitive
     }
 
-    /// Returns a copy with boolean literal matching case sensitivity changed.
-    ///
-    /// # Parameters
-    ///
-    /// * `case_sensitive` - Whether matching is case-sensitive.
-    ///
-    /// # Returns
-    ///
-    /// Updated options when the new matching rule keeps literal sets disjoint.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`BooleanLiteralConflictError`] when changing the matching rule
-    /// makes a true literal equal to a false literal.
-    #[inline]
-    pub(crate) fn with_case_sensitive(mut self, case_sensitive: bool) -> Result<Self, BooleanLiteralConflictError> {
-        self.case_sensitive = case_sensitive;
-        self.validate()?;
-        Ok(self)
-    }
-
     /// Returns the integer-to-boolean policy.
     ///
     /// # Returns
@@ -292,21 +236,6 @@ impl BooleanConversionPolicy {
     #[inline]
     pub const fn numeric_policy(&self) -> BooleanNumericPolicy {
         self.numeric_policy
-    }
-
-    /// Returns a copy with a different integer-to-boolean policy.
-    ///
-    /// # Parameters
-    ///
-    /// * `numeric_policy` - New policy for integer sources.
-    ///
-    /// # Returns
-    ///
-    /// Returns the updated options value.
-    #[inline]
-    pub(crate) fn with_numeric_policy(mut self, numeric_policy: BooleanNumericPolicy) -> Self {
-        self.numeric_policy = numeric_policy;
-        self
     }
 
     /// Parses a boolean literal using these options.

@@ -11,10 +11,10 @@ use super::BooleanConversionPolicy;
 use crate::converter::BooleanLiteralConflictError;
 use crate::converter::options::BooleanNumericPolicy;
 
-/// Configures and validates a [`BooleanConversionPolicy`].
+/// Collects configuration for a [`BooleanConversionPolicy`].
 ///
-/// Literal conflicts are retained by the builder and reported when it is
-/// built, so chained configuration remains available after a conflict.
+/// Setters collect configuration; `build` validates the final literal sets
+/// under the final case-sensitivity rule.
 ///
 /// # Examples
 ///
@@ -30,8 +30,14 @@ use crate::converter::options::BooleanNumericPolicy;
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BooleanConversionPolicyBuilder {
-    /// Validated policy or the first literal-conflict error encountered.
-    pub(super) policy: Result<BooleanConversionPolicy, BooleanLiteralConflictError>,
+    /// Collected true literals, which have not yet been validated.
+    pub(super) true_literals: Vec<String>,
+    /// Collected false literals, which have not yet been validated.
+    pub(super) false_literals: Vec<String>,
+    /// Collected case-sensitivity setting, which has not yet been validated.
+    pub(super) case_sensitive: bool,
+    /// Collected numeric policy, which has not yet been validated.
+    pub(super) numeric_policy: BooleanNumericPolicy,
 }
 
 impl BooleanConversionPolicyBuilder {
@@ -39,44 +45,45 @@ impl BooleanConversionPolicyBuilder {
     #[inline]
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            policy: Ok(BooleanConversionPolicy::strict()),
-        }
+        BooleanConversionPolicy::strict().into_builder()
     }
 
-    /// Adds a literal recognized as `true`.
+    /// Collects a literal recognized as `true`.
     #[inline]
     #[must_use]
     pub fn true_literal(mut self, literal: &str) -> Self {
-        self.policy = self.policy.and_then(|policy| policy.with_true_literal(literal));
+        self.true_literals.push(literal.to_owned());
         self
     }
 
-    /// Adds a literal recognized as `false`.
+    /// Collects a literal recognized as `false`.
     #[inline]
     #[must_use]
     pub fn false_literal(mut self, literal: &str) -> Self {
-        self.policy = self.policy.and_then(|policy| policy.with_false_literal(literal));
+        self.false_literals.push(literal.to_owned());
         self
     }
 
-    /// Configures case sensitivity.
+    /// Collects whether literal matching is case-sensitive.
     #[inline]
     #[must_use]
     pub fn case_sensitive(mut self, enabled: bool) -> Self {
-        self.policy = self.policy.and_then(|policy| policy.with_case_sensitive(enabled));
+        self.case_sensitive = enabled;
         self
     }
 
-    /// Configures integer-to-boolean conversion.
+    /// Collects the integer-to-boolean conversion policy.
     #[inline]
     #[must_use]
     pub fn numeric_policy(mut self, policy: BooleanNumericPolicy) -> Self {
-        self.policy = self.policy.map(|options| options.with_numeric_policy(policy));
+        self.numeric_policy = policy;
         self
     }
 
-    /// Builds the configured policy and validates literal conflicts.
+    /// Builds the configured policy and validates the final literal sets.
+    ///
+    /// Setters collect configuration; this method validates the final literal
+    /// sets under the final case-sensitivity rule.
     ///
     /// # Returns
     ///
@@ -85,10 +92,15 @@ impl BooleanConversionPolicyBuilder {
     ///
     /// # Errors
     ///
-    /// Returns [`BooleanLiteralConflictError`] if a prior literal
-    /// configuration introduced an overlap between the true and false sets.
+    /// Returns [`BooleanLiteralConflictError`] if the final true and false
+    /// literal sets overlap under the final case-sensitivity rule.
     #[inline]
     pub fn build(self) -> Result<BooleanConversionPolicy, BooleanLiteralConflictError> {
-        self.policy
+        BooleanConversionPolicy::try_new(
+            self.true_literals,
+            self.false_literals,
+            self.case_sensitive,
+            self.numeric_policy,
+        )
     }
 }
