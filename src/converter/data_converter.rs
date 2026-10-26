@@ -324,6 +324,12 @@ impl<'source> DataConverter<'source> {
     ///
     /// * `session` - Session whose policy and cumulative budgets are reused.
     ///
+    /// The item budget is charged before input checks and target conversion.
+    /// A successful item charge and any successfully charged input bytes remain
+    /// consumed if a later input check or target conversion fails. A failed
+    /// item-budget check adds no item; a failed individual input-byte charge
+    /// adds no bytes and does not undo the preceding item charge.
+    ///
     /// # Returns
     ///
     /// Returns the converted target value.
@@ -413,6 +419,12 @@ impl<'source> DataConverter<'source> {
     /// # Parameters
     ///
     /// * `session` - Session whose policy and cumulative budgets are reused.
+    ///
+    /// The item budget is charged before input checks and target conversion.
+    /// A successful item charge and any successfully charged input bytes remain
+    /// consumed if a later input check or target conversion fails. A failed
+    /// item-budget check adds no item; a failed individual input-byte charge
+    /// adds no bytes and does not undo the preceding item charge.
     ///
     /// # Returns
     ///

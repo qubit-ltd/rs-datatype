@@ -114,11 +114,14 @@ assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
 # Ok::<(), qubit_datatype::DataConversionError>(())
 ```
 
-An admitted conversion that later fails still retains its item and input
-charges. A failed admission does not consume an additional item. Use the
-session's `*_used`, `*_remaining`, and `*_limit` accessors when you need to
-observe the budget. `ConversionSession` is an operation-level owner: custom
-targets do not receive it directly.
+An attempt that has passed the item-budget check retains that item charge if
+an input check or target conversion later fails. Successfully charged input
+bytes are retained too. A failed item-budget check adds no item. A failed
+individual input-byte charge adds no bytes, but does not undo the item charge
+that preceded it. Built-in transactional String output is committed only on
+success. Use the session's `*_used`, `*_remaining`, and `*_limit` accessors when
+you need to observe the budget. `ConversionSession` is an operation-level
+owner: custom targets do not receive it directly.
 
 ### Extend a target type safely
 

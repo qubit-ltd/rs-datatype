@@ -51,6 +51,14 @@ use crate::datatype::DataType;
 
 /// Mutable conversion accounting shared by nested and batch conversions.
 ///
+/// Top-level conversion attempts consume an item before input checks and target
+/// conversion. A successful item charge remains consumed if a later input
+/// check or target conversion fails. Input bytes that were successfully charged
+/// also remain consumed. A failed item-budget check adds no item; a failed
+/// individual input-byte charge adds no bytes but does not undo an earlier item
+/// charge. Built-in transactional String rendering commits output bytes only on
+/// success.
+///
 /// # Examples
 ///
 /// ```
@@ -65,6 +73,31 @@ use crate::datatype::DataType;
 ///
 /// assert_eq!(value, 42);
 /// # Ok::<(), qubit_datatype::DataConversionError>(())
+/// ```
+///
+/// A failed target conversion keeps its item charge; later successful attempts
+/// use the remaining capacity, and an attempt rejected by the item limit adds
+/// no item:
+///
+/// ```
+/// use qubit_datatype::ConversionLimits;
+/// use qubit_datatype::ConversionOperationLimits;
+/// use qubit_datatype::ConversionPolicy;
+/// use qubit_datatype::ConversionResource;
+/// use qubit_datatype::ConversionSession;
+/// use qubit_datatype::DataConverter;
+///
+/// let policy = ConversionPolicy::strict();
+/// let limits = ConversionLimits::builder()
+///     .operation_limits(ConversionOperationLimits::builder().max_items(2).build())
+///     .build();
+/// let mut session = ConversionSession::new(&policy, &limits);
+/// assert!(DataConverter::from("bad").to_in::<u16>(&mut session).is_err());
+/// assert_eq!(session.items_used(), 1);
+/// assert_eq!(DataConverter::from("42").to_in::<u16>(&mut session).unwrap(), 42);
+/// let error = DataConverter::from("43").to_in::<u16>(&mut session).unwrap_err();
+/// assert_eq!(error.resource(), Some(ConversionResource::Items));
+/// assert_eq!(session.items_used(), 2);
 /// ```
 #[must_use]
 #[derive(Debug, PartialEq, Eq)]
@@ -144,7 +177,9 @@ impl<'a> ConversionSession<'a> {
         self.limits.operation().max_structured_payload_bytes()
     }
 
-    /// Returns cumulative converted items already consumed.
+    /// Returns the number of top-level item admissions already charged.
+    ///
+    /// This includes attempts that fail after the item charge succeeds.
     #[inline]
     #[must_use]
     pub fn items_used(&self) -> u64 {
