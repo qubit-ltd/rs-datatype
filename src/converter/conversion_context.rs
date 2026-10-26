@@ -247,4 +247,11 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
     pub(crate) fn admit_output_bytes(&mut self, amount: usize) -> Result<(), DataConversionError> {
         self.session.admit_output_bytes(self.from, self.to, amount)
     }
+
+    /// Checks a minimum output-byte requirement without consuming capacity.
+    #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+    #[inline]
+    pub(crate) fn check_output_bytes(&self, minimum: u64) -> Result<(), DataConversionError> {
+        self.session.check_output_bytes(self.from, self.to, minimum)
+    }
 }

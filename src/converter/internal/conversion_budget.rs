@@ -83,6 +83,13 @@ impl ConversionBudget {
         self.output_bytes.try_consume_usize(amount)
     }
 
+    /// Checks a minimum output-byte requirement without consuming capacity.
+    #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+    #[inline]
+    pub(crate) fn check_output_bytes(&self, minimum: u64) -> Result<(), BudgetError<ConversionResource, u64>> {
+        self.output_bytes.check_available(minimum).map_err(Into::into)
+    }
+
     /// Renders and commits one String payload transactionally.
     #[inline]
     pub(crate) fn try_write_string<E, F>(

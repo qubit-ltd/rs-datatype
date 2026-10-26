@@ -391,6 +391,20 @@ impl<'a> ConversionSession<'a> {
             .map_err(|error| DataConversionError::measured_limit(from, to, error))
     }
 
+    /// Checks a minimum output-byte requirement without consuming capacity.
+    #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+    #[inline]
+    pub(crate) fn check_output_bytes(
+        &self,
+        from: DataType,
+        to: DataType,
+        minimum: u64,
+    ) -> Result<(), DataConversionError> {
+        self.budget
+            .check_output_bytes(minimum)
+            .map_err(|error| DataConversionError::limit_exceeded(from, to, error))
+    }
+
     /// Renders one String transactionally under the cumulative output budget.
     ///
     /// # Errors

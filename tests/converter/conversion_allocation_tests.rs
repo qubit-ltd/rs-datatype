@@ -12,7 +12,9 @@ use std::alloc::Layout;
 use std::alloc::System;
 use std::cell::Cell;
 
-#[cfg(feature = "big-integer")]
+#[cfg(feature = "big-decimal")]
+use bigdecimal::BigDecimal;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_bigint::BigInt;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionOperationLimits;
@@ -125,6 +127,74 @@ fn test_borrowed_string_rejection_does_not_copy_payload() {
         assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
         assert_eq!(session.output_bytes_used(), 0);
         assert!(maximum < 4096, "rejected String allocated {maximum} bytes");
+    }
+}
+
+/// Big-number output preflight rejects before formatting the full value.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_big_number_string_output_rejection_avoids_materialization() {
+    let input = BigInt::from(1_u8) << 50_000_usize;
+    let policy = ConversionPolicy::default();
+    let limits = output_limits();
+    for owned in [false, true] {
+        for consume in [false, true] {
+            let source = if owned {
+                DataConverter::from(input.clone())
+            } else {
+                DataConverter::from(&input)
+            };
+            let mut session = ConversionSession::new(&policy, &limits);
+            let (result, maximum) = measure(|| {
+                if consume {
+                    source.into_target_in::<String>(&mut session)
+                } else {
+                    source.to_in::<String>(&mut session)
+                }
+            });
+            let error = result.expect_err("large number cannot fit eight output bytes");
+            assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+            assert_eq!(error.used(), Some(0));
+            assert_eq!(error.remaining(), Some(8));
+            assert!(error.requested().expect("preflight reports its lower bound") > 8);
+            assert_eq!(session.items_used(), 1);
+            assert_eq!(session.output_bytes_used(), 0);
+            assert!(maximum < 4096, "rejection allocated {maximum} bytes");
+        }
+    }
+}
+
+/// BigDecimal output preflight does not materialize its large coefficient.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_big_decimal_string_output_rejection_avoids_materialization() {
+    let input = BigDecimal::new(BigInt::from(1_u8) << 50_000_usize, 0);
+    let policy = ConversionPolicy::default();
+    let limits = output_limits();
+    for owned in [false, true] {
+        for consume in [false, true] {
+            let source = if owned {
+                DataConverter::from(input.clone())
+            } else {
+                DataConverter::from(&input)
+            };
+            let mut session = ConversionSession::new(&policy, &limits);
+            let (result, maximum) = measure(|| {
+                if consume {
+                    source.into_target_in::<String>(&mut session)
+                } else {
+                    source.to_in::<String>(&mut session)
+                }
+            });
+            let error = result.expect_err("large decimal cannot fit eight output bytes");
+            assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+            assert_eq!(error.used(), Some(0));
+            assert_eq!(error.remaining(), Some(8));
+            assert!(error.requested().expect("preflight reports its lower bound") > 8);
+            assert_eq!(session.items_used(), 1);
+            assert_eq!(session.output_bytes_used(), 0);
+            assert!(maximum < 4096, "rejection allocated {maximum} bytes");
+        }
     }
 }
 

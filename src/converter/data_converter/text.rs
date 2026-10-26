@@ -28,6 +28,8 @@ use super::DataConverter;
 use super::duration::duration_text_parts;
 #[cfg(feature = "json")]
 use super::internal::CanonicalStringMap;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use super::internal::check_big_number_output;
 use super::string_source::normalize;
 #[cfg(feature = "url")]
 use super::structured::check_structured_text_limit;
@@ -257,6 +259,8 @@ impl BuiltinDataConversionTarget for String {
             return context.write_string(|writer| writer.write_str(normalized));
         }
         if is_display_source(source) {
+            #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+            check_big_number_output(source, context)?;
             return context.write_string(|writer| format_display_source(source, writer).map(|_| ()));
         }
         match source {

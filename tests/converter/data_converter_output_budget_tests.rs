@@ -7,12 +7,18 @@
 // =============================================================================
 //! Regression tests for cumulative String output budgets.
 
+#[cfg(feature = "big-decimal")]
+use bigdecimal::BigDecimal;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use num_bigint::BigInt;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::ConversionSession;
 use qubit_datatype::DataConverter;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+use qubit_datatype::DataType;
 
 fn limits_with_output_limit(maximum: usize) -> ConversionLimits {
     ConversionLimits::builder()
@@ -84,4 +90,85 @@ fn test_owned_string_output_reuses_unchanged_storage() {
         .into_target::<String>()
         .expect("owned String conversion should succeed");
     assert_eq!(output.as_ptr(), pointer);
+}
+
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+#[test]
+fn test_big_number_output_preflight_preserves_session() {
+    let policy = ConversionPolicy::default();
+    let limits = limits_with_output_limit(8);
+    let mut session = ConversionSession::new(&policy, &limits);
+    assert_eq!(
+        DataConverter::from(123_i32).to_in::<String>(&mut session),
+        Ok("123".to_owned())
+    );
+
+    #[cfg(feature = "big-integer")]
+    let error = DataConverter::from(BigInt::from(1_u8) << 50_000_usize)
+        .to_in::<String>(&mut session)
+        .expect_err("large integer cannot fit the remaining five bytes");
+    #[cfg(all(not(feature = "big-integer"), feature = "big-decimal"))]
+    let error = DataConverter::from(BigDecimal::new(BigInt::from(1_u8) << 50_000_usize, 0))
+        .to_in::<String>(&mut session)
+        .expect_err("large decimal cannot fit the remaining five bytes");
+
+    assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+    assert_eq!(error.used(), Some(3));
+    assert_eq!(error.remaining(), Some(5));
+    assert!(error.requested().expect("preflight reports its lower bound") > 5);
+    #[cfg(feature = "big-integer")]
+    assert_eq!(error.from_type(), Some(DataType::BigInteger));
+    #[cfg(all(not(feature = "big-integer"), feature = "big-decimal"))]
+    assert_eq!(error.from_type(), Some(DataType::BigDecimal));
+    assert_eq!(error.to_type(), DataType::String);
+    assert_eq!(session.output_bytes_used(), 3);
+    assert_eq!(session.items_used(), 2);
+}
+
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_big_integer_output_preflight_preserves_display_text_and_boundary() {
+    let policy = ConversionPolicy::default();
+    for value in [BigInt::from(0_i8), 1.into(), (-1).into(), 99.into(), (-99).into()] {
+        let expected = value.to_string();
+        let exact_limits = limits_with_output_limit(expected.len());
+        assert_eq!(
+            DataConverter::from(&value).to_with::<String>(&policy, &exact_limits),
+            Ok(expected.clone()),
+        );
+        if !expected.is_empty() {
+            let short_limits = limits_with_output_limit(expected.len() - 1);
+            let mut session = ConversionSession::new(&policy, &short_limits);
+            let error = DataConverter::from(&value)
+                .to_in::<String>(&mut session)
+                .expect_err("one byte below the display length must fail");
+            assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+            assert_eq!(session.output_bytes_used(), 0);
+        }
+    }
+}
+
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_big_decimal_output_preflight_preserves_display_text_and_boundary() {
+    let policy = ConversionPolicy::default();
+    let coefficients = [BigInt::from(0_i8), 1.into(), (-1).into(), BigInt::from(10_u8).pow(40)];
+    for coefficient in coefficients {
+        for scale in [0_i64, 40, 10_000, -10_000] {
+            let value = BigDecimal::new(coefficient.clone(), scale);
+            let expected = value.to_string();
+            let exact_limits = limits_with_output_limit(expected.len());
+            assert_eq!(
+                DataConverter::from(&value).to_with::<String>(&policy, &exact_limits),
+                Ok(expected.clone()),
+            );
+            let short_limits = limits_with_output_limit(expected.len() - 1);
+            let mut session = ConversionSession::new(&policy, &short_limits);
+            let error = DataConverter::from(&value)
+                .to_in::<String>(&mut session)
+                .expect_err("one byte below the display length must fail");
+            assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+            assert_eq!(session.output_bytes_used(), 0);
+        }
+    }
 }
