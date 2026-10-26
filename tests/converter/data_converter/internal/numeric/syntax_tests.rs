@@ -79,3 +79,37 @@ fn test_big_decimal_integer_text_decimal_boundaries_preserve_exact_values() {
         assert_eq!(DataConverter::from(digits.as_str()).to::<BigDecimal>(), Ok(expected),);
     }
 }
+
+/// Verifies signs, leading zeroes, zero, decimal points, and exponents keep
+/// their established integer conversion semantics.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_big_integer_text_sign_zero_decimal_and_exponent_semantics() {
+    for (source, expected) in [
+        ("+000123", 123_i64),
+        ("-000123", -123_i64),
+        ("000000", 0_i64),
+        ("+00123.000e+1", 1230_i64),
+        ("-00123.9e1", -1239_i64),
+        ("-0.000e999999999999999999999", 0_i64),
+    ] {
+        assert_eq!(
+            DataConverter::from(source).to::<BigInt>(),
+            Ok(BigInt::from(expected)),
+            "source: {source}",
+        );
+    }
+}
+
+/// Verifies integer-number parsing preserves signs, leading zeroes, and zero.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_big_decimal_integer_sign_zero_and_leading_zero_semantics() {
+    for (source, expected) in [("+000123", "123"), ("-000123", "-123"), ("000000", "0")] {
+        assert_eq!(
+            DataConverter::from(source).to::<BigDecimal>(),
+            Ok(BigDecimal::from_str(expected).expect("expected value should parse")),
+            "source: {source}",
+        );
+    }
+}
