@@ -41,6 +41,10 @@ impl ConversionBudget {
     pub(crate) fn new(limits: &ConversionLimits) -> Self {
         let structured = limits.structured();
         let operation = limits.operation();
+        // Sessions intentionally select structure limits from the reusable
+        // template, then add cumulative node and payload budgets below. Its
+        // string-byte limit remains available to direct template consumers but
+        // does not constrain already materialized values in built-in sessions.
         let structure_limits = structured
             .value()
             .structure_limits()

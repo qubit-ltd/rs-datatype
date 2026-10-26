@@ -24,14 +24,19 @@ pub use structured_conversion_limits_builder::StructuredConversionLimitsBuilder;
 
 /// Bounds point checks and structural work introduced by structured conversion.
 ///
-/// The text limit applies to UTF-8 bytes after configured string normalization
-/// and covers JSON values, JSON objects converted to string maps, and URLs.
+/// The text limit bounds normalized source text on supported text conversion
+/// paths. It is not a per-string limit for already materialized JSON values.
+/// The reusable value-limit template also carries a string-byte limit with the
+/// same maximum. Consumers that apply this template directly enforce that
+/// limit. Built-in conversion sessions select the template's structure limits
+/// and add cumulative node and payload budgets; they do not apply its
+/// string-byte limit. This template is not a snapshot of a session's effective
+/// budgets.
+///
 /// Depth includes the root value as depth one. Sequence and map limits apply
 /// independently to the direct items or entries of each container. A zero
 /// container limit permits only empty containers; a zero depth limit rejects
-/// every root value. These per-value limits are separate from the cumulative
-/// structured-node budget configured on
-/// [`ConversionOperationLimits`](crate::converter::ConversionOperationLimits).
+/// every root value.
 ///
 /// # Examples
 ///
@@ -74,7 +79,13 @@ impl StructuredConversionLimits {
         StructuredConversionLimitsBuilder { limits: self }
     }
 
-    /// Returns the maximum normalized structured text length in bytes.
+    /// Returns the maximum normalized source-text length in bytes.
+    ///
+    /// This bounds supported text conversion paths; it does not impose a
+    /// per-string limit on already materialized JSON values. The reusable
+    /// [`value`](Self::value) template carries a string-byte limit with the
+    /// same maximum, which consumers applying that template directly
+    /// enforce.
     ///
     /// # Returns
     ///
@@ -85,7 +96,11 @@ impl StructuredConversionLimits {
         self.text.utf8_bytes_limit().map_or(0, |limit| limit.maximum())
     }
 
-    /// Returns the composed text-byte limits.
+    /// Returns the composed limits for normalized structured source text.
+    ///
+    /// Built-in conversion sessions use this text limit on supported text
+    /// paths; it is not a per-string limit for already materialized JSON
+    /// values.
     #[inline]
     #[must_use]
     pub const fn text(&self) -> &StringLimits<ConversionResource> {
@@ -101,7 +116,14 @@ impl StructuredConversionLimits {
             .expect("structured text limit is configured")
     }
 
-    /// Returns the composed JSON value limits used by structured traversal.
+    /// Returns the reusable JSON value-limit template.
+    ///
+    /// The template carries a string-byte limit matching
+    /// [`max_text_bytes`](Self::max_text_bytes), so consumers that apply it
+    /// directly enforce that limit. Built-in conversion sessions select its
+    /// structure limits and add cumulative node and payload budgets without
+    /// applying its string-byte limit. It is not a snapshot of a session's
+    /// effective budgets.
     #[inline]
     #[must_use]
     pub const fn value(&self) -> &JsonValueLimits<ConversionResource, u64> {

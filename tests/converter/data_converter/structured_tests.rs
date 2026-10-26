@@ -25,6 +25,8 @@ use chrono::NaiveTime;
 use chrono::Utc;
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
+#[cfg(feature = "json")]
+use qubit_budget::json::JsonMeasurement;
 #[cfg(any(feature = "json", feature = "url"))]
 use qubit_datatype::ConversionLimits;
 #[cfg(feature = "json")]
@@ -144,6 +146,32 @@ fn test_data_converter_rejects_oversize_structured_text() {
     assert_eq!(error.resource(), Some(ConversionResource::StructuredTextBytes));
     assert_eq!(error.configured_limit(), Some(2));
     assert_eq!(error.observed_lower_bound(), Some(9));
+}
+
+/// Contrasts reusable value-template limits with built-in source-text limits.
+#[cfg(feature = "json")]
+#[test]
+fn test_structured_limit_contract_distinguishes_template_and_source_text() {
+    let structured = StructuredConversionLimits::builder().max_text_bytes(2).build();
+    assert!(
+        structured
+            .value()
+            .check_point(JsonMeasurement::String { depth: 1, bytes: 3 })
+            .is_err()
+    );
+    let limits = ConversionLimits::builder().structured_limits(structured).build();
+    let policy = ConversionPolicy::strict();
+    let value = serde_json::Value::String("abc".to_owned());
+    let actual = DataConverter::from(&value)
+        .to_with::<serde_json::Value>(&policy, &limits)
+        .expect("materialized values do not use the source-text point limit");
+    assert_eq!(actual, value);
+    let error = DataConverter::from("\"abc\"")
+        .to_with::<serde_json::Value>(&policy, &limits)
+        .expect_err("the normalized JSON source text exceeds two bytes");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(error.resource(), Some(ConversionResource::StructuredTextBytes));
+    assert_eq!(error.configured_limit(), Some(2));
 }
 
 /// Tests that JSON text decoding enforces every configured structural point

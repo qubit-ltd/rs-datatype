@@ -56,6 +56,21 @@ fn test_structured_conversion_limits_defaults_and_customization() {
     assert_eq!(customized.max_map_entries(), 6);
 }
 
+/// Tests that the reusable value template retains its per-string limit.
+#[test]
+fn test_structured_limit_contract_keeps_reusable_string_limit() {
+    let limits = StructuredConversionLimits::builder().max_text_bytes(2).build();
+    assert_eq!(limits.max_text_bytes(), 2);
+    assert_eq!(limits.value().max_string_bytes(), Some(2));
+    assert_eq!(
+        limits.into_builder().max_depth(4).build().value().max_string_bytes(),
+        Some(2)
+    );
+    let wire = serde_json::to_string(&limits).expect("serialize limits");
+    let restored: StructuredConversionLimits = serde_json::from_str(&wire).expect("restore limits");
+    assert_eq!(restored, limits);
+}
+
 /// Tests Serde defaults and unknown-field rejection for structured limits.
 #[test]
 fn test_structured_conversion_limits_serde_contract() {
