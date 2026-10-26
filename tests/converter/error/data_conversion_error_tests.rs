@@ -9,6 +9,9 @@
 //!
 //! Tests for reusable data conversion errors.
 
+use std::error::Error;
+
+use qubit_budget::BudgetError;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
@@ -72,6 +75,15 @@ fn test_data_conversion_error_limit_exceeded_contract() {
     assert_eq!(error.remaining(), Some(1));
     assert_eq!(error.requested(), Some(3));
 
+    let cause = Error::source(&error).expect("budget error must expose its underlying cause");
+    let budget = cause
+        .downcast_ref::<BudgetError<ConversionResource, u64>>()
+        .expect("cause must be the native budget error, not the private wrapper");
+    assert_eq!(budget.resource(), &ConversionResource::OutputBytes);
+    assert_eq!(budget.configured_limit(), 4);
+    assert_eq!(budget.remaining(), Some(1));
+    assert_eq!(budget.requested(), Some(3));
+
     let list_error = DataListConversionError::new(7, error.clone());
     assert_eq!(list_error.source_index(), 7);
     assert_eq!(list_error.conversion_error(), &error);
@@ -79,6 +91,21 @@ fn test_data_conversion_error_limit_exceeded_contract() {
         list_error.conversion_error().resource(),
         Some(ConversionResource::OutputBytes),
     );
+}
+
+/// Test that ordinary conversion errors do not expose a fabricated cause.
+#[test]
+fn test_data_conversion_error_non_budget_errors_have_no_source() {
+    let errors = [
+        DataConversionError::missing(DataType::String, DataType::Bool),
+        DataConversionError::unsupported(DataType::String, DataType::Bool),
+        DataConversionError::empty_collection(DataType::Bool),
+        DataConversionError::invalid(DataType::String, DataType::Bool, InvalidValueReason::OutOfRange),
+    ];
+
+    for error in errors {
+        assert!(Error::source(&error).is_none(), "unexpected source for {error:?}");
+    }
 }
 
 /// Test non-accounting errors do not fabricate resource details.
@@ -104,6 +131,28 @@ fn test_data_conversion_error_does_not_contain_source_value() {
     assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
     assert!(!error.to_string().contains(secret));
     assert!(!format!("{error:?}").contains(secret));
+    let mut cause = Error::source(&error);
+    while let Some(current) = cause {
+        assert!(!current.to_string().contains(secret));
+        assert!(!format!("{current:?}").contains(secret));
+        cause = current.source();
+    }
+
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::builder()
+        .operation_limits(ConversionOperationLimits::builder().max_output_bytes(1).build())
+        .build();
+    let mut session = ConversionSession::new(&policy, &limits);
+    let error = DataConverter::from(secret)
+        .to_in::<String>(&mut session)
+        .expect_err("the secret text should exceed the output budget");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    let mut cause = Some(&error as &dyn Error);
+    while let Some(current) = cause {
+        assert!(!current.to_string().contains(secret));
+        assert!(!format!("{current:?}").contains(secret));
+        cause = current.source();
+    }
 
     #[cfg(feature = "json")]
     {

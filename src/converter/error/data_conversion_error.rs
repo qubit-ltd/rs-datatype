@@ -23,9 +23,11 @@ use crate::datatype::DataType;
 /// Describes why a source value could not be converted.
 ///
 /// The error exposes stable classification and context through accessors while
-/// keeping its variant representation private. Source values are deliberately
-/// not retained or formatted, which makes these errors safe to surface for
-/// secrets such as environment variables.
+/// keeping its variant representation private. Resource failures expose their
+/// underlying cause through the standard [`std::error::Error`] chain, while
+/// stable accessors remain the recommended way to classify conversion errors.
+/// Source values are deliberately not retained or formatted, which makes
+/// these errors safe to surface for secrets such as environment variables.
 ///
 /// # Examples
 ///
@@ -43,7 +45,7 @@ use crate::datatype::DataType;
 /// ```
 #[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[error("{inner}")]
+#[error(transparent)]
 pub struct DataConversionError {
     /// Variant-specific conversion error details.
     inner: DataConversionErrorInner,
@@ -369,12 +371,15 @@ impl DataConversionError {
         }
     }
 
-    /// Returns the quantity rejected by a failed cumulative request.
+    /// Returns the rejected quantity reported by a failed cumulative request.
     ///
     /// # Returns
     ///
     /// `Some` for an insufficient cumulative budget, or `None` for point-limit
-    /// and non-budget failures.
+    /// and non-budget failures. This is the rejected cumulative request amount:
+    /// an early preflight check may report a conservative minimum, while a
+    /// chunked formatter may report one write at a time. It is not necessarily
+    /// the exact length of the complete output text.
     #[must_use]
     #[inline]
     pub const fn requested(&self) -> Option<u64> {
