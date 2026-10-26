@@ -148,7 +148,7 @@ impl<'a> ScalarStringDataConverters<'a> {
         T: DataConversionTarget,
     {
         let mut source = session
-            .admit_scalar_string_source(self.source)
+            .admit_scalar_string_source_for(self.source, T::DATA_TYPE)
             .map_err(|source| DataListConversionError::new(0, source))?;
         let mut converted = Vec::new();
         while let Some(item) = source.next_item_for(T::DATA_TYPE) {
@@ -245,7 +245,7 @@ impl<'a> ScalarStringDataConverters<'a> {
     where
         T: DataConversionTarget,
     {
-        let mut source = session.admit_scalar_string_source(self.source)?;
+        let mut source = session.admit_scalar_string_source_for(self.source, T::DATA_TYPE)?;
         let first = source
             .next_item_for(T::DATA_TYPE)
             .ok_or(DataConversionError::empty_collection(T::DATA_TYPE))?

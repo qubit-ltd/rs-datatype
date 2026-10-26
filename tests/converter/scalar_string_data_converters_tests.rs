@@ -9,7 +9,9 @@
 //!
 //! Tests for scalar string collection conversion behavior.
 
+use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionResource;
+use qubit_datatype::ConversionSession;
 use qubit_datatype::DataType;
 use qubit_datatype::converter::BlankStringPolicy;
 use qubit_datatype::converter::CollectionConversionLimits;
@@ -22,6 +24,53 @@ use qubit_datatype::converter::EmptyItemPolicy;
 use qubit_datatype::converter::InvalidValueReason;
 use qubit_datatype::converter::ScalarStringDataConverters;
 use qubit_datatype::converter::StringConversionPolicy;
+
+/// Source admission failures retain the requested target type and budget facts.
+#[test]
+fn test_scalar_source_admission_errors_preserve_target_type() {
+    for source_limit in [true, false] {
+        for first in [true, false] {
+            let policy = ConversionPolicy::env_friendly();
+            let limits = if source_limit {
+                ConversionLimits::builder()
+                    .collection_limits(CollectionConversionLimits::builder().max_source_bytes(2).build())
+                    .build()
+            } else {
+                ConversionLimits::builder()
+                    .operation_limits(ConversionOperationLimits::builder().max_input_bytes(2).build())
+                    .build()
+            };
+            let mut session = ConversionSession::new(&policy, &limits);
+            let converter = ScalarStringDataConverters::from("1,2");
+            let error = if first {
+                converter.to_first_in::<u16>(&mut session).unwrap_err()
+            } else {
+                let error = converter.to_vec_in::<u16>(&mut session).unwrap_err();
+                assert_eq!(error.source_index(), 0);
+                error.into_conversion_error()
+            };
+            assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+            assert_eq!(error.from_type(), Some(DataType::String));
+            assert_eq!(error.to_type(), DataType::UInt16);
+            assert_eq!(error.configured_limit(), Some(2));
+            if source_limit {
+                assert_eq!(error.resource(), Some(ConversionResource::CollectionSourceBytes));
+                assert_eq!(error.observed_lower_bound(), Some(3));
+                assert_eq!(error.observation_is_exact(), Some(true));
+            } else {
+                assert_eq!(error.resource(), Some(ConversionResource::InputBytes));
+                assert_eq!(error.observed_lower_bound(), None);
+                assert_eq!(error.observation_is_exact(), None);
+                assert_eq!(error.used(), Some(0));
+                assert_eq!(error.remaining(), Some(2));
+                assert_eq!(error.requested(), Some(3));
+            }
+            assert_eq!(session.items_used(), 0);
+            assert_eq!(session.input_bytes_used(), 0);
+            assert_eq!(session.output_bytes_used(), 0);
+        }
+    }
+}
 
 /// Test default scalar string conversion without splitting.
 #[test]

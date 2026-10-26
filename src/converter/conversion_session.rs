@@ -258,7 +258,32 @@ impl<'a> ConversionSession<'a> {
     where
         'a: 'source,
     {
-        self.admit_scalar_source(DataType::String, DataType::String, source.len())?;
+        self.admit_scalar_string_source_for(source, DataType::String)
+    }
+
+    /// Admits one complete scalar String source using `target` for error
+    /// context.
+    ///
+    /// The target only identifies the requested conversion in admission errors.
+    /// The complete source is charged once to the cumulative input budget, and
+    /// the returned source lends individually admitted items without charging
+    /// their bytes again. No item is scanned or charged if source admission
+    /// fails.
+    ///
+    /// # Errors
+    ///
+    /// Returns a String-to-target conversion-domain quantity or resource-limit
+    /// error when the source exceeds its configured collection or input budget.
+    #[inline]
+    pub(super) fn admit_scalar_string_source_for<'session, 'source>(
+        &'session mut self,
+        source: &'source str,
+        target: DataType,
+    ) -> Result<AdmittedScalarSource<'session, 'a, 'source>, DataConversionError>
+    where
+        'a: 'source,
+    {
+        self.admit_scalar_source(DataType::String, target, source.len())?;
         Ok(AdmittedScalarSource::new(self, source))
     }
 

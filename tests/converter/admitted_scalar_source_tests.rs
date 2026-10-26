@@ -13,6 +13,7 @@ use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::ConversionSession;
+use qubit_datatype::DataType;
 use qubit_datatype::EmptyItemPolicy;
 
 /// A source is charged once and filtered elements keep their raw positions.
@@ -44,6 +45,8 @@ fn test_source_admission_rejects_input_before_items() {
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
     let error = session.admit_scalar_string_source("1").expect_err("input is forbidden");
+    assert_eq!(error.from_type(), Some(DataType::String));
+    assert_eq!(error.to_type(), DataType::String);
     assert_eq!(error.resource(), Some(ConversionResource::InputBytes));
     assert_eq!(session.input_bytes_used(), 0);
     assert_eq!(session.items_used(), 0);
