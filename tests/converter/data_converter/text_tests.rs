@@ -321,31 +321,34 @@ fn test_data_converter_char_target_conversions() {
 /// Test string target conversion from core scalar sources.
 #[test]
 fn test_data_converter_string_target_accepts_core_value_sources() {
-    for source in [
-        DataConverter::from("text"),
-        DataConverter::from(true),
-        DataConverter::from('A'),
-        DataConverter::from(1i8),
-        DataConverter::from(2i16),
-        DataConverter::from(3i32),
-        DataConverter::from(4i64),
-        DataConverter::from(5i128),
-        DataConverter::from(6u8),
-        DataConverter::from(7u16),
-        DataConverter::from(8u32),
-        DataConverter::from(9u64),
-        DataConverter::from(10u128),
-        DataConverter::from(13.5f32),
-        DataConverter::from(14.5f64),
-        DataConverter::from(Duration::from_millis(1)),
+    for (source, expected) in [
+        (DataConverter::from("text"), "text"),
+        (DataConverter::from(true), "true"),
+        (DataConverter::from('A'), "A"),
+        (DataConverter::from(1i8), "1"),
+        (DataConverter::from(2i16), "2"),
+        (DataConverter::from(3i32), "3"),
+        (DataConverter::from(4i64), "4"),
+        (DataConverter::from(5i128), "5"),
+        (DataConverter::from(6u8), "6"),
+        (DataConverter::from(7u16), "7"),
+        (DataConverter::from(8u32), "8"),
+        (DataConverter::from(9u64), "9"),
+        (DataConverter::from(10u128), "10"),
+        (DataConverter::from(Duration::from_millis(1)), "1ms"),
     ] {
-        assert!(
-            !source
-                .to::<String>()
-                .expect("source should convert to string")
-                .is_empty()
+        assert_eq!(
+            source.to::<String>().expect("source should convert to string"),
+            expected,
         );
     }
+    assert_eq!(DataConverter::from(13.5_f32).to::<String>().unwrap(), "13.5");
+    assert_eq!(DataConverter::from(14.5_f64).to::<String>().unwrap(), "14.5");
+    assert_eq!(DataConverter::from(-0.0_f32).to::<String>().unwrap(), "-0");
+    assert_eq!(DataConverter::from(-0.0_f64).to::<String>().unwrap(), "-0");
+    assert_eq!(DataConverter::from(f64::NAN).to::<String>().unwrap(), "NaN");
+    assert_eq!(DataConverter::from(f64::INFINITY).to::<String>().unwrap(), "inf");
+    assert_eq!(DataConverter::from(f64::NEG_INFINITY).to::<String>().unwrap(), "-inf");
     assert!(matches!(
         DataConverter::Unset(DataType::String).to::<String>(),
         Err(conversion_error) if conversion_error.kind() == DataConversionErrorKind::Missing
@@ -359,14 +362,38 @@ fn test_data_converter_string_target_accepts_chrono_sources() {
     let time = NaiveTime::from_hms_opt(12, 30, 45).expect("test time should be valid");
     let datetime = NaiveDateTime::new(date, time);
     let instant = DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc);
-    for source in [
-        DataConverter::from(date).to::<String>().unwrap(),
-        DataConverter::from(time).to::<String>().unwrap(),
+    assert_eq!(DataConverter::from(date).to::<String>().unwrap(), "2026-05-01");
+    assert_eq!(DataConverter::from(time).to::<String>().unwrap(), "12:30:45");
+    assert_eq!(
         DataConverter::from(datetime).to::<String>().unwrap(),
+        "2026-05-01T12:30:45",
+    );
+    assert_eq!(
         DataConverter::from(instant).to::<String>().unwrap(),
-    ] {
-        assert!(!source.is_empty());
-    }
+        "2026-05-01T12:30:45+00:00",
+    );
+
+    let fractional_time = NaiveTime::from_hms_nano_opt(12, 30, 45, 123_456_789).expect("test time should be valid");
+    let fractional_datetime = NaiveDateTime::new(date, fractional_time);
+    let fractional_instant = DateTime::<Utc>::from_naive_utc_and_offset(fractional_datetime, Utc);
+    assert_eq!(
+        DataConverter::from(fractional_time).to::<String>().unwrap(),
+        "12:30:45.123456789",
+    );
+    assert_eq!(
+        DataConverter::from(fractional_datetime).to::<String>().unwrap(),
+        "2026-05-01T12:30:45.123456789",
+    );
+    assert_eq!(
+        DataConverter::from(fractional_instant).to::<String>().unwrap(),
+        "2026-05-01T12:30:45.123456789+00:00",
+    );
+
+    let millisecond_time = NaiveTime::from_hms_milli_opt(12, 30, 45, 123).expect("test time should be valid");
+    assert_eq!(
+        DataConverter::from(millisecond_time).to::<String>().unwrap(),
+        "12:30:45.123",
+    );
 }
 
 #[test]
