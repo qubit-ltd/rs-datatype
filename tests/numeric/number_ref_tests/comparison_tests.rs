@@ -7,14 +7,14 @@
 // =============================================================================
 
 use std::cmp::Ordering;
-#[cfg(feature = "big-number")]
+#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
 use std::str::FromStr;
 
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_bigint::BigInt;
-#[cfg(feature = "big-number")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_rational::BigRational;
 use proptest::arbitrary::any;
 use proptest::prop_assert_eq;
@@ -73,7 +73,7 @@ fn finite_f64(sign: bool, exponent: u16, fraction: u64) -> f64 {
 /// # Panics
 ///
 /// Panics if `value` is NaN or infinite.
-#[cfg(feature = "big-number")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 fn finite_f64_to_rational(value: f64) -> BigRational {
     assert!(value.is_finite(), "the rational oracle requires a finite f64");
     let bits = value.to_bits();
@@ -106,7 +106,7 @@ fn finite_f64_to_rational(value: f64) -> BigRational {
 /// # Returns
 ///
 /// The rational value represented by `coefficient * 10^-scale`.
-#[cfg(feature = "big-number")]
+#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
 fn decimal_parts_to_rational(coefficient: i64, scale: i64) -> BigRational {
     let coefficient = BigInt::from(coefficient);
     let factor = BigInt::from(10_u8).pow(scale.unsigned_abs() as u32);
@@ -418,7 +418,7 @@ proptest! {
     }
 
     /// Checks integer/finite-float comparisons against an independent rational oracle.
-    #[cfg(feature = "big-number")]
+    #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
     #[test]
     fn test_number_ref_comparison_exact_integer_float_oracle_property(
         integer in any::<i128>(),
@@ -440,7 +440,7 @@ proptest! {
     }
 
     /// Checks bounded arbitrary-precision coefficients and decimal scales.
-    #[cfg(feature = "big-number")]
+    #[cfg(all(feature = "big-integer", feature = "big-decimal"))]
     #[test]
     fn test_number_ref_comparison_exact_big_number_oracle_property(
         integer_coefficient in -1_000_000_i64..=1_000_000,
@@ -462,7 +462,7 @@ proptest! {
     }
 
     /// Checks every public non-NaN representation pair remains ordered.
-    #[cfg(feature = "big-number")]
+    #[cfg(all(feature = "big-integer", feature = "big-decimal"))]
     #[test]
     fn test_number_ref_comparison_all_public_representations_are_ordered(
         signed in any::<i128>(),
@@ -520,7 +520,7 @@ proptest! {
 }
 
 /// Covers exact and approximate arbitrary-precision comparisons.
-#[cfg(feature = "big-number")]
+#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
 #[test]
 fn test_number_ref_comparison_big_number_paths() {
     let integer = BigInt::from(u128::MAX) + BigInt::from(1_u8);

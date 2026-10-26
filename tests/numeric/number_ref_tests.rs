@@ -12,9 +12,9 @@ mod exact_decimal_tests;
 
 use std::cmp::Ordering;
 
-#[cfg(feature = "big-number")]
+#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
 use bigdecimal::BigDecimal;
-#[cfg(feature = "big-number")]
+#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
 use num_bigint::BigInt;
 use qubit_datatype::NumberRef;
 use qubit_datatype::NumericComparisonPolicy;
@@ -64,7 +64,7 @@ fn test_number_ref_from_primitive_values() {
 }
 
 /// Verifies conversion from borrowed arbitrary-precision representations.
-#[cfg(feature = "big-number")]
+#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
 #[test]
 fn test_number_ref_from_big_number_references() {
     let integer = BigInt::from(13);

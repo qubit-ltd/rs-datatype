@@ -7,20 +7,20 @@
 // =============================================================================
 //! Exact rational comparison tests.
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use std::cmp::Ordering;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use std::str::FromStr;
 
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use qubit_datatype::NumberRef;
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 use qubit_datatype::NumericComparisonPolicy;
 
 /// Verifies an exactly binary-representable decimal equals its float value.
-#[cfg(feature = "big-number")]
+#[cfg(feature = "big-decimal")]
 #[test]
 fn test_exact_rational_matches_binary_fraction() {
     let decimal = BigDecimal::from_str("0.5").expect("test decimal");
