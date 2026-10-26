@@ -25,6 +25,9 @@ use super::scalar_item::ScalarItem;
 /// The item limit counts only items retained after trimming and empty-item
 /// policy handling. The first retained item beyond the limit produces one
 /// [`ScalarItemError::ItemLimitExceeded`] error and exhausts the iterator.
+/// With [`EmptyItemPolicy::Reject`], each rejected empty item produces an
+/// error without exhausting the iterator, so later items can still be read.
+/// The item-limit error is emitted at most once.
 ///
 /// # Examples
 ///
@@ -229,16 +232,18 @@ impl<'a> Iterator for ScalarItems<'a> {
 
     /// Returns the next retained item or the next lazily discovered error.
     ///
-    /// Empty-item policy is applied before retained items consume quota. A
+    /// Empty-item policy is applied before retained items consume quota. Each
     /// rejected empty item therefore takes precedence over the item limit and
-    /// does not consume quota. The first retained item beyond the configured
-    /// limit returns [`ScalarItemError::ItemLimitExceeded`] and exhausts this
-    /// iterator.
+    /// does not consume quota; iteration can continue after its error. The
+    /// first retained item beyond the configured limit returns
+    /// [`ScalarItemError::ItemLimitExceeded`] and exhausts this iterator.
     ///
     /// # Returns
     ///
-    /// `Some(Ok(item))` for a retained item, `Some(Err(error))` for the first
-    /// rejection or limit failure, and `None` after exhaustion.
+    /// `Some(Ok(item))` for a retained item, `Some(Err(error))` for a rejected
+    /// empty item or the first item-limit failure, and `None` after exhaustion.
+    /// A rejected empty item does not exhaust the iterator; each later empty
+    /// item can yield another error. The item-limit error is emitted once.
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             let mut item = self.next_raw()?;

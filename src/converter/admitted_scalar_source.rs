@@ -22,6 +22,9 @@ use crate::DataType;
 /// indices, and charge the session's item budget before target conversion.
 /// Dropping the source leaves unconsumed items unscanned and uncharged; the
 /// complete source's input bytes remain charged. No item strings are allocated.
+/// Unlike [`ScalarItems`], a splitting or item-admission error, including a
+/// rejected empty item, exhausts this source. A later target-conversion error
+/// from an admitted item is a separate operation.
 ///
 /// # Type Parameters
 ///
@@ -109,7 +112,10 @@ impl<'session, 'policy: 'source, 'source> AdmittedScalarSource<'session, 'policy
     /// `Some(Ok(item))` for the next admitted slice, `Some(Err(error))` for a
     /// splitting or item-budget failure, and `None` after exhaustion. Admission
     /// errors carry the original source index and String-to-String context;
-    /// conversion errors use the target selected by the item consumer.
+    /// conversion errors use the target selected by the item consumer. Unlike
+    /// [`ScalarItems`], a splitting or item-admission error, including a
+    /// rejected empty item, exhausts this source. A later target-conversion
+    /// error for an admitted item is a separate operation.
     ///
     /// # Errors
     ///
