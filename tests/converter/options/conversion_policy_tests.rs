@@ -16,6 +16,7 @@ use qubit_datatype::converter::DurationRoundingPolicy;
 use qubit_datatype::converter::EmptyItemPolicy;
 use qubit_datatype::converter::NumericConversionPolicy;
 use qubit_datatype::converter::StringConversionPolicy;
+use serde_json::from_str;
 
 /// Verifies the policy wire contains semantic fields but no resource limits.
 #[test]
@@ -142,4 +143,33 @@ fn test_conversion_policy_collection_builder_override_order() {
 
     assert_eq!(leaf_last.collection().empty_item_policy(), EmptyItemPolicy::Reject);
     assert_eq!(group_last.collection().empty_item_policy(), EmptyItemPolicy::Keep);
+}
+
+#[test]
+fn test_conversion_policy_deserialize_defaults() {
+    assert_eq!(
+        from_str::<ConversionPolicy>("{}").expect("omitted aggregate policies should use defaults"),
+        ConversionPolicy::default(),
+    );
+}
+
+#[test]
+fn test_conversion_policy_deserialize_partial_string_override() {
+    let policy = from_str::<ConversionPolicy>(r#"{"string":{"trim":true}}"#)
+        .expect("partial aggregate policies should deserialize");
+    let expected = ConversionPolicy::default()
+        .into_builder()
+        .string_policy(StringConversionPolicy::default().into_builder().trim(true).build())
+        .build();
+    assert_eq!(policy, expected);
+}
+
+#[test]
+fn test_conversion_policy_deserialize_rejects_unknown_fields() {
+    for wire in [
+        r#"{"unexpected":true}"#,
+        r#"{"string":{"trim":true,"unexpected":true}}"#,
+    ] {
+        assert!(from_str::<ConversionPolicy>(wire).is_err());
+    }
 }

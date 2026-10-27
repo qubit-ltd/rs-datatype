@@ -13,6 +13,7 @@ use qubit_datatype::converter::ConversionOperationLimits;
 use qubit_datatype::converter::DurationConversionLimits;
 use qubit_datatype::converter::NumericConversionLimits;
 use qubit_datatype::converter::StructuredConversionLimits;
+use serde_json::from_str;
 
 #[test]
 fn test_conversion_limits_aggregate_exact_limit_groups() {
@@ -59,4 +60,38 @@ fn test_conversion_limits_into_builder() {
         .build();
 
     assert_eq!(limits.operation().max_items(), 3);
+}
+
+#[test]
+fn test_conversion_limits_deserialize_defaults() {
+    assert_eq!(
+        from_str::<ConversionLimits>("{}").expect("omitted aggregate limits should use defaults"),
+        ConversionLimits::default(),
+    );
+}
+
+#[test]
+fn test_conversion_limits_deserialize_partial_operation_override() {
+    let limits = from_str::<ConversionLimits>(r#"{"operation":{"output_bytes":7}}"#)
+        .expect("partial aggregate limits should deserialize");
+    let expected = ConversionLimits::default()
+        .into_builder()
+        .operation_limits(
+            ConversionOperationLimits::default()
+                .into_builder()
+                .max_output_bytes(7)
+                .build(),
+        )
+        .build();
+    assert_eq!(limits, expected);
+}
+
+#[test]
+fn test_conversion_limits_deserialize_rejects_unknown_fields() {
+    for wire in [
+        r#"{"unexpected":1}"#,
+        r#"{"operation":{"output_bytes":7,"unexpected":1}}"#,
+    ] {
+        assert!(from_str::<ConversionLimits>(wire).is_err());
+    }
 }
