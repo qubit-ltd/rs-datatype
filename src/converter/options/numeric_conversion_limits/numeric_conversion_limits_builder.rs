@@ -10,6 +10,28 @@
 use super::NumericConversionLimits;
 
 /// Builder for [`NumericConversionLimits`].
+///
+/// The text limit applies after string normalization. The other limits bound
+/// the corresponding big-number result representations. These settings do not
+/// bound every temporary allocation or the independent `NumberRef` comparison
+/// API.
+///
+/// # Examples
+///
+/// ```
+/// use qubit_datatype::NumericConversionLimits;
+///
+/// let limits = NumericConversionLimits::builder()
+///     .max_text_bytes(256)
+///     .max_big_integer_digits(64)
+///     .max_big_decimal_coefficient_digits(64)
+///     .max_big_decimal_scale_magnitude(32)
+///     .build();
+/// assert_eq!(limits.max_text_bytes(), 256);
+/// assert_eq!(limits.max_big_integer_digits(), 64);
+/// assert_eq!(limits.max_big_decimal_coefficient_digits(), 64);
+/// assert_eq!(limits.max_big_decimal_scale_magnitude(), 32);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NumericConversionLimitsBuilder {
     /// Numeric limits being configured.

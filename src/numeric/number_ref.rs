@@ -125,6 +125,18 @@ fn compare_big_integer_to_fixed(left: &BigInt, right: NumberRepr<'_>) -> Option<
 /// assert!(number.is_integer());
 /// ```
 ///
+/// ```
+/// use std::cmp::Ordering;
+/// use qubit_datatype::NumberRef;
+/// use qubit_datatype::NumericComparisonPolicy;
+///
+/// let integer = NumberRef::from((1_u64 << 53) + 1);
+/// let float = NumberRef::from((1_u64 << 53) as f64);
+/// assert_eq!(integer.compare(float, NumericComparisonPolicy::Exact), Some(Ordering::Greater));
+/// assert_eq!(integer.compare(float, NumericComparisonPolicy::Approximate), Some(Ordering::Equal));
+/// assert_eq!(integer.compare(NumberRef::from(f64::NAN), NumericComparisonPolicy::Exact), None);
+/// ```
+///
 /// ```compile_fail
 /// use qubit_datatype::NumberRef;
 ///
@@ -415,6 +427,10 @@ impl<'a> NumberRef<'a> {
     /// representations avoid that work. Conversion limits and session budgets
     /// do not apply to this independent comparison; constrain untrusted number
     /// representations at the input boundary when their size must be bounded.
+    ///
+    /// See the [type-level examples](Self) for exact, approximate, and NaN
+    /// comparisons. Approximate comparison is not transitive across mixed
+    /// representations; do not use it for sorting or ordered keys.
     ///
     /// # Parameters
     ///
