@@ -85,7 +85,9 @@ impl StructuredConversionLimits {
     /// per-string limit on already materialized JSON values. The reusable
     /// [`value`](Self::value) template carries a string-byte limit with the
     /// same maximum, which consumers applying that template directly
-    /// enforce.
+    /// enforce. Public `AdmittedConversion::decode_json` also checks the exact
+    /// input byte length, including whitespace, before decoding; it does not
+    /// normalize or charge the source again.
     ///
     /// # Returns
     ///

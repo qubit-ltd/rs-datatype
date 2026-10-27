@@ -45,6 +45,13 @@ limit. `BooleanConversionPolicyBuilder` keeps unvalidated fields until
 `build()` validates their final combination, so its result does not depend on
 setter order.
 
+The public `AdmittedConversion::decode_json()` helper checks the exact bytes
+passed by the custom target against `max_text_bytes`, including whitespace,
+before decoding. It neither normalizes nor re-admits the source. A rejection
+retains the already charged item and source bytes and adds no structured or
+output charges. Built-in text-to-JSON conversion continues to check normalized
+source text before decoding.
+
 The raw `ScalarItems` iterator can continue after a rejected empty item and
 reports it at its original source index; it errors once when the retained-item
 limit is exceeded, then exhausts. `AdmittedScalarSource` instead exhausts on

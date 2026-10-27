@@ -34,6 +34,11 @@ context 还提供直接访问 `policy()`、`limits()` 和 JSON `decode_json_seed
 并叠加累计操作预算，不应用该字符串字节限额。`BooleanConversionPolicyBuilder` 会保留尚未验证的
 字段，直到 `build()` 时统一验证最终组合，因此构建结果不依赖 setter 顺序。
 
+公开的 `AdmittedConversion::decode_json()` helper 会在解码前，按自定义目标实际传入的字节长度
+检查 `max_text_bytes`，其中包括空白。它既不规范化，也不会再次准入来源。检查拒绝时，已扣除的
+条目和来源字节仍保留扣减，且不会新增结构或输出用量。内置文本转 JSON 路径仍会在解码前检查
+规范化后的来源文本。
+
 原始 `ScalarItems` 迭代器在拒绝空条目后仍可继续，并按原始来源索引报告错误；超过保留条目数时只
 报错一次，随后耗尽。`AdmittedScalarSource` 则在拆分或条目准入错误（包括拒绝空条目）后耗尽。
 已经准入条目后发生的目标转换失败属于后续独立操作。

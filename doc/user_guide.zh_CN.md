@@ -375,6 +375,11 @@ fn main() {
 执行此检查。内置转换会话从模板中选取结构限额，并叠加累计节点和 payload 预算；不会应用模板
 的字符串字节限额。因此，该模板不是会话最终生效预算的快照。
 
+自定义目标调用 `AdmittedConversion::decode_json` 时，helper 还会按传入字节的原始长度检查
+`max_text_bytes`，其中包括空白。它不会规范化输入，也不会再次准入输入。若此检查拒绝文本，
+已扣除的条目和来源字节仍保留扣减，且不会新增结构或输出字节用量。内置文本转 JSON 路径仍会在
+解码前检查规范化后的来源文本。
+
 ### 理解策略 builder 的调用顺序
 
 `string_policy` 这样的组 setter 会替换整组策略；`blank_string_policy` 这样的叶 setter 只修改

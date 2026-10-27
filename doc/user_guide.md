@@ -387,6 +387,13 @@ conversion sessions select its structure limits and add cumulative node and
 payload budgets; they do not apply its string-byte limit. The template is not
 a snapshot of a session's effective budgets.
 
+When a custom target calls `AdmittedConversion::decode_json`, the helper also
+checks the exact bytes passed to it against `max_text_bytes`, including any
+whitespace. It does not normalize the input or admit it again. If this check
+rejects the text, the already charged item and source bytes remain charged, and
+no structured or output bytes are added. Built-in text-to-JSON conversion
+continues to check its normalized source text before decoding.
+
 This example requires the `json` feature in addition to `converter`, and a direct dependency on `serde_json`. Use the following dependency configuration:
 
 ```toml

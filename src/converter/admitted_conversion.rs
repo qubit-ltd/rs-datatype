@@ -141,6 +141,10 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
 
     /// Decodes JSON under this conversion's bound resource context.
     ///
+    /// The byte limit applies to the exact input slice, including whitespace.
+    /// This check does not normalize the input or admit and charge it again;
+    /// the top-level item and source bytes have already been charged.
+    ///
     /// # Type Parameters
     ///
     /// * `'de` - Lifetime of borrowed data returned by the deserializer.
@@ -152,13 +156,24 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     ///
     /// # Errors
     ///
-    /// Returns a JSON syntax, deserialization, or structured-resource error.
+    /// Returns a JSON syntax or deserialization error, or a structured-resource
+    /// error when the input bytes or decoded structure exceed their limits.
+    /// Text-limit errors retain the top-level item and source-byte charges
+    /// and add no structured or output charges.
     #[cfg(feature = "json")]
     #[inline]
     pub fn decode_json<'de, T>(&mut self, input: &'de [u8]) -> Result<T, DataConversionError>
     where
         T: serde::Deserialize<'de>,
     {
+        let from = self.from_type();
+        let to = self.to_type();
+        self.context
+            .limits()
+            .structured()
+            .max_text_bytes_limit()
+            .check_usize(input.len())
+            .map_err(|error| DataConversionError::measured_limit(from, to, error))?;
         self.context.decode_json(input)
     }
 
