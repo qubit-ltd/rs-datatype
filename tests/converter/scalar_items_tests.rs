@@ -7,10 +7,117 @@
 // =============================================================================
 //! Tests for lazy scalar collection item iteration.
 
+use proptest::prelude::Strategy;
+use proptest::prelude::any;
+use proptest::proptest;
+use qubit_datatype::ScalarItemError;
 use qubit_datatype::converter::CollectionConversionLimits;
 use qubit_datatype::converter::CollectionConversionPolicy;
 use qubit_datatype::converter::EmptyItemPolicy;
 use qubit_datatype::converter::ScalarItems;
+
+fn reference_scalar_items(
+    text: &str,
+    delimiters: &[char],
+    trim: bool,
+    empty_policy: EmptyItemPolicy,
+    maximum: u64,
+) -> Vec<Result<(usize, String), ScalarItemError>> {
+    let mut retained = 0_u64;
+    let mut expected = Vec::new();
+    for (source_index, raw) in text.split(|ch| delimiters.contains(&ch)).enumerate() {
+        let value = if trim { raw.trim() } else { raw };
+        if value.is_empty() {
+            match empty_policy {
+                EmptyItemPolicy::Skip => continue,
+                EmptyItemPolicy::Reject => {
+                    expected.push(Err(ScalarItemError::BlankRejected { source_index }));
+                    continue;
+                }
+                EmptyItemPolicy::Keep => {}
+            }
+        }
+        if retained == maximum {
+            expected.push(Err(ScalarItemError::ItemLimitExceeded { source_index, maximum }));
+            break;
+        }
+        retained += 1;
+        expected.push(Ok((source_index, value.to_owned())));
+    }
+    expected
+}
+
+fn assert_scalar_items_match_reference(
+    text: &str,
+    delimiters: &[char],
+    trim: bool,
+    empty_policy: EmptyItemPolicy,
+    maximum: u64,
+) {
+    let expected = reference_scalar_items(text, delimiters, trim, empty_policy, maximum);
+    let policy = CollectionConversionPolicy::builder()
+        .split_scalar_strings(true)
+        .delimiters(delimiters.iter().copied())
+        .trim_items(trim)
+        .empty_item_policy(empty_policy)
+        .build();
+    let limits = CollectionConversionLimits::builder().max_items(maximum).build();
+    let mut iterator = policy.scalar_items(&limits, text);
+    let actual = iterator
+        .by_ref()
+        .map(|item| item.map(|item| (item.source_index, item.value.to_owned())))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        actual, expected,
+        "split results and source indices must match the reference"
+    );
+    assert!(iterator.next().is_none(), "exhaustion must remain stable");
+}
+
+proptest! {
+    #[test]
+    fn test_scalar_items_matches_unicode_reference(
+        delimiters in proptest::collection::vec(any::<char>(), 0..65),
+        pieces in proptest::collection::vec(
+            proptest::collection::vec(any::<char>(), 0..25)
+                .prop_map(|chars| chars.into_iter().collect::<String>()),
+            0..25,
+        ),
+        trim in any::<bool>(),
+        empty_control in 0_u8..3,
+        maximum in 0_u64..33,
+    ) {
+        let mut text = String::new();
+        for (index, piece) in pieces.iter().enumerate() {
+            if index != 0 && !delimiters.is_empty() {
+                text.push(delimiters[(index - 1) % delimiters.len()]);
+            }
+            text.push_str(piece);
+        }
+        let empty_policy = match empty_control {
+            0 => EmptyItemPolicy::Keep,
+            1 => EmptyItemPolicy::Skip,
+            _ => EmptyItemPolicy::Reject,
+        };
+        assert_scalar_items_match_reference(&text, &delimiters, trim, empty_policy, maximum);
+    }
+}
+
+#[test]
+fn test_scalar_items_reference_at_delimiter_threshold() {
+    let delimiters = ['|', ',', ';', ':', '/', '、', '😀', '💠', '\u{10000}'];
+    for count in [0, 8, 9] {
+        for trim in [false, true] {
+            for empty_policy in [EmptyItemPolicy::Keep, EmptyItemPolicy::Skip, EmptyItemPolicy::Reject] {
+                for maximum in [0, 1, 32] {
+                    for text in ["", " a| |b、c😀d💠e𐀀 ", "||"] {
+                        assert_scalar_items_match_reference(text, &delimiters[..count], trim, empty_policy, maximum);
+                    }
+                }
+            }
+        }
+    }
+}
 
 /// Test lazy splitting, trimming, skipping, and original source indices.
 #[test]
