@@ -199,65 +199,49 @@ impl StructuredConversionLimits {
     /// Updated limits.
     #[inline]
     pub(crate) fn with_max_text_bytes(mut self, maximum: u64) -> Self {
-        self.text = StringLimits::builder()
+        self.text = self
+            .text
+            .into_builder()
             .utf8_bytes_limit(ResourceLimit::new(ConversionResource::StructuredTextBytes, maximum))
             .build();
-        self.value = rebuild_value(
-            &self.value,
-            rebuild_structure(self.value.structure_limits(), None, None, None, None),
-            Some(ResourceLimit::new(ConversionResource::StructuredTextBytes, maximum)),
-        );
+        self.value = self
+            .value
+            .into_builder()
+            .string_bytes_limit(ResourceLimit::new(ConversionResource::StructuredTextBytes, maximum))
+            .build();
         self
     }
 
     /// Returns a copy with a different depth maximum.
     #[inline]
     pub(crate) fn with_max_depth(mut self, maximum: u64) -> Self {
-        self.value = rebuild_value(
-            &self.value,
-            rebuild_structure(
-                self.value.structure_limits(),
-                Some(ResourceLimit::new(ConversionResource::StructuredDepth, maximum)),
-                None,
-                None,
-                None,
-            ),
-            None,
-        );
+        let structure = (*self.value.structure_limits())
+            .into_builder()
+            .depth_limit(ResourceLimit::new(ConversionResource::StructuredDepth, maximum))
+            .build();
+        self.value = self.value.into_builder().structure_limits(structure).build();
         self
     }
 
     /// Returns a copy with a different sequence item maximum.
     #[inline]
     pub(crate) fn with_max_sequence_items(mut self, maximum: u64) -> Self {
-        self.value = rebuild_value(
-            &self.value,
-            rebuild_structure(
-                self.value.structure_limits(),
-                None,
-                Some(ResourceLimit::new(ConversionResource::SequenceItems, maximum)),
-                None,
-                None,
-            ),
-            None,
-        );
+        let structure = (*self.value.structure_limits())
+            .into_builder()
+            .sequence_items_limit(ResourceLimit::new(ConversionResource::SequenceItems, maximum))
+            .build();
+        self.value = self.value.into_builder().structure_limits(structure).build();
         self
     }
 
     /// Returns a copy with a different map entry maximum.
     #[inline]
     pub(crate) fn with_max_map_entries(mut self, maximum: u64) -> Self {
-        self.value = rebuild_value(
-            &self.value,
-            rebuild_structure(
-                self.value.structure_limits(),
-                None,
-                None,
-                Some(ResourceLimit::new(ConversionResource::MapEntries, maximum)),
-                None,
-            ),
-            None,
-        );
+        let structure = (*self.value.structure_limits())
+            .into_builder()
+            .map_entries_limit(ResourceLimit::new(ConversionResource::MapEntries, maximum))
+            .build();
+        self.value = self.value.into_builder().structure_limits(structure).build();
         self
     }
 }
@@ -301,49 +285,6 @@ impl Default for StructuredConversionLimits {
                 .build(),
         }
     }
-}
-
-/// Rebuilds structure limits while replacing the supplied resource bounds.
-fn rebuild_structure(
-    source: &StructureLimits<ConversionResource, u64>,
-    depth: Option<ResourceLimit<ConversionResource, u64>>,
-    sequence_items: Option<ResourceLimit<ConversionResource, u64>>,
-    map_entries: Option<ResourceLimit<ConversionResource, u64>>,
-    key_bytes: Option<ResourceLimit<ConversionResource, u64>>,
-) -> StructureLimits<ConversionResource, u64> {
-    let mut builder = (*source).into_builder();
-    if let Some(limit) = depth.or_else(|| source.depth_limit().cloned()) {
-        builder = builder.depth_limit(limit);
-    }
-    if let Some(limit) = sequence_items.or_else(|| source.sequence_items_limit().cloned()) {
-        builder = builder.sequence_items_limit(limit);
-    }
-    if let Some(limit) = map_entries.or_else(|| source.map_entries_limit().cloned()) {
-        builder = builder.map_entries_limit(limit);
-    }
-    if let Some(limit) = key_bytes.or_else(|| source.key_bytes_limit().cloned()) {
-        builder = builder.key_bytes_limit(limit);
-    }
-    builder.build()
-}
-
-/// Rebuilds JSON value limits while retaining unspecified resource bounds.
-fn rebuild_value(
-    source: &JsonValueLimits<ConversionResource, u64>,
-    structure: StructureLimits<ConversionResource, u64>,
-    string_bytes: Option<ResourceLimit<ConversionResource, u64>>,
-) -> JsonValueLimits<ConversionResource, u64> {
-    let mut builder = (*source).into_builder().structure_limits(structure);
-    if let Some(limit) = string_bytes.or_else(|| source.string_bytes_limit().cloned()) {
-        builder = builder.string_bytes_limit(limit);
-    }
-    if let Some(limit) = source.number_bytes_limit().cloned() {
-        builder = builder.number_bytes_limit(limit);
-    }
-    if let Some(limit) = source.payload_bytes_limit().cloned() {
-        builder = builder.payload_bytes_limit(limit);
-    }
-    builder.build()
 }
 
 impl Serialize for StructuredConversionLimits {

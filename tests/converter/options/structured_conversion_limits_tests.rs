@@ -7,6 +7,7 @@
 // =============================================================================
 //! Tests for structured conversion resource limits.
 
+use qubit_datatype::ConversionResource;
 use qubit_datatype::StructuredConversionLimits;
 
 /// Tests the default and customized structured text byte limits.
@@ -84,4 +85,62 @@ fn test_structured_conversion_limits_serde_contract() {
             .to_string()
             .contains("unknown field `unexpected`")
     );
+}
+
+#[test]
+fn test_structured_conversion_limits_single_override_preserves_other_limits() {
+    let base = StructuredConversionLimits::builder()
+        .max_text_bytes(17)
+        .max_depth(19)
+        .max_sequence_items(23)
+        .max_map_entries(29)
+        .build();
+    for maximum in [0_u64, 41] {
+        let cases = [
+            (
+                base.into_builder().max_text_bytes(maximum).build(),
+                [maximum, 19, 23, 29],
+            ),
+            (base.into_builder().max_depth(maximum).build(), [17, maximum, 23, 29]),
+            (
+                base.into_builder().max_sequence_items(maximum).build(),
+                [17, 19, maximum, 29],
+            ),
+            (
+                base.into_builder().max_map_entries(maximum).build(),
+                [17, 19, 23, maximum],
+            ),
+        ];
+        for (updated, [text, depth, sequence, map]) in cases {
+            let expected = StructuredConversionLimits::builder()
+                .max_text_bytes(text)
+                .max_depth(depth)
+                .max_sequence_items(sequence)
+                .max_map_entries(map)
+                .build();
+            assert_eq!(updated, expected);
+            assert_eq!(updated.max_text_bytes(), text);
+            assert_eq!(updated.max_depth(), depth);
+            assert_eq!(updated.max_sequence_items(), sequence);
+            assert_eq!(updated.max_map_entries(), map);
+            assert_eq!(updated.value().max_string_bytes(), Some(text));
+            assert_eq!(updated.value().max_depth(), Some(depth));
+            assert_eq!(
+                updated.max_text_bytes_limit().resource(),
+                &ConversionResource::StructuredTextBytes
+            );
+            assert_eq!(
+                updated.max_depth_limit().resource(),
+                &ConversionResource::StructuredDepth
+            );
+            assert_eq!(
+                updated.max_sequence_items_limit().resource(),
+                &ConversionResource::SequenceItems
+            );
+            assert_eq!(
+                updated.max_map_entries_limit().resource(),
+                &ConversionResource::MapEntries
+            );
+        }
+    }
 }
