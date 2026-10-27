@@ -89,7 +89,6 @@ impl DurationTextOptionsBuilder {
     ///
     /// The configured duration text options.
     #[inline]
-    #[must_use]
     pub const fn build(self) -> DurationTextOptions {
         self.options
     }

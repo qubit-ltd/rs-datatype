@@ -7,7 +7,7 @@
 // =============================================================================
 //! Lightweight Duration units, policies, parsing, and exact formatting.
 
-#![allow(clippy::double_must_use, clippy::new_without_default)]
+#![allow(clippy::new_without_default)]
 
 mod duration_overflow_error;
 mod duration_parse_error;

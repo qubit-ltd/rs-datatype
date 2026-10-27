@@ -91,7 +91,6 @@ impl DurationTextOptions {
     ///
     /// The configured strict or lenient unit parse mode.
     #[inline]
-    #[must_use]
     pub const fn unit_parse_mode(&self) -> DurationUnitParseMode {
         self.unit_parse_mode
     }
