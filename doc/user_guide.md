@@ -64,7 +64,12 @@ qubit-datatype = { version = "0.15", default-features = false, features = ["conv
 The strict policy is the default. It preserves whitespace, accepts only the
 default Boolean literals, and rejects precision-losing numeric and Duration
 conversions. An environment-style input normally benefits from the explicit
-`env_friendly()` profile instead.
+`env_friendly()` profile instead. Boolean literal matches take precedence over
+the numeric text byte limit. For an unknown Boolean string, exceeding
+`numeric.max_text_bytes` returns a `NumericTextBytes` limit error even when the
+text is not valid integer syntax; an unknown string within the limit remains an
+`InvalidBoolean` error. Errors report type and resource context without retaining
+the source value.
 
 ```rust
 use std::time::Duration;
@@ -297,12 +302,59 @@ lenient-only minute alias `m`; canonical output uses `µs` and `min`.
 
 For Serde fields, select the adapter from the wire contract:
 
-| Adapter | Representation | Precision |
+| Adapter | Representation | Precision and range |
 | --- | --- | --- |
-| `duration_millis` | JSON number | Half-up to milliseconds |
-| `duration_millis_with_unit` | `"<integer>ms"` | Half-up to milliseconds |
-| `duration_millis_with_unit_exact` | `"<integer>ms"` | Rejects submillisecond values |
-| `duration_with_unit` | Canonical unit string | Exact |
+| `duration_millis` | JSON number | Half-up to milliseconds; errors if the rounded result exceeds `u64::MAX` milliseconds |
+| `duration_millis_with_unit` | `"<integer>ms"` | Half-up to milliseconds; serialization saturates at `18446744073709551615999ms`, while deserialization rejects values outside `Duration` range |
+| `duration_millis_with_unit_exact` | `"<integer>ms"` | Rejects submillisecond values; whole-millisecond range follows `Duration`, without a `u64` millisecond cap |
+| `duration_with_unit` | Canonical unit string | Exact, with no rounding or saturation |
+
+These examples need only the `duration` feature; they do not require `converter`.
+Add direct dependencies on Serde derive and `serde_json`:
+
+```toml
+[dependencies]
+qubit-datatype = { version = "0.15", default-features = false, features = ["duration"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+```
+
+```rust
+use std::time::Duration;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct NumericDelay {
+    #[serde(with = "qubit_datatype::serde::duration_millis")]
+    delay: Duration,
+}
+
+#[derive(Serialize)]
+struct TextDelay {
+    #[serde(with = "qubit_datatype::serde::duration_millis_with_unit")]
+    delay: Duration,
+}
+
+#[derive(Serialize)]
+struct ExactDelay {
+    #[serde(with = "qubit_datatype::serde::duration_millis_with_unit_exact")]
+    delay: Duration,
+}
+
+fn main() {
+    let rounded = NumericDelay { delay: Duration::from_micros(1_500) };
+    assert_eq!(serde_json::to_value(&rounded).unwrap(), serde_json::json!({"delay": 2}));
+    let inexact = ExactDelay { delay: Duration::from_micros(1_500) };
+    assert!(serde_json::to_string(&inexact).is_err());
+    let exact = ExactDelay { delay: Duration::from_millis(2) };
+    assert_eq!(serde_json::to_value(&exact).unwrap(), serde_json::json!({"delay": "2ms"}));
+    assert!(serde_json::to_string(&NumericDelay { delay: Duration::MAX }).is_err());
+    assert_eq!(
+        serde_json::to_value(&TextDelay { delay: Duration::MAX }).unwrap(),
+        serde_json::json!({"delay": "18446744073709551615999ms"}),
+    );
+}
+```
 
 ### Bound structured input
 

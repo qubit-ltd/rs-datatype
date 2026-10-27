@@ -54,7 +54,10 @@ feature 的 `qubit-datatype = "0.15"` 即可。
 ### 核心工作流
 
 严格策略是默认值：它保留空白，只接受默认的布尔字面量，并拒绝会损失精度的数值和
-Duration 转换。处理环境变量风格的输入时，通常应明确选用 `env_friendly()`。
+Duration 转换。处理环境变量风格的输入时，通常应明确选用 `env_friendly()`。布尔字面量
+匹配优先于数值文本字节数限制。未知布尔文本若超过 `numeric.max_text_bytes`，会返回
+`NumericTextBytes` 限额错误，即使它不是合法整数语法；未超限的未知文本仍返回
+`InvalidBoolean`。错误包含类型和资源上下文，不会保留来源值。
 
 ```rust
 use std::time::Duration;
@@ -251,12 +254,59 @@ assert!(parse_duration_text("1500", &DurationTextOptions::default()).is_err());
 
 Serde 字段应按 wire contract 选择适配器：
 
-| 适配器 | 表示 | 精度 |
+| 适配器 | 表示 | 精度与范围 |
 | --- | --- | --- |
-| `duration_millis` | JSON 数字 | 向毫秒 half-up 舍入 |
-| `duration_millis_with_unit` | `"<integer>ms"` | 向毫秒 half-up 舍入 |
-| `duration_millis_with_unit_exact` | `"<integer>ms"` | 拒绝亚毫秒值 |
-| `duration_with_unit` | 规范化单位字符串 | 精确 |
+| `duration_millis` | JSON 数字 | 向毫秒 half-up 舍入；舍入结果超过 `u64::MAX` 毫秒时返回错误 |
+| `duration_millis_with_unit` | `"<integer>ms"` | 向毫秒 half-up 舍入；序列化在 `18446744073709551615999ms` 饱和，反序列化则拒绝超出 `Duration` 范围的值 |
+| `duration_millis_with_unit_exact` | `"<integer>ms"` | 拒绝亚毫秒值；整毫秒范围遵循 `Duration`，不受 `u64` 毫秒上限约束 |
+| `duration_with_unit` | 规范化单位字符串 | 精确，不进行舍入或饱和 |
+
+以下示例只需启用 `duration`，不需要 `converter`。请直接依赖 Serde derive 和
+`serde_json`：
+
+```toml
+[dependencies]
+qubit-datatype = { version = "0.15", default-features = false, features = ["duration"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+```
+
+```rust
+use std::time::Duration;
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct NumericDelay {
+    #[serde(with = "qubit_datatype::serde::duration_millis")]
+    delay: Duration,
+}
+
+#[derive(Serialize)]
+struct TextDelay {
+    #[serde(with = "qubit_datatype::serde::duration_millis_with_unit")]
+    delay: Duration,
+}
+
+#[derive(Serialize)]
+struct ExactDelay {
+    #[serde(with = "qubit_datatype::serde::duration_millis_with_unit_exact")]
+    delay: Duration,
+}
+
+fn main() {
+    let rounded = NumericDelay { delay: Duration::from_micros(1_500) };
+    assert_eq!(serde_json::to_value(&rounded).unwrap(), serde_json::json!({"delay": 2}));
+    let inexact = ExactDelay { delay: Duration::from_micros(1_500) };
+    assert!(serde_json::to_string(&inexact).is_err());
+    let exact = ExactDelay { delay: Duration::from_millis(2) };
+    assert_eq!(serde_json::to_value(&exact).unwrap(), serde_json::json!({"delay": "2ms"}));
+    assert!(serde_json::to_string(&NumericDelay { delay: Duration::MAX }).is_err());
+    assert_eq!(
+        serde_json::to_value(&TextDelay { delay: Duration::MAX }).unwrap(),
+        serde_json::json!({"delay": "18446744073709551615999ms"}),
+    );
+}
+```
 
 ### 限制结构化输入
 

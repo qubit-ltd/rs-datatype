@@ -121,7 +121,11 @@ pub fn parse(text: &str) -> Result<Duration, DurationParseError> {
 ///
 /// # Errors
 ///
-/// Returns the serializer error if writing the string value fails.
+/// Returns the serializer error if writing the string value fails. Rounding
+/// and formatting use the same saturation behavior as [`format()`]: a half-up
+/// result above the [`Duration`] range is serialized as
+/// `18446744073709551615999ms`. Deserialization does not saturate and rejects
+/// values outside the [`Duration`] range.
 #[inline]
 pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
 where
