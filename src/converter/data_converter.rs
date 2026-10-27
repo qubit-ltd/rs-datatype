@@ -87,6 +87,14 @@ macro_rules! data_converter_data_type_match {
 /// homogeneous collections, [`super::DataConverters`] provides indexed batch
 /// errors on top of the same conversion rules.
 ///
+/// Conversion profiles control normalization and conversion choices; they do
+/// not make every target use the same numeric lexer. In particular,
+/// `BigDecimal` preserves the spellings accepted by its parser, including
+/// `"12_34"`, `"1__2"`, `"12_"`, and `"1_2.5"`, under strict, lossy, and
+/// environment-friendly profiles. Fixed-width integer targets and `BigInt`
+/// require integer numeric syntax and reject these spellings. See the user
+/// guide for the complete text-conversion contract.
+///
 /// # Type Parameters
 ///
 /// * `'a` - Lifetime of borrowed string, big-number, URL, map, and JSON sources

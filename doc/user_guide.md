@@ -95,6 +95,20 @@ The result is observable: the values have their requested Rust types, and no
 conversion rule was selected implicitly. For repeated independent conversions,
 calling `to_with` is sufficient because each call creates a fresh session.
 
+### Profiles and numeric text syntax
+
+Conversion profiles select normalization and conversion behavior, such as
+trimming text or allowing a precision-losing conversion. They do not impose one
+shared lexer on every target type. `BigDecimal` accepts the underscore forms
+supported by its parser under all three profiles: `"12_34"`, `"1__2"`,
+`"12_"`, and `"1_2.5"`. The same text is invalid integer syntax for fixed-width
+integer targets and `BigInt`, so those targets return `InvalidSyntax`.
+
+This target-specific behavior preserves the existing `BigDecimal` parser
+compatibility while keeping integer syntax explicit. Choosing `lossy()` or
+`env_friendly()` does not change which numeric spellings each target parser
+accepts.
+
 ## Advanced usage
 
 ### Read a deployment port list

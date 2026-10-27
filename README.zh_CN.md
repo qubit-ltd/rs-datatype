@@ -85,6 +85,9 @@ assert_eq!(retry, Duration::from_millis(1500));
 `ConversionPolicy::env_friendly()`。错误会保留稳定分类与类型上下文，但不保存来源值，因此应用
 可以报告失败而不会由本 crate 意外暴露环境变量等机密内容。
 
+数值文本语法按目标类型区分：`BigDecimal` 保留其解析器接受的下划线形式，整数目标则会拒绝。
+详见[用户手册中的数值文本说明](doc/user_guide.zh_CN.md#profile-与数值文本语法)。
+
 将文本转换为 `chrono::DateTime<Utc>` 时，必须使用带显式时区偏移的 RFC 3339 格式，秒的小数部分最多
 9 位。所有转换策略都会拒绝超过 9 位的输入，包括末尾为零的多余位数。请在转换前按领域规则处理舍入，
 或直接传入已构造的 `DateTime<Utc>`。

@@ -95,6 +95,10 @@ rounding, and inexact Duration output. `ConversionPolicy::lossy()` and
 stable kind and type context, but not source values, so the crate does not
 expose secrets such as environment-variable contents.
 
+Numeric text syntax is target-specific: `BigDecimal` preserves underscore
+forms accepted by its parser, while integer targets reject them. See the
+[numeric text section of the user guide](doc/user_guide.md#profiles-and-numeric-text-syntax).
+
 Text converted to `chrono::DateTime<Utc>` must use RFC 3339 with an explicit
 offset and at most nine fractional second digits. Inputs with more digits are
 rejected, including trailing zeros, under every conversion policy. Apply any
