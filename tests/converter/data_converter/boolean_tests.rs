@@ -10,6 +10,7 @@
 #[cfg(feature = "big-integer")]
 use num_bigint::BigInt;
 use proptest::proptest;
+use qubit_datatype::BooleanConversionPolicy;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
@@ -124,6 +125,45 @@ fn test_data_converter_bool_numeric_text_limit() {
     assert_eq!(error.resource(), Some(ConversionResource::NumericTextBytes));
     assert_eq!(error.configured_limit(), Some(1));
     assert_eq!(error.observed_lower_bound(), Some(2));
+}
+
+#[test]
+fn test_data_converter_bool_limits_unknown_text_before_syntax() {
+    let policy = ConversionPolicy::strict();
+    let limits = ConversionLimits::builder()
+        .numeric_limits(NumericConversionLimits::builder().max_text_bytes(4).build())
+        .build();
+    let input = format!("{}x", "0".repeat(16_384));
+    let error = DataConverter::from(input.as_str())
+        .to_with::<bool>(&policy, &limits)
+        .expect_err("unknown oversized Boolean text must be rejected by the byte limit");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(error.resource(), Some(ConversionResource::NumericTextBytes));
+    assert_eq!(error.configured_limit(), Some(4));
+    assert_eq!(error.observed_lower_bound(), Some(input.len() as u64));
+    assert_eq!(error.from_type(), Some(DataType::String));
+    assert_eq!(error.to_type(), DataType::Bool);
+}
+
+#[test]
+fn test_data_converter_bool_keeps_literal_and_short_invalid_precedence() {
+    let boolean = BooleanConversionPolicy::builder()
+        .true_literal("00000x")
+        .build()
+        .expect("custom literal is disjoint from false literals");
+    let policy = ConversionPolicy::builder().boolean_policy(boolean).build();
+    let limits = ConversionLimits::builder()
+        .numeric_limits(NumericConversionLimits::builder().max_text_bytes(4).build())
+        .build();
+    assert_eq!(
+        DataConverter::from("00000x").to_with::<bool>(&policy, &limits),
+        Ok(true)
+    );
+    assert_eq!(DataConverter::from("true").to_with::<bool>(&policy, &limits), Ok(true));
+    let error = DataConverter::from("nope")
+        .to_with::<bool>(&policy, &limits)
+        .expect_err("short unknown text remains an invalid Boolean");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::InvalidBoolean));
 }
 
 proptest! {

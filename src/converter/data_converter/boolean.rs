@@ -67,7 +67,8 @@ fn integer_to_bool(
 ///
 /// * `value` - Source string before configured normalization.
 /// * `options` - String normalization and Boolean literal and numeric policies.
-/// * `limits` - Numeric text byte limit applied before parsing.
+/// * `limits` - Numeric text byte limit applied to fallback text after literal
+///   matching.
 ///
 /// # Returns
 ///
@@ -75,8 +76,9 @@ fn integer_to_bool(
 ///
 /// # Errors
 ///
-/// Returns a normalization or numeric-text limit error when those policies
-/// reject the input, or an invalid-Boolean error for unknown literals and
+/// Returns a normalization error when normalization rejects the input, a
+/// numeric-text limit error when an unmatched literal exceeds the configured
+/// byte limit, or an invalid-Boolean error for short unknown literals and
 /// rejected numeric values.
 fn string_to_bool(
     value: &str,
@@ -87,6 +89,7 @@ fn string_to_bool(
     if let Some(value) = options.boolean().parse(value) {
         return Ok(value);
     }
+    check_numeric_text_limit(value, limits, DataType::Bool)?;
     if !is_integer_syntax(value) {
         return Err(DataConversionError::invalid(
             DataType::String,
@@ -94,7 +97,6 @@ fn string_to_bool(
             InvalidValueReason::InvalidBoolean,
         ));
     }
-    check_numeric_text_limit(value, limits, DataType::Bool)?;
     let digits = value.strip_prefix(['+', '-']).unwrap_or(value);
     let zero = digits.bytes().all(|byte| byte == b'0');
     let one = !value.starts_with('-') && digits.trim_start_matches('0') == "1";
