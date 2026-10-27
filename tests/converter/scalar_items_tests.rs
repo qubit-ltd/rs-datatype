@@ -173,3 +173,74 @@ fn test_scalar_items_can_be_cloned_before_iteration() {
         "alpha"
     );
 }
+
+#[test]
+fn test_scalar_items_clone_after_partial_consumption_is_independent() {
+    let options = CollectionConversionPolicy::builder()
+        .split_scalar_strings(true)
+        .empty_item_policy(EmptyItemPolicy::Skip)
+        .build();
+    let limits = CollectionConversionLimits::builder().max_items(2).build();
+    let mut original = options.scalar_items(&limits, "a,,b,c");
+
+    let first = original
+        .next()
+        .expect("first item should exist")
+        .expect("first item should be valid");
+    assert_eq!((first.source_index, first.value), (0, "a"));
+
+    let mut cloned = original.clone();
+
+    let original_second = original
+        .next()
+        .expect("second original item should exist")
+        .expect("second original item should be valid");
+    assert_eq!((original_second.source_index, original_second.value), (2, "b"));
+    let cloned_second = cloned
+        .next()
+        .expect("second cloned item should exist")
+        .expect("second cloned item should be valid");
+    assert_eq!((cloned_second.source_index, cloned_second.value), (2, "b"));
+
+    let original_limit = original
+        .next()
+        .expect("original limit error should exist")
+        .expect_err("third retained original item should exceed the limit");
+    assert_eq!(original_limit.source_index(), 3);
+    assert_eq!(original_limit.maximum_items(), Some(2));
+    let cloned_limit = cloned
+        .next()
+        .expect("cloned limit error should exist")
+        .expect_err("third retained cloned item should exceed the limit");
+    assert_eq!(cloned_limit.source_index(), 3);
+    assert_eq!(cloned_limit.maximum_items(), Some(2));
+    assert!(original.next().is_none());
+    assert!(original.next().is_none());
+    assert!(cloned.next().is_none());
+
+    let mut exhausted_clone = original.clone();
+    assert!(exhausted_clone.next().is_none());
+    assert!(exhausted_clone.next().is_none());
+}
+
+#[test]
+fn test_scalar_items_clone_after_normal_exhaustion_stays_exhausted() {
+    let options = CollectionConversionPolicy::builder().split_scalar_strings(true).build();
+    let limits = CollectionConversionLimits::default();
+    let mut original = options.scalar_items(&limits, "a");
+
+    assert_eq!(
+        original
+            .next()
+            .expect("only item should exist")
+            .expect("only item should be valid")
+            .value,
+        "a"
+    );
+    assert!(original.next().is_none());
+
+    let mut cloned = original.clone();
+    assert!(cloned.next().is_none());
+    assert!(cloned.next().is_none());
+    assert!(original.next().is_none());
+}

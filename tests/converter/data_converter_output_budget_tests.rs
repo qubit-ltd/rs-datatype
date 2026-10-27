@@ -45,6 +45,10 @@ fn test_string_output_budget_counts_borrowed_and_owned_payloads_equally() {
         DataConverter::from(42_i32).into_target_in::<String>(&mut owned_session),
         Ok("42".to_owned()),
     );
+    assert_eq!(borrowed_session.output_bytes_used(), 2);
+    assert_eq!(borrowed_session.output_bytes_remaining(), 1);
+    assert_eq!(owned_session.output_bytes_used(), 2);
+    assert_eq!(owned_session.output_bytes_remaining(), 1);
 }
 
 #[test]
@@ -74,12 +78,46 @@ fn test_string_output_budget_failure_is_transactional() {
 #[test]
 fn test_string_output_budget_counts_utf8_bytes() {
     let policy = ConversionPolicy::default();
-    let limits = limits_with_output_limit("é".len());
-
-    assert_eq!(
-        DataConverter::from("é").to_with::<String>(&policy, &limits),
-        Ok("é".to_owned()),
-    );
+    for source_owned in [false, true] {
+        for consume_converter in [false, true] {
+            for maximum in [1_usize, 2] {
+                let limits = limits_with_output_limit(maximum);
+                let mut session = ConversionSession::new(&policy, &limits);
+                let result = if source_owned {
+                    let converter = DataConverter::from(String::from("é"));
+                    if consume_converter {
+                        converter.into_target_in::<String>(&mut session)
+                    } else {
+                        converter.to_in::<String>(&mut session)
+                    }
+                } else {
+                    let converter = DataConverter::from("é");
+                    if consume_converter {
+                        converter.into_target_in::<String>(&mut session)
+                    } else {
+                        converter.to_in::<String>(&mut session)
+                    }
+                };
+                if maximum == 1 {
+                    let error = result.expect_err("two UTF-8 bytes exceed one byte");
+                    assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+                    assert_eq!(session.output_bytes_used(), 0);
+                    assert_eq!(session.output_bytes_remaining(), 1);
+                    assert_eq!(DataConverter::from("a").to_in::<String>(&mut session).unwrap(), "a",);
+                    assert_eq!(session.output_bytes_used(), 1);
+                    assert_eq!(session.output_bytes_remaining(), 0);
+                } else {
+                    assert_eq!(result.unwrap(), "é");
+                    assert_eq!(session.output_bytes_used(), 2);
+                    assert_eq!(session.output_bytes_remaining(), 0);
+                    let error = DataConverter::from("a").to_in::<String>(&mut session).unwrap_err();
+                    assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+                    assert_eq!(session.output_bytes_used(), 2);
+                    assert_eq!(session.output_bytes_remaining(), 0);
+                }
+            }
+        }
+    }
 }
 
 #[test]
