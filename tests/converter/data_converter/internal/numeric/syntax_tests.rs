@@ -12,7 +12,7 @@ use std::str::FromStr;
 
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-#[cfg(feature = "big-integer")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_bigint::BigInt;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionPolicy;
@@ -69,6 +69,31 @@ fn test_big_integer_text_decimal_boundaries_preserve_exact_values() {
     }
 }
 
+/// Verifies a 16 KiB integer text parses through the public API.
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_big_integer_text_parses_16_kib_integer() {
+    let digits = "9".repeat(16_384);
+    let expected = BigInt::from(10_u8).pow(16_384) - BigInt::from(1_u8);
+    let limits = ConversionLimits::builder()
+        .numeric_limits(
+            NumericConversionLimits::builder()
+                .max_text_bytes(16_388)
+                .max_big_integer_digits(16_384)
+                .build(),
+        )
+        .build();
+
+    assert_eq!(
+        DataConverter::from(digits.as_str()).to_with::<BigInt>(&ConversionPolicy::default(), &limits),
+        Ok(expected.clone()),
+    );
+    assert_eq!(
+        DataConverter::from(format!("{digits}.000").as_str()).to_with::<BigInt>(&ConversionPolicy::default(), &limits),
+        Ok(expected),
+    );
+}
+
 /// Verifies integer-number text preserves exact values at digit boundaries.
 #[cfg(feature = "big-decimal")]
 #[test]
@@ -78,6 +103,28 @@ fn test_big_decimal_integer_text_decimal_boundaries_preserve_exact_values() {
         let expected = BigDecimal::from_str(&digits).expect("the expected integer should parse");
         assert_eq!(DataConverter::from(digits.as_str()).to::<BigDecimal>(), Ok(expected),);
     }
+}
+
+/// Verifies a 16 KiB integer text parses through the public API.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_big_decimal_integer_text_parses_16_kib_integer() {
+    let digits = "9".repeat(16_384);
+    let expected_integer = BigInt::from(10_u8).pow(16_384) - BigInt::from(1_u8);
+    let expected = BigDecimal::from(expected_integer);
+    let limits = ConversionLimits::builder()
+        .numeric_limits(
+            NumericConversionLimits::builder()
+                .max_text_bytes(16_388)
+                .max_big_decimal_coefficient_digits(16_384)
+                .build(),
+        )
+        .build();
+
+    assert_eq!(
+        DataConverter::from(digits.as_str()).to_with::<BigDecimal>(&ConversionPolicy::default(), &limits),
+        Ok(expected),
+    );
 }
 
 /// Verifies signs, leading zeroes, zero, decimal points, and exponents keep
@@ -111,5 +158,37 @@ fn test_big_decimal_integer_sign_zero_and_leading_zero_semantics() {
             Ok(BigDecimal::from_str(expected).expect("expected value should parse")),
             "source: {source}",
         );
+    }
+}
+
+/// Verifies BigDecimal keeps its parser-compatible underscore spellings while
+/// integer targets require integer numeric syntax.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_big_decimal_text_preserves_underscore_compatibility() {
+    for (source, expected) in [("12_34", "1234"), ("1__2", "12"), ("12_", "12"), ("1_2.5", "12.5")] {
+        let expected = BigDecimal::from_str(expected).expect("expected value should parse");
+        for policy in [
+            ConversionPolicy::strict(),
+            ConversionPolicy::lossy(),
+            ConversionPolicy::env_friendly(),
+        ] {
+            assert_eq!(
+                DataConverter::from(source).to_with::<BigDecimal>(&policy, &ConversionLimits::default(),),
+                Ok(expected.clone()),
+                "source: {source}",
+            );
+        }
+        assert!(matches!(
+            DataConverter::from(source).to::<i128>(),
+            Err(error) if matches!(error.reason(),
+                Some(InvalidValueReason::InvalidSyntax { .. }))
+        ));
+        #[cfg(feature = "big-integer")]
+        assert!(matches!(
+            DataConverter::from(source).to::<BigInt>(),
+            Err(error) if matches!(error.reason(),
+                Some(InvalidValueReason::InvalidSyntax { .. }))
+        ));
     }
 }

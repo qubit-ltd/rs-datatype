@@ -66,6 +66,64 @@ fn test_text_to_big_decimal_preserves_value() {
     assert_eq!(DataConverter::from("123.50").to::<BigDecimal>(), Ok(expected),);
 }
 
+/// Verifies fixed-width overflow is reported before decimal power construction.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_decimal_fixed_integer_overflow_preserves_error_priority() {
+    use qubit_datatype::InvalidValueReason;
+
+    let coefficient = num_bigint::BigInt::from(10_u8).pow(10_000);
+    let policy = qubit_datatype::ConversionPolicy::strict();
+    let limits = qubit_datatype::ConversionLimits::default();
+    for coefficient in [coefficient.clone(), -coefficient] {
+        let value = BigDecimal::new(coefficient.clone(), 5_000);
+        let error = DataConverter::from(&value)
+            .to_with::<i32>(&policy, &limits)
+            .expect_err("a huge integral result must be out of range");
+        assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+
+        let fractional = BigDecimal::new(coefficient + 1, 5_000);
+        let error = DataConverter::from(&fractional)
+            .to_with::<i32>(&policy, &limits)
+            .expect_err("strict conversion must prioritize fractional precision loss");
+        assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
+    }
+}
+
+/// Verifies positive-scale decimal conversion preserves fixed-width boundaries.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_decimal_positive_scale_preserves_fixed_integer_boundaries() {
+    use qubit_datatype::InvalidValueReason;
+
+    let minimum = BigDecimal::new(num_bigint::BigInt::from(i128::MIN) * 10_u8, 1);
+    assert_eq!(DataConverter::from(&minimum).to::<i128>(), Ok(i128::MIN));
+
+    let maximum = BigDecimal::new(num_bigint::BigInt::from(u128::MAX) * 10_u8, 1);
+    assert_eq!(DataConverter::from(&maximum).to::<u128>(), Ok(u128::MAX));
+
+    let overflow = BigDecimal::new((num_bigint::BigInt::from(u128::MAX) + 1_u8) * 10_u8, 1);
+    let error = DataConverter::from(&overflow)
+        .to::<u128>()
+        .expect_err("the next value above u128::MAX must be out of range");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+
+    let negative_fraction = BigDecimal::from_str("-12.9").expect("valid test decimal");
+    assert_eq!(
+        DataConverter::from(&negative_fraction).to_with::<i32>(
+            &qubit_datatype::ConversionPolicy::lossy(),
+            &qubit_datatype::ConversionLimits::default(),
+        ),
+        Ok(-12),
+    );
+
+    let less_than_one = BigDecimal::from_str("0.1").expect("valid test decimal");
+    let error = DataConverter::from(&less_than_one)
+        .to::<i32>()
+        .expect_err("strict conversion must reject a nonzero fraction below one");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
+}
+
 /// Verifies primitive sources honor the BigInteger result digit limit.
 #[cfg(feature = "big-integer")]
 #[test]
