@@ -163,8 +163,8 @@ pub(super) fn enforce_big_decimal_limits(
 ///
 /// Returns a precision error for a fractional value under
 /// [`FractionalToIntegerPolicy::Reject`], a resource limit error when a
-/// `BigInt` result would exceed `maximum_digits`, or a range error before
-/// constructing an impractically large fixed-width intermediate.
+/// `BigInt` result would exceed `maximum_digits`, or a fixed-width range error
+/// before constructing the scale divisor for an oversized result.
 #[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_bigint(
     value: &BigDecimal,
@@ -173,9 +173,9 @@ pub(super) fn decimal_to_bigint(
     from: DataType,
     to: DataType,
 ) -> Result<BigInt, DataConversionError> {
-    let (coefficient, scale) = value.as_bigint_and_exponent();
-    if coefficient == BigInt::from(0u8) {
-        return Ok(coefficient);
+    let (coefficient, scale) = value.as_bigint_and_scale();
+    if coefficient.as_ref() == &BigInt::from(0u8) {
+        return Ok(coefficient.into_owned());
     }
     if scale <= 0 {
         let exponent = scale.unsigned_abs();
@@ -195,10 +195,10 @@ pub(super) fn decimal_to_bigint(
         if (to.is_integer() && to != DataType::BigInteger && result_digits > 39) || exponent > u64::from(u32::MAX) {
             return Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange));
         }
-        return Ok(coefficient * BigInt::from(10u8).pow(exponent as u32));
+        return Ok(coefficient.as_ref() * BigInt::from(10u8).pow(exponent as u32));
     }
 
-    let coefficient_text = coefficient.to_str_radix(10);
+    let coefficient_text = coefficient.as_ref().to_str_radix(10);
     let coefficient_digits = coefficient_text.trim_start_matches('-').len();
     if scale as u64 >= coefficient_digits as u64 {
         return if policy == FractionalToIntegerPolicy::Reject {
@@ -234,8 +234,11 @@ pub(super) fn decimal_to_bigint(
             },
         ));
     }
+    if to.is_integer() && to != DataType::BigInteger && result_digits > 39 {
+        return Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange));
+    }
     let divisor = BigInt::from(10u8).pow(scale as u32);
-    let quotient = &coefficient / &divisor;
+    let quotient = coefficient.as_ref() / &divisor;
     Ok(quotient)
 }
 

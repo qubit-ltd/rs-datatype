@@ -115,9 +115,7 @@ pub(super) fn parse_number(value: &str, to: DataType) -> Result<ParsedNumber, Da
     if is_integer_syntax(value) {
         let negative = value.starts_with('-');
         let digits = value.strip_prefix(['+', '-']).unwrap_or(value);
-        let integer = digits
-            .bytes()
-            .fold(BigInt::from(0u8), |value, digit| value * 10u8 + (digit - b'0'));
+        let integer = BigInt::parse_bytes(digits.as_bytes(), 10).ok_or_else(|| invalid_numeric_syntax(to))?;
         return Ok(ParsedNumber::Integer(if negative { -integer } else { integer }));
     }
     match BigDecimal::from_str(value) {
@@ -530,11 +528,16 @@ pub(super) fn parse_text_bigint(
             },
         ));
     }
-    let mut integer = mantissa
+    let Some(first_non_zero) = first_non_zero else {
+        return Ok(BigInt::from(0_u8));
+    };
+    let digits = mantissa
         .bytes()
         .filter(u8::is_ascii_digit)
         .take(integer_digit_count)
-        .fold(BigInt::from(0_u8), |value, digit| value * 10_u8 + (digit - b'0'));
+        .skip(first_non_zero)
+        .collect::<Vec<_>>();
+    let mut integer = BigInt::parse_bytes(&digits, 10).ok_or_else(|| invalid_numeric_syntax(to))?;
     if appended_zeros > 0 && integer != BigInt::from(0_u8) {
         let exponent = u32::try_from(appended_zeros)
             .map_err(|_| DataConversionError::invalid(DataType::String, to, InvalidValueReason::OutOfRange))?;

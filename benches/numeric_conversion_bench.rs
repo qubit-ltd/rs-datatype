@@ -167,6 +167,30 @@ fn benchmark_big_decimal_text(c: &mut Criterion) {
     let _ = c;
 }
 
+/// Benchmarks rejecting a materialized decimal that exceeds a fixed integer
+/// range.
+fn benchmark_big_decimal_integer_overflow(c: &mut Criterion) {
+    #[cfg(feature = "big-decimal")]
+    {
+        let source = bigdecimal::BigDecimal::new(num_bigint::BigInt::from(10_u8).pow(10_000), 5_000);
+        let policy = ConversionPolicy::strict();
+        let limits = ConversionLimits::default();
+        let error = DataConverter::from(&source)
+            .to_with::<i32>(&policy, &limits)
+            .expect_err("the fixture exceeds the integer range");
+        assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+        c.bench_function("materialized_decimal_to_i32_overflow", |b| {
+            b.iter(|| {
+                black_box(
+                    DataConverter::from(black_box(&source)).to_with::<i32>(black_box(&policy), black_box(&limits)),
+                )
+            });
+        });
+    }
+    #[cfg(not(feature = "big-decimal"))]
+    let _ = c;
+}
+
 criterion_group!(
     benches,
     benchmark_exact_integer_text,
@@ -174,5 +198,6 @@ criterion_group!(
     benchmark_exact_float_text,
     benchmark_big_integer_text,
     benchmark_big_decimal_text,
+    benchmark_big_decimal_integer_overflow,
 );
 criterion_main!(benches);
