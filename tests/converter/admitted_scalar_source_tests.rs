@@ -13,6 +13,7 @@ use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::ConversionSession;
+use qubit_datatype::DataConversionErrorKind;
 use qubit_datatype::DataType;
 use qubit_datatype::EmptyItemPolicy;
 
@@ -34,6 +35,35 @@ fn test_source_admission_preserves_indices_and_charges_once() {
     }
     assert_eq!(session.input_bytes_used(), 4);
     assert_eq!(session.items_used(), 2);
+}
+
+/// A target conversion failure leaves later admitted source items readable.
+#[test]
+fn test_source_target_conversion_failure_allows_later_items() {
+    let policy = ConversionPolicy::env_friendly();
+    let limits = ConversionLimits::default();
+    let mut session = ConversionSession::new(&policy, &limits);
+    {
+        let mut source = session.admit_scalar_string_source("1,bad,3").expect("source fits");
+        let first = source.next_item().expect("first item").expect("first admission");
+        assert_eq!(first.source_index(), 0);
+        assert_eq!(first.convert::<u8>(), Ok(1));
+
+        let second = source.next_item().expect("second item").expect("second admission");
+        assert_eq!(second.source_index(), 1);
+        let error = second.convert::<u8>().expect_err("invalid integer text");
+        assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+        assert_eq!(error.from_type(), Some(DataType::String));
+        assert_eq!(error.to_type(), DataType::UInt8);
+
+        let third = source.next_item().expect("third item").expect("third admission");
+        assert_eq!(third.source_index(), 2);
+        assert_eq!(third.convert::<u8>(), Ok(3));
+        assert!(source.next_item().is_none());
+    }
+    assert_eq!(session.items_used(), 3);
+    assert_eq!(session.input_bytes_used(), 7);
+    assert_eq!(session.output_bytes_used(), 0);
 }
 
 /// Rejected source admission does not scan or charge its elements.
