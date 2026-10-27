@@ -186,7 +186,7 @@ where
         let capacity = self.trusted_capacity.map_or(0, |capacity| {
             capacity.min(usize::try_from(session.remaining_items()).unwrap_or(usize::MAX))
         });
-        let mut converted = Vec::with_capacity(capacity);
+        let mut converted = Vec::new();
         for (index, source) in sources.enumerate() {
             let value = match source.into().into_target_in::<T>(session) {
                 Ok(value) => value,
@@ -194,6 +194,9 @@ where
                     return Err(DataListConversionError::new(index, source));
                 }
             };
+            if index == 0 {
+                converted = Vec::with_capacity(capacity);
+            }
             converted.push(value);
         }
         Ok(converted)

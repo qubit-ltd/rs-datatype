@@ -22,6 +22,7 @@ use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::ConversionSession;
 use qubit_datatype::DataConverter;
+use qubit_datatype::DataConverters;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::NumericConversionLimits;
 use qubit_datatype::converter::CollectionConversionLimits;
@@ -81,6 +82,44 @@ unsafe impl GlobalAlloc for TrackingAllocator {
 
 #[global_allocator]
 static ALLOCATOR: TrackingAllocator = TrackingAllocator;
+
+/// Batch rejection must not allocate target slots for unvisited items.
+#[test]
+fn test_batch_rejection_does_not_preallocate_target_slots() {
+    const COUNT: usize = 65_536;
+    let policy = ConversionPolicy::strict();
+    for (input_maximum, output_maximum, resource, expected_input) in [
+        (0, 64 * 1024 * 1024, ConversionResource::InputBytes, 0),
+        (64 * 1024 * 1024, 0, ConversionResource::OutputBytes, 1),
+    ] {
+        let limits = ConversionLimits::builder()
+            .operation_limits(
+                ConversionOperationLimits::builder()
+                    .max_items(COUNT as u64)
+                    .max_input_bytes(input_maximum)
+                    .max_output_bytes(output_maximum)
+                    .build(),
+            )
+            .build();
+        for adapter in 0..4 {
+            let values = vec![String::from("1"); COUNT];
+            let mut session = ConversionSession::new(&policy, &limits);
+            let (result, maximum) = measure(|| match adapter {
+                0 => DataConverters::from(values.as_slice()).to_vec_in::<String>(&mut session),
+                1 => DataConverters::from(&values).to_vec_in::<String>(&mut session),
+                2 => DataConverters::from(values).to_vec_in::<String>(&mut session),
+                _ => DataConverters::from_iterator(values.iter()).to_vec_in::<String>(&mut session),
+            });
+            let error = result.expect_err("the first item must exceed its budget");
+            assert_eq!(error.source_index(), 0);
+            assert_eq!(error.conversion_error().resource(), Some(resource));
+            assert_eq!(session.items_used(), 1);
+            assert_eq!(session.input_bytes_used(), expected_input);
+            assert_eq!(session.output_bytes_used(), 0);
+            assert!(maximum < 4096, "adapter {adapter} allocated {maximum} bytes");
+        }
+    }
+}
 
 /// Stops measurement even when the measured operation unwinds.
 struct MeasurementGuard;
