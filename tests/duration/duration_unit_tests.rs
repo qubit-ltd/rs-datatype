@@ -43,7 +43,8 @@ fn test_duration_unit_exact_and_rounded_units() {
     assert_eq!(DurationUnit::Milliseconds.rounded_units(inexact), 2);
 }
 
-/// Tests that every unit converts boundary counts without losing precision.
+/// Tests that every unit converts representative counts without losing
+/// precision.
 #[test]
 fn test_duration_unit_converts_supported_counts() {
     let cases = [
@@ -65,4 +66,51 @@ fn test_duration_unit_converts_supported_counts() {
         DurationUnit::Days.duration_from_u128(u128::MAX),
         Err(DurationOverflowError),
     );
+}
+
+/// Tests the maximum representable count and the adjacent overflow for each
+/// unit.
+#[test]
+fn test_duration_unit_maximum_and_adjacent_overflow() {
+    let cases = [
+        (DurationUnit::Nanoseconds, 1_u128),
+        (DurationUnit::Microseconds, 1_000),
+        (DurationUnit::Milliseconds, 1_000_000),
+        (DurationUnit::Seconds, 1_000_000_000),
+        (DurationUnit::Minutes, 60_000_000_000),
+        (DurationUnit::Hours, 3_600_000_000_000),
+        (DurationUnit::Days, 86_400_000_000_000),
+    ];
+    for (unit, nanos_per_unit) in cases {
+        let maximum = Duration::MAX.as_nanos() / nanos_per_unit;
+        let total_nanos = maximum * nanos_per_unit;
+        let expected = Duration::new(
+            u64::try_from(total_nanos / 1_000_000_000).expect("seconds fit Duration"),
+            u32::try_from(total_nanos % 1_000_000_000).expect("subsecond remainder fits u32"),
+        );
+        assert_eq!(unit.duration_from_u128(maximum), Ok(expected), "maximum for {unit:?}");
+        assert_eq!(
+            unit.duration_from_u128(maximum + 1),
+            Err(DurationOverflowError),
+            "adjacent overflow for {unit:?}",
+        );
+        if let Ok(maximum_u64) = u64::try_from(maximum) {
+            assert_eq!(unit.duration_from_u64(maximum_u64), Ok(expected));
+            if let Some(next) = maximum_u64.checked_add(1) {
+                assert_eq!(
+                    unit.duration_from_u64(next),
+                    Err(DurationOverflowError),
+                    "adjacent u64 overflow for {unit:?}",
+                );
+            }
+        } else {
+            let from_u64 = unit.duration_from_u64(u64::MAX);
+            assert!(from_u64.is_ok(), "u64 count is within range for {unit:?}");
+            assert_eq!(
+                from_u64,
+                unit.duration_from_u128(u128::from(u64::MAX)),
+                "u64 maximum matches u128 conversion for {unit:?}",
+            );
+        }
+    }
 }
