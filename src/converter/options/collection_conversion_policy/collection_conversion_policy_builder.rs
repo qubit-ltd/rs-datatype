@@ -11,6 +11,33 @@ use super::CollectionConversionPolicy;
 use crate::converter::options::EmptyItemPolicy;
 
 /// Builder for [`CollectionConversionPolicy`].
+///
+/// Enable scalar string splitting explicitly before configuring delimiters.
+/// The example trims each item and skips empty entries.
+///
+/// # Examples
+///
+/// ```rust
+/// use qubit_datatype::CollectionConversionPolicy;
+/// use qubit_datatype::ConversionLimits;
+/// use qubit_datatype::ConversionPolicy;
+/// use qubit_datatype::EmptyItemPolicy;
+/// use qubit_datatype::ScalarStringDataConverters;
+///
+/// let collection = CollectionConversionPolicy::builder()
+///     .split_scalar_strings(true)
+///     .delimiters([',', ';'])
+///     .trim_items(true)
+///     .empty_item_policy(EmptyItemPolicy::Skip)
+///     .build();
+/// let policy = ConversionPolicy::builder()
+///     .collection_policy(collection)
+///     .build();
+/// let ports = ScalarStringDataConverters::from("8080,, 8443;9000")
+///     .to_vec_with::<u16>(&policy, &ConversionLimits::default())
+///     .expect("all configured ports should be valid");
+/// assert_eq!(ports, vec![8080, 8443, 9000]);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CollectionConversionPolicyBuilder {
     /// Collection policy being configured.

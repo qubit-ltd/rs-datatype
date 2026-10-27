@@ -12,6 +12,32 @@ use crate::duration::DurationUnitParseMode;
 use crate::duration::SuffixlessDurationPolicy;
 
 /// Builder for [`DurationTextOptions`].
+///
+/// Choose an explicit unit for suffixless input and bound the accepted text
+/// length.
+///
+/// # Examples
+///
+/// ```rust
+/// use std::time::Duration;
+///
+/// use qubit_datatype::DurationTextOptions;
+/// use qubit_datatype::DurationUnit;
+/// use qubit_datatype::DurationUnitParseMode;
+/// use qubit_datatype::SuffixlessDurationPolicy;
+/// use qubit_datatype::parse_duration_text;
+///
+/// let options = DurationTextOptions::builder()
+///     .suffixless_policy(SuffixlessDurationPolicy::Assume(DurationUnit::Milliseconds))
+///     .unit_parse_mode(DurationUnitParseMode::Lenient)
+///     .max_text_bytes(32)
+///     .build();
+/// let duration = parse_duration_text("1500", &options)
+///     .expect("suffixless input uses the configured unit");
+/// assert_eq!(duration, Duration::from_millis(1500));
+/// assert_eq!(options.unit_parse_mode(), DurationUnitParseMode::Lenient);
+/// assert_eq!(options.max_text_bytes(), 32);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DurationTextOptionsBuilder {
     /// Duration text options being configured.
