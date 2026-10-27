@@ -165,11 +165,21 @@ fn test_session_observability_methods() {
     let limits = ConversionLimits::default();
     let mut session = ConversionSession::new(&policy, &limits);
 
+    assert_eq!(session.items_used(), 0);
+    assert_eq!(session.input_bytes_used(), 0);
+    assert_eq!(session.output_bytes_used(), 0);
+    assert_eq!(session.items_remaining(), session.items_limit());
+    assert_eq!(session.input_bytes_remaining(), session.input_bytes_limit());
+    assert_eq!(session.output_bytes_remaining(), session.output_bytes_limit());
+
     assert_eq!(session.policy(), &policy);
     assert_eq!(session.limits(), &limits);
-    DataConverter::from("ok")
-        .to_in::<String>(&mut session)
-        .expect("public conversion should fit");
+    assert_eq!(
+        DataConverter::from("ok")
+            .to_in::<String>(&mut session)
+            .expect("public conversion should fit"),
+        "ok",
+    );
 
     assert_eq!(session.items_limit(), limits.operation().max_items());
     assert_eq!(session.input_bytes_limit(), limits.operation().max_input_bytes());
@@ -182,12 +192,41 @@ fn test_session_observability_methods() {
         session.structured_payload_bytes_limit(),
         limits.operation().max_structured_payload_bytes()
     );
-    assert!(session.items_remaining() <= session.items_limit());
-    assert!(session.items_used() <= session.items_limit());
-    assert!(session.input_bytes_used() <= session.input_bytes_limit());
-    assert!(session.input_bytes_remaining() <= session.input_bytes_limit());
-    assert!(session.output_bytes_used() <= session.output_bytes_limit());
-    assert!(session.output_bytes_remaining() <= session.output_bytes_limit());
+    assert_eq!(session.items_used(), 1);
+    assert_eq!(session.input_bytes_used(), 2);
+    assert_eq!(session.output_bytes_used(), 2);
+    assert_eq!(session.items_remaining(), session.items_limit() - 1);
+    assert_eq!(session.input_bytes_remaining(), session.input_bytes_limit() - 2);
+    assert_eq!(session.output_bytes_remaining(), session.output_bytes_limit() - 2);
     assert_eq!(session.structured_nodes_used(), 0);
     assert_eq!(session.structured_payload_bytes_used(), 0);
+}
+
+/// Verifies public remaining-capacity accessors at exact exhaustion.
+#[test]
+fn test_session_observability_at_exact_exhaustion() {
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder()
+                .max_items(1)
+                .max_input_bytes(2)
+                .max_output_bytes(2)
+                .build(),
+        )
+        .build();
+    let mut session = ConversionSession::new(&policy, &limits);
+
+    assert_eq!(
+        DataConverter::from("ok")
+            .to_in::<String>(&mut session)
+            .expect("the exact item and byte budgets should fit"),
+        "ok",
+    );
+    assert_eq!(session.items_used(), 1);
+    assert_eq!(session.input_bytes_used(), 2);
+    assert_eq!(session.output_bytes_used(), 2);
+    assert_eq!(session.items_remaining(), 0);
+    assert_eq!(session.input_bytes_remaining(), 0);
+    assert_eq!(session.output_bytes_remaining(), 0);
 }

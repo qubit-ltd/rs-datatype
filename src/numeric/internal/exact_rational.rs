@@ -97,9 +97,11 @@ pub(in crate::numeric) fn f64_rational(value: f64) -> BigRational {
 ///
 /// # Returns
 ///
-/// The exact decimal value when its scale fits `u32`, otherwise `None` so the
-/// caller can use `BigDecimal`'s exact scale-aware comparator without an
-/// impractically large power allocation.
+/// The exact decimal value when the absolute scale is at most
+/// `MAX_MATERIALIZED_DECIMAL_SCALE` (4096). Returns `None` when the absolute
+/// scale cannot be represented as `u32` or exceeds that bound, so the caller
+/// can use `BigDecimal`'s exact scale-aware comparator without materializing
+/// an impractically large power of ten.
 #[cfg(feature = "big-decimal")]
 pub(in crate::numeric) fn decimal_rational(value: &BigDecimal) -> Option<BigRational> {
     let (coefficient, scale) = value.as_bigint_and_exponent();

@@ -309,7 +309,27 @@ fn test_delegate_preserves_output_budget() {
     let error = DataConverter::from(42_u16)
         .to_in::<Text>(&mut session)
         .expect_err("delegated String output should share the one-byte budget");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+    assert_eq!(error.from_type(), Some(DataType::UInt16));
     assert_eq!(error.to_type(), DataType::String);
+    assert_eq!(error.configured_limit(), Some(1));
+    assert_eq!(error.used(), Some(0));
+    assert_eq!(error.remaining(), Some(1));
+    assert!(error.requested().expect("output failure should report a request") > 1);
+    assert_eq!(session.output_bytes_used(), 0);
+    assert_eq!(session.output_bytes_remaining(), 1);
+
+    let exact_limits = ConversionLimits::builder()
+        .operation_limits(ConversionOperationLimits::builder().max_output_bytes(2).build())
+        .build();
+    let mut exact_session = ConversionSession::new(&policy, &exact_limits);
+    assert_eq!(
+        DataConverter::from(42_u16).to_in::<Text>(&mut exact_session),
+        Ok(Text(String::from("42"))),
+    );
+    assert_eq!(exact_session.output_bytes_used(), 2);
+    assert_eq!(exact_session.output_bytes_remaining(), 0);
 }
 
 #[test]
@@ -320,7 +340,28 @@ fn test_delegate_owned_preserves_output_budget() {
         .build();
     let mut session = ConversionSession::new(&policy, &limits);
 
-    let _ = DataConverter::from(42_u16)
+    let error = DataConverter::from(42_u16)
         .into_target_in::<Text>(&mut session)
         .expect_err("owned delegation must share the one-byte output budget");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+    assert_eq!(error.from_type(), Some(DataType::UInt16));
+    assert_eq!(error.to_type(), DataType::String);
+    assert_eq!(error.configured_limit(), Some(1));
+    assert_eq!(error.used(), Some(0));
+    assert_eq!(error.remaining(), Some(1));
+    assert!(error.requested().expect("output failure should report a request") > 1);
+    assert_eq!(session.output_bytes_used(), 0);
+    assert_eq!(session.output_bytes_remaining(), 1);
+
+    let exact_limits = ConversionLimits::builder()
+        .operation_limits(ConversionOperationLimits::builder().max_output_bytes(2).build())
+        .build();
+    let mut exact_session = ConversionSession::new(&policy, &exact_limits);
+    assert_eq!(
+        DataConverter::from(42_u16).into_target_in::<Text>(&mut exact_session),
+        Ok(Text(String::from("42"))),
+    );
+    assert_eq!(exact_session.output_bytes_used(), 2);
+    assert_eq!(exact_session.output_bytes_remaining(), 0);
 }
