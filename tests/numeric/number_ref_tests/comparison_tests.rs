@@ -106,7 +106,7 @@ fn finite_f64_to_rational(value: f64) -> BigRational {
 /// # Returns
 ///
 /// The rational value represented by `coefficient * 10^-scale`.
-#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
+#[cfg(feature = "big-decimal")]
 fn decimal_parts_to_rational(coefficient: i64, scale: i64) -> BigRational {
     let coefficient = BigInt::from(coefficient);
     let factor = BigInt::from(10_u8).pow(scale.unsigned_abs() as u32);
@@ -461,6 +461,54 @@ proptest! {
         );
     }
 
+    /// Checks exact decimal comparisons against an independent `f64` rational oracle.
+    #[cfg(feature = "big-decimal")]
+    #[test]
+    fn test_number_ref_comparison_exact_decimal_f64_oracle_property(
+        coefficient in -1_000_000_i64..=1_000_000,
+        scale in -32_i64..=32,
+        sign in any::<bool>(),
+        exponent in 0_u16..0x7ff,
+        fraction in 0_u64..(1_u64 << 52),
+    ) {
+        let decimal = BigDecimal::new(BigInt::from(coefficient), scale);
+        let float = finite_f64(sign, exponent, fraction);
+        let expected = decimal_parts_to_rational(coefficient, scale)
+            .cmp(&finite_f64_to_rational(float));
+        prop_assert_eq!(
+            compare_numbers(NumberRef::from(&decimal), NumberRef::from(float), NumericComparisonPolicy::Exact),
+            Some(expected),
+        );
+        prop_assert_eq!(
+            compare_numbers(NumberRef::from(float), NumberRef::from(&decimal), NumericComparisonPolicy::Exact),
+            Some(expected.reverse()),
+        );
+    }
+
+    /// Checks exact decimal comparisons against an independent `f32` rational oracle.
+    #[cfg(feature = "big-decimal")]
+    #[test]
+    fn test_number_ref_comparison_exact_decimal_f32_oracle_property(
+        coefficient in -1_000_000_i64..=1_000_000,
+        scale in -32_i64..=32,
+        sign in any::<bool>(),
+        exponent in 0_u32..0xff,
+        fraction in 0_u32..(1_u32 << 23),
+    ) {
+        let decimal = BigDecimal::new(BigInt::from(coefficient), scale);
+        let float = f32::from_bits((u32::from(sign) << 31) | (exponent << 23) | fraction);
+        let expected = decimal_parts_to_rational(coefficient, scale)
+            .cmp(&finite_f64_to_rational(f64::from(float)));
+        prop_assert_eq!(
+            compare_numbers(NumberRef::from(&decimal), NumberRef::from(float), NumericComparisonPolicy::Exact),
+            Some(expected),
+        );
+        prop_assert_eq!(
+            compare_numbers(NumberRef::from(float), NumberRef::from(&decimal), NumericComparisonPolicy::Exact),
+            Some(expected.reverse()),
+        );
+    }
+
     /// Checks every public non-NaN representation pair remains ordered.
     #[cfg(all(feature = "big-integer", feature = "big-decimal"))]
     #[test]
@@ -515,6 +563,41 @@ proptest! {
                     prop_assert_eq!(reverse, forward.map(Ordering::reverse));
                 }
             }
+        }
+    }
+}
+
+/// Covers decimal comparisons at zero, subnormal, and adjacent-float
+/// boundaries.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_number_ref_comparison_exact_decimal_float_oracle_edges() {
+    for (coefficient, scale) in [(0_i64, 0_i64), (5, 1)] {
+        let decimal = BigDecimal::new(BigInt::from(coefficient), scale);
+        let expected_decimal = decimal_parts_to_rational(coefficient, scale);
+        for float in [
+            0.0_f64,
+            -0.0,
+            f64::from_bits(1),
+            -f64::from_bits(1),
+            f64::from_bits(0.5_f64.to_bits() - 1),
+            0.5,
+            f64::from_bits(0.5_f64.to_bits() + 1),
+        ] {
+            let expected = expected_decimal.cmp(&finite_f64_to_rational(float));
+            assert_exact(NumberRef::from(&decimal), NumberRef::from(float), Some(expected));
+        }
+        for float in [
+            0.0_f32,
+            -0.0,
+            f32::from_bits(1),
+            -f32::from_bits(1),
+            f32::from_bits(0.5_f32.to_bits() - 1),
+            0.5,
+            f32::from_bits(0.5_f32.to_bits() + 1),
+        ] {
+            let expected = expected_decimal.cmp(&finite_f64_to_rational(f64::from(float)));
+            assert_exact(NumberRef::from(&decimal), NumberRef::from(float), Some(expected));
         }
     }
 }
