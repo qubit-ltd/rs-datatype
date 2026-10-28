@@ -104,18 +104,23 @@ pub(in crate::numeric) fn f64_rational(value: f64) -> BigRational {
 /// an impractically large power of ten.
 #[cfg(feature = "big-decimal")]
 pub(in crate::numeric) fn decimal_rational(value: &BigDecimal) -> Option<BigRational> {
-    let (coefficient, scale) = value.as_bigint_and_exponent();
+    let (coefficient, scale) = value.as_bigint_and_scale();
     if scale >= 0 {
         let scale = u32::try_from(scale).ok()?;
         if scale > MAX_MATERIALIZED_DECIMAL_SCALE {
             return None;
         }
-        Some(BigRational::new(coefficient, BigInt::from(10_u8).pow(scale)))
+        Some(BigRational::new(
+            coefficient.into_owned(),
+            BigInt::from(10_u8).pow(scale),
+        ))
     } else {
         let scale = u32::try_from(scale.unsigned_abs()).ok()?;
         if scale > MAX_MATERIALIZED_DECIMAL_SCALE {
             return None;
         }
-        Some(BigRational::from_integer(coefficient * BigInt::from(10_u8).pow(scale)))
+        Some(BigRational::from_integer(
+            coefficient.into_owned() * BigInt::from(10_u8).pow(scale),
+        ))
     }
 }

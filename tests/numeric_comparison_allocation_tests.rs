@@ -6,7 +6,7 @@
 //    Licensed under the Apache License, Version 2.0.
 // =============================================================================
 
-#![cfg(feature = "big-integer")]
+#![cfg(any(feature = "big-integer", feature = "big-decimal"))]
 
 use std::alloc::GlobalAlloc;
 use std::alloc::Layout;
@@ -14,6 +14,8 @@ use std::alloc::System;
 use std::cell::Cell;
 use std::cmp::Ordering;
 
+#[cfg(feature = "big-decimal")]
+use bigdecimal::BigDecimal;
 use num_bigint::BigInt;
 use qubit_datatype::NumberRef;
 use qubit_datatype::NumericComparisonPolicy;
@@ -21,13 +23,16 @@ use qubit_datatype::NumericComparisonPolicy;
 struct CountingAllocator;
 
 thread_local! {
-    static ALLOCATIONS: Cell<Option<usize>> = const { Cell::new(None) };
+    static ALLOCATIONS: Cell<Option<(usize, usize)>> = const { Cell::new(None) };
 }
 
-fn record_allocation() {
+fn record_allocation(size: usize) {
     let _ = ALLOCATIONS.try_with(|allocations| {
-        if let Some(count) = allocations.get() {
-            allocations.set(Some(count.wrapping_add(1)));
+        if let Some((count, large_count)) = allocations.get() {
+            allocations.set(Some((
+                count.saturating_add(1),
+                large_count.saturating_add(usize::from(size >= 64 * 1024)),
+            )));
         }
     });
 }
@@ -36,7 +41,7 @@ fn record_allocation() {
 // layout.
 unsafe impl GlobalAlloc for CountingAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        record_allocation();
+        record_allocation(layout.size());
         // SAFETY: The caller guarantees that `layout` is valid.
         unsafe { System.alloc(layout) }
     }
@@ -47,13 +52,13 @@ unsafe impl GlobalAlloc for CountingAllocator {
     }
 
     unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
-        record_allocation();
+        record_allocation(layout.size());
         // SAFETY: The caller guarantees that `layout` is valid.
         unsafe { System.alloc_zeroed(layout) }
     }
 
     unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
-        record_allocation();
+        record_allocation(new_size);
         // SAFETY: The caller guarantees the pointer/layout pair is valid.
         unsafe { System.realloc(pointer, layout, new_size) }
     }
@@ -68,16 +73,16 @@ struct AllocationTracking {
 
 impl AllocationTracking {
     fn start() -> Self {
-        let _ = ALLOCATIONS.try_with(|allocations| allocations.set(Some(0)));
+        let _ = ALLOCATIONS.try_with(|allocations| allocations.set(Some((0, 0))));
         Self { armed: true }
     }
 
-    fn finish(mut self) -> usize {
-        let count = ALLOCATIONS
-            .try_with(|allocations| allocations.replace(None).unwrap_or(0))
-            .unwrap_or(0);
+    fn finish(mut self) -> (usize, usize) {
+        let counts = ALLOCATIONS
+            .try_with(|allocations| allocations.replace(None).unwrap_or((0, 0)))
+            .unwrap_or((0, 0));
         self.armed = false;
-        count
+        counts
     }
 }
 
@@ -94,6 +99,7 @@ fn compare_exact(left: NumberRef<'_>, right: NumberRef<'_>) -> Option<Ordering> 
 }
 
 #[test]
+#[cfg(feature = "big-integer")]
 fn test_big_integer_float_easy_comparisons_do_not_allocate() {
     let huge_positive = BigInt::from(1_u8) << 4096;
     let huge_negative = -&huge_positive;
@@ -173,9 +179,44 @@ fn test_big_integer_float_easy_comparisons_do_not_allocate() {
     }
 }
 
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_big_decimal_scale_fallback_avoids_redundant_coefficient_clone() {
+    for scale in [4097_i64, -4097, i64::MIN, i64::MAX] {
+        let coefficient = -(BigInt::from(1_u8) << 1_048_576_usize);
+        let decimal = BigDecimal::new(coefficient, scale);
+        for zero in [NumberRef::from(0_i32), NumberRef::from(0.0_f64)] {
+            for reverse in [false, true] {
+                let (left, right, expected) = if reverse {
+                    (zero, NumberRef::from(&decimal), Ordering::Greater)
+                } else {
+                    (NumberRef::from(&decimal), zero, Ordering::Less)
+                };
+                let (actual, large_allocations) = count_large_allocations(|| {
+                    std::hint::black_box(compare_exact(std::hint::black_box(left), std::hint::black_box(right)))
+                });
+                assert_eq!(actual, Some(expected));
+                assert!(
+                    large_allocations <= 1,
+                    "scale={scale}, reverse={reverse}, large allocations={large_allocations}"
+                );
+            }
+        }
+    }
+}
+
+#[cfg(feature = "big-integer")]
 fn count_allocations<T>(operation: impl FnOnce() -> T) -> (T, usize) {
     let tracking = AllocationTracking::start();
     let result = operation();
-    let allocations = tracking.finish();
+    let (allocations, _) = tracking.finish();
     (result, allocations)
+}
+
+#[cfg(feature = "big-decimal")]
+fn count_large_allocations<T>(operation: impl FnOnce() -> T) -> (T, usize) {
+    let tracking = AllocationTracking::start();
+    let result = operation();
+    let (_, large_allocations) = tracking.finish();
+    (result, large_allocations)
 }
