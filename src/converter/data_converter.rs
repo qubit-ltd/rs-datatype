@@ -92,8 +92,12 @@ macro_rules! data_converter_data_type_match {
 /// `BigDecimal` preserves the spellings accepted by its parser, including
 /// `"12_34"`, `"1__2"`, `"12_"`, and `"1_2.5"`, under strict, lossy, and
 /// environment-friendly profiles. Fixed-width integer targets and `BigInt`
-/// require integer numeric syntax and reject these spellings. See the user
-/// guide for the complete text-conversion contract.
+/// reject these underscore spellings, but accept decimal and exponent notation.
+/// Acceptance depends on the fractional-to-integer policy and the target
+/// range: exact integral values are accepted by the strict profile, while
+/// truncation requires an explicit policy. Successful conversion is not an
+/// integer-only lexical validation. See the user guide for the complete
+/// text-conversion contract.
 ///
 /// # Type Parameters
 ///
@@ -116,6 +120,24 @@ macro_rules! data_converter_data_type_match {
 /// let limits = ConversionLimits::default();
 /// let value: u16 = DataConverter::from("3.9").to_with(&lossy, &limits).unwrap();
 /// assert_eq!(value, 3);
+/// ```
+///
+/// Integer results can come from decimal or exponent notation when the
+/// represented value satisfies the selected fractional-to-integer policy:
+///
+/// ```
+/// use qubit_datatype::{ConversionLimits, ConversionPolicy, DataConverter};
+///
+/// assert_eq!(DataConverter::from("1.0").to::<i32>(), Ok(1));
+/// assert_eq!(DataConverter::from("1e2").to::<i32>(), Ok(100));
+/// assert!(DataConverter::from("1.9").to::<i32>().is_err());
+/// assert_eq!(
+///     DataConverter::from("1.9").to_with::<i32>(
+///         &ConversionPolicy::lossy(),
+///         &ConversionLimits::default(),
+///     ),
+///     Ok(1),
+/// );
 /// ```
 ///
 /// Platform-sized integers are intentionally not conversion sources:
