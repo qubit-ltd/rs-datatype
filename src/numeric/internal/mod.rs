@@ -7,11 +7,15 @@
 // =============================================================================
 //! Private numeric comparison algorithms.
 
+#[cfg(feature = "big-integer")]
+mod big_integer_float;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 mod exact_rational;
 mod fixed_numeric;
 mod number_repr;
 
+#[cfg(feature = "big-integer")]
+pub(in crate::numeric) use big_integer_float::compare_big_integer_float;
 #[cfg(feature = "big-decimal")]
 pub(in crate::numeric) use exact_rational::decimal_rational;
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]

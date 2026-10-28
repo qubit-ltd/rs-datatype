@@ -24,6 +24,8 @@ use num_traits::Zero;
 
 use super::NumericComparisonPolicy;
 use super::internal::NumberRepr;
+#[cfg(feature = "big-integer")]
+use super::internal::compare_big_integer_float;
 use super::internal::compare_magnitude;
 #[cfg(feature = "big-decimal")]
 use super::internal::decimal_rational;
@@ -530,6 +532,10 @@ impl<'a> NumberRef<'a> {
         if let Some(ordering) = self.compare_big_integer_fixed(right) {
             return Some(ordering);
         }
+        #[cfg(feature = "big-integer")]
+        if let Some(ordering) = self.compare_big_integer_float(right) {
+            return Some(ordering);
+        }
         #[cfg(feature = "big-decimal")]
         if let (NumberRepr::BigDecimal(left), NumberRepr::BigDecimal(right)) = (self.inner, right.inner) {
             return Some(left.cmp(right));
@@ -560,6 +566,23 @@ impl<'a> NumberRef<'a> {
         match (self.inner, right.inner) {
             (NumberRepr::BigInteger(left), right) => compare_big_integer_to_fixed(left, right),
             (left, NumberRepr::BigInteger(right)) => compare_big_integer_to_fixed(right, left).map(Ordering::reverse),
+            _ => None,
+        }
+    }
+
+    /// Compares a `BigInt` directly with a finite floating-point value when
+    /// zero, sign, or highest-bit ordering determines the result.
+    #[cfg(feature = "big-integer")]
+    #[must_use]
+    #[inline]
+    fn compare_big_integer_float(self, right: NumberRef<'_>) -> Option<Ordering> {
+        match (self.inner, right.inner) {
+            (NumberRepr::BigInteger(left), NumberRepr::Float32(_) | NumberRepr::Float64(_)) => {
+                compare_big_integer_float(left, right)
+            }
+            (NumberRepr::Float32(_) | NumberRepr::Float64(_), NumberRepr::BigInteger(right)) => {
+                compare_big_integer_float(right, self).map(Ordering::reverse)
+            }
             _ => None,
         }
     }

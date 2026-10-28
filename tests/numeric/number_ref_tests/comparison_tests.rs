@@ -125,6 +125,28 @@ fn test_number_ref_comparison_exact_fixed_boundaries() {
         NumberRef::from(u128::MAX),
         Some(Ordering::Less),
     );
+    #[cfg(feature = "big-integer")]
+    {
+        let exact: BigInt = BigInt::from(1_u8) << 53;
+        let below: BigInt = &exact - BigInt::from(1_u8);
+        let above: BigInt = &exact + BigInt::from(1_u8);
+        let float = NumberRef::from((1_u64 << 53) as f64);
+        assert_exact(NumberRef::from(&below), float, Some(Ordering::Less));
+        assert_exact(NumberRef::from(&exact), float, Some(Ordering::Equal));
+        assert_exact(NumberRef::from(&above), float, Some(Ordering::Greater));
+
+        let negative_below = -below;
+        let negative_exact = -exact;
+        let negative_above = -above;
+        let negative_float = NumberRef::from(-((1_u64 << 53) as f64));
+        assert_exact(
+            NumberRef::from(&negative_below),
+            negative_float,
+            Some(Ordering::Greater),
+        );
+        assert_exact(NumberRef::from(&negative_exact), negative_float, Some(Ordering::Equal));
+        assert_exact(NumberRef::from(&negative_above), negative_float, Some(Ordering::Less));
+    }
     assert_exact(
         NumberRef::from((1_u64 << 53) + 1),
         NumberRef::from((1_u64 << 53) as f64),
@@ -223,6 +245,20 @@ fn test_number_ref_comparison_approximate_policy() {
         ),
         Some(Ordering::Equal)
     );
+    #[cfg(feature = "big-integer")]
+    {
+        let integer: BigInt = (BigInt::from(1_u8) << 53) | BigInt::from(1_u8);
+        let integer = NumberRef::from(&integer);
+        let float = NumberRef::from((1_u64 << 53) as f64);
+        assert_eq!(
+            compare_numbers(integer, float, NumericComparisonPolicy::Exact),
+            Some(Ordering::Greater)
+        );
+        assert_eq!(
+            compare_numbers(integer, float, NumericComparisonPolicy::Approximate),
+            Some(Ordering::Equal)
+        );
+    }
     assert_eq!(
         compare_numbers(
             NumberRef::from(u128::MAX - 1),
@@ -436,6 +472,63 @@ proptest! {
                 NumericComparisonPolicy::Exact,
             ),
             Some(expected),
+        );
+    }
+
+    /// Checks arbitrary-precision integer/float ordering against an
+    /// independently decoded rational oracle.
+    #[cfg(feature = "big-integer")]
+    #[test]
+    fn test_number_ref_comparison_exact_big_integer_float_oracle_property(
+        coefficient in any::<i128>(),
+        shift in 0_u32..1600,
+        sign in any::<bool>(),
+        exponent in 0_u16..0x7ff,
+        fraction in 0_u64..(1_u64 << 52),
+    ) {
+        let integer = BigInt::from(coefficient) << shift;
+        let float = finite_f64(sign, exponent, fraction);
+        let expected = BigRational::from_integer(integer.clone())
+            .cmp(&finite_f64_to_rational(float));
+        let integer_ref = NumberRef::from(&integer);
+        let float_ref = NumberRef::from(float);
+        prop_assert_eq!(
+            compare_numbers(integer_ref, float_ref, NumericComparisonPolicy::Exact),
+            Some(expected),
+        );
+        prop_assert_eq!(
+            compare_numbers(float_ref, integer_ref, NumericComparisonPolicy::Exact),
+            Some(expected.reverse()),
+        );
+    }
+
+    /// Checks arbitrary-precision integer/f32 ordering against the same
+    /// independently decoded rational oracle.
+    #[cfg(feature = "big-integer")]
+    #[test]
+    fn test_number_ref_comparison_exact_big_integer_f32_oracle_property(
+        coefficient in any::<i128>(),
+        shift in 0_u32..1600,
+        sign in any::<bool>(),
+        exponent in 0_u32..255,
+        fraction in any::<u32>(),
+    ) {
+        let integer = BigInt::from(coefficient) << shift;
+        let sign = u32::from(sign) << 31;
+        let exponent = exponent << 23;
+        let fraction = fraction & ((1_u32 << 23) - 1);
+        let float = f32::from_bits(sign | exponent | fraction);
+        let expected = BigRational::from_integer(integer.clone())
+            .cmp(&finite_f64_to_rational(f64::from(float)));
+        let integer_ref = NumberRef::from(&integer);
+        let float_ref = NumberRef::from(float);
+        prop_assert_eq!(
+            compare_numbers(integer_ref, float_ref, NumericComparisonPolicy::Exact),
+            Some(expected),
+        );
+        prop_assert_eq!(
+            compare_numbers(float_ref, integer_ref, NumericComparisonPolicy::Exact),
+            Some(expected.reverse()),
         );
     }
 
