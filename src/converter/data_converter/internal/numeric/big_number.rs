@@ -164,7 +164,9 @@ pub(super) fn enforce_big_decimal_limits(
 /// Returns a precision error for a fractional value under
 /// [`FractionalToIntegerPolicy::Reject`], a resource limit error when a
 /// `BigInt` result would exceed `maximum_digits`, or a fixed-width range error
-/// before constructing the scale divisor for an oversized result.
+/// before constructing the scale divisor for an oversized result. A `BigInt`
+/// digit-limit error from a conservative precheck may report a lower bound
+/// rather than an exact digit count; values near the limit use the exact path.
 #[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_bigint(
     value: &BigDecimal,
@@ -179,6 +181,25 @@ pub(super) fn decimal_to_bigint(
     }
     if scale <= 0 {
         let exponent = scale.unsigned_abs();
+        // For a nonzero b-bit coefficient, at least floor((b - 1) / 4) + 1
+        // decimal digits exist because 2^4 >= 10. Multiplication by 10^exponent
+        // adds exponent digits. Saturation keeps this a conservative lower bound.
+        let coefficient_digits_lower_bound = (coefficient.bits() - 1) / 4 + 1;
+        let result_digits_lower_bound = coefficient_digits_lower_bound.saturating_add(exponent);
+        if to == DataType::BigInteger && result_digits_lower_bound > maximum_digits {
+            return Err(DataConversionError::limit_exceeded(
+                from,
+                to,
+                BudgetError::LimitExceeded {
+                    resource: crate::converter::ConversionResource::BigIntegerDigits,
+                    observed: Observation::AtLeast(result_digits_lower_bound),
+                    maximum: maximum_digits,
+                },
+            ));
+        }
+        if to.is_integer() && to != DataType::BigInteger && result_digits_lower_bound > 39 {
+            return Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange));
+        }
         let coefficient_digits = coefficient.to_str_radix(10).trim_start_matches('-').len() as u64;
         let result_digits = coefficient_digits.saturating_add(exponent);
         if to == DataType::BigInteger && u128::from(result_digits) > maximum_digits as u128 {

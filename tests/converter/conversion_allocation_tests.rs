@@ -21,8 +21,14 @@ use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
 use qubit_datatype::ConversionResource;
 use qubit_datatype::ConversionSession;
+#[cfg(feature = "big-decimal")]
+use qubit_datatype::DataConversionErrorKind;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataConverters;
+#[cfg(feature = "big-decimal")]
+use qubit_datatype::DataType;
+#[cfg(feature = "big-decimal")]
+use qubit_datatype::InvalidValueReason;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::NumericConversionLimits;
 use qubit_datatype::converter::CollectionConversionLimits;
@@ -257,6 +263,77 @@ fn test_big_decimal_string_output_rejection_avoids_materialization() {
             assert_eq!(session.items_used(), 1);
             assert_eq!(session.output_bytes_used(), 0);
             assert!(maximum < 4096, "rejection allocated {maximum} bytes");
+        }
+    }
+}
+
+/// BigDecimal fixed-integer rejection must avoid formatting its coefficient.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_decimal_fixed_integer_rejection_does_not_format_payload() {
+    let coefficient = BigInt::from(1_u8) << 1_000_000_usize;
+    let policy = ConversionPolicy::strict();
+    let limits = ConversionLimits::default();
+    for coefficient in [coefficient.clone(), -coefficient] {
+        for scale in [0_i64, -1] {
+            let input = BigDecimal::new(coefficient.clone(), scale);
+            for consume in [false, true] {
+                let source = DataConverter::from(&input);
+                let mut session = ConversionSession::new(&policy, &limits);
+                let (result, maximum) = measure(|| {
+                    if consume {
+                        source.into_target_in::<u8>(&mut session)
+                    } else {
+                        source.to_in::<u8>(&mut session)
+                    }
+                });
+                let error = result.expect_err("oversized decimal must fail");
+                assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+                assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+                assert_eq!(error.from_type(), Some(DataType::BigDecimal));
+                assert_eq!(error.to_type(), DataType::UInt8);
+                assert_eq!(session.items_used(), 1);
+                assert_eq!(session.output_bytes_used(), 0);
+                assert!(maximum < 4096, "rejection allocated {maximum} bytes");
+            }
+        }
+    }
+}
+
+/// BigDecimal BigInteger rejection must avoid formatting its coefficient.
+#[cfg(all(feature = "big-decimal", feature = "big-integer"))]
+#[test]
+fn test_decimal_big_integer_rejection_does_not_format_payload() {
+    let coefficient = BigInt::from(1_u8) << 1_000_000_usize;
+    let policy = ConversionPolicy::strict();
+    let limits = ConversionLimits::builder()
+        .numeric_limits(NumericConversionLimits::builder().max_big_integer_digits(8).build())
+        .build();
+    for coefficient in [coefficient.clone(), -coefficient] {
+        for scale in [0_i64, -1] {
+            let input = BigDecimal::new(coefficient.clone(), scale);
+            for consume in [false, true] {
+                let source = DataConverter::from(&input);
+                let mut session = ConversionSession::new(&policy, &limits);
+                let (result, maximum) = measure(|| {
+                    if consume {
+                        source.into_target_in::<BigInt>(&mut session)
+                    } else {
+                        source.to_in::<BigInt>(&mut session)
+                    }
+                });
+                let error = result.expect_err("decimal exceeds the eight-digit result budget");
+                assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+                assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+                assert_eq!(error.configured_limit(), Some(8));
+                assert_eq!(error.from_type(), Some(DataType::BigDecimal));
+                assert_eq!(error.to_type(), DataType::BigInteger);
+                assert_eq!(error.observation_is_exact(), Some(false));
+                assert!(error.observed_lower_bound().expect("lower bound exists") > 8);
+                assert_eq!(session.items_used(), 1);
+                assert_eq!(session.output_bytes_used(), 0);
+                assert!(maximum < 4096, "rejection allocated {maximum} bytes");
+            }
         }
     }
 }

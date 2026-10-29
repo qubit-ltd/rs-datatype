@@ -126,6 +126,38 @@ fn test_decimal_positive_scale_preserves_fixed_integer_boundaries() {
     assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
 }
 
+/// Verifies nonpositive scales preserve zero and fixed-width integer
+/// boundaries.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_decimal_nonpositive_scale_preserves_fixed_integer_boundaries() {
+    use qubit_datatype::InvalidValueReason;
+
+    let zero = BigDecimal::new(num_bigint::BigInt::from(0_u8), i64::MIN);
+    assert_eq!(DataConverter::from(&zero).to::<u8>(), Ok(0));
+
+    let positive = BigDecimal::new(num_bigint::BigInt::from(12_u8), -1);
+    assert_eq!(DataConverter::from(&positive).to::<i32>(), Ok(120));
+    let negative = BigDecimal::new(num_bigint::BigInt::from(-12_i8), -1);
+    assert_eq!(DataConverter::from(&negative).to::<i32>(), Ok(-120));
+
+    let minimum = BigDecimal::new(num_bigint::BigInt::from(i128::MIN), 0);
+    assert_eq!(DataConverter::from(&minimum).to::<i128>(), Ok(i128::MIN));
+    let maximum = BigDecimal::new(num_bigint::BigInt::from(u128::MAX), 0);
+    assert_eq!(DataConverter::from(&maximum).to::<u128>(), Ok(u128::MAX));
+    let overflow = BigDecimal::new(num_bigint::BigInt::from(u128::MAX) + 1_u8, 0);
+    let error = DataConverter::from(&overflow)
+        .to::<u128>()
+        .expect_err("the next value above u128::MAX must be out of range");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+
+    let extreme_scale = BigDecimal::new(num_bigint::BigInt::from(1_u8), i64::MIN);
+    let error = DataConverter::from(&extreme_scale)
+        .to::<i32>()
+        .expect_err("an extreme negative scale must be out of range");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+}
+
 /// Verifies primitive sources honor the BigInteger result digit limit.
 #[cfg(feature = "big-integer")]
 #[test]
@@ -234,6 +266,47 @@ fn test_positive_scale_decimal_to_bigint_enforces_result_digit_limit() {
     assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
     assert_eq!(error.configured_limit(), Some(3));
     assert_eq!(error.observed_lower_bound(), Some(4));
+}
+
+/// Verifies nonpositive-scale BigDecimal digit-limit boundaries and
+/// diagnostics.
+#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
+#[test]
+fn test_nonpositive_scale_decimal_to_bigint_preserves_digit_limit_boundaries() {
+    let policy = ConversionPolicy::strict();
+    let limits = limits_with_big_integer_digit_limit(8);
+    let maximum = BigDecimal::new(BigInt::from(99_999_999_u32), 0);
+    assert_eq!(
+        DataConverter::from(&maximum).to_with::<BigInt>(&policy, &limits),
+        Ok(BigInt::from(99_999_999_u32)),
+    );
+
+    let exact_fallback = BigDecimal::new(BigInt::from(100_000_000_u32), 0);
+    let error = DataConverter::from(&exact_fallback)
+        .to_with::<BigInt>(&policy, &limits)
+        .expect_err("a nine-digit result must exceed the eight-digit limit");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(8));
+    assert_eq!(error.observed_lower_bound(), Some(9));
+    assert_eq!(error.observation_is_exact(), Some(true));
+
+    let huge = BigDecimal::new(BigInt::from(1_u8), i64::MIN);
+    let error = DataConverter::from(&huge)
+        .to_with::<BigInt>(&policy, &limits)
+        .expect_err("the digit limit must precede the exponent range error");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(8));
+    assert_eq!(error.observation_is_exact(), Some(false));
+    assert!(error.observed_lower_bound().expect("lower bound exists") > 8);
+
+    let small = BigDecimal::new(BigInt::from(12_u8), -1);
+    let unlimited = limits_with_big_integer_digit_limit(u64::MAX);
+    assert_eq!(
+        DataConverter::from(&small).to_with::<BigInt>(&policy, &unlimited),
+        Ok(BigInt::from(120_u16)),
+    );
 }
 
 /// Verifies an exponent outside `BigInt::pow`'s range is rejected safely.
