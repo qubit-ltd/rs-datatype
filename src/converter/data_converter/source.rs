@@ -30,8 +30,11 @@ macro_rules! impl_from_copy {
                 Self::$variant(value)
             }
         }
-        impl<'a> From<&'a $source> for DataConverter<'a> {
+        impl<'a> From<&$source> for DataConverter<'a> {
             /// Wraps a borrowed scalar by copying its value.
+            ///
+            /// The source is copied immediately; its borrow does not constrain the
+            /// converter lifetime.
             ///
             /// # Parameters
             ///
@@ -41,7 +44,7 @@ macro_rules! impl_from_copy {
             ///
             /// A converter owning the copied scalar representation.
             #[inline]
-            fn from(value: &'a $source) -> Self {
+            fn from(value: &$source) -> Self {
                 Self::$variant(*value)
             }
         }

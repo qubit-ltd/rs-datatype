@@ -143,6 +143,57 @@ fn test_data_converter_from_impls_cover_all_sources() {
     assert_data_type(DataConverter::Unset(DataType::Json), DataType::Json);
 }
 
+#[test]
+fn test_copied_reference_sources_outlive_local_values() {
+    let expected_bool = true;
+    let expected_u32 = 42u32;
+    let expected_duration = Duration::from_millis(1500);
+    let bool_value: DataConverter<'static> = {
+        let source = expected_bool;
+        DataConverter::from(&source)
+    };
+    let u32_value: DataConverter<'static> = {
+        let source = expected_u32;
+        DataConverter::from(&source)
+    };
+    let duration: DataConverter<'static> = {
+        let source = expected_duration;
+        DataConverter::from(&source)
+    };
+    assert_eq!(bool_value.to::<bool>(), Ok(expected_bool));
+    assert_eq!(u32_value.to::<u32>(), Ok(expected_u32));
+    assert_eq!(duration.to::<Duration>(), Ok(expected_duration));
+}
+
+#[cfg(feature = "chrono")]
+#[test]
+fn test_copied_chrono_references_outlive_local_values() {
+    let expected_date = NaiveDate::from_ymd_opt(2026, 10, 30).expect("valid test date");
+    let expected_time = NaiveTime::from_hms_opt(1, 16, 51).expect("valid test time");
+    let expected_datetime = NaiveDateTime::new(expected_date, expected_time);
+    let expected_instant = DateTime::<Utc>::from_naive_utc_and_offset(expected_datetime, Utc);
+    let date: DataConverter<'static> = {
+        let source = expected_date;
+        DataConverter::from(&source)
+    };
+    let time: DataConverter<'static> = {
+        let source = expected_time;
+        DataConverter::from(&source)
+    };
+    let datetime: DataConverter<'static> = {
+        let source = expected_datetime;
+        DataConverter::from(&source)
+    };
+    let instant: DataConverter<'static> = {
+        let source = expected_instant;
+        DataConverter::from(&source)
+    };
+    assert_eq!(date.to::<NaiveDate>(), Ok(expected_date));
+    assert_eq!(time.to::<NaiveTime>(), Ok(expected_time));
+    assert_eq!(datetime.to::<NaiveDateTime>(), Ok(expected_datetime));
+    assert_eq!(instant.to::<DateTime<Utc>>(), Ok(expected_instant));
+}
+
 /// Test derived converter traits used by callers and assertions.
 #[test]
 fn test_data_converter_derived_traits() {
