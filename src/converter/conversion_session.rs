@@ -41,7 +41,9 @@ use super::conversion_resource::ConversionResource;
 use super::conversion_string_writer::ConversionStringWriter;
 use super::error::DataConversionError;
 use super::internal::ConversionBudget;
+#[cfg(feature = "json")]
 use super::internal::map_json_decode_error;
+#[cfg(feature = "json")]
 use super::internal::map_json_encode_error;
 use super::internal::map_string_write_error;
 use super::options::ConversionLimits;
