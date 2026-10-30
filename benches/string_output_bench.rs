@@ -28,7 +28,8 @@ use qubit_datatype::DataConverter;
 
 const TEXT_SIZES: [usize; 3] = [64, 4 * 1024, 256 * 1024];
 
-/// Benchmarks integer and Unicode text rendering at representative budgets.
+/// Benchmarks borrowed and owned ASCII identity conversion at representative
+/// budgets.
 fn benchmark_scalar_string_output(c: &mut Criterion) {
     let mut group = c.benchmark_group("string_output_scalar");
     for size in TEXT_SIZES {
@@ -41,18 +42,22 @@ fn benchmark_scalar_string_output(c: &mut Criterion) {
                     .build(),
             )
             .build();
-        let borrowed = {
+        let (borrowed, borrowed_used) = {
             let mut session = ConversionSession::new(&policy, &limits);
-            DataConverter::from(source.as_str()).to_in::<String>(&mut session)
-        }
-        .expect("borrowed string output benchmark fixture should convert");
+            let output = DataConverter::from(source.as_str()).to_in::<String>(&mut session);
+            (output, session.output_bytes_used())
+        };
+        let borrowed = borrowed.expect("borrowed ASCII identity benchmark fixture should convert");
         assert_eq!(borrowed, source);
-        let owned = {
+        assert_eq!(borrowed_used, u64::try_from(source.len()).unwrap());
+        let (owned, owned_used) = {
             let mut session = ConversionSession::new(&policy, &limits);
-            DataConverter::from(source.clone()).into_target_in::<String>(&mut session)
-        }
-        .expect("owned string output benchmark fixture should convert");
+            let output = DataConverter::from(source.clone()).into_target_in::<String>(&mut session);
+            (output, session.output_bytes_used())
+        };
+        let owned = owned.expect("owned ASCII identity benchmark fixture should convert");
         assert_eq!(owned, source);
+        assert_eq!(owned_used, u64::try_from(source.len()).unwrap());
         group.bench_with_input(BenchmarkId::new("borrowed_identity", size), &source, |bench, source| {
             bench.iter_batched(
                 || source.as_str(),
@@ -125,9 +130,128 @@ fn benchmark_string_map_output(c: &mut Criterion) {
     group.finish();
 }
 
+/// Benchmarks integer and floating-point formatting through DataConverter.
+fn benchmark_numeric_string_output(c: &mut Criterion) {
+    let mut group = c.benchmark_group("string_output_numeric");
+    let policy = ConversionPolicy::strict();
+
+    let number = -1_234_567_890_123_456_789_i128;
+    let expected = number.to_string();
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder()
+                .max_output_bytes(u64::try_from(expected.len()).unwrap())
+                .build(),
+        )
+        .build();
+    let mut session = ConversionSession::new(&policy, &limits);
+    let output = DataConverter::from(number)
+        .to_in::<String>(&mut session)
+        .expect("i128 string output benchmark fixture should convert");
+    assert_eq!(output, expected);
+    assert_eq!(session.output_bytes_used(), u64::try_from(expected.len()).unwrap());
+    group.bench_function("i128", |bench| {
+        bench.iter_batched(
+            || number,
+            |number| {
+                let mut session = ConversionSession::new(&policy, &limits);
+                black_box(DataConverter::from(black_box(number)).to_in::<String>(&mut session))
+            },
+            BatchSize::SmallInput,
+        );
+    });
+
+    let number = 12345.5_f64;
+    let expected = number.to_string();
+    let limits = ConversionLimits::builder()
+        .operation_limits(
+            ConversionOperationLimits::builder()
+                .max_output_bytes(u64::try_from(expected.len()).unwrap())
+                .build(),
+        )
+        .build();
+    let mut session = ConversionSession::new(&policy, &limits);
+    let output = DataConverter::from(number)
+        .to_in::<String>(&mut session)
+        .expect("f64 string output benchmark fixture should convert");
+    assert_eq!(output, expected);
+    assert_eq!(session.output_bytes_used(), u64::try_from(expected.len()).unwrap());
+    group.bench_function("f64", |bench| {
+        bench.iter_batched(
+            || number,
+            |number| {
+                let mut session = ConversionSession::new(&policy, &limits);
+                black_box(DataConverter::from(black_box(number)).to_in::<String>(&mut session))
+            },
+            BatchSize::SmallInput,
+        );
+    });
+    group.finish();
+}
+
+/// Benchmarks borrowed and owned identity conversion for multibyte UTF-8 text.
+fn benchmark_utf8_string_output(c: &mut Criterion) {
+    let mut group = c.benchmark_group("string_output_utf8");
+    let policy = ConversionPolicy::strict();
+    for size in TEXT_SIZES {
+        let source = "é汉🙂".repeat(size / "é汉🙂".len());
+        let bytes = source.len();
+        let output_budget = u64::try_from(bytes).unwrap();
+        let limits = ConversionLimits::builder()
+            .operation_limits(
+                ConversionOperationLimits::builder()
+                    .max_output_bytes(output_budget)
+                    .build(),
+            )
+            .build();
+
+        let mut session = ConversionSession::new(&policy, &limits);
+        let output = DataConverter::from(source.as_str())
+            .to_in::<String>(&mut session)
+            .expect("borrowed UTF-8 identity benchmark fixture should convert");
+        assert_eq!(output, source);
+        assert_eq!(session.output_bytes_used(), output_budget);
+
+        let mut session = ConversionSession::new(&policy, &limits);
+        let output = DataConverter::from(source.clone())
+            .into_target_in::<String>(&mut session)
+            .expect("owned UTF-8 identity benchmark fixture should convert");
+        assert_eq!(output, source);
+        assert_eq!(session.output_bytes_used(), output_budget);
+
+        group.bench_with_input(
+            BenchmarkId::new("borrowed_identity", bytes),
+            &source,
+            |bench, source| {
+                bench.iter_batched(
+                    || source.as_str(),
+                    |source| {
+                        let mut session = ConversionSession::new(&policy, &limits);
+                        black_box(DataConverter::from(black_box(source)).to_in::<String>(&mut session))
+                    },
+                    BatchSize::LargeInput,
+                );
+            },
+        );
+        group.bench_with_input(BenchmarkId::new("owned_identity", bytes), &source, |bench, source| {
+            bench.iter_batched(
+                || source.clone(),
+                |source| {
+                    let mut session = ConversionSession::new(&policy, &limits);
+                    black_box(DataConverter::from(black_box(source)).into_target_in::<String>(&mut session))
+                },
+                BatchSize::LargeInput,
+            );
+        });
+    }
+    group.finish();
+}
+
 criterion_group!(
     string_output_benches,
     benchmark_scalar_string_output,
     benchmark_string_map_output,
+    benchmark_numeric_string_output,
+    benchmark_utf8_string_output,
 );
 criterion_main!(string_output_benches);
