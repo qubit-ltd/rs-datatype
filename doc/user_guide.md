@@ -266,9 +266,9 @@ An attempt that has passed the item-budget check retains that item charge if
 an input check or target conversion later fails. Successfully charged input
 bytes are retained too. A failed item-budget check adds no item. A failed
 individual input-byte charge adds no bytes, but does not undo the item charge
-that preceded it. Output bytes are counted for built-in `String` conversions
-and for custom targets that use `AdmittedConversion::write_string`. With the
-`json` feature, `AdmittedConversion::encode_json` also charges the actual
+that preceded it. Built-in `String` conversions and custom targets that use
+`AdmittedConversion::write_string` count the rendered string's UTF-8 bytes.
+With the `json` feature, `AdmittedConversion::encode_json` also charges the actual
 encoded JSON bytes, including formatting and escaping. Each output operation
 commits its bytes on success; a later failure in a custom target does not undo
 an earlier successful output operation. Other output a custom target produces
