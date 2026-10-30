@@ -501,6 +501,29 @@ assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
 `requested()`。批量 API 返回 `DataListConversionError`，其中保留原始 `source_index` 和
 转换错误。
 
+JSON 转换失败时，可通过 `json_diagnostic()` 查看解码器提供的安全元数据；错误的通用分类仍是
+`InvalidValue`。`category()` 返回 `Read`、`EmptyInput`、`InvalidUtf8`、`InvalidJson`、
+`UnexpectedTopLevel` 或 `Deserialize`。下面示例使用 `converter` 和 `json` 两个 feature，并直接依赖
+`serde_json`；依赖配置见[限制结构化输入](#限制结构化输入)：
+
+```rust
+use qubit_datatype::{DataConverter, JsonConversionErrorCategory};
+
+let error = DataConverter::from("{\n@}")
+    .to::<serde_json::Value>()
+    .unwrap_err();
+let diagnostic = error.json_diagnostic().expect("JSON diagnostic");
+assert_eq!(diagnostic.category(), JsonConversionErrorCategory::InvalidJson);
+assert_eq!(diagnostic.line(), Some(2));
+assert_eq!(diagnostic.column(), Some(1));
+```
+
+行号从 1 开始。位置对应实际交给解码器的文本；该文本可能已经过规范化。`InvalidJson` 的列按
+Unicode 字符计数，`Deserialize` 的列按 UTF-8 字节计数。并非每种错误类别或每个调用入口都会提供
+行列；解码器未提供的位置由相应访问器返回 `None`。诊断不会保存输入值、对象键或后端错误消息。
+预算耗尽仍返回 `LimitExceeded`，且不附带 JSON 诊断。附加诊断不会改变 `DataConversionError` 的
+公共相等性比较结果，比较时不考虑诊断。
+
 `requested()` 表示被拒绝的累计请求，可能是保守的最低预留量或格式化器的一次写入量，
 而不是最终完整文本的精确长度。资源失败还可通过 `std::error::Error::source` 访问底层原因；
 稳定分类仍应优先使用现有访问器。

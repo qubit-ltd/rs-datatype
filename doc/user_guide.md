@@ -575,6 +575,34 @@ For a limit failure, inspect `resource()`, `configured_limit()`,
 applicable. Batch APIs return `DataListConversionError`, which retains the
 original `source_index` alongside the conversion error.
 
+When a JSON conversion fails, `json_diagnostic()` provides safe decoder
+metadata without changing the general `InvalidValue` classification. Its
+`category()` is one of `Read`, `EmptyInput`, `InvalidUtf8`, `InvalidJson`,
+`UnexpectedTopLevel`, or `Deserialize`. This example uses the `converter` and
+`json` features and a direct `serde_json` dependency, as shown in [Bound
+structured input](#bound-structured-input):
+
+```rust
+use qubit_datatype::{DataConverter, JsonConversionErrorCategory};
+
+let error = DataConverter::from("{\n@}")
+    .to::<serde_json::Value>()
+    .unwrap_err();
+let diagnostic = error.json_diagnostic().expect("JSON diagnostic");
+assert_eq!(diagnostic.category(), JsonConversionErrorCategory::InvalidJson);
+assert_eq!(diagnostic.line(), Some(2));
+assert_eq!(diagnostic.column(), Some(1));
+```
+
+The line number is one-based. Coordinates refer to the text passed to the
+decoder, which may be normalized text. `InvalidJson` columns count Unicode
+characters; `Deserialize` columns count UTF-8 bytes. A decoder may omit either
+coordinate, so neither coordinate is guaranteed for every category or entry
+point; an omitted coordinate is `None`. The diagnostic stores no input value,
+object key, or backend message. Budget failures remain `LimitExceeded` errors
+and have no JSON diagnostic. Adding this metadata does not change public error
+equality: diagnostics are not part of `DataConversionError` equality.
+
 `requested()` describes the rejected cumulative request. It may be a
 conservative minimum reservation or one formatter write, rather than the exact
 final text size. Resource failures also expose their underlying cause through

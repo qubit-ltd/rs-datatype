@@ -52,6 +52,15 @@ retains the already charged item and source bytes and adds no structured or
 output charges. Built-in text-to-JSON conversion continues to check normalized
 source text before decoding.
 
+JSON decode failures retain only a datatype-owned category and optional line
+and column through `DataConversionError::json_diagnostic()`. This metadata
+never includes input values, keys, or backend error text. Coordinates refer to
+the decoder input (which may be normalized); syntax columns count Unicode
+characters, while target-deserialization columns count UTF-8 bytes. Missing
+coordinates remain `None`. Budget failures retain their existing
+`LimitExceeded` classification and do not carry a JSON diagnostic; the
+diagnostic does not alter legacy error equality or the error source chain.
+
 The raw `ScalarItems` iterator can continue after a rejected empty item and
 reports it at its original source index; it errors once when the retained-item
 limit is exceeded, then exhausts. `AdmittedScalarSource` instead exhausts on
