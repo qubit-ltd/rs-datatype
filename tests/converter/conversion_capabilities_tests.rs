@@ -9,6 +9,7 @@
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::fmt::Debug;
 use std::time::Duration;
 
 #[cfg(feature = "big-decimal")]
@@ -28,8 +29,10 @@ use num_bigint::BigInt;
 use qubit_datatype::ConversionCapabilities;
 use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConversionErrorKind;
+use qubit_datatype::DataConversionTarget;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataType;
+use qubit_datatype::DataTypeOf;
 #[cfg(feature = "json")]
 use serde_json::Value;
 #[cfg(feature = "url")]
@@ -217,8 +220,8 @@ fn test_supported_targets_are_empty_for_unavailable_source() {
     }
 }
 
-/// Verifies the capability matrix agrees with every concrete conversion
-/// implementation available in the current feature combination.
+/// Verifies capability reporting agrees with concrete dispatch for every
+/// represented source and target in the current feature combination.
 #[test]
 fn test_capabilities_match_representative_conversion_dispatch() {
     let capabilities = ConversionCapabilities::current();
@@ -250,4 +253,204 @@ fn test_capabilities_match_representative_conversion_dispatch() {
             }
         }
     }
+}
+
+fn assert_supported_contract<T>(source: DataConverter<'_>, expected: T)
+where
+    T: DataConversionTarget + DataTypeOf + Debug + PartialEq,
+{
+    let from = source.data_type();
+    let to = T::DATA_TYPE;
+    assert!(ConversionCapabilities::current().supports(from, to), "{from} -> {to}");
+    assert_eq!(source.to::<T>(), Ok(expected), "{from} -> {to}");
+}
+
+fn assert_unsupported_contract<T>(source: DataConverter<'_>, from: DataType, to: DataType)
+where
+    T: DataConversionTarget + DataTypeOf + Debug,
+{
+    let error = source.to::<T>().unwrap_err();
+    assert!(!ConversionCapabilities::current().supports(from, to), "{from} -> {to}");
+    assert_eq!(error.kind(), DataConversionErrorKind::Unsupported);
+    assert_eq!(error.from_type(), Some(from));
+    assert_eq!(error.to_type(), to);
+}
+
+macro_rules! assert_numeric_targets {
+    ($source:expr, $value:expr) => {{
+        assert_supported_contract($source, $value as i8);
+        assert_supported_contract($source, $value as i16);
+        assert_supported_contract($source, $value as i32);
+        assert_supported_contract($source, $value as i64);
+        assert_supported_contract($source, $value as i128);
+        assert_supported_contract($source, $value as u8);
+        assert_supported_contract($source, $value as u16);
+        assert_supported_contract($source, $value as u32);
+        assert_supported_contract($source, $value as u64);
+        assert_supported_contract($source, $value as u128);
+        assert_supported_contract($source, $value as f32);
+        assert_supported_contract($source, $value as f64);
+    }};
+}
+
+macro_rules! assert_integer_targets {
+    ($source:expr) => {{
+        assert_supported_contract($source, 1_i8);
+        assert_supported_contract($source, 1_i16);
+        assert_supported_contract($source, 1_i32);
+        assert_supported_contract($source, 1_i64);
+        assert_supported_contract($source, 1_i128);
+        assert_supported_contract($source, 1_u8);
+        assert_supported_contract($source, 1_u16);
+        assert_supported_contract($source, 1_u32);
+        assert_supported_contract($source, 1_u64);
+        assert_supported_contract($source, 1_u128);
+    }};
+}
+
+macro_rules! assert_integer_duration_paths {
+    ($value:expr) => {{
+        assert_supported_contract(DataConverter::from($value), true);
+        assert_supported_contract(DataConverter::from($value), Duration::from_millis(1));
+    }};
+}
+
+#[test]
+fn test_independent_core_conversion_contracts() {
+    assert_numeric_targets!(DataConverter::from(1_i8), 1);
+    assert_numeric_targets!(DataConverter::from(1_i16), 1);
+    assert_numeric_targets!(DataConverter::from(1_i32), 1);
+    assert_numeric_targets!(DataConverter::from(1_i64), 1);
+    assert_numeric_targets!(DataConverter::from(1_i128), 1);
+    assert_numeric_targets!(DataConverter::from(1_u8), 1);
+    assert_numeric_targets!(DataConverter::from(1_u16), 1);
+    assert_numeric_targets!(DataConverter::from(1_u32), 1);
+    assert_numeric_targets!(DataConverter::from(1_u64), 1);
+    assert_numeric_targets!(DataConverter::from(1_u128), 1);
+    assert_numeric_targets!(DataConverter::from(1.0_f32), 1);
+    assert_numeric_targets!(DataConverter::from(1.0_f64), 1);
+    assert_numeric_targets!(DataConverter::from(true), 1);
+    assert_numeric_targets!(DataConverter::from('A'), 65);
+
+    assert_integer_duration_paths!(1_i8);
+    assert_integer_duration_paths!(1_i16);
+    assert_integer_duration_paths!(1_i32);
+    assert_integer_duration_paths!(1_i64);
+    assert_integer_duration_paths!(1_i128);
+    assert_integer_duration_paths!(1_u8);
+    assert_integer_duration_paths!(1_u16);
+    assert_integer_duration_paths!(1_u32);
+    assert_integer_duration_paths!(1_u64);
+    assert_integer_duration_paths!(1_u128);
+    assert_integer_targets!(DataConverter::from(Duration::from_millis(1)));
+
+    assert_supported_contract(DataConverter::from("true"), true);
+    assert_supported_contract(DataConverter::from("A"), 'A');
+    assert_supported_contract(DataConverter::from("1"), 1_i8);
+    assert_supported_contract(DataConverter::from("1"), 1_i16);
+    assert_supported_contract(DataConverter::from("1"), 1_i32);
+    assert_supported_contract(DataConverter::from("1"), 1_i64);
+    assert_supported_contract(DataConverter::from("1"), 1_i128);
+    assert_supported_contract(DataConverter::from("1"), 1_u8);
+    assert_supported_contract(DataConverter::from("1"), 1_u16);
+    assert_supported_contract(DataConverter::from("1"), 1_u32);
+    assert_supported_contract(DataConverter::from("1"), 1_u64);
+    assert_supported_contract(DataConverter::from("1"), 1_u128);
+    assert_supported_contract(DataConverter::from("1"), 1.0_f32);
+    assert_supported_contract(DataConverter::from("1"), 1.0_f64);
+    assert_supported_contract(DataConverter::from("1ms"), Duration::from_millis(1));
+    assert_supported_contract(DataConverter::from(true), String::from("true"));
+    assert_supported_contract(DataConverter::from('A'), String::from("A"));
+    assert_supported_contract(DataConverter::from(1_i8), String::from("1"));
+    assert_supported_contract(DataConverter::from(1_i16), String::from("1"));
+    assert_supported_contract(DataConverter::from(1_i32), String::from("1"));
+    assert_supported_contract(DataConverter::from(1_i64), String::from("1"));
+    assert_supported_contract(DataConverter::from(1_i128), String::from("1"));
+    assert_supported_contract(DataConverter::from(1_u8), String::from("1"));
+    assert_supported_contract(DataConverter::from(1_u16), String::from("1"));
+    assert_supported_contract(DataConverter::from(1_u32), String::from("1"));
+    assert_supported_contract(DataConverter::from(1_u64), String::from("1"));
+    assert_supported_contract(DataConverter::from(1_u128), String::from("1"));
+    assert_supported_contract(DataConverter::from(1.0_f32), String::from("1"));
+    assert_supported_contract(DataConverter::from(1.0_f64), String::from("1"));
+
+    assert_unsupported_contract::<Duration>(DataConverter::from(true), DataType::Bool, DataType::Duration);
+    assert_unsupported_contract::<bool>(DataConverter::from('A'), DataType::Char, DataType::Bool);
+    assert_unsupported_contract::<Duration>(DataConverter::from(1.0_f64), DataType::Float64, DataType::Duration);
+    assert_unsupported_contract::<bool>(
+        DataConverter::from(HashMap::<String, String>::new()),
+        DataType::StringMap,
+        DataType::Bool,
+    );
+}
+
+#[cfg(feature = "big-integer")]
+#[test]
+fn test_big_integer_conversion_contracts() {
+    assert_supported_contract(DataConverter::from(BigInt::from(1)), 1_i64);
+    assert_supported_contract(DataConverter::from(BigInt::from(1)), true);
+    assert_supported_contract(DataConverter::from(BigInt::from(1)), Duration::from_millis(1));
+    assert_supported_contract(DataConverter::from(true), BigInt::from(1));
+    assert_supported_contract(DataConverter::from(Duration::from_millis(1)), BigInt::from(1));
+}
+
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_big_decimal_conversion_contracts() {
+    assert_supported_contract(DataConverter::from(BigDecimal::from(1)), 1_i64);
+    assert_supported_contract(DataConverter::from(BigDecimal::from(1)), 1.0_f64);
+    assert_supported_contract(DataConverter::from(1_i64), BigDecimal::from(1));
+}
+
+#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
+#[test]
+fn test_big_number_cross_conversion_contracts() {
+    assert_supported_contract(DataConverter::from(BigInt::from(1)), BigDecimal::from(1));
+    assert_supported_contract(DataConverter::from(BigDecimal::from(1)), BigInt::from(1));
+}
+
+#[cfg(feature = "chrono")]
+#[test]
+fn test_chrono_conversion_contracts() {
+    let date = NaiveDate::from_ymd_opt(2026, 1, 2).unwrap();
+    let time = NaiveTime::from_hms_opt(3, 4, 5).unwrap();
+    let datetime = date.and_time(time);
+    let instant = DateTime::parse_from_rfc3339("2026-01-02T03:04:05Z")
+        .unwrap()
+        .with_timezone(&Utc);
+    assert_supported_contract(DataConverter::from("2026-01-02"), date);
+    assert_supported_contract(DataConverter::from("03:04:05"), time);
+    assert_supported_contract(DataConverter::from("2026-01-02T03:04:05"), datetime);
+    assert_supported_contract(DataConverter::from("2026-01-02T03:04:05Z"), instant);
+    assert_supported_contract(DataConverter::from(date), date);
+    assert_supported_contract(DataConverter::from(time), time);
+    assert_supported_contract(DataConverter::from(datetime), datetime);
+    assert_supported_contract(DataConverter::from(instant), instant);
+    assert_supported_contract(DataConverter::from(date), String::from("2026-01-02"));
+    assert_supported_contract(DataConverter::from(time), String::from("03:04:05"));
+    assert_supported_contract(DataConverter::from(datetime), String::from("2026-01-02T03:04:05"));
+    assert_supported_contract(DataConverter::from(instant), String::from("2026-01-02T03:04:05+00:00"));
+    assert_unsupported_contract::<i32>(DataConverter::from(date), DataType::Date, DataType::Int32);
+}
+
+#[cfg(feature = "url")]
+#[test]
+fn test_url_conversion_contracts() {
+    let url = Url::parse("https://example.com/").unwrap();
+    assert_supported_contract(DataConverter::from("https://example.com/"), url.clone());
+    assert_supported_contract(DataConverter::from(url.clone()), url.clone());
+    assert_supported_contract(DataConverter::from(url), String::from("https://example.com/"));
+}
+
+#[cfg(feature = "json")]
+#[test]
+fn test_json_conversion_contracts() {
+    let map = HashMap::from([(String::from("k"), String::from("v"))]);
+    let value = serde_json::json!({"k": "v"});
+    assert_supported_contract(DataConverter::from("{\"k\":\"v\"}"), map.clone());
+    assert_supported_contract(DataConverter::from(map.clone()), value.clone());
+    assert_supported_contract(DataConverter::from(map), String::from("{\"k\":\"v\"}"));
+    assert_supported_contract(DataConverter::from("{\"k\":\"v\"}"), value.clone());
+    assert_supported_contract(DataConverter::from(value.clone()), value.clone());
+    assert_supported_contract(DataConverter::from(value), String::from("{\"k\":\"v\"}"));
 }
