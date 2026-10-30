@@ -172,8 +172,9 @@ fn coefficient_remainder(coefficient: &BigInt, divisor: u64) -> u64 {
 ///
 /// Returns a BigInteger digit-limit error with a lower-bound observation or a
 /// fixed-width out-of-range error when oversize is proven. Under strict policy,
-/// scales up to 19 are checked for exact divisibility first, preserving
-/// precision-error priority. Larger strict scales defer to the original path.
+/// scales up to 19 are checked for exact divisibility first. Larger scales
+/// check divisibility by 10^19 as a necessary condition; a zero remainder
+/// still defers to the original exactness and range checks.
 #[cfg(feature = "big-decimal")]
 fn precheck_positive_scale_integer(
     coefficient: &BigInt,
@@ -195,16 +196,16 @@ fn precheck_positive_scale_integer(
         return Ok(());
     }
     if policy == FractionalToIntegerPolicy::Reject {
-        if scale > 19 {
-            return Ok(());
-        }
-        let divisor = 10_u64.pow(scale as u32);
+        let divisor = 10_u64.pow(scale.min(19) as u32);
         if coefficient_remainder(coefficient, divisor) != 0 {
             return Err(DataConversionError::invalid(
                 from,
                 to,
                 InvalidValueReason::PrecisionLoss,
             ));
+        }
+        if scale > 19 {
+            return Ok(());
         }
     }
     if to == DataType::BigInteger {
@@ -261,9 +262,10 @@ pub(super) fn enforce_big_decimal_limits(
 /// digit-limit error from a conservative precheck may report a lower bound
 /// rather than an exact digit count; values near the limit use the exact path.
 /// For positive scales, a bit-derived lower bound rejects clearly oversized
-/// integer results before formatting the coefficient. Strict conversions with
-/// scales up to 19 check divisibility first so precision loss retains priority;
-/// larger strict scales use the original conversion path. This optimization
+/// integer results before formatting the coefficient. Under strict policy,
+/// scales up to 19 are checked for exact divisibility first. Larger scales
+/// check divisibility by 10^19 as a necessary condition; a zero remainder
+/// still defers to the original exactness and range checks. This optimization
 /// does not bound all allocations for every decimal conversion.
 #[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_bigint(

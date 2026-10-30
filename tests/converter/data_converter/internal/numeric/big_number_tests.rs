@@ -412,6 +412,26 @@ fn test_positive_scale_precheck_boundary_and_fallback() {
     assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
 }
 
+/// Necessary divisibility by 10^19 must not be treated as proof of exactness.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_large_scale_necessary_divisibility_keeps_fallback() {
+    use qubit_datatype::InvalidValueReason;
+
+    let strict = ConversionPolicy::strict();
+    let limits = ConversionLimits::default();
+    let ten = BigInt::from(10_u8);
+    let huge = BigInt::from(1_u8) << 1_000_usize;
+    let coefficient = huge * ten.pow(20) + ten.pow(19);
+    for coefficient in [coefficient.clone(), -coefficient] {
+        let value = BigDecimal::new(coefficient, 20);
+        let error = DataConverter::from(&value)
+            .to_with::<i32>(&strict, &limits)
+            .expect_err("necessary divisibility does not prove exactness");
+        assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
+    }
+}
+
 /// Verifies nearby BigInteger limits keep exact digit observations.
 #[cfg(all(feature = "big-integer", feature = "big-decimal"))]
 #[test]

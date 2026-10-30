@@ -23,6 +23,8 @@ use qubit_datatype::ConversionResource;
 use qubit_datatype::ConversionSession;
 #[cfg(feature = "big-decimal")]
 use qubit_datatype::DataConversionErrorKind;
+#[cfg(feature = "big-decimal")]
+use qubit_datatype::DataConversionTarget;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataConverters;
 #[cfg(feature = "big-decimal")]
@@ -88,6 +90,56 @@ unsafe impl GlobalAlloc for TrackingAllocator {
 
 #[global_allocator]
 static ALLOCATOR: TrackingAllocator = TrackingAllocator;
+
+/// Confirms large-scale fractional BigDecimals fail without formatting their
+/// large coefficients, across ownership and consumption modes.
+#[cfg(feature = "big-decimal")]
+fn assert_large_scale_fraction_rejection<T: DataConversionTarget>() {
+    let policy = ConversionPolicy::strict();
+    let limits = ConversionLimits::default();
+    for scale in [20_u32, 37] {
+        for negative in [false, true] {
+            let magnitude =
+                ((BigInt::from(1_u8) << 1_000_000_usize) * BigInt::from(10_u8).pow(scale)) + BigInt::from(1_u8);
+            let coefficient = if negative { -magnitude } else { magnitude };
+            let decimal = BigDecimal::new(coefficient, i64::from(scale));
+            for owned in [false, true] {
+                for consume in [false, true] {
+                    let source = if owned {
+                        DataConverter::from(decimal.clone())
+                    } else {
+                        DataConverter::from(&decimal)
+                    };
+                    let mut session = ConversionSession::new(&policy, &limits);
+                    let (result, maximum) = measure(|| {
+                        if consume {
+                            source.into_target_in::<T>(&mut session)
+                        } else {
+                            source.to_in::<T>(&mut session)
+                        }
+                    });
+                    let error = result.err().expect("the fractional input must fail");
+                    assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+                    assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
+                    assert_eq!(error.from_type(), Some(DataType::BigDecimal));
+                    assert_eq!(error.to_type(), T::DATA_TYPE);
+                    assert_eq!(session.items_used(), 1);
+                    assert_eq!(session.output_bytes_used(), 0);
+                    assert!(maximum < 4096, "rejection allocated {maximum} bytes");
+                }
+            }
+        }
+    }
+}
+
+/// Strict large-scale fractional rejection must avoid coefficient formatting.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_large_scale_fraction_rejection_avoids_formatting() {
+    assert_large_scale_fraction_rejection::<i32>();
+    #[cfg(feature = "big-integer")]
+    assert_large_scale_fraction_rejection::<BigInt>();
+}
 
 /// Batch rejection must not allocate target slots for unvisited items.
 #[test]
