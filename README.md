@@ -53,15 +53,15 @@ use qubit_datatype::{ConversionLimits, ConversionPolicy, DataConversionError, Da
 
 fn main() -> Result<(), DataConversionError> {
     let policy = ConversionPolicy::env_friendly();
-let limits = ConversionLimits::default();
+    let limits = ConversionLimits::default();
 
-let port = DataConverter::from("8080").to_with::<u16>(&policy, &limits)?;
-let admin = DataConverter::from(" yes ").to_with::<bool>(&policy, &limits)?;
-let retry = DataConverter::from("1500ms").to_with::<Duration>(&policy, &limits)?;
+    let port = DataConverter::from("8080").to_with::<u16>(&policy, &limits)?;
+    let admin = DataConverter::from(" yes ").to_with::<bool>(&policy, &limits)?;
+    let retry = DataConverter::from("1500ms").to_with::<Duration>(&policy, &limits)?;
 
-assert_eq!(port, 8080);
-assert!(admin);
-assert_eq!(retry, Duration::from_millis(1500));
+    assert_eq!(port, 8080);
+    assert!(admin);
+    assert_eq!(retry, Duration::from_millis(1500));
     Ok(())
 }
 ```

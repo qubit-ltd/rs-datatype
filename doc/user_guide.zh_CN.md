@@ -65,16 +65,16 @@ use std::time::Duration;
 use qubit_datatype::{ConversionLimits, ConversionPolicy, DataConversionError, DataConverter};
 
 fn main() -> Result<(), DataConversionError> {
-let policy = ConversionPolicy::env_friendly();
-let limits = ConversionLimits::default();
+    let policy = ConversionPolicy::env_friendly();
+    let limits = ConversionLimits::default();
 
-let port = DataConverter::from("8080").to_with::<u16>(&policy, &limits)?;
-let admin = DataConverter::from(" yes ").to_with::<bool>(&policy, &limits)?;
-let retry = DataConverter::from("1500ms").to_with::<Duration>(&policy, &limits)?;
+    let port = DataConverter::from("8080").to_with::<u16>(&policy, &limits)?;
+    let admin = DataConverter::from(" yes ").to_with::<bool>(&policy, &limits)?;
+    let retry = DataConverter::from("1500ms").to_with::<Duration>(&policy, &limits)?;
 
-assert_eq!(port, 8080);
-assert!(admin);
-assert_eq!(retry, Duration::from_millis(1500));
+    assert_eq!(port, 8080);
+    assert!(admin);
+    assert_eq!(retry, Duration::from_millis(1500));
     Ok(())
 }
 ```
@@ -214,15 +214,15 @@ use qubit_datatype::{
 };
 
 fn main() -> Result<(), DataConversionError> {
-let policy = ConversionPolicy::strict();
-let limits = ConversionLimits::builder()
-    .operation_limits(ConversionOperationLimits::builder().max_items(2).build())
-    .build();
-let mut session = ConversionSession::new(&policy, &limits);
+    let policy = ConversionPolicy::strict();
+    let limits = ConversionLimits::builder()
+        .operation_limits(ConversionOperationLimits::builder().max_items(2).build())
+        .build();
+    let mut session = ConversionSession::new(&policy, &limits);
 
-assert_eq!(DataConverter::from("1").to_in::<u16>(&mut session)?, 1);
-assert_eq!(DataConverter::from("2").to_in::<u16>(&mut session)?, 2);
-assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
+    assert_eq!(DataConverter::from("1").to_in::<u16>(&mut session)?, 1);
+    assert_eq!(DataConverter::from("2").to_in::<u16>(&mut session)?, 2);
+    assert!(DataConverter::from("3").to_in::<u16>(&mut session).is_err());
     Ok(())
 }
 ```
@@ -286,12 +286,12 @@ use std::cmp::Ordering;
 use qubit_datatype::{NumberRef, NumericComparisonPolicy};
 
 fn main() {
-let integer = NumberRef::from((1_u64 << 53) + 1);
-let float = NumberRef::from((1_u64 << 53) as f64);
-assert_eq!(
-    integer.compare(float, NumericComparisonPolicy::Exact),
-    Some(Ordering::Greater),
-);
+    let integer = NumberRef::from((1_u64 << 53) + 1);
+    let float = NumberRef::from((1_u64 << 53) as f64);
+    assert_eq!(
+        integer.compare(float, NumericComparisonPolicy::Exact),
+        Some(Ordering::Greater),
+    );
 }
 ```
 
@@ -313,9 +313,9 @@ use std::time::Duration;
 use qubit_datatype::{parse_duration_text, DurationTextOptions};
 
 fn main() -> Result<(), qubit_datatype::DurationParseError> {
-let value = parse_duration_text("1500ms", &DurationTextOptions::default())?;
-assert_eq!(value, Duration::from_millis(1500));
-assert!(parse_duration_text("1500", &DurationTextOptions::default()).is_err());
+    let value = parse_duration_text("1500ms", &DurationTextOptions::default())?;
+    assert_eq!(value, Duration::from_millis(1500));
+    assert!(parse_duration_text("1500", &DurationTextOptions::default()).is_err());
     Ok(())
 }
 ```
@@ -494,8 +494,8 @@ fn main() {
 use qubit_datatype::{DataConversionErrorKind, DataConverter};
 
 fn main() {
-let error = DataConverter::from("3.9").to::<i32>().unwrap_err();
-assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+    let error = DataConverter::from("3.9").to::<i32>().unwrap_err();
+    assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
 }
 ```
 
