@@ -92,6 +92,64 @@ assert_eq!(retry, Duration::from_millis(1500));
 这种按目标类型区分的行为保留了 `BigDecimal` 解析器的既有兼容性，同时明确了整数语法。
 选择 `lossy()` 或 `env_friendly()` 不会改变各目标解析器接受的数值拼写。
 
+### 为数值转换设置资源上限
+
+`NumericConversionLimits` 的四项限制分别作用于以下转换阶段：
+
+| 限制项 | 生效阶段 |
+| --- | --- |
+| `max_text_bytes` | 解析数值文本时生效，统计配置的字符串规范化之后的 UTF-8 字节数。 |
+| `max_big_integer_digits` | 物化 `BigInt` 结果时生效；前导零和零结果不占用位数额度。 |
+| `max_big_decimal_coefficient_digits` | 目标类型为 `BigDecimal` 时生效，包括把已有值复制到该目标。 |
+| `max_big_decimal_scale_magnitude` | 目标类型为 `BigDecimal` 时生效，包括把已有值复制到该目标。 |
+
+例如，应用要把整数文本转换为 `BigInt`，需要启用 `converter` 和 `big-integer`，并分别
+配置输入文本与结果位数上限：
+
+```toml
+[dependencies]
+qubit-datatype = { version = "0.15", default-features = false, features = ["converter", "big-integer"] }
+num-bigint = "0.4"
+```
+
+下面的完整示例接受三位结果 `999`，并拒绝 `1000`，因为生成的 `BigInt` 有四位。文本上限
+高于这两个输入的长度，因此拒绝原因是结果位数超限：
+
+```rust
+use num_bigint::BigInt;
+use qubit_datatype::{
+    ConversionLimits, ConversionPolicy, ConversionResource, DataConverter,
+    NumericConversionLimits,
+};
+
+fn main() {
+    let numeric = NumericConversionLimits::builder()
+        .max_text_bytes(64)
+        .max_big_integer_digits(3)
+        .build();
+    let limits = ConversionLimits::builder().numeric_limits(numeric).build();
+    let policy = ConversionPolicy::strict();
+    assert_eq!(
+        DataConverter::from("999").to_with::<BigInt>(&policy, &limits),
+        Ok(BigInt::from(999_u16)),
+    );
+    let error = DataConverter::from("1000")
+        .to_with::<BigInt>(&policy, &limits)
+        .expect_err("four result digits exceed the configured maximum");
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(3));
+}
+```
+
+这些限制不覆盖已有数值转换过程中的所有临时分配。例如，把已构造的 `BigDecimal` 转为
+浮点数时，转换器可能先把完整系数格式化为解析器输入；系数位数和 scale 上限只在目标为
+`BigDecimal` 时生效，不会自动限制已有 `BigDecimal` 转整数或浮点数的全部工作量。需要更强的
+资源边界时，应在应用的输入或反序列化边界限制不可信数值表示的规模。`NumberRef` 的比较也
+独立于转换会话，不受其中的转换预算计量；详见[比较不同数值表示](#比较不同数值表示)。
+
+各 builder 方法的具体约定及生效阶段见
+[`NumericConversionLimits` API 文档](https://docs.rs/qubit-datatype/0.15.0/qubit_datatype/struct.NumericConversionLimits.html)。
+
 ## 进阶用法
 
 ### 读取部署端口列表

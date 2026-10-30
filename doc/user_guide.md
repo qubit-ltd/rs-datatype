@@ -109,6 +109,69 @@ compatibility while keeping integer syntax explicit. Choosing `lossy()` or
 `env_friendly()` does not change which numeric spellings each target parser
 accepts.
 
+### Bound numeric conversion resources
+
+`NumericConversionLimits` applies each limit at a specific conversion stage:
+
+| Limit | Applies when |
+| --- | --- |
+| `max_text_bytes` | Parsing numeric text, after configured string normalization; the count is UTF-8 bytes. |
+| `max_big_integer_digits` | Materializing a `BigInt` result; leading zeros and a zero result do not consume the digit budget. |
+| `max_big_decimal_coefficient_digits` | Converting to a `BigDecimal`, including copying an existing value to that target. |
+| `max_big_decimal_scale_magnitude` | Converting to a `BigDecimal`, including copying an existing value to that target. |
+
+For example, when an application accepts integer text as `BigInt`, configure the
+`converter` and `big-integer` features and set both the text and result limits:
+
+```toml
+[dependencies]
+qubit-datatype = { version = "0.15", default-features = false, features = ["converter", "big-integer"] }
+num-bigint = "0.4"
+```
+
+The following complete example accepts the three-digit result `999` and rejects
+`1000` because its materialized `BigInt` result has four digits. The input text
+limit is set higher than either input so the rejection identifies the result
+digit limit:
+
+```rust
+use num_bigint::BigInt;
+use qubit_datatype::{
+    ConversionLimits, ConversionPolicy, ConversionResource, DataConverter,
+    NumericConversionLimits,
+};
+
+fn main() {
+    let numeric = NumericConversionLimits::builder()
+        .max_text_bytes(64)
+        .max_big_integer_digits(3)
+        .build();
+    let limits = ConversionLimits::builder().numeric_limits(numeric).build();
+    let policy = ConversionPolicy::strict();
+    assert_eq!(
+        DataConverter::from("999").to_with::<BigInt>(&policy, &limits),
+        Ok(BigInt::from(999_u16)),
+    );
+    let error = DataConverter::from("1000")
+        .to_with::<BigInt>(&policy, &limits)
+        .expect_err("four result digits exceed the configured maximum");
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(3));
+}
+```
+
+These limits do not cap every temporary allocation while converting an
+already-materialized number. For example, converting an existing `BigDecimal`
+to a float may format its full coefficient as parser input; the coefficient
+and scale limits apply when `BigDecimal` is the target, not to all work on an
+existing value. If a stronger resource boundary is required, constrain
+untrusted number representations at the application's input or deserialization
+boundary. `NumberRef` comparisons are also independent of conversion sessions
+and their budgets; see [Compare mixed numeric values](#compare-mixed-numeric-values).
+
+For the detailed contract of each setter and its target stage, see the
+[`NumericConversionLimits` API documentation](https://docs.rs/qubit-datatype/0.15.0/qubit_datatype/struct.NumericConversionLimits.html).
+
 ## Advanced usage
 
 ### Read a deployment port list
