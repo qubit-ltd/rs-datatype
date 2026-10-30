@@ -833,6 +833,22 @@ fn test_data_converter_numeric_boundary_branches() {
     }
 }
 
+/// Tests bool values convert to their numeric BigDecimal representation.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_data_converter_bool_to_big_decimal_preserves_zero_and_one() {
+    assert_eq!(
+        DataConverter::from(true).to::<BigDecimal>(),
+        Ok(BigDecimal::from(1)),
+        "true should convert to BigDecimal one",
+    );
+    assert_eq!(
+        DataConverter::from(false).to::<BigDecimal>(),
+        Ok(BigDecimal::from(0)),
+        "false should convert to BigDecimal zero",
+    );
+}
+
 /// Tests BigDecimal rejects rich non-numeric source families.
 #[cfg(all(feature = "big-decimal", feature = "chrono", feature = "url", feature = "json"))]
 #[test]
