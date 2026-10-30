@@ -442,7 +442,6 @@ impl<'a> NumberRef<'a> {
     /// # Returns
     ///
     /// The numeric ordering, or `None` when either operand is NaN.
-    #[must_use]
     pub fn compare(self, right: NumberRef<'_>, policy: NumericComparisonPolicy) -> Option<Ordering> {
         if self.is_nan() || right.is_nan() {
             return None;
@@ -522,7 +521,6 @@ impl<'a> NumberRef<'a> {
     ///
     /// Their exact mathematical ordering, or `None` for non-finite values.
     #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-    #[must_use]
     fn compare_exact_rational(self, right: NumberRef<'_>) -> Option<Ordering> {
         #[cfg(feature = "big-integer")]
         if let (NumberRepr::BigInteger(left), NumberRepr::BigInteger(right)) = (self.inner, right.inner) {
@@ -560,7 +558,6 @@ impl<'a> NumberRef<'a> {
     /// The ordering when the pair contains a `BigInt` and no floating-point
     /// or decimal value; otherwise, `None`.
     #[cfg(feature = "big-integer")]
-    #[must_use]
     #[inline]
     fn compare_big_integer_fixed(self, right: NumberRef<'_>) -> Option<Ordering> {
         match (self.inner, right.inner) {
@@ -573,7 +570,6 @@ impl<'a> NumberRef<'a> {
     /// Compares a `BigInt` directly with a finite floating-point value when
     /// zero, sign, or highest-bit ordering determines the result.
     #[cfg(feature = "big-integer")]
-    #[must_use]
     #[inline]
     fn compare_big_integer_float(self, right: NumberRef<'_>) -> Option<Ordering> {
         match (self.inner, right.inner) {
@@ -600,7 +596,6 @@ impl<'a> NumberRef<'a> {
     /// non-finite.
     #[cfg(feature = "big-decimal")]
     #[inline]
-    #[must_use]
     fn compare_exact_decimal(self, right: NumberRef<'_>) -> Option<Ordering> {
         Some(self.to_exact_decimal()?.cmp(&right.to_exact_decimal()?))
     }
@@ -615,7 +610,6 @@ impl<'a> NumberRef<'a> {
     ///
     /// Their mathematical ordering, or `None` for a non-finite or unsupported
     /// input.
-    #[must_use]
     fn compare_fixed(self, right: NumberRef<'_>) -> Option<Ordering> {
         let (left_negative, left_significand, left_exponent) = finite_parts(self)?;
         let (right_negative, right_significand, right_exponent) = finite_parts(right)?;
@@ -644,7 +638,6 @@ impl<'a> NumberRef<'a> {
     /// The approximate `f64` projection, or `None` when an arbitrary-precision
     /// value cannot be represented as `f64` or a decimal scale cannot be
     /// safely projected.
-    #[must_use]
     fn to_approximate_f64(self) -> Option<f64> {
         match self.inner {
             NumberRepr::Int8(value) => Some(f64::from(value)),
@@ -681,7 +674,6 @@ impl<'a> NumberRef<'a> {
     /// The exact mathematical value, or `None` for non-finite values or an
     /// impractically large decimal scale.
     #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
-    #[must_use]
     fn to_exact_rational(self) -> Option<BigRational> {
         match self.inner {
             NumberRepr::Int8(value) => Some(BigRational::from_integer(BigInt::from(value))),
@@ -713,7 +705,6 @@ impl<'a> NumberRef<'a> {
     ///
     /// The exact decimal value, or `None` for a non-finite primitive float.
     #[cfg(feature = "big-decimal")]
-    #[must_use]
     fn to_exact_decimal(self) -> Option<BigDecimal> {
         match self.inner {
             NumberRepr::Int8(value) => Some(BigDecimal::from(value)),

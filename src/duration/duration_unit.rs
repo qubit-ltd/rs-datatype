@@ -170,7 +170,6 @@ impl DurationUnit {
     /// # Returns
     ///
     /// The exact count, or `None` when the unit would lose precision.
-    #[must_use]
     #[inline]
     pub fn exact_units(self, duration: Duration) -> Option<u128> {
         let total_nanos = duration.as_nanos();

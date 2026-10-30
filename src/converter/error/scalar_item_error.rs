@@ -96,7 +96,6 @@ impl ScalarItemError {
     ///
     /// `Some` with the configured limit for an item-limit error, or `None`
     /// for an empty-item rejection.
-    #[must_use]
     #[inline]
     pub const fn maximum_items(&self) -> Option<u64> {
         match *self {

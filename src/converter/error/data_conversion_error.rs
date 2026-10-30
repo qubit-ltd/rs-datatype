@@ -281,7 +281,6 @@ impl DataConversionError {
     ///
     /// `Some` for resource-limit and native-measurement failures, or `None`
     /// for conversion errors unrelated to resource accounting.
-    #[must_use]
     #[inline]
     pub const fn resource(&self) -> Option<ConversionResource> {
         match &self.inner {
@@ -297,7 +296,6 @@ impl DataConversionError {
     ///
     /// `Some` with the point maximum or cumulative limit for a
     /// resource-limit error, or `None` for every other error kind.
-    #[must_use]
     #[inline]
     pub const fn configured_limit(&self) -> Option<u64> {
         match &self.inner {
@@ -312,7 +310,6 @@ impl DataConversionError {
     ///
     /// `Some` for a point-limit failure, including inexact observations, or
     /// `None` for cumulative and non-budget failures.
-    #[must_use]
     #[inline]
     pub const fn observed_lower_bound(&self) -> Option<u64> {
         match &self.inner {
@@ -328,7 +325,6 @@ impl DataConversionError {
     /// `Some(true)` for an exact point observation, `Some(false)` for a
     /// lower-bound observation, or `None` when the error is not a point-limit
     /// failure.
-    #[must_use]
     #[inline]
     pub const fn observation_is_exact(&self) -> Option<bool> {
         match &self.inner {
@@ -347,7 +343,6 @@ impl DataConversionError {
     ///
     /// `Some` for an insufficient cumulative budget, or `None` for point-limit
     /// and non-budget failures.
-    #[must_use]
     #[inline]
     pub fn used(&self) -> Option<u64> {
         match &self.inner {
@@ -362,7 +357,6 @@ impl DataConversionError {
     ///
     /// `Some` for an insufficient cumulative budget, or `None` for point-limit
     /// and non-budget failures.
-    #[must_use]
     #[inline]
     pub const fn remaining(&self) -> Option<u64> {
         match &self.inner {
@@ -380,7 +374,6 @@ impl DataConversionError {
     /// an early preflight check may report a conservative minimum, while a
     /// chunked formatter may report one write at a time. It is not necessarily
     /// the exact length of the complete output text.
-    #[must_use]
     #[inline]
     pub const fn requested(&self) -> Option<u64> {
         match &self.inner {
@@ -395,7 +388,6 @@ impl DataConversionError {
     ///
     /// `Some` with the resource for a native-measurement failure, or `None`
     /// for every other error kind.
-    #[must_use]
     #[inline]
     pub const fn quantity_resource(&self) -> Option<ConversionResource> {
         match &self.inner {
