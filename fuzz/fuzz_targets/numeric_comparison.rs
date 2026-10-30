@@ -22,7 +22,8 @@ use num_bigint::BigInt;
 use qubit_datatype::NumberRef;
 use qubit_datatype::NumericComparisonPolicy;
 
-/// Bytes required for the two integers, float bits, and decimal scale fields.
+/// Bytes required for the two integers, float bits, and two decimal scale
+/// fields.
 const FIXED_INPUT_SIZE: usize = 42;
 /// Bounds arbitrary-precision coefficient allocation and comparison cost.
 const MAX_COEFFICIENT_SIZE: usize = 128;
@@ -50,15 +51,18 @@ fuzz_target!(|data: &[u8]| {
     if float.is_nan() {
         return;
     }
-    let coefficient = BigInt::from_signed_bytes_le(&data[FIXED_INPUT_SIZE..]);
-    let scale = i64::from(u16::from_le_bytes(scale_bytes) % 257) - 128;
-    let decimal = BigDecimal::new(coefficient.clone(), scale);
+    let payload = &data[FIXED_INPUT_SIZE..];
+    let coefficient = BigInt::from_signed_bytes_le(payload);
+    let (payload_a, payload_b) = payload.split_at(payload.len() / 2);
+    let decimal_a = BigDecimal::new(BigInt::from_signed_bytes_le(payload_a), i64::from(scale_bytes[0]) - 128);
+    let decimal_b = BigDecimal::new(BigInt::from_signed_bytes_le(payload_b), i64::from(scale_bytes[1]) - 128);
     let values = [
         NumberRef::from(signed),
         NumberRef::from(unsigned),
         NumberRef::from(float),
         NumberRef::from(&coefficient),
-        NumberRef::from(&decimal),
+        NumberRef::from(&decimal_a),
+        NumberRef::from(&decimal_b),
     ];
 
     for policy in [NumericComparisonPolicy::Exact, NumericComparisonPolicy::Approximate] {

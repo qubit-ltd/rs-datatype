@@ -602,6 +602,61 @@ proptest! {
         );
     }
 
+    /// Checks two independent decimals and mixed representations against exact mathematics.
+    #[cfg(feature = "big-decimal")]
+    #[test]
+    fn test_number_ref_exact_decimal_pair_oracle_and_transitivity(
+        coefficient_a in -1_000_000_i64..=1_000_000,
+        scale_a in -32_i64..=32,
+        coefficient_b in -1_000_000_i64..=1_000_000,
+        scale_b in -32_i64..=32,
+        integer in any::<i128>(),
+        sign in any::<bool>(),
+        exponent in 0_u16..0x7ff,
+        fraction in 0_u64..(1_u64 << 52),
+    ) {
+        let decimal_a = BigDecimal::new(BigInt::from(coefficient_a), scale_a);
+        let decimal_b = BigDecimal::new(BigInt::from(coefficient_b), scale_b);
+        let float = finite_f64(sign, exponent, fraction);
+        let values = [
+            NumberRef::from(&decimal_a),
+            NumberRef::from(&decimal_b),
+            NumberRef::from(integer),
+            NumberRef::from(float),
+        ];
+        let expected = [
+            decimal_parts_to_rational(coefficient_a, scale_a),
+            decimal_parts_to_rational(coefficient_b, scale_b),
+            BigRational::from_integer(BigInt::from(integer)),
+            finite_f64_to_rational(float),
+        ];
+        for left in 0..values.len() {
+            for middle in 0..values.len() {
+                let left_middle = compare_numbers(
+                    values[left],
+                    values[middle],
+                    NumericComparisonPolicy::Exact,
+                );
+                prop_assert_eq!(left_middle, Some(expected[left].cmp(&expected[middle])));
+                for right in 0..values.len() {
+                    let middle_right = compare_numbers(
+                        values[middle],
+                        values[right],
+                        NumericComparisonPolicy::Exact,
+                    );
+                    if left_middle != Some(Ordering::Greater)
+                        && middle_right != Some(Ordering::Greater)
+                    {
+                        prop_assert_ne!(
+                            compare_numbers(values[left], values[right], NumericComparisonPolicy::Exact),
+                            Some(Ordering::Greater),
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     /// Checks every public non-NaN representation pair remains ordered.
     #[cfg(all(feature = "big-integer", feature = "big-decimal"))]
     #[test]
@@ -615,6 +670,8 @@ proptest! {
         integer_coefficient in -1_000_000_i64..=1_000_000,
         decimal_coefficient in -1_000_000_i64..=1_000_000,
         decimal_scale in -32_i64..=32,
+        second_decimal_coefficient in -1_000_000_i64..=1_000_000,
+        second_decimal_scale in -32_i64..=32,
     ) {
         let float32 = float32_numerator as f32 / 17.0;
         let float64 = finite_f64(
@@ -626,6 +683,10 @@ proptest! {
         let decimal = BigDecimal::new(
             BigInt::from(decimal_coefficient),
             decimal_scale,
+        );
+        let second_decimal = BigDecimal::new(
+            BigInt::from(second_decimal_coefficient),
+            second_decimal_scale,
         );
         let values = [
             NumberRef::from(signed as i8),
@@ -642,6 +703,7 @@ proptest! {
             NumberRef::from(float64),
             NumberRef::from(&integer),
             NumberRef::from(&decimal),
+            NumberRef::from(&second_decimal),
         ];
 
         for policy in [
@@ -654,6 +716,57 @@ proptest! {
                     let reverse = compare_numbers(right, left, policy);
                     prop_assert_ne!(forward, None);
                     prop_assert_eq!(reverse, forward.map(Ordering::reverse));
+                }
+            }
+        }
+    }
+}
+
+/// Checks equal decimal encodings and scale boundaries across mixed
+/// representations.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_number_ref_exact_decimal_pair_boundaries() {
+    let negative_a = BigDecimal::new(BigInt::from(-1), 0);
+    let negative_b = BigDecimal::new(BigInt::from(-100), 2);
+    let zero_a = BigDecimal::new(BigInt::from(0), i64::MIN);
+    let zero_b = BigDecimal::new(BigInt::from(0), i64::MAX);
+    let one_a = BigDecimal::new(BigInt::from(1), 0);
+    let one_b = BigDecimal::new(BigInt::from(100), 2);
+    let tiny = [4097, 4096, 4095].map(|scale| BigDecimal::new(BigInt::from(1), scale));
+    let huge = [-4095, -4096, -4097].map(|scale| BigDecimal::new(BigInt::from(1), scale));
+    let groups: Vec<Vec<NumberRef<'_>>> = vec![
+        vec![
+            NumberRef::from(&negative_a),
+            NumberRef::from(&negative_b),
+            NumberRef::from(-1_i128),
+            NumberRef::from(-1.0_f64),
+        ],
+        vec![
+            NumberRef::from(&zero_a),
+            NumberRef::from(&zero_b),
+            NumberRef::from(0_i128),
+            NumberRef::from(0.0_f64),
+            NumberRef::from(-0.0_f64),
+        ],
+        vec![NumberRef::from(&tiny[0])],
+        vec![NumberRef::from(&tiny[1])],
+        vec![NumberRef::from(&tiny[2])],
+        vec![
+            NumberRef::from(&one_a),
+            NumberRef::from(&one_b),
+            NumberRef::from(1_i128),
+            NumberRef::from(1.0_f64),
+        ],
+        vec![NumberRef::from(&huge[0])],
+        vec![NumberRef::from(&huge[1])],
+        vec![NumberRef::from(&huge[2])],
+    ];
+    for (left_index, left_group) in groups.iter().enumerate() {
+        for (right_index, right_group) in groups.iter().enumerate() {
+            for &left in left_group {
+                for &right in right_group {
+                    assert_exact(left, right, Some(left_index.cmp(&right_index)));
                 }
             }
         }
