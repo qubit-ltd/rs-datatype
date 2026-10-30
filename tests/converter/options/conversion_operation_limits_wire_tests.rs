@@ -21,8 +21,7 @@ fn test_conversion_operation_limits_default_output_bytes_match_public_constant()
 
 #[test]
 fn test_conversion_operation_limits_deserialize_defaults() {
-    let limits = from_str::<ConversionOperationLimits>("{}")
-        .expect("omitted operation limits should use defaults");
+    let limits = from_str::<ConversionOperationLimits>("{}").expect("omitted operation limits should use defaults");
     assert_eq!(limits, ConversionOperationLimits::default());
 }
 
