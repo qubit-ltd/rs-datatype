@@ -181,10 +181,11 @@ fn test_big_integer_float_easy_comparisons_do_not_allocate() {
 
 #[cfg(feature = "big-decimal")]
 #[test]
-fn test_big_decimal_scale_fallback_avoids_redundant_coefficient_clone() {
-    for scale in [4097_i64, -4097, i64::MIN, i64::MAX] {
+fn test_big_decimal_zero_comparisons_at_scale_boundaries_do_not_allocate() {
+    for scale in [0_i64, 4096, -4096, 4097, -4097, i64::MIN, i64::MAX] {
         let coefficient = -(BigInt::from(1_u8) << 1_048_576_usize);
         let decimal = BigDecimal::new(coefficient, scale);
+        let decimal_zero = BigDecimal::new(BigInt::from(0_u8), scale);
         for zero in [NumberRef::from(0_i32), NumberRef::from(0.0_f64)] {
             for reverse in [false, true] {
                 let (left, right, expected) = if reverse {
@@ -192,31 +193,107 @@ fn test_big_decimal_scale_fallback_avoids_redundant_coefficient_clone() {
                 } else {
                     (NumberRef::from(&decimal), zero, Ordering::Less)
                 };
-                let (actual, large_allocations) = count_large_allocations(|| {
+                let (actual, allocations) = count_allocations(|| {
                     std::hint::black_box(compare_exact(std::hint::black_box(left), std::hint::black_box(right)))
                 });
                 assert_eq!(actual, Some(expected));
-                assert!(
-                    large_allocations <= 1,
-                    "scale={scale}, reverse={reverse}, large allocations={large_allocations}"
-                );
+                assert_eq!(allocations, 0, "scale={scale}, reverse={reverse}");
+            }
+        }
+        for (left, right, expected) in [
+            (
+                NumberRef::from(&decimal_zero),
+                NumberRef::from(0.0_f64),
+                Ordering::Equal,
+            ),
+            (
+                NumberRef::from(0.0_f64),
+                NumberRef::from(&decimal_zero),
+                Ordering::Equal,
+            ),
+            (
+                NumberRef::from(&decimal_zero),
+                NumberRef::from(-1_i64),
+                Ordering::Greater,
+            ),
+            (
+                NumberRef::from(1_i64),
+                NumberRef::from(&decimal_zero),
+                Ordering::Greater,
+            ),
+        ] {
+            let (actual, allocations) = count_allocations(|| {
+                std::hint::black_box(compare_exact(std::hint::black_box(left), std::hint::black_box(right)))
+            });
+            assert_eq!(actual, Some(expected), "scale={scale}");
+            assert_eq!(allocations, 0, "zero coefficient, scale={scale}");
+        }
+        #[cfg(feature = "big-integer")]
+        {
+            let positive_integer = BigInt::from(1_u8);
+            let negative_integer = BigInt::from(-1_i8);
+            let positive_decimal = -&decimal;
+            for (left, right, expected) in [
+                (
+                    NumberRef::from(&positive_decimal),
+                    NumberRef::from(&negative_integer),
+                    Ordering::Greater,
+                ),
+                (
+                    NumberRef::from(&negative_integer),
+                    NumberRef::from(&positive_decimal),
+                    Ordering::Less,
+                ),
+                (
+                    NumberRef::from(&decimal),
+                    NumberRef::from(&positive_integer),
+                    Ordering::Less,
+                ),
+                (
+                    NumberRef::from(&positive_integer),
+                    NumberRef::from(&decimal),
+                    Ordering::Greater,
+                ),
+            ] {
+                let (actual, allocations) = count_allocations(|| {
+                    std::hint::black_box(compare_exact(std::hint::black_box(left), std::hint::black_box(right)))
+                });
+                assert_eq!(actual, Some(expected), "scale={scale}");
+                assert_eq!(allocations, 0, "BigInt mixed comparison, scale={scale}");
             }
         }
     }
 }
 
-#[cfg(feature = "big-integer")]
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_big_decimal_zero_and_opposite_sign_comparisons_do_not_allocate() {
+    for scale in [4096_i64, 4097, i64::MIN, i64::MAX] {
+        let positive = BigDecimal::new(BigInt::from(1_u8) << 4096_usize, scale);
+        let negative = -&positive;
+        for (left, right, expected) in [
+            (NumberRef::from(&positive), NumberRef::from(0_i32), Ordering::Greater),
+            (NumberRef::from(0_i32), NumberRef::from(&positive), Ordering::Less),
+            (NumberRef::from(&negative), NumberRef::from(0.0_f64), Ordering::Less),
+            (NumberRef::from(0.0_f64), NumberRef::from(&negative), Ordering::Greater),
+            (NumberRef::from(&positive), NumberRef::from(-1.0_f64), Ordering::Greater),
+            (NumberRef::from(-1.0_f64), NumberRef::from(&positive), Ordering::Less),
+            (NumberRef::from(&negative), NumberRef::from(1_i64), Ordering::Less),
+            (NumberRef::from(1_i64), NumberRef::from(&negative), Ordering::Greater),
+        ] {
+            let (actual, allocations) = count_allocations(|| {
+                std::hint::black_box(left).compare(std::hint::black_box(right), NumericComparisonPolicy::Exact)
+            });
+            assert_eq!(actual, Some(expected), "scale={scale}");
+            assert_eq!(allocations, 0, "scale={scale}, expected={expected:?}");
+        }
+    }
+}
+
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 fn count_allocations<T>(operation: impl FnOnce() -> T) -> (T, usize) {
     let tracking = AllocationTracking::start();
     let result = operation();
     let (allocations, _) = tracking.finish();
     (result, allocations)
-}
-
-#[cfg(feature = "big-decimal")]
-fn count_large_allocations<T>(operation: impl FnOnce() -> T) -> (T, usize) {
-    let tracking = AllocationTracking::start();
-    let result = operation();
-    let (_, large_allocations) = tracking.finish();
-    (result, large_allocations)
 }

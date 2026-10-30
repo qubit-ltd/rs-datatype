@@ -808,6 +808,70 @@ fn test_number_ref_comparison_exact_decimal_float_oracle_edges() {
     }
 }
 
+/// Keeps exact mixed decimal comparisons distinct from approximate float
+/// comparison.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_number_ref_comparison_decimal_sign_and_zero_fast_paths_preserve_semantics() {
+    let tiny_positive = BigDecimal::new(BigInt::from(1_u8), 4097);
+    let tiny_negative = -&tiny_positive;
+    let positive_zero = NumberRef::from(0.0_f64);
+    let negative_zero = NumberRef::from(-0.0_f32);
+
+    assert_exact(NumberRef::from(&tiny_positive), positive_zero, Some(Ordering::Greater));
+    assert_exact(NumberRef::from(&tiny_negative), positive_zero, Some(Ordering::Less));
+    assert_exact(NumberRef::from(&tiny_positive), negative_zero, Some(Ordering::Greater));
+    assert_exact(NumberRef::from(&tiny_negative), negative_zero, Some(Ordering::Less));
+    assert_eq!(
+        compare_numbers(
+            NumberRef::from(&tiny_positive),
+            positive_zero,
+            NumericComparisonPolicy::Approximate
+        ),
+        Some(Ordering::Equal)
+    );
+    assert_eq!(
+        compare_numbers(
+            NumberRef::from(&tiny_negative),
+            positive_zero,
+            NumericComparisonPolicy::Approximate
+        ),
+        Some(Ordering::Equal)
+    );
+    assert_eq!(
+        compare_numbers(
+            NumberRef::from(&tiny_positive),
+            NumberRef::from(-1.0_f64),
+            NumericComparisonPolicy::Exact
+        ),
+        Some(Ordering::Greater)
+    );
+    assert_eq!(
+        compare_numbers(
+            NumberRef::from(&tiny_negative),
+            NumberRef::from(1.0_f64),
+            NumericComparisonPolicy::Exact
+        ),
+        Some(Ordering::Less)
+    );
+    assert_eq!(
+        compare_numbers(
+            NumberRef::from(&tiny_positive),
+            NumberRef::from(f64::NAN),
+            NumericComparisonPolicy::Exact
+        ),
+        None
+    );
+    assert_eq!(
+        compare_numbers(
+            NumberRef::from(&tiny_negative),
+            NumberRef::from(f64::INFINITY),
+            NumericComparisonPolicy::Exact
+        ),
+        Some(Ordering::Less)
+    );
+}
+
 /// Covers exact and approximate arbitrary-precision comparisons.
 #[cfg(all(feature = "big-integer", feature = "big-decimal"))]
 #[test]

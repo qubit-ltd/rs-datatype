@@ -147,6 +147,58 @@ fn benchmark_big_decimal(c: &mut Criterion) {
     group.finish();
 }
 
+/// Benchmarks mixed decimal comparisons that can be decided by sign alone.
+fn benchmark_big_decimal_sign_zero(c: &mut Criterion) {
+    let policy = NumericComparisonPolicy::Exact;
+    let mut group = c.benchmark_group("big_decimal_sign_zero");
+
+    for scale in [4096_i64, 4097, i64::MIN, i64::MAX] {
+        let coefficient = BigInt::from(1_u8) << 4096_usize;
+        let positive = BigDecimal::new(coefficient, scale);
+        let negative = -&positive;
+        let positive_ref = NumberRef::from(&positive);
+        let negative_ref = NumberRef::from(&negative);
+        let cases = [
+            (
+                "positive_vs_zero",
+                positive_ref,
+                NumberRef::from(0_i32),
+                Ordering::Greater,
+            ),
+            ("negative_vs_zero", negative_ref, NumberRef::from(0_i32), Ordering::Less),
+            (
+                "positive_vs_negative",
+                positive_ref,
+                NumberRef::from(-1_i64),
+                Ordering::Greater,
+            ),
+            (
+                "negative_vs_positive",
+                negative_ref,
+                NumberRef::from(1_i64),
+                Ordering::Less,
+            ),
+            (
+                "positive_same_sign",
+                positive_ref,
+                NumberRef::from(1_i64),
+                if scale < 0 { Ordering::Greater } else { Ordering::Less },
+            ),
+        ];
+        for (name, left, right, expected) in cases {
+            assert_eq!(
+                left.compare(right, policy),
+                Some(expected),
+                "scale={scale}, case={name}"
+            );
+            group.bench_function(format!("scale_{scale}_{name}"), |b| {
+                b.iter(|| black_box(black_box(left).compare(black_box(right), black_box(policy))));
+            });
+        }
+    }
+    group.finish();
+}
+
 /// Builds decimal candidates for membership comparisons against `42`.
 fn decimal_candidates(count: usize, includes_match: bool) -> Vec<BigDecimal> {
     (0..count)
@@ -293,6 +345,7 @@ criterion_group!(
     benchmark_big_integer,
     benchmark_big_integer_float,
     benchmark_big_decimal,
+    benchmark_big_decimal_sign_zero,
     benchmark_big_integer_decimal_pairs,
     benchmark_big_numeric_membership,
 );

@@ -491,10 +491,58 @@ impl<'a> NumberRef<'a> {
             #[cfg(not(feature = "big-decimal"))]
             let has_big_decimal = false;
             if has_big_integer || has_big_decimal {
+                #[cfg(feature = "big-decimal")]
+                if policy == NumericComparisonPolicy::Exact
+                    && self.is_big_decimal() != right.is_big_decimal()
+                    && let Some(ordering) = self.compare_zero_or_opposite_sign(right)
+                {
+                    return Some(ordering);
+                }
                 return self.compare_exact_rational(right);
             }
         }
         self.compare_fixed(right)
+    }
+
+    /// Compares mixed numeric representations when zero or opposite signs
+    /// determine their ordering without constructing exact rational values.
+    ///
+    /// # Parameters
+    ///
+    /// * `right` - Right numeric operand.
+    ///
+    /// # Returns
+    ///
+    /// The exact ordering when either value is zero or their nonzero signs
+    /// differ; otherwise, `None`.
+    #[cfg(feature = "big-decimal")]
+    fn compare_zero_or_opposite_sign(self, right: NumberRef<'_>) -> Option<Ordering> {
+        let left_zero = self.is_zero();
+        let right_zero = right.is_zero();
+        if left_zero {
+            return Some(if right_zero {
+                Ordering::Equal
+            } else if right.is_negative() {
+                Ordering::Greater
+            } else {
+                Ordering::Less
+            });
+        }
+        if right_zero {
+            return Some(if self.is_negative() {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            });
+        }
+        if self.is_negative() != right.is_negative() {
+            return Some(if self.is_negative() {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            });
+        }
+        None
     }
 
     /// Returns the private representation for numeric algorithms.
