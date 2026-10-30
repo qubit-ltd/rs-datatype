@@ -12,11 +12,11 @@ use std::str::FromStr;
 
 #[cfg(feature = "big-decimal")]
 use bigdecimal::BigDecimal;
-#[cfg(feature = "big-integer")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use num_bigint::BigInt;
-#[cfg(feature = "big-integer")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use qubit_datatype::ConversionLimits;
-#[cfg(feature = "big-integer")]
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 use qubit_datatype::ConversionPolicy;
 #[cfg(feature = "big-integer")]
 use qubit_datatype::ConversionResource;
@@ -307,6 +307,130 @@ fn test_nonpositive_scale_decimal_to_bigint_preserves_digit_limit_boundaries() {
         DataConverter::from(&small).to_with::<BigInt>(&policy, &unlimited),
         Ok(BigInt::from(120_u16)),
     );
+}
+
+/// Verifies positive-scale prechecks preserve precision-error priority and
+/// fallback semantics.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_positive_scale_precheck_preserves_error_precedence() {
+    use qubit_datatype::InvalidValueReason;
+
+    let policy = ConversionPolicy::strict();
+    let limits = ConversionLimits::default();
+    let huge = BigInt::from(1_u8) << 1_000_usize;
+    for scale in [1_u32, 19] {
+        let power = BigInt::from(10_u8).pow(scale);
+        for sign in [1_i8, -1_i8] {
+            let integral = BigDecimal::new(&huge * &power * sign, i64::from(scale));
+            let fractional = BigDecimal::new(&huge * &power * sign + BigInt::from(sign), i64::from(scale));
+
+            let error = DataConverter::from(&integral)
+                .to_with::<i32>(&policy, &limits)
+                .expect_err("oversized integral result must be out of range");
+            assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+
+            let error = DataConverter::from(&fractional)
+                .to_with::<i32>(&policy, &limits)
+                .expect_err("strict conversion must prioritize fractional precision loss");
+            assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
+
+            let error = DataConverter::from(&fractional)
+                .to_with::<i32>(&ConversionPolicy::lossy(), &limits)
+                .expect_err("lossy oversized result must be out of range");
+            assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+        }
+    }
+}
+
+/// Verifies positive-scale conversion boundaries and the large-scale fallback.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_positive_scale_precheck_boundary_and_fallback() {
+    use qubit_datatype::InvalidValueReason;
+
+    let strict = ConversionPolicy::strict();
+    let lossy = ConversionPolicy::lossy();
+    let limits = ConversionLimits::default();
+    let decimal = |coefficient: i64, scale: i64| BigDecimal::new(BigInt::from(coefficient), scale);
+
+    assert_eq!(
+        DataConverter::from(&decimal(1_230, 1)).to_with::<i32>(&strict, &limits),
+        Ok(123)
+    );
+    let error = DataConverter::from(&decimal(1_231, 1))
+        .to_with::<i32>(&strict, &limits)
+        .expect_err("strict conversion rejects a fractional value");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
+    assert_eq!(
+        DataConverter::from(&decimal(1_231, 1)).to_with::<i32>(&lossy, &limits),
+        Ok(123)
+    );
+    assert_eq!(
+        DataConverter::from(&decimal(-1_231, 1)).to_with::<i32>(&lossy, &limits),
+        Ok(-123)
+    );
+    assert_eq!(
+        DataConverter::from(&decimal(2_550, 1)).to_with::<u8>(&strict, &limits),
+        Ok(u8::MAX)
+    );
+    let error = DataConverter::from(&decimal(2_560, 1))
+        .to_with::<u8>(&strict, &limits)
+        .expect_err("256 exceeds u8");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+    for scale in [1, 20] {
+        assert_eq!(
+            DataConverter::from(&decimal(0, scale)).to_with::<u8>(&strict, &limits),
+            Ok(0)
+        );
+    }
+
+    let scale_twenty_fraction = BigDecimal::new(BigInt::from(10_u8).pow(20) + 1_u8, 20);
+    let error = DataConverter::from(&scale_twenty_fraction)
+        .to_with::<i32>(&strict, &limits)
+        .expect_err("strict conversion preserves precision loss on the fallback");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
+    assert_eq!(
+        DataConverter::from(&scale_twenty_fraction).to_with::<i32>(&lossy, &limits),
+        Ok(1)
+    );
+
+    let huge = BigInt::from(1_u8) << 1_000_usize;
+    let scale_twenty_integer = BigDecimal::new(&huge * BigInt::from(10_u8).pow(20), 20);
+    let error = DataConverter::from(&scale_twenty_integer)
+        .to_with::<i32>(&strict, &limits)
+        .expect_err("huge integral fallback must remain out of range");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+    let scale_twenty_non_integer = BigDecimal::new(&huge * BigInt::from(10_u8).pow(20) + 1_u8, 20);
+    let error = DataConverter::from(&scale_twenty_non_integer)
+        .to_with::<i32>(&strict, &limits)
+        .expect_err("strict fallback must preserve precision priority");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::PrecisionLoss));
+    let error = DataConverter::from(&scale_twenty_non_integer)
+        .to_with::<i32>(&lossy, &limits)
+        .expect_err("lossy huge fallback must remain out of range");
+    assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+}
+
+/// Verifies nearby BigInteger limits keep exact digit observations.
+#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
+#[test]
+fn test_positive_scale_precheck_keeps_near_limit_observation_exact() {
+    let limits = limits_with_big_integer_digit_limit(3);
+    let policy = ConversionPolicy::strict();
+    assert_eq!(
+        DataConverter::from(&BigDecimal::new(BigInt::from(9_990_u16), 1)).to_with::<BigInt>(&policy, &limits),
+        Ok(BigInt::from(999_u16)),
+    );
+
+    let error = DataConverter::from(&BigDecimal::new(BigInt::from(10_000_u16), 1))
+        .to_with::<BigInt>(&policy, &limits)
+        .expect_err("1000 exceeds a three-digit limit");
+    assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+    assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+    assert_eq!(error.configured_limit(), Some(3));
+    assert_eq!(error.observed_lower_bound(), Some(4));
+    assert_eq!(error.observation_is_exact(), Some(true));
 }
 
 /// Verifies an exponent outside `BigInt::pow`'s range is rejected safely.

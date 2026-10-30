@@ -267,6 +267,108 @@ fn test_big_decimal_string_output_rejection_avoids_materialization() {
     }
 }
 
+/// Positive-scale fixed-width rejection must avoid formatting the coefficient.
+#[cfg(feature = "big-decimal")]
+#[test]
+fn test_positive_scale_fixed_integer_rejection_avoids_formatting() {
+    let strict = ConversionPolicy::strict();
+    let lossy = ConversionPolicy::lossy();
+    let limits = ConversionLimits::default();
+    for scale in [1_u64, 19] {
+        for negative in [false, true] {
+            let mut coefficient = (BigInt::from(1_u8) << 1_000_000_usize) * BigInt::from(10_u8).pow(scale as u32);
+            if negative {
+                coefficient = -coefficient;
+            }
+            let decimal = BigDecimal::new(coefficient, scale as i64);
+            for policy in [&strict, &lossy] {
+                for owned in [false, true] {
+                    for consume in [false, true] {
+                        let source = if owned {
+                            DataConverter::from(decimal.clone())
+                        } else {
+                            DataConverter::from(&decimal)
+                        };
+                        let mut session = ConversionSession::new(policy, &limits);
+                        let (result, maximum) = measure(|| {
+                            if consume {
+                                source.into_target_in::<u8>(&mut session)
+                            } else {
+                                source.to_in::<u8>(&mut session)
+                            }
+                        });
+                        let error = result.expect_err("oversized positive-scale decimal must fail");
+                        assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
+                        assert_eq!(error.reason(), Some(&InvalidValueReason::OutOfRange));
+                        assert_eq!(error.from_type(), Some(DataType::BigDecimal));
+                        assert_eq!(error.to_type(), DataType::UInt8);
+                        assert_eq!(session.items_used(), 1);
+                        assert_eq!(session.output_bytes_used(), 0);
+                        assert!(
+                            maximum < 4096,
+                            "scale {scale}, owned {owned}, consume {consume} allocated {maximum} bytes"
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Positive-scale BigInteger rejection must avoid formatting the coefficient.
+#[cfg(all(feature = "big-integer", feature = "big-decimal"))]
+#[test]
+fn test_positive_scale_big_integer_rejection_avoids_formatting() {
+    let strict = ConversionPolicy::strict();
+    let lossy = ConversionPolicy::lossy();
+    let limits = ConversionLimits::builder()
+        .numeric_limits(NumericConversionLimits::builder().max_big_integer_digits(8).build())
+        .build();
+    for scale in [1_u64, 19] {
+        for negative in [false, true] {
+            let mut coefficient = (BigInt::from(1_u8) << 1_000_000_usize) * BigInt::from(10_u8).pow(scale as u32);
+            if negative {
+                coefficient = -coefficient;
+            }
+            let decimal = BigDecimal::new(coefficient, scale as i64);
+            for policy in [&strict, &lossy] {
+                for owned in [false, true] {
+                    for consume in [false, true] {
+                        let source = if owned {
+                            DataConverter::from(decimal.clone())
+                        } else {
+                            DataConverter::from(&decimal)
+                        };
+                        let mut session = ConversionSession::new(policy, &limits);
+                        let (result, maximum) = measure(|| {
+                            if consume {
+                                source.into_target_in::<BigInt>(&mut session)
+                            } else {
+                                source.to_in::<BigInt>(&mut session)
+                            }
+                        });
+                        let error = result.expect_err("oversized positive-scale decimal must fail");
+                        assert!(
+                            maximum < 4096,
+                            "scale {scale}, owned {owned}, consume {consume} allocated {maximum} bytes"
+                        );
+                        assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+                        assert_eq!(error.resource(), Some(ConversionResource::BigIntegerDigits));
+                        assert_eq!(error.configured_limit(), Some(8));
+                        assert_eq!(error.from_type(), Some(DataType::BigDecimal));
+                        assert_eq!(error.to_type(), DataType::BigInteger);
+                        assert!(error.observed_lower_bound().expect("lower bound") > 8);
+                        assert!(error.observed_lower_bound().expect("lower bound") <= 301_030);
+                        assert_eq!(error.observation_is_exact(), Some(false));
+                        assert_eq!(session.items_used(), 1);
+                        assert_eq!(session.output_bytes_used(), 0);
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// BigDecimal fixed-integer rejection must avoid formatting its coefficient.
 #[cfg(feature = "big-decimal")]
 #[test]

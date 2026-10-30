@@ -129,6 +129,99 @@ fn enforce_big_integer_digit_limit(
     })
 }
 
+/// Computes a signed coefficient's magnitude remainder without formatting it.
+///
+/// # Parameters
+///
+/// * `coefficient` - Integer whose magnitude is reduced.
+/// * `divisor` - Nonzero divisor that fits in `u64`.
+///
+/// # Returns
+///
+/// The remainder of the coefficient magnitude modulo `divisor`.
+///
+/// # Errors
+///
+/// This helper does not return errors. Its caller must provide a nonzero
+/// divisor; the widened recurrence stays within `u128` for every `u64` divisor.
+#[cfg(feature = "big-decimal")]
+fn coefficient_remainder(coefficient: &BigInt, divisor: u64) -> u64 {
+    let divisor = u128::from(divisor);
+    coefficient.iter_u64_digits().rev().fold(0_u128, |remainder, digit| {
+        ((remainder << 64) | u128::from(digit)) % divisor
+    }) as u64
+}
+
+/// Rejects clearly oversized positive-scale integer results before formatting.
+///
+/// # Parameters
+///
+/// * `coefficient` - Nonzero decimal coefficient.
+/// * `scale` - Positive decimal scale.
+/// * `policy` - Exactness policy for fractional values.
+/// * `maximum_digits` - Maximum decimal digits for a `BigInt` target.
+/// * `from` - Source type retained in conversion errors.
+/// * `to` - Target type retained in conversion errors.
+///
+/// # Returns
+///
+/// `Ok(())` when the conservative digit lower bound does not prove that the
+/// result exceeds the relevant limit, or when the target is not an integer.
+///
+/// # Errors
+///
+/// Returns a BigInteger digit-limit error with a lower-bound observation or a
+/// fixed-width out-of-range error when oversize is proven. Under strict policy,
+/// scales up to 19 are checked for exact divisibility first, preserving
+/// precision-error priority. Larger strict scales defer to the original path.
+#[cfg(feature = "big-decimal")]
+fn precheck_positive_scale_integer(
+    coefficient: &BigInt,
+    scale: u64,
+    policy: FractionalToIntegerPolicy,
+    maximum_digits: u64,
+    from: DataType,
+    to: DataType,
+) -> Result<(), DataConversionError> {
+    let threshold = if to == DataType::BigInteger {
+        maximum_digits
+    } else if to.is_integer() {
+        39
+    } else {
+        return Ok(());
+    };
+    let lower_bound = ((coefficient.bits() - 1) / 4 + 1).saturating_sub(scale);
+    if lower_bound <= threshold {
+        return Ok(());
+    }
+    if policy == FractionalToIntegerPolicy::Reject {
+        if scale > 19 {
+            return Ok(());
+        }
+        let divisor = 10_u64.pow(scale as u32);
+        if coefficient_remainder(coefficient, divisor) != 0 {
+            return Err(DataConversionError::invalid(
+                from,
+                to,
+                InvalidValueReason::PrecisionLoss,
+            ));
+        }
+    }
+    if to == DataType::BigInteger {
+        Err(DataConversionError::limit_exceeded(
+            from,
+            to,
+            BudgetError::LimitExceeded {
+                resource: crate::converter::ConversionResource::BigIntegerDigits,
+                observed: Observation::AtLeast(lower_bound),
+                maximum: maximum_digits,
+            },
+        ))
+    } else {
+        Err(DataConversionError::invalid(from, to, InvalidValueReason::OutOfRange))
+    }
+}
+
 /// Enforces coefficient and scale bounds before a decimal is consumed.
 #[cfg(feature = "big-decimal")]
 #[inline]
@@ -167,6 +260,11 @@ pub(super) fn enforce_big_decimal_limits(
 /// before constructing the scale divisor for an oversized result. A `BigInt`
 /// digit-limit error from a conservative precheck may report a lower bound
 /// rather than an exact digit count; values near the limit use the exact path.
+/// For positive scales, a bit-derived lower bound rejects clearly oversized
+/// integer results before formatting the coefficient. Strict conversions with
+/// scales up to 19 check divisibility first so precision loss retains priority;
+/// larger strict scales use the original conversion path. This optimization
+/// does not bound all allocations for every decimal conversion.
 #[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_bigint(
     value: &BigDecimal,
@@ -219,6 +317,7 @@ pub(super) fn decimal_to_bigint(
         return Ok(coefficient.as_ref() * BigInt::from(10u8).pow(exponent as u32));
     }
 
+    precheck_positive_scale_integer(coefficient.as_ref(), scale as u64, policy, maximum_digits, from, to)?;
     let coefficient_text = coefficient.as_ref().to_str_radix(10);
     let coefficient_digits = coefficient_text.trim_start_matches('-').len();
     if scale as u64 >= coefficient_digits as u64 {
