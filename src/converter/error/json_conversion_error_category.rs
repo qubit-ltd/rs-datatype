@@ -9,13 +9,30 @@
 
 /// A value-free category for a JSON decoding failure.
 ///
+/// Obtain the category through
+/// [`DataConversionError::json_diagnostic()`].
+/// This type is part of the `converter` API; the built-in JSON decoding path
+/// also requires the `json` feature. The diagnostic can be absent for
+/// non-JSON failures and JSON budget failures.
+///
+/// # Examples
+///
 /// ```
+/// # #[cfg(feature = "json")]
+/// # {
+/// use qubit_datatype::DataConverter;
 /// use qubit_datatype::JsonConversionErrorCategory;
 ///
-/// assert_eq!(
-///     JsonConversionErrorCategory::InvalidJson,
-///     JsonConversionErrorCategory::InvalidJson,
-/// );
+/// let error = DataConverter::from("{\n@}")
+///     .to::<serde_json::Value>()
+///     .expect_err("the fixture contains invalid JSON");
+/// let diagnostic = error.json_diagnostic().expect("JSON syntax diagnostic");
+/// let classification = match diagnostic.category() {
+///     JsonConversionErrorCategory::InvalidJson => "invalid syntax",
+///     _ => "other JSON decoding failure",
+/// };
+/// assert_eq!(classification, "invalid syntax");
+/// # }
 /// ```
 ///
 /// Downstream matches must handle categories they do not recognize:
@@ -33,6 +50,8 @@
 ///     JsonConversionErrorCategory::Deserialize => {}
 /// }
 /// ```
+///
+/// [`DataConversionError::json_diagnostic()`]: crate::converter::DataConversionError::json_diagnostic
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum JsonConversionErrorCategory {
