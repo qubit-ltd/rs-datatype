@@ -601,9 +601,7 @@ fn map_json_decode_error(
 }
 
 #[cfg(feature = "json")]
-fn json_decode_diagnostic(
-    error: &JsonDecodeError<ConversionResource, u64>,
-) -> Option<JsonConversionDiagnostic> {
+fn json_decode_diagnostic(error: &JsonDecodeError<ConversionResource, u64>) -> Option<JsonConversionDiagnostic> {
     let category = match error.kind() {
         JsonDecodeErrorKind::Read => JsonConversionErrorCategory::Read,
         JsonDecodeErrorKind::EmptyInput => JsonConversionErrorCategory::EmptyInput,
@@ -613,11 +611,7 @@ fn json_decode_diagnostic(
         JsonDecodeErrorKind::Deserialize => JsonConversionErrorCategory::Deserialize,
         JsonDecodeErrorKind::Budget => return None,
     };
-    Some(JsonConversionDiagnostic::new(
-        category,
-        error.line(),
-        error.column(),
-    ))
+    Some(JsonConversionDiagnostic::new(category, error.line(), error.column()))
 }
 
 /// Converts a JSON encoder failure into a conversion error.

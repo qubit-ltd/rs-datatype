@@ -1,3 +1,11 @@
+// =============================================================================
+//    Copyright (c) 2025 - 2026 Haixing Hu.
+//
+//    SPDX-License-Identifier: Apache-2.0
+//
+//    Licensed under the Apache License, Version 2.0.
+// =============================================================================
+
 #![cfg(feature = "json")]
 
 use qubit_datatype::DataConversionError;
@@ -14,10 +22,7 @@ fn test_json_conversion_diagnostic_reports_syntax_location() {
         .to::<serde_json::Value>()
         .expect_err("an object member cannot start with @");
     let diagnostic = error.json_diagnostic().expect("syntax location retained");
-    assert_eq!(
-        diagnostic.category(),
-        JsonConversionErrorCategory::InvalidJson
-    );
+    assert_eq!(diagnostic.category(), JsonConversionErrorCategory::InvalidJson);
     assert_eq!(diagnostic.line(), Some(2));
     assert_eq!(diagnostic.column(), Some(1));
     assert_eq!(error.kind(), DataConversionErrorKind::InvalidValue);
@@ -36,10 +41,7 @@ fn test_json_conversion_diagnostic_reports_syntax_location() {
             format: DataFormat::Json,
         },
     );
-    assert_eq!(
-        error, legacy,
-        "diagnostics must not alter legacy error equality"
-    );
+    assert_eq!(error, legacy, "diagnostics must not alter legacy error equality");
     assert_eq!(error.clone().json_diagnostic(), error.json_diagnostic());
 }
 
@@ -49,10 +51,7 @@ fn test_json_conversion_diagnostic_counts_syntax_columns_as_characters() {
         .to::<serde_json::Value>()
         .expect_err("syntax must fail after the multibyte key");
     let diagnostic = error.json_diagnostic().expect("diagnostic retained");
-    assert_eq!(
-        diagnostic.category(),
-        JsonConversionErrorCategory::InvalidJson
-    );
+    assert_eq!(diagnostic.category(), JsonConversionErrorCategory::InvalidJson);
     assert_eq!(diagnostic.line(), Some(1));
     assert_eq!(diagnostic.column(), Some(8));
 }
@@ -81,10 +80,7 @@ fn test_json_conversion_diagnostic_reports_deserialize_byte_columns() {
         .to::<HashMap<String, String>>()
         .expect_err("number cannot be materialized as String");
     let diagnostic = error.json_diagnostic().expect("diagnostic retained");
-    assert_eq!(
-        diagnostic.category(),
-        JsonConversionErrorCategory::Deserialize
-    );
+    assert_eq!(diagnostic.category(), JsonConversionErrorCategory::Deserialize);
     assert_eq!(diagnostic.line(), Some(1));
     assert_eq!(diagnostic.column(), Some(8));
     assert_eq!(error.to_type(), DataType::StringMap);
@@ -100,14 +96,10 @@ impl qubit_datatype::DataTypeOf for DecodedJson {
 }
 
 impl qubit_datatype::DataConversionTarget for DecodedJson {
-    fn convert(
-        mut input: qubit_datatype::AdmittedConversion<'_, '_, '_>,
-    ) -> Result<Self, DataConversionError> {
+    fn convert(mut input: qubit_datatype::AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
         let source = input.source().clone();
         match source {
-            DataConverter::String(value) => input
-                .decode_json(value.as_bytes())
-                .map(|_value| Self { _value }),
+            DataConverter::String(value) => input.decode_json(value.as_bytes()).map(|_value| Self { _value }),
             _ => Err(input.unsupported()),
         }
     }
@@ -119,10 +111,7 @@ fn test_json_conversion_diagnostic_preserves_custom_target_input_location() {
         .to::<DecodedJson>()
         .expect_err("custom target JSON decoder rejects malformed input");
     let diagnostic = error.json_diagnostic().expect("diagnostic retained");
-    assert_eq!(
-        diagnostic.category(),
-        JsonConversionErrorCategory::InvalidJson
-    );
+    assert_eq!(diagnostic.category(), JsonConversionErrorCategory::InvalidJson);
     assert_eq!((diagnostic.line(), diagnostic.column()), (Some(2), Some(1)));
 }
 
@@ -134,11 +123,7 @@ fn test_json_conversion_diagnostic_preserves_list_error() {
     let list_error = qubit_datatype::DataListConversionError::new(2, error);
     assert_eq!(list_error.source_index(), 2);
     assert_eq!(
-        list_error
-            .conversion_error()
-            .json_diagnostic()
-            .unwrap()
-            .category(),
+        list_error.conversion_error().json_diagnostic().unwrap().category(),
         JsonConversionErrorCategory::InvalidJson
     );
 }
@@ -188,10 +173,7 @@ fn test_json_conversion_diagnostic_keeps_budget_error_classification() {
 fn test_json_conversion_diagnostic_preserves_unknown_location() {
     let error = DataConverter::from("0").to::<Refuses>().unwrap_err();
     let diagnostic = error.json_diagnostic().expect("category retained");
-    assert_eq!(
-        diagnostic.category(),
-        JsonConversionErrorCategory::Deserialize
-    );
+    assert_eq!(diagnostic.category(), JsonConversionErrorCategory::Deserialize);
     assert_eq!(diagnostic.line(), None);
     assert_eq!(diagnostic.column(), None);
 }
@@ -213,21 +195,15 @@ impl qubit_datatype::DataTypeOf for Refuses {
 }
 
 impl qubit_datatype::DataConversionTarget for Refuses {
-    fn convert(
-        mut input: qubit_datatype::AdmittedConversion<'_, '_, '_>,
-    ) -> Result<Self, DataConversionError> {
+    fn convert(mut input: qubit_datatype::AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
         input.decode_json(b"0")
     }
 }
 
 #[test]
 fn test_json_conversion_diagnostic_does_not_change_legacy_display_or_equality() {
-    let first = DataConverter::from("{\n@}")
-        .to::<serde_json::Value>()
-        .unwrap_err();
-    let second = DataConverter::from("{")
-        .to::<serde_json::Value>()
-        .unwrap_err();
+    let first = DataConverter::from("{\n@}").to::<serde_json::Value>().unwrap_err();
+    let second = DataConverter::from("{").to::<serde_json::Value>().unwrap_err();
     assert_eq!(first, second);
     assert_ne!(first.json_diagnostic(), second.json_diagnostic());
     assert_eq!(

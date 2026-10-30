@@ -47,15 +47,7 @@ impl JsonConversionDiagnostic {
     /// Creates a diagnostic from safe decoder metadata.
     #[cfg(feature = "json")]
     #[inline]
-    pub(crate) const fn new(
-        category: JsonConversionErrorCategory,
-        line: Option<usize>,
-        column: Option<usize>,
-    ) -> Self {
-        Self {
-            category,
-            line,
-            column,
-        }
+    pub(crate) const fn new(category: JsonConversionErrorCategory, line: Option<usize>, column: Option<usize>) -> Self {
+        Self { category, line, column }
     }
 }

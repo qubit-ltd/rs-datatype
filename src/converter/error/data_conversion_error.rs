@@ -307,12 +307,29 @@ impl DataConversionError {
     ///
     /// This diagnostic contains only a stable category and optional location;
     /// it does not retain source text and does not affect error equality.
+    ///
+    /// Returns `None` for non-JSON failures and JSON budget failures.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use qubit_datatype::{DataConverter, JsonConversionErrorCategory};
+    ///
+    /// #[cfg(feature = "json")]
+    /// {
+    ///     let error = DataConverter::from("{\n@}")
+    ///         .to::<serde_json::Value>()
+    ///         .expect_err("invalid JSON");
+    ///     let diagnostic = error.json_diagnostic().expect("JSON diagnostic");
+    ///     assert_eq!(diagnostic.category(), JsonConversionErrorCategory::InvalidJson);
+    ///     assert_eq!(diagnostic.line(), Some(2));
+    ///     assert_eq!(diagnostic.column(), Some(1));
+    /// }
+    /// ```
     #[inline]
     pub const fn json_diagnostic(&self) -> Option<&JsonConversionDiagnostic> {
         match &self.inner {
-            DataConversionErrorInner::InvalidValue {
-                json_diagnostic, ..
-            } => json_diagnostic.as_ref(),
+            DataConversionErrorInner::InvalidValue { json_diagnostic, .. } => json_diagnostic.as_ref(),
             _ => None,
         }
     }
@@ -321,10 +338,7 @@ impl DataConversionError {
     #[cfg(feature = "json")]
     #[inline]
     pub(crate) fn with_json_diagnostic(mut self, diagnostic: JsonConversionDiagnostic) -> Self {
-        if let DataConversionErrorInner::InvalidValue {
-            json_diagnostic, ..
-        } = &mut self.inner
-        {
+        if let DataConversionErrorInner::InvalidValue { json_diagnostic, .. } = &mut self.inner {
             *json_diagnostic = Some(diagnostic);
         }
         self

@@ -8,6 +8,32 @@
 //! Safe categories for JSON decoding failures.
 
 /// A value-free category for a JSON decoding failure.
+///
+/// ```
+/// use qubit_datatype::JsonConversionErrorCategory;
+///
+/// assert_eq!(
+///     JsonConversionErrorCategory::InvalidJson,
+///     JsonConversionErrorCategory::InvalidJson,
+/// );
+/// ```
+///
+/// Downstream matches must handle categories they do not recognize:
+///
+/// ```compile_fail
+/// use qubit_datatype::JsonConversionErrorCategory;
+///
+/// let category = JsonConversionErrorCategory::Read;
+/// match category {
+///     JsonConversionErrorCategory::Read => {}
+///     JsonConversionErrorCategory::EmptyInput => {}
+///     JsonConversionErrorCategory::InvalidUtf8 => {}
+///     JsonConversionErrorCategory::InvalidJson => {}
+///     JsonConversionErrorCategory::UnexpectedTopLevel => {}
+///     JsonConversionErrorCategory::Deserialize => {}
+/// }
+/// ```
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum JsonConversionErrorCategory {
     /// Reading the JSON input failed.
