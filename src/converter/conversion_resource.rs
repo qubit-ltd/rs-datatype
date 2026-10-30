@@ -40,7 +40,9 @@ pub enum ConversionResource {
     Items,
     /// Cumulative input bytes.
     InputBytes,
-    /// Cumulative UTF-8 payload bytes produced by built-in String targets.
+    /// Cumulative output bytes for built-in String conversions, custom
+    /// `AdmittedConversion::write_string` rendering, and JSON encoding through
+    /// `AdmittedConversion::encode_json` when the `json` feature is enabled.
     OutputBytes,
     /// Maximum root-inclusive structured value depth.
     StructuredDepth,

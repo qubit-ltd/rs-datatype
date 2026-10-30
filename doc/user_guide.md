@@ -266,8 +266,15 @@ An attempt that has passed the item-budget check retains that item charge if
 an input check or target conversion later fails. Successfully charged input
 bytes are retained too. A failed item-budget check adds no item. A failed
 individual input-byte charge adds no bytes, but does not undo the item charge
-that preceded it. Built-in transactional String output is committed only on
-success. Use the session's `*_used`, `*_remaining`, and `*_limit` accessors when
+that preceded it. Output bytes are counted for built-in `String` conversions
+and for custom targets that use `AdmittedConversion::write_string`. With the
+`json` feature, `AdmittedConversion::encode_json` also charges the actual
+encoded JSON bytes, including formatting and escaping. Each output operation
+commits its bytes on success; a later failure in a custom target does not undo
+an earlier successful output operation. Other output a custom target produces
+is not automatically counted, and this budget does not bound all temporary
+allocations. Other input, item, and structured budgets keep their existing
+rules. Use the session's `*_used`, `*_remaining`, and `*_limit` accessors when
 you need to observe the budget. `ConversionSession` is an operation-level
 owner: custom targets do not receive it directly.
 

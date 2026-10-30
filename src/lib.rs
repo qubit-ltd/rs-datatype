@@ -46,9 +46,14 @@
 //!
 //! A reusable conversion session reports stable resource facts through
 //! `DataConversionError` accessors without exposing its accounting backend.
-//! Its output-byte budget counts successful built-in `String` payloads
-//! cumulatively for both borrowed and owned sources; each String source is
-//! normalized exactly once.
+//! The session's output-byte budget is shared by built-in `String`
+//! conversions, custom targets using `AdmittedConversion::write_string`, and
+//! JSON encoding through `AdmittedConversion::encode_json` when the `json`
+//! feature is enabled. It counts UTF-8 `String` bytes and encoded JSON bytes.
+//! Each output operation commits its bytes on success. Custom targets'
+//! independently produced output is not automatically accounted for.
+//! Built-in `String` conversions retain the same accounting for borrowed and
+//! owned sources; each `String` source is normalized exactly once.
 //!
 //! Strings are not trimmed by default and are normalized exactly once.
 //! Boolean text defaults to `true` and `false`; numeric 0/1 handling is
