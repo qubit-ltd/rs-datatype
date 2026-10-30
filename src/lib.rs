@@ -208,6 +208,10 @@ pub use converter::FractionalToIntegerPolicy;
 #[cfg(feature = "converter")]
 pub use converter::InvalidValueReason;
 #[cfg(feature = "converter")]
+pub use converter::JsonConversionDiagnostic;
+#[cfg(feature = "converter")]
+pub use converter::JsonConversionErrorCategory;
+#[cfg(feature = "converter")]
 pub use converter::NumericConversionLimits;
 #[cfg(feature = "converter")]
 pub use converter::NumericConversionLimitsBuilder;

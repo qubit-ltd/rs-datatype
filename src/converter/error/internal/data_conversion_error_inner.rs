@@ -13,6 +13,7 @@ use qubit_budget::BudgetError;
 use qubit_budget::QuantityConversionError;
 
 use super::super::invalid_value_reason::InvalidValueReason;
+use super::super::json_conversion_diagnostic::JsonConversionDiagnostic;
 use crate::converter::ConversionResource;
 use crate::datatype::DataType;
 
@@ -50,6 +51,8 @@ pub(in crate::converter::error) enum DataConversionErrorInner {
         to: DataType,
         /// Stable, value-free rejection reason.
         reason: InvalidValueReason,
+        /// Optional value-free JSON decoder metadata.
+        json_diagnostic: Option<JsonConversionDiagnostic>,
     },
     /// The conversion would exceed a configured resource limit.
     #[error("Conversion limit exceeded from {from} to {to}: {source}")]

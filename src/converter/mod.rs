@@ -45,6 +45,8 @@ pub use error::DataFormat;
 pub use error::DataListConversionError;
 pub use error::DurationOverflowError;
 pub use error::InvalidValueReason;
+pub use error::JsonConversionDiagnostic;
+pub use error::JsonConversionErrorCategory;
 pub use error::ScalarItemError;
 pub use error::StringNormalizationError;
 pub(crate) use internal::BuiltinDataConversionTarget;

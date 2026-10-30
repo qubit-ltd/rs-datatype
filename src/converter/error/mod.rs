@@ -14,6 +14,8 @@ mod data_format;
 mod data_list_conversion_error;
 mod internal;
 mod invalid_value_reason;
+mod json_conversion_diagnostic;
+mod json_conversion_error_category;
 mod scalar_item_error;
 mod string_normalization_error;
 
@@ -23,6 +25,8 @@ pub use data_conversion_error_kind::DataConversionErrorKind;
 pub use data_format::DataFormat;
 pub use data_list_conversion_error::DataListConversionError;
 pub use invalid_value_reason::InvalidValueReason;
+pub use json_conversion_diagnostic::JsonConversionDiagnostic;
+pub use json_conversion_error_category::JsonConversionErrorCategory;
 pub use scalar_item_error::ScalarItemError;
 pub use string_normalization_error::StringNormalizationError;
 

@@ -25,6 +25,8 @@ use qubit_budget::json::JsonValueTransaction;
 #[cfg(feature = "json")]
 use qubit_json::decode::JsonDecodeError;
 #[cfg(feature = "json")]
+use qubit_json::decode::JsonDecodeErrorKind;
+#[cfg(feature = "json")]
 use qubit_json::decode::JsonDecoder;
 #[cfg(feature = "json")]
 use qubit_json::encode::JsonEncodeError;
@@ -45,6 +47,10 @@ use super::admitted_scalar_source::AdmittedScalarSource;
 use super::conversion_resource::ConversionResource;
 use super::conversion_string_writer::ConversionStringWriter;
 use super::error::DataConversionError;
+#[cfg(feature = "json")]
+use super::error::JsonConversionDiagnostic;
+#[cfg(feature = "json")]
+use super::error::JsonConversionErrorCategory;
 use super::internal::ConversionBudget;
 use super::options::ConversionLimits;
 use super::options::ConversionPolicy;
@@ -578,16 +584,40 @@ fn map_json_decode_error(
     to: DataType,
     error: JsonDecodeError<ConversionResource, u64>,
 ) -> DataConversionError {
-    match error.budget_error().cloned() {
-        Some(error) => DataConversionError::measured_limit(from, to, error),
-        None => DataConversionError::invalid(
-            from,
-            to,
-            super::error::InvalidValueReason::Deserialization {
-                format: super::error::DataFormat::Json,
-            },
-        ),
+    if let Some(budget) = error.budget_error().cloned() {
+        return DataConversionError::measured_limit(from, to, budget);
     }
+    let converted = DataConversionError::invalid(
+        from,
+        to,
+        super::error::InvalidValueReason::Deserialization {
+            format: super::error::DataFormat::Json,
+        },
+    );
+    match json_decode_diagnostic(&error) {
+        Some(diagnostic) => converted.with_json_diagnostic(diagnostic),
+        None => converted,
+    }
+}
+
+#[cfg(feature = "json")]
+fn json_decode_diagnostic(
+    error: &JsonDecodeError<ConversionResource, u64>,
+) -> Option<JsonConversionDiagnostic> {
+    let category = match error.kind() {
+        JsonDecodeErrorKind::Read => JsonConversionErrorCategory::Read,
+        JsonDecodeErrorKind::EmptyInput => JsonConversionErrorCategory::EmptyInput,
+        JsonDecodeErrorKind::InvalidUtf8 => JsonConversionErrorCategory::InvalidUtf8,
+        JsonDecodeErrorKind::InvalidJson => JsonConversionErrorCategory::InvalidJson,
+        JsonDecodeErrorKind::UnexpectedTopLevel => JsonConversionErrorCategory::UnexpectedTopLevel,
+        JsonDecodeErrorKind::Deserialize => JsonConversionErrorCategory::Deserialize,
+        JsonDecodeErrorKind::Budget => return None,
+    };
+    Some(JsonConversionDiagnostic::new(
+        category,
+        error.line(),
+        error.column(),
+    ))
 }
 
 /// Converts a JSON encoder failure into a conversion error.

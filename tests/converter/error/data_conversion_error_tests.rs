@@ -29,6 +29,7 @@ use qubit_datatype::converter::InvalidValueReason;
 fn test_data_conversion_error_constructors_and_accessors() {
     let missing = DataConversionError::missing(DataType::String, DataType::Bool);
     assert_eq!(missing.kind(), DataConversionErrorKind::Missing);
+    assert_eq!(missing.json_diagnostic(), None);
 
     let reason = InvalidValueReason::OutOfRange;
     let error = DataConversionError::invalid(DataType::Int64, DataType::UInt8, reason.clone());
@@ -38,6 +39,7 @@ fn test_data_conversion_error_constructors_and_accessors() {
     assert_eq!(error.to_type(), DataType::UInt8);
     assert_eq!(error.reason(), Some(&reason));
     assert_eq!(error.resource(), None);
+    assert_eq!(error.json_diagnostic(), None);
 
     let empty = DataConversionError::empty_collection(DataType::String);
     assert_eq!(empty.kind(), DataConversionErrorKind::EmptyCollection);
@@ -45,6 +47,11 @@ fn test_data_conversion_error_constructors_and_accessors() {
     assert_eq!(empty.to_type(), DataType::String);
     assert_eq!(empty.reason(), None);
     assert_eq!(empty.resource(), None);
+    assert_eq!(empty.json_diagnostic(), None);
+    assert_eq!(
+        DataConversionError::unsupported(DataType::String, DataType::Bool).json_diagnostic(),
+        None
+    );
 }
 
 /// Test the resource-limit constructor, accessors, and list wrapping.

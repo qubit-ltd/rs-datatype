@@ -18,6 +18,7 @@ use super::super::conversion_resource::ConversionResource;
 use super::data_conversion_error_kind::DataConversionErrorKind;
 use super::internal::DataConversionErrorInner;
 use super::invalid_value_reason::InvalidValueReason;
+use super::json_conversion_diagnostic::JsonConversionDiagnostic;
 use crate::datatype::DataType;
 
 /// Describes why a source value could not be converted.
@@ -44,11 +45,33 @@ use crate::datatype::DataType;
 /// ));
 /// ```
 #[must_use]
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, Clone, Eq, thiserror::Error)]
 #[error(transparent)]
 pub struct DataConversionError {
     /// Variant-specific conversion error details.
     inner: DataConversionErrorInner,
+}
+
+impl PartialEq for DataConversionError {
+    fn eq(&self, other: &Self) -> bool {
+        match (&self.inner, &other.inner) {
+            (
+                DataConversionErrorInner::InvalidValue {
+                    from: left_from,
+                    to: left_to,
+                    reason: left_reason,
+                    ..
+                },
+                DataConversionErrorInner::InvalidValue {
+                    from: right_from,
+                    to: right_to,
+                    reason: right_reason,
+                    ..
+                },
+            ) => left_from == right_from && left_to == right_to && left_reason == right_reason,
+            _ => self.inner == other.inner,
+        }
+    }
 }
 
 impl DataConversionError {
@@ -116,7 +139,12 @@ impl DataConversionError {
     #[inline]
     pub const fn invalid(from: DataType, to: DataType, reason: InvalidValueReason) -> Self {
         Self {
-            inner: DataConversionErrorInner::InvalidValue { from, to, reason },
+            inner: DataConversionErrorInner::InvalidValue {
+                from,
+                to,
+                reason,
+                json_diagnostic: None,
+            },
         }
     }
 
@@ -273,6 +301,33 @@ impl DataConversionError {
             DataConversionErrorInner::InvalidValue { reason, .. } => Some(reason),
             _ => None,
         }
+    }
+
+    /// Returns safe JSON decoder metadata, when this is a JSON decoding error.
+    ///
+    /// This diagnostic contains only a stable category and optional location;
+    /// it does not retain source text and does not affect error equality.
+    #[inline]
+    pub const fn json_diagnostic(&self) -> Option<&JsonConversionDiagnostic> {
+        match &self.inner {
+            DataConversionErrorInner::InvalidValue {
+                json_diagnostic, ..
+            } => json_diagnostic.as_ref(),
+            _ => None,
+        }
+    }
+
+    /// Attaches value-free JSON decoder metadata to an invalid-value error.
+    #[cfg(feature = "json")]
+    #[inline]
+    pub(crate) fn with_json_diagnostic(mut self, diagnostic: JsonConversionDiagnostic) -> Self {
+        if let DataConversionErrorInner::InvalidValue {
+            json_diagnostic, ..
+        } = &mut self.inner
+        {
+            *json_diagnostic = Some(diagnostic);
+        }
+        self
     }
 
     /// Returns the conversion resource associated with an accounting failure.
