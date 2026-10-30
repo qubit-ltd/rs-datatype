@@ -8,19 +8,21 @@
 //! Fuzzes bounded borrowed and owned conversion outcomes.
 //!
 //! The target exercises numeric, Unicode, and canonical JSON-string-map
-//! sources. Borrowed and owned conversions must agree, and output-limit
-//! failures must retain their structured budget facts. Each fresh session is
-//! checked independently against the generated output budget. On success,
-//! committed output bytes equal the UTF-8 output length and fit the limit. On
-//! output-limit failure, the resource and configured limit match, all budget
-//! facts exist, and used <= limit, remaining == limit - used, and requested >
-//! remaining. A failed transaction commits no output bytes to its fresh
-//! session. Error `used` can include staged writes, and `requested` can be one
-//! write or a conservative reservation, so neither is equated with committed
-//! usage or the complete output length.
+//! sources. Borrowed and owned conversions must agree with independently
+//! generated expected output. Numeric and unchanged text output must be
+//! admitted exactly when its UTF-8 length fits the output budget; maps retain
+//! conservative reservation failures, so only their successful content is
+//! checked. Every error must be an output-byte limit error with structured
+//! budget facts. Each fresh session is checked independently. On success,
+//! committed output bytes equal the UTF-8 output length and fit the limit. A
+//! failed transaction commits no output bytes to its fresh session. Error
+//! `used` can include staged writes, and `requested` can be one write or a
+//! conservative reservation, so neither is equated with committed usage or
+//! the complete output length.
 
 #![no_main]
 
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 
 use libfuzzer_sys::fuzz_target;
@@ -74,42 +76,68 @@ fn padded_bytes<const N: usize>(data: &[u8]) -> [u8; N] {
     result
 }
 
-/// Compares borrowed and owned integer conversion accounting.
+/// Compares borrowed and owned integer output with an independent reference.
 fn assert_borrowed_and_owned_number(number: i128, policy: &ConversionPolicy, limits: &ConversionLimits, limit: u64) {
+    let expected = number.to_string();
     let mut borrowed_session = ConversionSession::new(policy, limits);
     let borrowed_result = DataConverter::from(number).to_in::<String>(&mut borrowed_session);
     assert_budget_result(&borrowed_result, &borrowed_session, limit);
+    assert_expected_output(&borrowed_result, &expected, limit, true);
     let mut owned_session = ConversionSession::new(policy, limits);
     let owned_result = DataConverter::from(number).into_target_in::<String>(&mut owned_session);
     assert_budget_result(&owned_result, &owned_session, limit);
+    assert_expected_output(&owned_result, &expected, limit, true);
     assert_equivalent_results(&borrowed_result, &owned_result);
 }
 
-/// Compares borrowed and owned Unicode text conversion accounting.
+/// Compares borrowed and owned unchanged text with an independent reference.
 fn assert_borrowed_and_owned_text(text: &str, policy: &ConversionPolicy, limits: &ConversionLimits, limit: u64) {
     let mut borrowed_session = ConversionSession::new(policy, limits);
     let borrowed_result = DataConverter::from(text).to_in::<String>(&mut borrowed_session);
     assert_budget_result(&borrowed_result, &borrowed_session, limit);
+    assert_expected_output(&borrowed_result, text, limit, true);
     let mut owned_session = ConversionSession::new(policy, limits);
     let owned_result = DataConverter::from(text.to_owned()).into_target_in::<String>(&mut owned_session);
     assert_budget_result(&owned_result, &owned_session, limit);
+    assert_expected_output(&owned_result, text, limit, true);
     assert_equivalent_results(&borrowed_result, &owned_result);
 }
 
-/// Compares borrowed and owned canonical JSON map conversion accounting.
+/// Compares map output with an independently serialized ordered reference.
 fn assert_borrowed_and_owned_map(
     map: &HashMap<String, String>,
     policy: &ConversionPolicy,
     limits: &ConversionLimits,
     limit: u64,
 ) {
+    let ordered = map.iter().collect::<BTreeMap<_, _>>();
+    let expected = serde_json::to_string(&ordered).expect("bounded string maps serialize as JSON");
     let mut borrowed_session = ConversionSession::new(policy, limits);
     let borrowed_result = DataConverter::from(map).to_in::<String>(&mut borrowed_session);
     assert_budget_result(&borrowed_result, &borrowed_session, limit);
+    assert_expected_output(&borrowed_result, &expected, limit, false);
     let mut owned_session = ConversionSession::new(policy, limits);
     let owned_result = DataConverter::from(map.clone()).into_target_in::<String>(&mut owned_session);
     assert_budget_result(&owned_result, &owned_session, limit);
+    assert_expected_output(&owned_result, &expected, limit, false);
     assert_equivalent_results(&borrowed_result, &owned_result);
+}
+
+/// Checks successful content and, when exact, admission by expected byte
+/// length.
+fn assert_expected_output(
+    result: &Result<String, DataConversionError>,
+    expected: &str,
+    limit: u64,
+    exact_admission: bool,
+) {
+    if let Ok(actual) = result {
+        assert_eq!(actual, expected);
+    }
+    if exact_admission {
+        let length = u64::try_from(expected.len()).expect("bounded fuzz output fits u64");
+        assert_eq!(result.is_ok(), length <= limit);
+    }
 }
 
 /// Checks that both conversion modes have the same public outcome class.
@@ -138,16 +166,15 @@ fn assert_budget_result(result: &Result<String, DataConversionError>, session: &
         }
         Err(error) => {
             assert_eq!(session.output_bytes_used(), 0);
-            if error.kind() == DataConversionErrorKind::LimitExceeded {
-                assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
-                assert_eq!(error.configured_limit(), Some(limit));
-                let used = error.used().expect("cumulative usage is present");
-                let remaining = error.remaining().expect("remaining budget is present");
-                let requested = error.requested().expect("rejected request is present");
-                assert!(used <= limit);
-                assert_eq!(remaining, limit - used);
-                assert!(requested > remaining);
-            }
+            assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
+            assert_eq!(error.resource(), Some(ConversionResource::OutputBytes));
+            assert_eq!(error.configured_limit(), Some(limit));
+            let used = error.used().expect("cumulative usage is present");
+            let remaining = error.remaining().expect("remaining budget is present");
+            let requested = error.requested().expect("rejected request is present");
+            assert!(used <= limit);
+            assert_eq!(remaining, limit - used);
+            assert!(requested > remaining);
         }
     }
 }
