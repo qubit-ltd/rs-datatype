@@ -28,6 +28,16 @@ const FIXED_INPUT_SIZE: usize = 42;
 /// Bounds arbitrary-precision coefficient allocation and comparison cost.
 const MAX_COEFFICIENT_SIZE: usize = 128;
 
+/// Decodes a selector into either a common small scale or a scale boundary.
+fn decode_scale(selector: u8) -> i64 {
+    const EDGES: [i64; 10] = [-4097, -4096, -4095, 4095, 4096, 4097, i64::MIN, i64::MAX, 0, -1];
+    if selector < 240 {
+        i64::from(selector) - 128
+    } else {
+        EDGES[usize::from(selector - 240) % EDGES.len()]
+    }
+}
+
 fuzz_target!(|data: &[u8]| {
     if data.len() < FIXED_INPUT_SIZE || data.len() > FIXED_INPUT_SIZE + MAX_COEFFICIENT_SIZE {
         return;
@@ -54,8 +64,8 @@ fuzz_target!(|data: &[u8]| {
     let payload = &data[FIXED_INPUT_SIZE..];
     let coefficient = BigInt::from_signed_bytes_le(payload);
     let (payload_a, payload_b) = payload.split_at(payload.len() / 2);
-    let decimal_a = BigDecimal::new(BigInt::from_signed_bytes_le(payload_a), i64::from(scale_bytes[0]) - 128);
-    let decimal_b = BigDecimal::new(BigInt::from_signed_bytes_le(payload_b), i64::from(scale_bytes[1]) - 128);
+    let decimal_a = BigDecimal::new(BigInt::from_signed_bytes_le(payload_a), decode_scale(scale_bytes[0]));
+    let decimal_b = BigDecimal::new(BigInt::from_signed_bytes_le(payload_b), decode_scale(scale_bytes[1]));
     let values = [
         NumberRef::from(signed),
         NumberRef::from(unsigned),
