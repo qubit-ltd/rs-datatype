@@ -42,13 +42,26 @@ pub struct BooleanConversionPolicyBuilder {
 
 impl BooleanConversionPolicyBuilder {
     /// Creates a builder initialized with the strict boolean policy.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing the default `true` and `false` literals, with
+    /// case-insensitive matching and the default numeric policy.
     #[inline]
     #[must_use]
     pub fn new() -> Self {
         BooleanConversionPolicy::strict().into_builder()
     }
 
-    /// Collects a literal recognized as `true`.
+    /// Adds a literal recognized as `true`.
+    ///
+    /// # Parameters
+    ///
+    /// * `literal` - Text to recognize as `true` during conversion.
+    ///
+    /// # Returns
+    ///
+    /// The builder with `literal` appended to its true literals.
     #[inline]
     #[must_use]
     pub fn true_literal(mut self, literal: &str) -> Self {
@@ -56,7 +69,15 @@ impl BooleanConversionPolicyBuilder {
         self
     }
 
-    /// Collects a literal recognized as `false`.
+    /// Adds a literal recognized as `false`.
+    ///
+    /// # Parameters
+    ///
+    /// * `literal` - Text to recognize as `false` during conversion.
+    ///
+    /// # Returns
+    ///
+    /// The builder with `literal` appended to its false literals.
     #[inline]
     #[must_use]
     pub fn false_literal(mut self, literal: &str) -> Self {
@@ -65,6 +86,14 @@ impl BooleanConversionPolicyBuilder {
     }
 
     /// Collects whether literal matching is case-sensitive.
+    ///
+    /// # Parameters
+    ///
+    /// * `enabled` - Whether matching must preserve ASCII case distinctions.
+    ///
+    /// # Returns
+    ///
+    /// The builder configured with the supplied case-sensitivity setting.
     #[inline]
     #[must_use]
     pub fn case_sensitive(mut self, enabled: bool) -> Self {
@@ -73,6 +102,14 @@ impl BooleanConversionPolicyBuilder {
     }
 
     /// Collects the integer-to-boolean conversion policy.
+    ///
+    /// # Parameters
+    ///
+    /// * `policy` - Rule used to convert integer values to booleans.
+    ///
+    /// # Returns
+    ///
+    /// The builder configured with the supplied numeric conversion policy.
     #[inline]
     #[must_use]
     pub fn numeric_policy(mut self, policy: BooleanNumericPolicy) -> Self {

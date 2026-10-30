@@ -24,9 +24,33 @@ use crate::converter::DataConverter;
 /// # Returns
 ///
 /// A lower bound of at least one decimal digit, including for zero.
+#[must_use]
 #[inline]
 fn decimal_digit_lower_bound(bits: u64) -> u64 {
     if bits == 0 { 1 } else { (bits - 1) / 4 + 1 }
+}
+
+/// Estimates the minimum decimal digits needed by an admitted big-number
+/// source.
+///
+/// The estimate reads the integer magnitude and leaves non-big-number sources
+/// unclassified so their existing conversion path can proceed unchanged.
+///
+/// # Returns
+///
+/// `Some` with the conservative digit lower bound for a big-number source, or
+/// `None` when the source is not an arbitrary-precision number.
+fn minimum_big_number_digits(source: &DataConverter<'_>) -> Option<u64> {
+    match source {
+        #[cfg(feature = "big-integer")]
+        DataConverter::BigInteger(value) => Some(decimal_digit_lower_bound(value.bits())),
+        #[cfg(feature = "big-decimal")]
+        DataConverter::BigDecimal(value) => {
+            let (coefficient, _) = value.as_bigint_and_scale();
+            Some(decimal_digit_lower_bound(coefficient.bits()))
+        }
+        _ => None,
+    }
 }
 
 /// Rejects a big-number String conversion whose decimal digits cannot fit.
@@ -54,17 +78,10 @@ pub(in crate::converter::data_converter) fn check_big_number_output(
     source: &DataConverter<'_>,
     context: &ConversionContext<'_, '_>,
 ) -> Result<(), DataConversionError> {
-    let minimum = match source {
-        #[cfg(feature = "big-integer")]
-        DataConverter::BigInteger(value) => decimal_digit_lower_bound(value.bits()),
-        #[cfg(feature = "big-decimal")]
-        DataConverter::BigDecimal(value) => {
-            let (coefficient, _) = value.as_bigint_and_scale();
-            decimal_digit_lower_bound(coefficient.bits())
-        }
-        _ => return Ok(()),
-    };
-    context.check_output_bytes(minimum)
+    match minimum_big_number_digits(source) {
+        Some(minimum) => context.check_output_bytes(minimum),
+        None => Ok(()),
+    }
 }
 
 #[cfg(test)]

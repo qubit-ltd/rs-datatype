@@ -42,6 +42,10 @@ pub struct StructuredConversionLimitsBuilder {
 
 impl StructuredConversionLimitsBuilder {
     /// Creates a builder initialized with the documented defaults.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing the default structured conversion limits.
     #[inline]
     #[must_use]
     pub fn new() -> Self {
@@ -51,6 +55,14 @@ impl StructuredConversionLimitsBuilder {
     }
 
     /// Configures the normalized text byte maximum.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum normalized structured text length in bytes.
+    ///
+    /// # Returns
+    ///
+    /// The builder with the text byte maximum updated.
     #[inline]
     #[must_use]
     pub fn max_text_bytes(self, maximum: u64) -> Self {
@@ -61,6 +73,14 @@ impl StructuredConversionLimitsBuilder {
 
     /// Configures the maximum depth, counting the root value as one. A zero
     /// maximum rejects every root value.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum depth including the root value.
+    ///
+    /// # Returns
+    ///
+    /// The builder with the depth maximum updated.
     #[inline]
     #[must_use]
     pub fn max_depth(self, maximum: u64) -> Self {
@@ -71,6 +91,14 @@ impl StructuredConversionLimitsBuilder {
 
     /// Configures the maximum number of direct items in each sequence. Zero
     /// permits only empty sequences.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum direct item count for each sequence.
+    ///
+    /// # Returns
+    ///
+    /// The builder with the sequence item maximum updated.
     #[inline]
     #[must_use]
     pub fn max_sequence_items(self, maximum: u64) -> Self {
@@ -81,6 +109,14 @@ impl StructuredConversionLimitsBuilder {
 
     /// Configures the maximum number of direct entries in each map. Zero
     /// permits only empty maps.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - Maximum direct entry count for each map.
+    ///
+    /// # Returns
+    ///
+    /// The builder with the map entry maximum updated.
     #[inline]
     #[must_use]
     pub fn max_map_entries(self, maximum: u64) -> Self {
@@ -90,6 +126,10 @@ impl StructuredConversionLimitsBuilder {
     }
 
     /// Builds the configured structured limits.
+    ///
+    /// # Returns
+    ///
+    /// The structured conversion limits configured by this builder.
     #[inline]
     pub fn build(self) -> StructuredConversionLimits {
         self.limits

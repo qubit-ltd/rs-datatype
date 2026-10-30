@@ -8,6 +8,7 @@
 //! Iterator with an intentionally dishonest lower size bound.
 
 /// Yields one value while advertising the largest possible lower bound.
+#[must_use]
 pub(in crate::converter) struct InflatedSizeHintIterator {
     /// The only value still available from the iterator.
     value: Option<&'static str>,

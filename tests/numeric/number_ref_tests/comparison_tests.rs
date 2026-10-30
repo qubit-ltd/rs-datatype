@@ -28,6 +28,7 @@ use qubit_datatype::NumericComparisonPolicy;
 fn compare_numbers(left: NumberRef<'_>, right: NumberRef<'_>, policy: NumericComparisonPolicy) -> Option<Ordering> {
     left.compare(right, policy)
 }
+
 /// Asserts an exact ordering and its reverse-direction symmetry.
 fn assert_exact(left: NumberRef<'_>, right: NumberRef<'_>, expected: Option<Ordering>) {
     assert_eq!(compare_numbers(left, right, NumericComparisonPolicy::Exact), expected);
@@ -569,11 +570,19 @@ proptest! {
         let expected = decimal_parts_to_rational(coefficient, scale)
             .cmp(&finite_f64_to_rational(float));
         prop_assert_eq!(
-            compare_numbers(NumberRef::from(&decimal), NumberRef::from(float), NumericComparisonPolicy::Exact),
+            compare_numbers(
+                NumberRef::from(&decimal),
+                NumberRef::from(float),
+                NumericComparisonPolicy::Exact,
+            ),
             Some(expected),
         );
         prop_assert_eq!(
-            compare_numbers(NumberRef::from(float), NumberRef::from(&decimal), NumericComparisonPolicy::Exact),
+            compare_numbers(
+                NumberRef::from(float),
+                NumberRef::from(&decimal),
+                NumericComparisonPolicy::Exact,
+            ),
             Some(expected.reverse()),
         );
     }
@@ -593,11 +602,19 @@ proptest! {
         let expected = decimal_parts_to_rational(coefficient, scale)
             .cmp(&finite_f64_to_rational(f64::from(float)));
         prop_assert_eq!(
-            compare_numbers(NumberRef::from(&decimal), NumberRef::from(float), NumericComparisonPolicy::Exact),
+            compare_numbers(
+                NumberRef::from(&decimal),
+                NumberRef::from(float),
+                NumericComparisonPolicy::Exact,
+            ),
             Some(expected),
         );
         prop_assert_eq!(
-            compare_numbers(NumberRef::from(float), NumberRef::from(&decimal), NumericComparisonPolicy::Exact),
+            compare_numbers(
+                NumberRef::from(float),
+                NumberRef::from(&decimal),
+                NumericComparisonPolicy::Exact,
+            ),
             Some(expected.reverse()),
         );
     }
@@ -648,7 +665,11 @@ proptest! {
                         && middle_right != Some(Ordering::Greater)
                     {
                         prop_assert_ne!(
-                            compare_numbers(values[left], values[right], NumericComparisonPolicy::Exact),
+                            compare_numbers(
+                                values[left],
+                                values[right],
+                                NumericComparisonPolicy::Exact,
+                            ),
                             Some(Ordering::Greater),
                         );
                     }

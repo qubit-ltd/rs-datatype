@@ -26,6 +26,7 @@ use crate::converter::ConversionResource;
 /// assert_eq!(limits.max_items(), 128);
 /// assert_eq!(limits.max_input_bytes(), 4_096);
 /// ```
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ConversionOperationLimitsBuilder {
     /// Operation limits being configured.
@@ -40,7 +41,6 @@ impl ConversionOperationLimitsBuilder {
     /// A builder containing the default cumulative limits for conversion
     /// operations.
     #[inline]
-    #[must_use]
     pub const fn new() -> Self {
         Self {
             limits: ConversionOperationLimits {
@@ -75,7 +75,6 @@ impl ConversionOperationLimitsBuilder {
     ///
     /// This builder with the item maximum updated.
     #[inline]
-    #[must_use]
     pub const fn max_items(mut self, maximum: u64) -> Self {
         self.limits.items = ResourceLimit::new(ConversionResource::Items, maximum);
         self
@@ -92,7 +91,6 @@ impl ConversionOperationLimitsBuilder {
     ///
     /// This builder with the input byte maximum updated.
     #[inline]
-    #[must_use]
     pub const fn max_input_bytes(mut self, maximum: u64) -> Self {
         self.limits.input_bytes = ResourceLimit::new(ConversionResource::InputBytes, maximum);
         self
@@ -109,7 +107,6 @@ impl ConversionOperationLimitsBuilder {
     ///
     /// This builder with the output byte maximum updated.
     #[inline]
-    #[must_use]
     pub const fn max_output_bytes(mut self, maximum: u64) -> Self {
         self.limits.output_bytes = ResourceLimit::new(ConversionResource::OutputBytes, maximum);
         self
@@ -126,7 +123,6 @@ impl ConversionOperationLimitsBuilder {
     ///
     /// This builder with the structured node maximum updated.
     #[inline]
-    #[must_use]
     pub const fn max_structured_nodes(mut self, maximum: u64) -> Self {
         self.limits.structured_nodes = ResourceLimit::new(ConversionResource::StructuredNodes, maximum);
         self
@@ -143,7 +139,6 @@ impl ConversionOperationLimitsBuilder {
     ///
     /// This builder with the structured payload byte maximum updated.
     #[inline]
-    #[must_use]
     pub const fn max_structured_payload_bytes(mut self, maximum: u64) -> Self {
         self.limits.structured_payload_bytes = ResourceLimit::new(ConversionResource::StructuredPayloadBytes, maximum);
         self

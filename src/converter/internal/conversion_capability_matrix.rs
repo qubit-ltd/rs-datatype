@@ -7,24 +7,10 @@
 // =============================================================================
 //! Canonical matrix of implemented conversion paths.
 
-use crate::DataType;
+mod conversion_edge;
 
-/// Describes one family of built-in conversion edges.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ConversionEdge {
-    /// Converts any source to or from String.
-    String,
-    /// Converts StringMap to JSON when JSON support is compiled in.
-    StringMapJson,
-    /// Converts booleans and characters to numeric types.
-    BooleanCharacterNumeric,
-    /// Converts integer types to numeric, boolean, and duration types.
-    IntegerNumericBooleanDuration,
-    /// Converts floating-point and BigDecimal types to numeric types.
-    FloatNumeric,
-    /// Converts durations to integer types.
-    DurationInteger,
-}
+use self::conversion_edge::ConversionEdge;
+use crate::DataType;
 
 /// The single declaration of built-in conversion edge families.
 const CONVERSION_EDGES: &[ConversionEdge] = &[
@@ -42,6 +28,16 @@ const CONVERSION_EDGES: &[ConversionEdge] = &[
 /// facade. The built-in target adapter consults this same table before
 /// dispatching to a conversion implementation, so capability discovery and
 /// built-in dispatch cannot register different edge families.
+///
+/// # Parameters
+///
+/// * `from` - Available source type to convert.
+/// * `to` - Available target type to convert into.
+///
+/// # Returns
+///
+/// `true` when this matrix contains the requested conversion path.
+#[must_use]
 pub(in crate::converter) fn supports_conversion(from: DataType, to: DataType) -> bool {
     if from == to {
         return true;

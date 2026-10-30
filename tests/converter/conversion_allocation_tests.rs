@@ -100,7 +100,7 @@ fn assert_large_scale_fraction_rejection<T: DataConversionTarget>() {
     for scale in [20_u32, 37] {
         for negative in [false, true] {
             let magnitude =
-                ((BigInt::from(1_u8) << 1_000_000_usize) * BigInt::from(10_u8).pow(scale)) + BigInt::from(1_u8);
+                (BigInt::from(1_u8) << 1_000_000_usize) * BigInt::from(10_u8).pow(scale) + BigInt::from(1_u8);
             let coefficient = if negative { -magnitude } else { magnitude };
             let decimal = BigDecimal::new(coefficient, i64::from(scale));
             for owned in [false, true] {

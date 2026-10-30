@@ -12,8 +12,13 @@ use std::time::Duration;
 use serde::Deserialize;
 use serde::Serialize;
 
+use self::internal::checked_seconds;
+use self::internal::duration_from_subseconds;
 use super::DurationOverflowError;
 use super::DurationParseError;
+
+// Checked conversion helpers used by `DurationUnit`.
+mod internal;
 
 /// Unit used to interpret or format a Duration value.
 ///
@@ -170,6 +175,7 @@ impl DurationUnit {
     /// # Returns
     ///
     /// The exact count, or `None` when the unit would lose precision.
+    #[must_use]
     #[inline]
     pub fn exact_units(self, duration: Duration) -> Option<u128> {
         let total_nanos = duration.as_nanos();
@@ -233,6 +239,7 @@ impl DurationUnit {
     ///
     /// `Some` containing the represented unit when `symbol` is accepted by
     /// strict mode; otherwise, `None`.
+    #[must_use]
     fn strict_symbol(symbol: &str) -> Option<Self> {
         match symbol {
             "ns" => Some(Self::Nanoseconds),
@@ -256,6 +263,7 @@ impl DurationUnit {
     ///
     /// `Some` containing the represented unit and its preferred output symbol
     /// when `symbol` is a Lenient-only alias; otherwise, `None`.
+    #[must_use]
     #[inline]
     fn lenient_alias(symbol: &str) -> Option<(Self, &'static str)> {
         match symbol {
@@ -263,58 +271,4 @@ impl DurationUnit {
             _ => None,
         }
     }
-}
-
-/// Converts a whole-unit count into seconds without overflow.
-///
-/// # Parameters
-///
-/// * `value` - Whole-unit count to convert.
-/// * `seconds_per_unit` - Number of seconds represented by one unit.
-///
-/// # Returns
-///
-/// The exact represented duration.
-///
-/// # Errors
-///
-/// Returns [`DurationOverflowError`] when multiplication or `Duration`'s
-/// seconds range would overflow.
-#[inline]
-fn checked_seconds(value: u128, seconds_per_unit: u128) -> Result<Duration, DurationOverflowError> {
-    let seconds = value
-        .checked_mul(seconds_per_unit)
-        .filter(|seconds| *seconds <= u128::from(u64::MAX))
-        .ok_or(DurationOverflowError)?;
-    Ok(Duration::from_secs(seconds as u64))
-}
-
-/// Decomposes a subsecond count without multiplying the complete value.
-///
-/// # Parameters
-///
-/// * `value` - Subsecond-unit count to convert.
-/// * `units_per_second` - Number of source units in one second.
-/// * `nanos_per_unit` - Nanoseconds represented by one source unit.
-///
-/// # Returns
-///
-/// The exact represented duration.
-///
-/// # Errors
-///
-/// Returns [`DurationOverflowError`] when the whole-seconds component exceeds
-/// `Duration`'s range.
-#[inline]
-fn duration_from_subseconds(
-    value: u128,
-    units_per_second: u128,
-    nanos_per_unit: u32,
-) -> Result<Duration, DurationOverflowError> {
-    let seconds = value / units_per_second;
-    if seconds > u128::from(u64::MAX) {
-        return Err(DurationOverflowError);
-    }
-    let nanos = (value % units_per_second) as u32 * nanos_per_unit;
-    Ok(Duration::new(seconds as u64, nanos))
 }

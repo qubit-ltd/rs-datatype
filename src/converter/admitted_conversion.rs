@@ -59,6 +59,10 @@ pub struct AdmittedConversion<'session, 'policy, 'source> {
 
 impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> {
     /// Creates an admitted conversion after framework-owned resource charging.
+    ///
+    /// # Returns
+    ///
+    /// An admitted conversion bound to the charged source and context.
     #[inline]
     pub(crate) fn new(source: DataConverter<'source>, context: ConversionContext<'session, 'policy>) -> Self {
         Self { source, context }
@@ -154,6 +158,10 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     ///
     /// * `input` - UTF-8 JSON bytes to decode.
     ///
+    /// # Returns
+    ///
+    /// The value deserialized from the JSON input.
+    ///
     /// # Errors
     ///
     /// Returns a JSON syntax or deserialization error, or a structured-resource
@@ -183,6 +191,10 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     ///
     /// * `value` - Materialized JSON value whose structure is charged.
     ///
+    /// # Returns
+    ///
+    /// `()` when the JSON structure is accounted successfully.
+    ///
     /// # Errors
     ///
     /// Returns a structured-resource error when accounting exceeds the bound
@@ -202,6 +214,10 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     /// # Parameters
     ///
     /// * `value` - Value to serialize as JSON.
+    ///
+    /// # Returns
+    ///
+    /// The JSON bytes produced by serializing `value`.
     ///
     /// # Errors
     ///
@@ -225,6 +241,10 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
     ///
     /// * `render` - Closure that produces the complete String output.
     ///
+    /// # Returns
+    ///
+    /// The complete String produced by the renderer.
+    ///
     /// # Errors
     ///
     /// Returns the renderer's conversion error or an output-resource error.
@@ -238,6 +258,10 @@ impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> 
 
     /// Unpacks the admitted source and its conversion context for built-in
     /// targets.
+    ///
+    /// # Returns
+    ///
+    /// The admitted source and its bound conversion context.
     #[inline]
     pub(crate) fn into_parts(self) -> (DataConverter<'source>, ConversionContext<'session, 'policy>) {
         (self.source, self.context)

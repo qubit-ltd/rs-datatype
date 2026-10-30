@@ -34,7 +34,6 @@ impl StringConversionPolicyBuilder {
     ///
     /// A builder containing the default string conversion policy.
     #[inline]
-    #[must_use]
     pub fn new() -> Self {
         Self {
             policy: StringConversionPolicy::default(),
@@ -51,7 +50,6 @@ impl StringConversionPolicyBuilder {
     ///
     /// The builder with the trimming option updated.
     #[inline]
-    #[must_use]
     pub fn trim(self, trim: bool) -> Self {
         Self {
             policy: self.policy.with_trim(trim),
@@ -68,7 +66,6 @@ impl StringConversionPolicyBuilder {
     ///
     /// The builder with the blank-string policy updated.
     #[inline]
-    #[must_use]
     pub fn blank_string_policy(self, policy: BlankStringPolicy) -> Self {
         Self {
             policy: self.policy.with_blank_string_policy(policy),

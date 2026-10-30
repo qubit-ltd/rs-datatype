@@ -10,9 +10,15 @@
 mod builtin_data_conversion_target;
 mod conversion_budget;
 mod conversion_capability_matrix;
+mod conversion_session_error;
 mod conversion_string_sink;
 
 pub(crate) use builtin_data_conversion_target::BuiltinDataConversionTarget;
 pub(super) use conversion_budget::ConversionBudget;
 pub(super) use conversion_capability_matrix::supports_conversion;
+#[cfg(feature = "json")]
+pub(super) use conversion_session_error::map_json_decode_error;
+#[cfg(feature = "json")]
+pub(super) use conversion_session_error::map_json_encode_error;
+pub(super) use conversion_session_error::map_string_write_error;
 pub(super) use conversion_string_sink::ConversionStringSink;

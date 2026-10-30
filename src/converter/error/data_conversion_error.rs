@@ -334,16 +334,6 @@ impl DataConversionError {
         }
     }
 
-    /// Attaches value-free JSON decoder metadata to an invalid-value error.
-    #[cfg(feature = "json")]
-    #[inline]
-    pub(crate) fn with_json_diagnostic(mut self, diagnostic: JsonConversionDiagnostic) -> Self {
-        if let DataConversionErrorInner::InvalidValue { json_diagnostic, .. } = &mut self.inner {
-            *json_diagnostic = Some(diagnostic);
-        }
-        self
-    }
-
     /// Returns the conversion resource associated with an accounting failure.
     ///
     /// # Returns
@@ -463,5 +453,15 @@ impl DataConversionError {
             DataConversionErrorInner::Quantity { resource, .. } => Some(*resource),
             _ => None,
         }
+    }
+
+    /// Attaches value-free JSON decoder metadata to an invalid-value error.
+    #[cfg(feature = "json")]
+    #[inline]
+    pub(crate) fn with_json_diagnostic(mut self, diagnostic: JsonConversionDiagnostic) -> Self {
+        if let DataConversionErrorInner::InvalidValue { json_diagnostic, .. } = &mut self.inner {
+            *json_diagnostic = Some(diagnostic);
+        }
+        self
     }
 }

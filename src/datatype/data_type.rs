@@ -316,6 +316,18 @@ impl DataType {
 
 impl Display for DataType {
     /// Writes the stable lowercase type name to the formatter.
+    ///
+    /// # Parameters
+    ///
+    /// * `formatter` - Formatter that receives the type name.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(())` when the name is written successfully.
+    ///
+    /// # Errors
+    ///
+    /// Returns the formatter's error if writing the name fails.
     #[inline]
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         formatter.write_str(self.as_str())
@@ -326,6 +338,18 @@ impl FromStr for DataType {
     type Err = DataTypeParseError;
 
     /// Parses a type name case-insensitively using the stable vocabulary.
+    ///
+    /// # Parameters
+    ///
+    /// * `input` - Type name to parse.
+    ///
+    /// # Returns
+    ///
+    /// The matching data type.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DataTypeParseError`] when `input` is not a known type name.
     fn from_str(input: &str) -> Result<Self, Self::Err> {
         Self::ALL
             .iter()
@@ -337,6 +361,14 @@ impl FromStr for DataType {
 
 impl From<DataType> for &'static str {
     /// Converts a type descriptor to its stable lowercase name.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Type descriptor to convert.
+    ///
+    /// # Returns
+    ///
+    /// The stable lowercase name of `value`.
     #[inline]
     fn from(value: DataType) -> Self {
         value.as_str()
@@ -345,6 +377,14 @@ impl From<DataType> for &'static str {
 
 impl From<&DataType> for &'static str {
     /// Converts a borrowed type descriptor to its stable lowercase name.
+    ///
+    /// # Parameters
+    ///
+    /// * `value` - Borrowed type descriptor to convert.
+    ///
+    /// # Returns
+    ///
+    /// The stable lowercase name of `value`.
     #[inline]
     fn from(value: &DataType) -> Self {
         value.as_str()

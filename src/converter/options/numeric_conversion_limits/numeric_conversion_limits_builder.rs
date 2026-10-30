@@ -40,6 +40,10 @@ pub struct NumericConversionLimitsBuilder {
 
 impl NumericConversionLimitsBuilder {
     /// Creates a builder initialized with the documented defaults.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing the default numeric conversion limits.
     #[inline]
     #[must_use]
     pub fn new() -> Self {
@@ -54,6 +58,10 @@ impl NumericConversionLimitsBuilder {
     ///
     /// * `maximum` - Maximum number of bytes accepted after string
     ///   normalization.
+    ///
+    /// # Returns
+    ///
+    /// This builder with the normalized text byte limit set to `maximum`.
     #[inline]
     #[must_use]
     pub fn max_text_bytes(self, maximum: u64) -> Self {
@@ -69,6 +77,10 @@ impl NumericConversionLimitsBuilder {
     ///
     /// * `maximum` - Maximum number of significant result digits; leading zeros
     ///   do not count.
+    ///
+    /// # Returns
+    ///
+    /// This builder with the BigInt digit limit set to `maximum`.
     #[inline]
     #[must_use]
     pub fn max_big_integer_digits(self, maximum: u64) -> Self {
@@ -83,6 +95,11 @@ impl NumericConversionLimitsBuilder {
     /// # Parameters
     ///
     /// * `maximum` - Maximum number of significant coefficient digits.
+    ///
+    /// # Returns
+    ///
+    /// This builder with the BigDecimal coefficient digit limit set to
+    /// `maximum`.
     #[inline]
     #[must_use]
     pub fn max_big_decimal_coefficient_digits(self, maximum: u64) -> Self {
@@ -96,6 +113,11 @@ impl NumericConversionLimitsBuilder {
     /// # Parameters
     ///
     /// * `maximum` - Maximum absolute value of the decimal scale.
+    ///
+    /// # Returns
+    ///
+    /// This builder with the BigDecimal scale magnitude limit set to
+    /// `maximum`.
     #[inline]
     #[must_use]
     pub fn max_big_decimal_scale_magnitude(self, maximum: u64) -> Self {
@@ -105,6 +127,10 @@ impl NumericConversionLimitsBuilder {
     }
 
     /// Builds the configured numeric limits.
+    ///
+    /// # Returns
+    ///
+    /// The configured numeric conversion limits.
     #[inline]
     pub fn build(self) -> NumericConversionLimits {
         self.limits

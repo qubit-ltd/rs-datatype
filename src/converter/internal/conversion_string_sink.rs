@@ -18,12 +18,36 @@ use super::super::conversion_resource::ConversionResource;
 /// streaming output.
 pub(crate) trait ConversionStringSink {
     /// Writes one string slice through the underlying formatter.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` when the string slice is accepted by the formatter.
+    ///
+    /// # Errors
+    ///
+    /// Returns the underlying formatter's error if the write fails.
     fn write_str(&mut self, value: &str) -> fmt::Result;
 
     /// Writes one Unicode scalar through the underlying formatter.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` when the character is accepted by the formatter.
+    ///
+    /// # Errors
+    ///
+    /// Returns the underlying formatter's error if the write fails.
     fn write_char(&mut self, value: char) -> fmt::Result;
 
     /// Writes formatting arguments through the underlying formatter.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` when the formatted output is accepted.
+    ///
+    /// # Errors
+    ///
+    /// Returns the underlying formatter's error if formatting fails.
     fn write_fmt(&mut self, arguments: fmt::Arguments<'_>) -> fmt::Result;
 }
 

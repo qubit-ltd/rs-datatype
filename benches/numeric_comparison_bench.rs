@@ -283,8 +283,8 @@ fn benchmark_big_numeric_membership(c: &mut Criterion) {
                     b.iter(|| {
                         let stored = NumberRef::from(black_box(&integer));
                         black_box(candidates.iter().any(|candidate| {
-                            stored.compare(NumberRef::from(black_box(candidate)), black_box(policy))
-                                == Some(Ordering::Equal)
+                            let comparison = stored.compare(NumberRef::from(black_box(candidate)), black_box(policy));
+                            comparison == Some(Ordering::Equal)
                         }))
                     });
                 },
@@ -296,8 +296,8 @@ fn benchmark_big_numeric_membership(c: &mut Criterion) {
                     b.iter(|| {
                         let stored = NumberRef::from(black_box(&integer));
                         black_box(candidates.iter().all(|candidate| {
-                            stored.compare(NumberRef::from(black_box(candidate)), black_box(policy))
-                                != Some(Ordering::Equal)
+                            let comparison = stored.compare(NumberRef::from(black_box(candidate)), black_box(policy));
+                            comparison != Some(Ordering::Equal)
                         }))
                     });
                 },
@@ -314,8 +314,8 @@ fn benchmark_big_numeric_membership(c: &mut Criterion) {
                     b.iter(|| {
                         let stored = NumberRef::from(black_box(&decimal));
                         black_box(candidates.iter().any(|candidate| {
-                            stored.compare(NumberRef::from(black_box(candidate)), black_box(policy))
-                                == Some(Ordering::Equal)
+                            let comparison = stored.compare(NumberRef::from(black_box(candidate)), black_box(policy));
+                            comparison == Some(Ordering::Equal)
                         }))
                     });
                 },
@@ -327,8 +327,8 @@ fn benchmark_big_numeric_membership(c: &mut Criterion) {
                     b.iter(|| {
                         let stored = NumberRef::from(black_box(&decimal));
                         black_box(candidates.iter().all(|candidate| {
-                            stored.compare(NumberRef::from(black_box(candidate)), black_box(policy))
-                                != Some(Ordering::Equal)
+                            let comparison = stored.compare(NumberRef::from(black_box(candidate)), black_box(policy));
+                            comparison != Some(Ordering::Equal)
                         }))
                     });
                 },

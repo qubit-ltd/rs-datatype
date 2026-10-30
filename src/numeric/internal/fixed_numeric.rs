@@ -113,7 +113,6 @@ fn f64_parts(value: f64) -> (bool, u128, i32) {
 /// # Returns
 ///
 /// The exact magnitude ordering.
-#[must_use]
 pub(in crate::numeric) fn compare_magnitude(
     left_significand: u128,
     left_exponent: i32,

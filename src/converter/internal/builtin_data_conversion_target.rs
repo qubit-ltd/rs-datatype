@@ -24,6 +24,20 @@ pub(crate) trait BuiltinDataConversionTarget: DataTypeOf + Sized {
     ///
     /// The default implementation borrows the consumed source. Targets that
     /// can reuse an owned source allocation may override this method.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - The admitted source value whose data may be reused.
+    /// * `context` - The active conversion's bound policies and resource
+    ///   budget.
+    ///
+    /// # Returns
+    ///
+    /// The converted target value.
+    ///
+    /// # Errors
+    ///
+    /// Returns the conversion error produced while converting the source.
     #[inline]
     fn convert_owned(
         source: DataConverter<'_>,
@@ -33,6 +47,21 @@ pub(crate) trait BuiltinDataConversionTarget: DataTypeOf + Sized {
     }
 
     /// Converts a borrowed framework-owned source.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - The admitted source value to convert without consuming it.
+    /// * `context` - The active conversion's bound policies and resource
+    ///   budget.
+    ///
+    /// # Returns
+    ///
+    /// The converted target value.
+    ///
+    /// # Errors
+    ///
+    /// Returns an unsupported-conversion error unless the target implements
+    /// this method for the source value.
     fn convert_from(
         source: &DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,

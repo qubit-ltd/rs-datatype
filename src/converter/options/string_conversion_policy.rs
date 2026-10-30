@@ -74,6 +74,7 @@ impl StringConversionPolicy {
     pub fn into_builder(self) -> StringConversionPolicyBuilder {
         StringConversionPolicyBuilder { policy: self }
     }
+
     /// Creates options suitable for environment-variable input.
     ///
     /// The profile trims surrounding whitespace and treats a blank value as

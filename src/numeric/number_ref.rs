@@ -551,7 +551,6 @@ impl<'a> NumberRef<'a> {
     ///
     /// The crate-private `NumberRepr` payload borrowed or copied by this value.
     #[inline]
-    #[must_use]
     pub(in crate::numeric) const fn inner(self) -> NumberRepr<'a> {
         self.inner
     }

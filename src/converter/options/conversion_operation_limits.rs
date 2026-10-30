@@ -61,20 +61,32 @@ impl ConversionOperationLimits {
     pub const DEFAULT_MAX_STRUCTURED_PAYLOAD_BYTES: u64 = 64 * 1024 * 1024;
 
     /// Creates a builder initialized with the default operation limits.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing the documented finite defaults.
     #[inline]
-    #[must_use]
+    #[must_use = "configure the returned builder or call build()"]
     pub const fn builder() -> ConversionOperationLimitsBuilder {
         ConversionOperationLimitsBuilder::new()
     }
 
     /// Converts these limits into a builder for explicit customization.
+    ///
+    /// # Returns
+    ///
+    /// A builder initialized with these limits.
     #[inline]
-    #[must_use]
+    #[must_use = "configure the returned builder or call build()"]
     pub const fn into_builder(self) -> ConversionOperationLimitsBuilder {
         ConversionOperationLimitsBuilder { limits: self }
     }
 
     /// Returns the configured item maximum.
+    ///
+    /// # Returns
+    ///
+    /// The maximum number of top-level items in one operation.
     #[inline]
     #[must_use]
     pub const fn max_items(&self) -> u64 {
@@ -82,6 +94,10 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the item resource limit.
+    ///
+    /// # Returns
+    ///
+    /// The immutable item limit, including its resource identity and maximum.
     #[must_use]
     #[inline]
     pub const fn items_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
@@ -89,6 +105,10 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the configured cumulative input byte maximum.
+    ///
+    /// # Returns
+    ///
+    /// The maximum cumulative input bytes in one operation.
     #[inline]
     #[must_use]
     pub const fn max_input_bytes(&self) -> u64 {
@@ -96,6 +116,11 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the input byte resource limit.
+    ///
+    /// # Returns
+    ///
+    /// The immutable input byte limit, including its resource identity and
+    /// maximum.
     #[must_use]
     #[inline]
     pub const fn input_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
@@ -103,6 +128,10 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the configured cumulative output byte maximum.
+    ///
+    /// # Returns
+    ///
+    /// The maximum cumulative output bytes in one operation.
     #[inline]
     #[must_use]
     pub const fn max_output_bytes(&self) -> u64 {
@@ -110,6 +139,11 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the output byte resource limit.
+    ///
+    /// # Returns
+    ///
+    /// The immutable output byte limit, including its resource identity and
+    /// maximum.
     #[must_use]
     #[inline]
     pub const fn output_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
@@ -117,6 +151,10 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the configured cumulative structured node maximum.
+    ///
+    /// # Returns
+    ///
+    /// The maximum structured value nodes in one operation.
     #[inline]
     #[must_use]
     pub const fn max_structured_nodes(&self) -> u64 {
@@ -124,6 +162,11 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the structured node resource limit.
+    ///
+    /// # Returns
+    ///
+    /// The immutable structured node limit, including its resource identity and
+    /// maximum.
     #[must_use]
     #[inline]
     pub const fn structured_nodes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
@@ -131,6 +174,11 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the configured cumulative structured payload byte maximum.
+    ///
+    /// # Returns
+    ///
+    /// The maximum structured key, string, and number payload bytes in one
+    /// operation.
     #[inline]
     #[must_use]
     pub const fn max_structured_payload_bytes(&self) -> u64 {
@@ -138,6 +186,11 @@ impl ConversionOperationLimits {
     }
 
     /// Returns the structured payload byte resource limit.
+    ///
+    /// # Returns
+    ///
+    /// The immutable structured payload limit, including its resource identity
+    /// and maximum.
     #[must_use]
     #[inline]
     pub const fn structured_payload_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
@@ -147,6 +200,10 @@ impl ConversionOperationLimits {
 
 impl Default for ConversionOperationLimits {
     /// Creates the documented finite default limits.
+    ///
+    /// # Returns
+    ///
+    /// Limits initialized to the documented finite defaults.
     #[inline]
     fn default() -> Self {
         Self {
@@ -167,6 +224,19 @@ impl Default for ConversionOperationLimits {
 
 impl Serialize for ConversionOperationLimits {
     /// Serializes the configured limits through the private wire shape.
+    ///
+    /// # Parameters
+    ///
+    /// * `serializer` - Serializer that receives the five configured maxima.
+    ///
+    /// # Returns
+    ///
+    /// The serializer's result after writing the limits.
+    ///
+    /// # Errors
+    ///
+    /// Returns the serializer's error if it cannot encode the wire
+    /// representation.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -184,6 +254,20 @@ impl Serialize for ConversionOperationLimits {
 
 impl<'de> Deserialize<'de> for ConversionOperationLimits {
     /// Deserializes limits from the private wire shape.
+    ///
+    /// # Parameters
+    ///
+    /// * `deserializer` - Deserializer that supplies the five configured
+    ///   maxima.
+    ///
+    /// # Returns
+    ///
+    /// The limits reconstructed from the wire representation.
+    ///
+    /// # Errors
+    ///
+    /// Returns the deserializer's error if the wire representation cannot be
+    /// read.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,

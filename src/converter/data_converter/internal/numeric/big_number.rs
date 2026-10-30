@@ -52,6 +52,11 @@ use crate::datatype::DataType;
 ///
 /// Returns a measured budget error when a limit rejects the value or a native
 /// measurement cannot fit the budget quantity.
+///
+/// # Panics
+///
+/// Panics only if a rejected lower-bound measurement has a `u64::MAX` maximum,
+/// which would violate the budget check's rejection invariant.
 #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
 #[inline]
 fn check_big_integer_limits(
@@ -144,6 +149,10 @@ fn enforce_big_integer_digit_limit(
 ///
 /// This helper does not return errors. Its caller must provide a nonzero
 /// divisor; the widened recurrence stays within `u128` for every `u64` divisor.
+///
+/// # Panics
+///
+/// Panics if `divisor` is zero.
 #[cfg(feature = "big-decimal")]
 fn coefficient_remainder(coefficient: &BigInt, divisor: u64) -> u64 {
     let divisor = u128::from(divisor);
@@ -267,6 +276,10 @@ pub(super) fn enforce_big_decimal_limits(
 /// check divisibility by 10^19 as a necessary condition; a zero remainder
 /// still defers to the original exactness and range checks. This optimization
 /// does not bound all allocations for every decimal conversion.
+///
+/// # Panics
+///
+/// Panics if the decimal coefficient's digit count cannot fit in `u64`.
 #[cfg(feature = "big-decimal")]
 pub(super) fn decimal_to_bigint(
     value: &BigDecimal,

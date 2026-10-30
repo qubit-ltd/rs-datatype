@@ -75,7 +75,7 @@ impl DataConversionTarget for DirectBool {
 }
 
 impl DataConversionTarget for CrossNumeric {
-    fn convert(input: qubit_datatype::AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
         input.convert::<u32>().map(|_| Self)
     }
 }
@@ -91,7 +91,7 @@ impl DataTypeOf for CrossJson {
 
 #[cfg(feature = "json")]
 impl DataConversionTarget for CrossJson {
-    fn convert(input: qubit_datatype::AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
         input.convert::<Value>().map(|_| Self)
     }
 }
@@ -107,7 +107,7 @@ impl DataTypeOf for SameJson {
 
 #[cfg(feature = "json")]
 impl DataConversionTarget for SameJson {
-    fn convert(input: qubit_datatype::AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+    fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
         input.convert::<Value>().map(Self)
     }
 }

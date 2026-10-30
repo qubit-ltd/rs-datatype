@@ -7,6 +7,8 @@
 // =============================================================================
 //! Conversion session accounting tests.
 
+use proptest::strategy::Just;
+use proptest::strategy::Strategy;
 use qubit_datatype::ConversionLimits;
 use qubit_datatype::ConversionOperationLimits;
 use qubit_datatype::ConversionPolicy;
@@ -122,7 +124,8 @@ fn run_session_sequence(items_limit: u64, input_limit: u64, output_limit: u64, o
 
     for (index, operation) in operations.iter().enumerate() {
         let context = format!(
-            "operation #{index} {operation:?}, limits items={items_limit}, input={input_limit}, output={output_limit}"
+            "operation #{index} {operation:?}, limits items={items_limit}, \
+             input={input_limit}, output={output_limit}"
         );
         let expected = model.apply(operation);
         let actual = match operation {
@@ -270,8 +273,6 @@ proptest::proptest! {
 }
 
 fn session_operation_strategy() -> impl proptest::strategy::Strategy<Value = SessionOperation> {
-    use proptest::strategy::Just;
-    use proptest::strategy::Strategy;
     let text = proptest::collection::vec(
         proptest::prop_oneof![Just("a"), Just("12"), Just("é"), Just("汉"), Just("🙂")],
         0..=8,

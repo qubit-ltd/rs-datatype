@@ -12,7 +12,7 @@
 //! narrower than the full range of [`Duration`]. Deserialization accepts a
 //! `u64` millisecond value and converts it back to [`Duration`].
 //!
-//! # Example
+//! # Examples
 //!
 //! ```rust
 //! use std::time::Duration;

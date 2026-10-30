@@ -45,7 +45,8 @@ use super::json_conversion_error_category::JsonConversionErrorCategory;
 /// The example uses a fixed, non-sensitive input and exposes only its
 /// category and optional coordinates.
 ///
-/// [`DataConversionError::json_diagnostic()`]: crate::converter::DataConversionError::json_diagnostic
+/// [`DataConversionError::json_diagnostic()`]:
+/// crate::converter::DataConversionError::json_diagnostic
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct JsonConversionDiagnostic {
     category: JsonConversionErrorCategory,
@@ -55,12 +56,14 @@ pub struct JsonConversionDiagnostic {
 
 impl JsonConversionDiagnostic {
     /// Returns the safe category of the decoding failure.
+    #[must_use]
     #[inline]
     pub const fn category(&self) -> JsonConversionErrorCategory {
         self.category
     }
 
     /// Returns the one-based line, when the decoder provides one.
+    #[must_use]
     #[inline]
     pub const fn line(&self) -> Option<usize> {
         self.line
@@ -70,6 +73,7 @@ impl JsonConversionDiagnostic {
     ///
     /// Invalid JSON syntax reports a character column, while target
     /// deserialization reports a byte column.
+    #[must_use]
     #[inline]
     pub const fn column(&self) -> Option<usize> {
         self.column
@@ -77,6 +81,7 @@ impl JsonConversionDiagnostic {
 
     /// Creates a diagnostic from safe decoder metadata.
     #[cfg(feature = "json")]
+    #[must_use]
     #[inline]
     pub(crate) const fn new(category: JsonConversionErrorCategory, line: Option<usize>, column: Option<usize>) -> Self {
         Self { category, line, column }

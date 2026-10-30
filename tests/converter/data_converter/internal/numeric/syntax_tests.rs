@@ -27,8 +27,12 @@ use qubit_datatype::NumericConversionLimits;
 fn test_numeric_text_rejects_duplicate_signs() {
     assert!(matches!(
         DataConverter::from("--1").to::<f64>(),
-        Err(conversion_error) if matches!(conversion_error.reason(), Some(InvalidValueReason::InvalidSyntax { .. })
-    )));
+        Err(conversion_error)
+            if matches!(
+                conversion_error.reason(),
+                Some(InvalidValueReason::InvalidSyntax { .. })
+            )
+    ));
 }
 
 /// Verifies numeric text at the configured byte boundary preserves its

@@ -22,6 +22,7 @@ use num_bigint::BigInt;
 /// # Type Parameters
 ///
 /// * `'a` - Lifetime of a borrowed arbitrary-precision numeric value.
+#[must_use]
 #[derive(Debug, Clone, Copy)]
 pub(in crate::numeric) enum NumberRepr<'a> {
     /// An `i8` value.

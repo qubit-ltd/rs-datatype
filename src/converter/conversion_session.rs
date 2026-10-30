@@ -13,7 +13,6 @@
 //! type pair while keeping raw policy and budget access internal.
 
 use qubit_budget::BudgetError;
-use qubit_budget::BudgetedStringError;
 use qubit_budget::MeasuredBudgetError;
 use qubit_budget::ResourceLimit;
 use qubit_budget::ResourceQuantity;
@@ -23,13 +22,7 @@ use qubit_budget::json::JsonDecodeSession;
 use qubit_budget::json::JsonEncodeSession;
 use qubit_budget::json::JsonValueTransaction;
 #[cfg(feature = "json")]
-use qubit_json::decode::JsonDecodeError;
-#[cfg(feature = "json")]
-use qubit_json::decode::JsonDecodeErrorKind;
-#[cfg(feature = "json")]
 use qubit_json::decode::JsonDecoder;
-#[cfg(feature = "json")]
-use qubit_json::encode::JsonEncodeError;
 #[cfg(feature = "json")]
 use qubit_json::encode::JsonEncoder;
 #[cfg(feature = "json")]
@@ -47,11 +40,10 @@ use super::admitted_scalar_source::AdmittedScalarSource;
 use super::conversion_resource::ConversionResource;
 use super::conversion_string_writer::ConversionStringWriter;
 use super::error::DataConversionError;
-#[cfg(feature = "json")]
-use super::error::JsonConversionDiagnostic;
-#[cfg(feature = "json")]
-use super::error::JsonConversionErrorCategory;
 use super::internal::ConversionBudget;
+use super::internal::map_json_decode_error;
+use super::internal::map_json_encode_error;
+use super::internal::map_string_write_error;
 use super::options::ConversionLimits;
 use super::options::ConversionPolicy;
 use crate::datatype::DataType;
@@ -119,6 +111,15 @@ pub struct ConversionSession<'a> {
 
 impl<'a> ConversionSession<'a> {
     /// Creates a fresh session from immutable policy and limit configuration.
+    ///
+    /// # Parameters
+    ///
+    /// * `policy` - Immutable policy shared by conversions in this session.
+    /// * `limits` - Resource limits used to initialize cumulative budgets.
+    ///
+    /// # Returns
+    ///
+    /// A session with fresh cumulative accounting initialized from `limits`.
     #[inline]
     pub fn new(policy: &'a ConversionPolicy, limits: &'a ConversionLimits) -> Self {
         Self {
@@ -129,6 +130,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns the immutable conversion policy associated with this session.
+    ///
+    /// # Returns
+    ///
+    /// The policy reference supplied when this session was created.
     #[must_use = "the conversion policy must be inspected or retained"]
     #[inline]
     pub const fn policy(&self) -> &'a ConversionPolicy {
@@ -136,6 +141,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns the immutable conversion limits associated with this session.
+    ///
+    /// # Returns
+    ///
+    /// The limits reference supplied when this session was created.
     #[must_use = "the conversion limits must be inspected or retained"]
     #[inline]
     pub const fn limits(&self) -> &'a ConversionLimits {
@@ -143,6 +152,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns remaining top-level item capacity.
+    ///
+    /// # Returns
+    ///
+    /// The number of top-level items that can still be admitted.
     #[inline]
     #[must_use]
     pub const fn items_remaining(&self) -> u64 {
@@ -150,6 +163,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns the configured cumulative item limit.
+    ///
+    /// # Returns
+    ///
+    /// The maximum number of top-level items allowed in this session.
     #[inline]
     #[must_use]
     pub const fn items_limit(&self) -> u64 {
@@ -157,6 +174,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns the configured cumulative input-byte limit.
+    ///
+    /// # Returns
+    ///
+    /// The maximum input bytes allowed in this session.
     #[inline]
     #[must_use]
     pub const fn input_bytes_limit(&self) -> u64 {
@@ -164,6 +185,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns the configured cumulative output-byte limit.
+    ///
+    /// # Returns
+    ///
+    /// The maximum output bytes allowed in this session.
     #[inline]
     #[must_use]
     pub const fn output_bytes_limit(&self) -> u64 {
@@ -171,6 +196,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns the configured cumulative structured-node limit.
+    ///
+    /// # Returns
+    ///
+    /// The maximum structured nodes allowed in this session.
     #[inline]
     #[must_use]
     pub const fn structured_nodes_limit(&self) -> u64 {
@@ -178,6 +207,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns the configured cumulative structured-payload limit.
+    ///
+    /// # Returns
+    ///
+    /// The maximum structured payload bytes allowed in this session.
     #[inline]
     #[must_use]
     pub const fn structured_payload_bytes_limit(&self) -> u64 {
@@ -187,6 +220,10 @@ impl<'a> ConversionSession<'a> {
     /// Returns the number of top-level item admissions already charged.
     ///
     /// This includes attempts that fail after the item charge succeeds.
+    ///
+    /// # Returns
+    ///
+    /// The number of top-level item admissions already charged.
     #[inline]
     #[must_use]
     pub fn items_used(&self) -> u64 {
@@ -194,6 +231,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns cumulative input bytes already consumed.
+    ///
+    /// # Returns
+    ///
+    /// The input bytes charged to this session so far.
     #[inline]
     #[must_use]
     pub fn input_bytes_used(&self) -> u64 {
@@ -201,6 +242,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns remaining cumulative input-byte capacity.
+    ///
+    /// # Returns
+    ///
+    /// The input-byte capacity still available in this session.
     #[inline]
     #[must_use]
     pub fn input_bytes_remaining(&self) -> u64 {
@@ -208,6 +253,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns cumulative output bytes already consumed.
+    ///
+    /// # Returns
+    ///
+    /// The output bytes committed to this session so far.
     #[inline]
     #[must_use]
     pub fn output_bytes_used(&self) -> u64 {
@@ -215,6 +264,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns remaining cumulative output-byte capacity.
+    ///
+    /// # Returns
+    ///
+    /// The output-byte capacity still available in this session.
     #[inline]
     #[must_use]
     pub fn output_bytes_remaining(&self) -> u64 {
@@ -222,6 +275,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns cumulative structured nodes already consumed.
+    ///
+    /// # Returns
+    ///
+    /// The structured nodes charged to this session so far.
     #[inline]
     #[must_use]
     pub fn structured_nodes_used(&self) -> u64 {
@@ -229,6 +286,10 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Returns cumulative structured payload bytes already consumed.
+    ///
+    /// # Returns
+    ///
+    /// The structured payload bytes charged to this session so far.
     #[inline]
     #[must_use]
     pub fn structured_payload_bytes_used(&self) -> u64 {
@@ -244,13 +305,13 @@ impl<'a> ConversionSession<'a> {
     /// cannot substitute an uncharged source. Splitting is lazy and retains
     /// original indices even when empty items are skipped.
     ///
-    /// # Returns
-    ///
-    /// A source-bound capability borrowing this session and the source text.
-    ///
     /// # Parameters
     ///
     /// * `source` - Scalar collection text borrowed for lazy item iteration.
+    ///
+    /// # Returns
+    ///
+    /// A source-bound capability borrowing this session and the source text.
     ///
     /// # Errors
     ///
@@ -280,6 +341,15 @@ impl<'a> ConversionSession<'a> {
     ///
     /// Returns a String-to-target conversion-domain quantity or resource-limit
     /// error when the source exceeds its configured collection or input budget.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Complete scalar collection text to admit.
+    /// * `target` - Target datatype used to identify admission errors.
+    ///
+    /// # Returns
+    ///
+    /// A source-bound capability lending individually admitted items.
     #[inline]
     pub(super) fn admit_scalar_string_source_for<'session, 'source>(
         &'session mut self,
@@ -297,6 +367,20 @@ impl<'a> ConversionSession<'a> {
     ///
     /// The caller is responsible for charging any outer source/input bytes;
     /// this method accounts only the JSON value structure and payload.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Owned or borrowed value type deserialized from the input bytes.
+    ///
+    /// # Parameters
+    ///
+    /// * `from` - Source datatype used to identify decoding errors.
+    /// * `to` - Target datatype used to identify decoding errors.
+    /// * `input` - UTF-8 JSON bytes to decode.
+    ///
+    /// # Returns
+    ///
+    /// The decoded `T` value, which may borrow from `input`.
     ///
     /// # Errors
     ///
@@ -323,6 +407,17 @@ impl<'a> ConversionSession<'a> {
     ///
     /// The caller is responsible for charging outer input bytes. This method
     /// accounts only the JSON structure and payload consumed by the decoder.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `S` - Deserialization seed that constructs the decoded value.
+    ///
+    /// # Parameters
+    ///
+    /// * `from` - Source datatype used to identify decoding errors.
+    /// * `to` - Target datatype used to identify decoding errors.
+    /// * `seed` - Seed that constructs the returned value.
+    /// * `input` - UTF-8 JSON bytes consumed by the seed.
     ///
     /// # Returns
     ///
@@ -352,6 +447,16 @@ impl<'a> ConversionSession<'a> {
     /// Accounts an already materialized JSON value through rs-budget's
     /// canonical iterative traversal.
     ///
+    /// # Parameters
+    ///
+    /// * `from` - Source datatype used to identify accounting errors.
+    /// * `to` - Target datatype used to identify accounting errors.
+    /// * `value` - Materialized JSON value to account.
+    ///
+    /// # Returns
+    ///
+    /// Success after the complete JSON value is committed to the shared budget.
+    ///
     /// # Errors
     ///
     /// Returns a measured-limit conversion error when accounting the value
@@ -372,17 +477,43 @@ impl<'a> ConversionSession<'a> {
             .map_err(|error| DataConversionError::measured_limit(from, to, error))
     }
 
+    /// Returns remaining cumulative item capacity for internal adapters.
+    ///
+    /// # Returns
+    ///
+    /// The top-level item capacity still available to the session.
+    #[inline]
+    #[must_use]
+    pub(crate) fn remaining_items(&self) -> u64 {
+        self.items_remaining()
+    }
+
     /// Starts a transactional admission over the shared structured budget.
     ///
     /// # Returns
     ///
     /// A transaction that can stage structured-value accounting before it is
     /// committed to the shared budget.
+    #[must_use = "commit the transaction to publish its staged accounting"]
     pub(crate) fn structured_transaction(&mut self) -> JsonValueTransaction<'_, ConversionResource, u64> {
         self.budget.structured_transaction()
     }
 
     /// Encodes JSON through the shared structured and output budgets.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - Value type serialized as JSON; unsized values are supported.
+    ///
+    /// # Parameters
+    ///
+    /// * `from` - Source datatype used to identify encoding errors.
+    /// * `to` - Target datatype used to identify encoding errors.
+    /// * `value` - Value serialized into the returned JSON bytes.
+    ///
+    /// # Returns
+    ///
+    /// The encoded UTF-8 JSON payload.
     ///
     /// # Errors
     ///
@@ -405,8 +536,17 @@ impl<'a> ConversionSession<'a> {
             .to_vec(value)
             .map_err(|error| map_json_encode_error(from, to, error))
     }
-
     /// Admits one completed output payload measured by a Rust String length.
+    ///
+    /// # Parameters
+    ///
+    /// * `from` - Source datatype used to identify output-accounting errors.
+    /// * `to` - Target datatype used to identify output-accounting errors.
+    /// * `amount` - Completed output length in bytes.
+    ///
+    /// # Returns
+    ///
+    /// Success when the output bytes fit the remaining budget.
     ///
     /// # Errors
     ///
@@ -424,6 +564,21 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Checks a minimum output-byte requirement without consuming capacity.
+    ///
+    /// # Parameters
+    ///
+    /// * `from` - Source datatype used to identify output-check errors.
+    /// * `to` - Target datatype used to identify output-check errors.
+    /// * `minimum` - Minimum output capacity required, in bytes.
+    ///
+    /// # Returns
+    ///
+    /// Success when at least `minimum` output bytes remain available.
+    ///
+    /// # Errors
+    ///
+    /// Returns a conversion-domain error when the requested capacity exceeds
+    /// the configured output limit.
     #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
     #[inline]
     pub(crate) fn check_output_bytes(
@@ -438,6 +593,21 @@ impl<'a> ConversionSession<'a> {
     }
 
     /// Renders one String transactionally under the cumulative output budget.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `F` - One-shot renderer that writes into the budget-aware string
+    ///   writer.
+    ///
+    /// # Parameters
+    ///
+    /// * `from` - Source datatype used to identify rendering errors.
+    /// * `to` - Target datatype used to identify rendering errors.
+    /// * `render` - Closure that renders the complete output string.
+    ///
+    /// # Returns
+    ///
+    /// The rendered string after its output bytes are committed successfully.
     ///
     /// # Errors
     ///
@@ -464,6 +634,10 @@ impl<'a> ConversionSession<'a> {
     /// # Errors
     ///
     /// Returns a budget error when the cumulative item limit is exhausted.
+    ///
+    /// # Returns
+    ///
+    /// Success after one top-level item is charged.
     #[inline]
     pub(crate) fn consume_item(&mut self) -> Result<(), BudgetError<ConversionResource, u64>> {
         self.budget.consume_item()
@@ -480,6 +654,14 @@ impl<'a> ConversionSession<'a> {
     /// Returns a measured budget error when the source is too large, its
     /// length cannot be represented as `u64`, or the cumulative input budget
     /// is exhausted.
+    ///
+    /// # Parameters
+    ///
+    /// * `amount` - Complete scalar source length in native bytes.
+    ///
+    /// # Returns
+    ///
+    /// Success after the source-size check and input-byte charge both pass.
     #[inline]
     pub(crate) fn admit_scalar_source_bytes_usize(
         &mut self,
@@ -495,6 +677,14 @@ impl<'a> ConversionSession<'a> {
     ///
     /// Returns a quantity error if the `usize` value cannot be represented as
     /// `u64`, or a budget error when the cumulative limit is exhausted.
+    ///
+    /// # Parameters
+    ///
+    /// * `amount` - Input length in native bytes to charge.
+    ///
+    /// # Returns
+    ///
+    /// Success after the input bytes are charged.
     #[inline]
     pub(crate) fn consume_input_bytes_usize(
         &mut self,
@@ -503,14 +693,20 @@ impl<'a> ConversionSession<'a> {
         self.budget.consume_input_bytes_usize(amount)
     }
 
-    /// Returns remaining cumulative item capacity for internal adapters.
-    #[inline]
-    #[must_use]
-    pub(crate) fn remaining_items(&self) -> u64 {
-        self.items_remaining()
-    }
-
     /// Checks a scalar collection source measured by a native slice length.
+    ///
+    /// # Parameters
+    ///
+    /// * `actual` - Source length in native bytes to compare with its limit.
+    ///
+    /// # Returns
+    ///
+    /// Success when the source length is within its configured limit.
+    ///
+    /// # Errors
+    ///
+    /// Returns a quantity error if `actual` cannot fit in `u64`, or a limit
+    /// error when the configured source-size limit is exceeded.
     #[inline]
     pub(crate) fn check_collection_source_bytes_usize(
         &self,
@@ -530,117 +726,19 @@ impl<'a> ConversionSession<'a> {
     /// # Errors
     ///
     /// Returns a conversion-domain quantity or resource-limit error.
+    ///
+    /// # Parameters
+    ///
+    /// * `from` - Source datatype used to identify admission errors.
+    /// * `to` - Target datatype used to identify admission errors.
+    /// * `amount` - Complete scalar source length in native bytes.
+    ///
+    /// # Returns
+    ///
+    /// Success after source-size validation and input-byte accounting.
     #[inline]
     fn admit_scalar_source(&mut self, from: DataType, to: DataType, amount: usize) -> Result<(), DataConversionError> {
         self.admit_scalar_source_bytes_usize(amount)
             .map_err(|error| DataConversionError::measured_limit(from, to, error))
-    }
-}
-
-/// Converts a budgeted string rendering failure into a conversion error.
-///
-/// # Parameters
-///
-/// * `from` - Runtime source type retained in the error.
-/// * `to` - Requested target type retained in the error.
-/// * `error` - Rendering or budget failure to convert.
-///
-/// # Returns
-///
-/// A conversion error preserving budget, quantity, render, or encoding
-/// failure details where the public error model supports them.
-fn map_string_write_error(
-    from: DataType,
-    to: DataType,
-    error: BudgetedStringError<ConversionResource, DataConversionError>,
-) -> DataConversionError {
-    match error {
-        BudgetedStringError::Budget(error) => DataConversionError::limit_exceeded(from, to, error.into()),
-        BudgetedStringError::Quantity { resource, source } => DataConversionError::quantity(from, to, resource, source),
-        BudgetedStringError::Render(error) => error,
-        BudgetedStringError::InvalidUtf8(_)
-        | BudgetedStringError::LengthOverflow
-        | BudgetedStringError::Allocation(_) => {
-            DataConversionError::invalid(from, to, super::error::InvalidValueReason::OutOfRange)
-        }
-    }
-}
-
-/// Converts a JSON decoder failure into a conversion error.
-///
-/// # Parameters
-///
-/// * `from` - Runtime source type retained in the error.
-/// * `to` - Requested target type retained in the error.
-/// * `error` - JSON decoding failure to convert.
-///
-/// # Returns
-///
-/// A measured-limit error when the decoder exhausted a budget, otherwise a
-/// JSON deserialization invalid-value error.
-#[cfg(feature = "json")]
-fn map_json_decode_error(
-    from: DataType,
-    to: DataType,
-    error: JsonDecodeError<ConversionResource, u64>,
-) -> DataConversionError {
-    if let Some(budget) = error.budget_error().cloned() {
-        return DataConversionError::measured_limit(from, to, budget);
-    }
-    let converted = DataConversionError::invalid(
-        from,
-        to,
-        super::error::InvalidValueReason::Deserialization {
-            format: super::error::DataFormat::Json,
-        },
-    );
-    match json_decode_diagnostic(&error) {
-        Some(diagnostic) => converted.with_json_diagnostic(diagnostic),
-        None => converted,
-    }
-}
-
-#[cfg(feature = "json")]
-fn json_decode_diagnostic(error: &JsonDecodeError<ConversionResource, u64>) -> Option<JsonConversionDiagnostic> {
-    let category = match error.kind() {
-        JsonDecodeErrorKind::Read => JsonConversionErrorCategory::Read,
-        JsonDecodeErrorKind::EmptyInput => JsonConversionErrorCategory::EmptyInput,
-        JsonDecodeErrorKind::InvalidUtf8 => JsonConversionErrorCategory::InvalidUtf8,
-        JsonDecodeErrorKind::InvalidJson => JsonConversionErrorCategory::InvalidJson,
-        JsonDecodeErrorKind::UnexpectedTopLevel => JsonConversionErrorCategory::UnexpectedTopLevel,
-        JsonDecodeErrorKind::Deserialize => JsonConversionErrorCategory::Deserialize,
-        JsonDecodeErrorKind::Budget => return None,
-    };
-    Some(JsonConversionDiagnostic::new(category, error.line(), error.column()))
-}
-
-/// Converts a JSON encoder failure into a conversion error.
-///
-/// # Parameters
-///
-/// * `from` - Runtime source type retained in the error.
-/// * `to` - Requested target type retained in the error.
-/// * `error` - JSON encoding failure to convert.
-///
-/// # Returns
-///
-/// A measured-limit error for budget failures, or a JSON serialization
-/// invalid-value error for encoding failures.
-#[cfg(feature = "json")]
-fn map_json_encode_error(
-    from: DataType,
-    to: DataType,
-    error: JsonEncodeError<ConversionResource, u64>,
-) -> DataConversionError {
-    if let Some(error) = error.into_budget_error() {
-        DataConversionError::measured_limit(from, to, error)
-    } else {
-        DataConversionError::invalid(
-            from,
-            to,
-            super::error::InvalidValueReason::Serialization {
-                format: super::error::DataFormat::Json,
-            },
-        )
     }
 }

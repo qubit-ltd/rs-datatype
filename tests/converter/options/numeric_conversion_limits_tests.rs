@@ -14,7 +14,7 @@ use qubit_datatype::converter::NumericConversionLimits;
 fn test_numeric_conversion_limits_contract() {
     let defaults = NumericConversionLimits::default();
     assert_eq!(NumericConversionLimits::DEFAULT_MAX_TEXT_BYTES, 16_384);
-    assert_eq!(NumericConversionLimits::DEFAULT_MAX_BIG_INTEGER_DIGITS, 16_384,);
+    assert_eq!(NumericConversionLimits::DEFAULT_MAX_BIG_INTEGER_DIGITS, 16_384);
     assert_eq!(defaults.max_text_bytes(), 16_384);
     assert_eq!(defaults.max_big_integer_digits(), 16_384);
     assert_eq!(defaults.max_text_bytes_limit().maximum(), defaults.max_text_bytes());

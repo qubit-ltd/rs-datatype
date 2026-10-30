@@ -27,7 +27,7 @@ fn test_collection_conversion_limits_defaults_builders_and_wire() {
         r#"{"max_source_bytes":128,"max_items":3}"#
     );
     assert_eq!(
-        serde_json::from_str::<CollectionConversionLimits>(r#"{"max_source_bytes":128,"max_items":3}"#)
+        serde_json::from_str::<CollectionConversionLimits>(r#"{"max_source_bytes":128,"max_items":3}"#,)
             .expect("collection limits should deserialize"),
         limits
     );

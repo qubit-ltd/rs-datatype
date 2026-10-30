@@ -7,6 +7,8 @@
 // =============================================================================
 //! Tests for the aggregate conversion policy.
 
+use std::ptr::eq;
+
 use qubit_datatype::converter::BlankStringPolicy;
 use qubit_datatype::converter::BooleanConversionPolicy;
 use qubit_datatype::converter::CollectionConversionPolicy;
@@ -17,12 +19,12 @@ use qubit_datatype::converter::EmptyItemPolicy;
 use qubit_datatype::converter::NumericConversionPolicy;
 use qubit_datatype::converter::StringConversionPolicy;
 use serde_json::from_str;
+use serde_json::to_value;
 
 /// Verifies the policy wire contains semantic fields but no resource limits.
 #[test]
 fn test_conversion_policy_wire_contains_no_resource_limits() {
-    let value =
-        serde_json::to_value(ConversionPolicy::default()).expect("the default conversion policy should serialize");
+    let value = to_value(ConversionPolicy::default()).expect("the default conversion policy should serialize");
     let object = value
         .as_object()
         .expect("the conversion policy wire should be an object");
@@ -48,16 +50,22 @@ fn test_conversion_policy_wire_contains_no_resource_limits() {
 fn test_conversion_policy_profiles_preserve_semantic_defaults() {
     assert_eq!(ConversionPolicy::strict(), ConversionPolicy::default());
     assert_eq!(ConversionPolicy::lossy().numeric(), &NumericConversionPolicy::lossy());
-    assert!(ConversionPolicy::lossy().string().trim());
+    assert!(
+        ConversionPolicy::lossy().string().trim(),
+        "the lossy profile should trim strings"
+    );
     assert_eq!(
         ConversionPolicy::lossy().duration().rounding_policy(),
         DurationRoundingPolicy::HalfUp
     );
-    assert!(ConversionPolicy::env_friendly().collection().split_scalar_strings());
-    assert!(std::ptr::eq(
-        ConversionPolicy::default_ref(),
-        ConversionPolicy::default_ref()
-    ));
+    assert!(
+        ConversionPolicy::env_friendly().collection().split_scalar_strings(),
+        "the environment-friendly profile should split scalar strings"
+    );
+    assert!(
+        eq(ConversionPolicy::default_ref(), ConversionPolicy::default_ref()),
+        "the default policy reference should point to the shared instance"
+    );
 }
 
 #[test]
@@ -73,10 +81,13 @@ fn test_conversion_policy_builders_replace_each_policy_group() {
         .build();
 
     assert_eq!(policy.numeric(), &NumericConversionPolicy::lossy());
-    assert!(policy.string().trim());
+    assert!(policy.string().trim(), "the string override should enable trimming");
     assert_eq!(policy.string().blank_string_policy(), BlankStringPolicy::TreatAsMissing);
     assert_eq!(policy.boolean(), &BooleanConversionPolicy::env_friendly());
-    assert!(policy.collection().split_scalar_strings());
+    assert!(
+        policy.collection().split_scalar_strings(),
+        "the collection override should split scalar strings"
+    );
     assert_eq!(policy.collection().empty_item_policy(), EmptyItemPolicy::Skip);
     assert_eq!(policy.duration(), &DurationConversionPolicy::default());
 }
@@ -170,6 +181,9 @@ fn test_conversion_policy_deserialize_rejects_unknown_fields() {
         r#"{"unexpected":true}"#,
         r#"{"string":{"trim":true,"unexpected":true}}"#,
     ] {
-        assert!(from_str::<ConversionPolicy>(wire).is_err());
+        assert!(
+            from_str::<ConversionPolicy>(wire).is_err(),
+            "unknown aggregate and nested fields should be rejected"
+        );
     }
 }

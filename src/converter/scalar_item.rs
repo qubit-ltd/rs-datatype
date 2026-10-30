@@ -20,6 +20,8 @@
 /// # Examples
 ///
 /// ```
+/// # #[cfg(feature = "converter")]
+/// # {
 /// use qubit_datatype::ScalarItem;
 ///
 /// let item = ScalarItem {
@@ -28,6 +30,7 @@
 /// };
 /// assert_eq!(item.source_index, 2);
 /// assert_eq!(item.value, " 42 ");
+/// # }
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[must_use]

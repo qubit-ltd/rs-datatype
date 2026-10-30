@@ -54,6 +54,7 @@ impl NumericConversionPolicy {
     pub fn into_builder(self) -> NumericConversionPolicyBuilder {
         NumericConversionPolicyBuilder { policy: self }
     }
+
     /// Creates the strict numeric conversion profile used by [`Default`].
     ///
     /// # Returns

@@ -8,18 +8,34 @@
 
 #![cfg(feature = "json")]
 
+use std::collections::HashMap;
+use std::error::Error;
+
+use qubit_datatype::AdmittedConversion;
+use qubit_datatype::ConversionLimits;
+use qubit_datatype::ConversionPolicy;
+use qubit_datatype::ConversionResource;
 use qubit_datatype::DataConversionError;
 use qubit_datatype::DataConversionErrorKind;
+use qubit_datatype::DataConversionTarget;
 use qubit_datatype::DataConverter;
 use qubit_datatype::DataFormat;
+use qubit_datatype::DataListConversionError;
 use qubit_datatype::DataType;
+use qubit_datatype::DataTypeOf;
 use qubit_datatype::InvalidValueReason;
 use qubit_datatype::JsonConversionErrorCategory;
+use qubit_datatype::StringConversionPolicy;
+use qubit_datatype::StructuredConversionLimits;
+use serde::Deserialize;
+use serde::Deserializer;
+use serde::de::Error as DeError;
+use serde_json::Value;
 
 #[test]
 fn test_json_conversion_diagnostic_reports_syntax_location() {
     let error = DataConverter::from("{\n@}")
-        .to::<serde_json::Value>()
+        .to::<Value>()
         .expect_err("an object member cannot start with @");
     let diagnostic = error.json_diagnostic().expect("syntax location retained");
     assert_eq!(diagnostic.category(), JsonConversionErrorCategory::InvalidJson);
@@ -48,7 +64,7 @@ fn test_json_conversion_diagnostic_reports_syntax_location() {
 #[test]
 fn test_json_conversion_diagnostic_counts_syntax_columns_as_characters() {
     let error = DataConverter::from(r#"{"字":0,@}"#)
-        .to::<serde_json::Value>()
+        .to::<Value>()
         .expect_err("syntax must fail after the multibyte key");
     let diagnostic = error.json_diagnostic().expect("diagnostic retained");
     assert_eq!(diagnostic.category(), JsonConversionErrorCategory::InvalidJson);
@@ -58,14 +74,11 @@ fn test_json_conversion_diagnostic_counts_syntax_columns_as_characters() {
 
 #[test]
 fn test_json_conversion_diagnostic_follows_normalized_text() {
-    use qubit_datatype::ConversionPolicy;
-    use qubit_datatype::StringConversionPolicy;
-
     let policy = ConversionPolicy::builder()
         .string_policy(StringConversionPolicy::builder().trim(true).build())
         .build();
     let error = DataConverter::from("\n  {\n@}\n")
-        .to_with::<serde_json::Value>(&policy, &qubit_datatype::ConversionLimits::default())
+        .to_with::<Value>(&policy, &ConversionLimits::default())
         .expect_err("normalized JSON remains invalid");
     let diagnostic = error.json_diagnostic().expect("diagnostic retained");
     assert_eq!(diagnostic.line(), Some(2));
@@ -74,8 +87,6 @@ fn test_json_conversion_diagnostic_follows_normalized_text() {
 
 #[test]
 fn test_json_conversion_diagnostic_reports_deserialize_byte_columns() {
-    use std::collections::HashMap;
-
     let error = DataConverter::from(r#"{"字":1}"#)
         .to::<HashMap<String, String>>()
         .expect_err("number cannot be materialized as String");
@@ -88,15 +99,15 @@ fn test_json_conversion_diagnostic_reports_deserialize_byte_columns() {
 
 #[derive(Debug)]
 struct DecodedJson {
-    _value: serde_json::Value,
+    _value: Value,
 }
 
-impl qubit_datatype::DataTypeOf for DecodedJson {
+impl DataTypeOf for DecodedJson {
     const DATA_TYPE: DataType = DataType::Json;
 }
 
-impl qubit_datatype::DataConversionTarget for DecodedJson {
-    fn convert(mut input: qubit_datatype::AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+impl DataConversionTarget for DecodedJson {
+    fn convert(mut input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
         let source = input.source().clone();
         match source {
             DataConverter::String(value) => input.decode_json(value.as_bytes()).map(|_value| Self { _value }),
@@ -117,10 +128,8 @@ fn test_json_conversion_diagnostic_preserves_custom_target_input_location() {
 
 #[test]
 fn test_json_conversion_diagnostic_preserves_list_error() {
-    let error = DataConverter::from("{\n@}")
-        .to::<serde_json::Value>()
-        .expect_err("invalid JSON");
-    let list_error = qubit_datatype::DataListConversionError::new(2, error);
+    let error = DataConverter::from("{\n@}").to::<Value>().expect_err("invalid JSON");
+    let list_error = DataListConversionError::new(2, error);
     assert_eq!(list_error.source_index(), 2);
     assert_eq!(
         list_error.conversion_error().json_diagnostic().unwrap().category(),
@@ -130,10 +139,8 @@ fn test_json_conversion_diagnostic_preserves_list_error() {
 
 #[test]
 fn test_json_conversion_diagnostic_retains_no_secret() {
-    use std::error::Error;
-
     let error = DataConverter::from(r#"{"TOP_SECRET_KEY":"TOP_SECRET_VALUE",@}"#)
-        .to::<serde_json::Value>()
+        .to::<Value>()
         .expect_err("malformed JSON");
     let markers = ["TOP_SECRET_KEY", "TOP_SECRET_VALUE"];
     for marker in markers {
@@ -152,20 +159,14 @@ fn test_json_conversion_diagnostic_retains_no_secret() {
 
 #[test]
 fn test_json_conversion_diagnostic_keeps_budget_error_classification() {
-    use qubit_datatype::ConversionLimits;
-    use qubit_datatype::StructuredConversionLimits;
-
     let limits = ConversionLimits::builder()
         .structured_limits(StructuredConversionLimits::builder().max_depth(0).build())
         .build();
     let error = DataConverter::from("0")
-        .to_with::<serde_json::Value>(&qubit_datatype::ConversionPolicy::default(), &limits)
+        .to_with::<Value>(&ConversionPolicy::default(), &limits)
         .expect_err("depth zero rejects structured JSON decode");
     assert_eq!(error.kind(), DataConversionErrorKind::LimitExceeded);
-    assert_eq!(
-        error.resource(),
-        Some(qubit_datatype::ConversionResource::StructuredDepth)
-    );
+    assert_eq!(error.resource(), Some(ConversionResource::StructuredDepth));
     assert_eq!(error.json_diagnostic(), None);
 }
 
@@ -181,29 +182,29 @@ fn test_json_conversion_diagnostic_preserves_unknown_location() {
 #[derive(Debug)]
 struct Refuses;
 
-impl<'de> serde::Deserialize<'de> for Refuses {
+impl<'de> Deserialize<'de> for Refuses {
     fn deserialize<D>(_: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
-        Err(serde::de::Error::custom("safe failure"))
+        Err(DeError::custom("safe failure"))
     }
 }
 
-impl qubit_datatype::DataTypeOf for Refuses {
+impl DataTypeOf for Refuses {
     const DATA_TYPE: DataType = DataType::Json;
 }
 
-impl qubit_datatype::DataConversionTarget for Refuses {
-    fn convert(mut input: qubit_datatype::AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
+impl DataConversionTarget for Refuses {
+    fn convert(mut input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
         input.decode_json(b"0")
     }
 }
 
 #[test]
 fn test_json_conversion_diagnostic_does_not_change_legacy_display_or_equality() {
-    let first = DataConverter::from("{\n@}").to::<serde_json::Value>().unwrap_err();
-    let second = DataConverter::from("{").to::<serde_json::Value>().unwrap_err();
+    let first = DataConverter::from("{\n@}").to::<Value>().unwrap_err();
+    let second = DataConverter::from("{").to::<Value>().unwrap_err();
     assert_eq!(first, second);
     assert_ne!(first.json_diagnostic(), second.json_diagnostic());
     assert_eq!(

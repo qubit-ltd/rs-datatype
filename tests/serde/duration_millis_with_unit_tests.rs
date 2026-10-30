@@ -130,7 +130,12 @@ fn test_duration_millis_with_unit_deserialize_rejects_text_above_default_limit()
     let maximum = DurationTextOptions::DEFAULT_MAX_TEXT_BYTES;
     let text = format!("{}ms", "0".repeat(maximum - 1));
 
-    assert!(serde_json::from_value::<DurationMillisWithUnitHolder>(serde_json::json!({ "duration": text }),).is_err());
+    assert!(
+        serde_json::from_value::<DurationMillisWithUnitHolder>(serde_json::json!({
+            "duration": text
+        }),)
+        .is_err()
+    );
 }
 
 /// Verifies the direct serializer emits fixed millisecond text.

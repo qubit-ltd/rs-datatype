@@ -32,6 +32,10 @@ pub struct ConversionLimitsBuilder {
 
 impl ConversionLimitsBuilder {
     /// Creates a builder initialized with the documented defaults.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing the default aggregate conversion limits.
     #[inline]
     #[must_use]
     pub fn new() -> Self {
@@ -41,6 +45,14 @@ impl ConversionLimitsBuilder {
     }
 
     /// Configures numeric value limits.
+    ///
+    /// # Parameters
+    ///
+    /// * `limits` - Numeric limits applied to each converted numeric value.
+    ///
+    /// # Returns
+    ///
+    /// This builder with the numeric value limits configured as `limits`.
     #[inline]
     #[must_use]
     pub fn numeric_limits(mut self, limits: NumericConversionLimits) -> Self {
@@ -49,6 +61,14 @@ impl ConversionLimitsBuilder {
     }
 
     /// Configures scalar collection value limits.
+    ///
+    /// # Parameters
+    ///
+    /// * `limits` - Limits applied to the contents of each scalar collection.
+    ///
+    /// # Returns
+    ///
+    /// This builder with the scalar collection limits configured as `limits`.
     #[inline]
     #[must_use]
     pub fn collection_limits(mut self, limits: CollectionConversionLimits) -> Self {
@@ -57,6 +77,14 @@ impl ConversionLimitsBuilder {
     }
 
     /// Configures duration value limits.
+    ///
+    /// # Parameters
+    ///
+    /// * `limits` - Limits applied to each converted duration value.
+    ///
+    /// # Returns
+    ///
+    /// This builder with the duration value limits configured as `limits`.
     #[inline]
     #[must_use]
     pub fn duration_limits(mut self, limits: DurationConversionLimits) -> Self {
@@ -65,6 +93,14 @@ impl ConversionLimitsBuilder {
     }
 
     /// Configures structured value limits.
+    ///
+    /// # Parameters
+    ///
+    /// * `limits` - Limits applied to each converted structured value.
+    ///
+    /// # Returns
+    ///
+    /// This builder with the structured value limits configured as `limits`.
     #[inline]
     #[must_use]
     pub fn structured_limits(mut self, limits: StructuredConversionLimits) -> Self {
@@ -73,6 +109,15 @@ impl ConversionLimitsBuilder {
     }
 
     /// Configures cumulative operation limits.
+    ///
+    /// # Parameters
+    ///
+    /// * `limits` - Limits shared across the logical conversion operation.
+    ///
+    /// # Returns
+    ///
+    /// This builder with the cumulative operation limits configured as
+    /// `limits`.
     #[inline]
     #[must_use]
     pub fn operation_limits(mut self, limits: ConversionOperationLimits) -> Self {
@@ -81,6 +126,10 @@ impl ConversionLimitsBuilder {
     }
 
     /// Builds the configured conversion limits.
+    ///
+    /// # Returns
+    ///
+    /// The aggregate conversion limits configured by this builder.
     #[inline]
     pub fn build(self) -> ConversionLimits {
         self.limits

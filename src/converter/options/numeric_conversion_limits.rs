@@ -72,6 +72,10 @@ pub struct NumericConversionLimits {
 
 impl NumericConversionLimits {
     /// Creates a builder initialized with the default numeric limits.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing the documented default limits.
     #[inline]
     #[must_use]
     pub fn builder() -> NumericConversionLimitsBuilder {
@@ -79,6 +83,10 @@ impl NumericConversionLimits {
     }
 
     /// Converts these limits into a builder for explicit customization.
+    ///
+    /// # Returns
+    ///
+    /// A builder initialized with these limits.
     #[inline]
     #[must_use]
     pub fn into_builder(self) -> NumericConversionLimitsBuilder {
@@ -106,6 +114,10 @@ impl NumericConversionLimits {
     }
 
     /// Returns the composed text-byte limits.
+    ///
+    /// # Returns
+    ///
+    /// The configured text-byte limits.
     #[inline]
     #[must_use]
     pub const fn text(&self) -> &StringLimits<ConversionResource> {
@@ -113,6 +125,10 @@ impl NumericConversionLimits {
     }
 
     /// Returns the numeric text resource limit.
+    ///
+    /// # Returns
+    ///
+    /// The configured numeric text resource limit.
     ///
     /// # Panics
     ///
@@ -144,6 +160,10 @@ impl NumericConversionLimits {
     }
 
     /// Returns composed BigInteger limits when the feature is enabled.
+    ///
+    /// # Returns
+    ///
+    /// The configured BigInteger limits.
     #[cfg(feature = "big-integer")]
     #[inline]
     #[must_use]
@@ -218,6 +238,10 @@ impl NumericConversionLimits {
     }
 
     /// Returns composed BigDecimal limits when the feature is enabled.
+    ///
+    /// # Returns
+    ///
+    /// The configured BigDecimal limits.
     #[cfg(feature = "big-decimal")]
     #[inline]
     #[must_use]

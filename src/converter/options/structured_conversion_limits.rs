@@ -66,6 +66,10 @@ impl StructuredConversionLimits {
     pub const DEFAULT_MAX_MAP_ENTRIES: u64 = 65_536;
 
     /// Creates a builder initialized with the default structured limits.
+    ///
+    /// # Returns
+    ///
+    /// A builder initialized from the default limits.
     #[inline]
     #[must_use]
     pub fn builder() -> StructuredConversionLimitsBuilder {
@@ -73,6 +77,10 @@ impl StructuredConversionLimits {
     }
 
     /// Converts these limits into a builder for explicit customization.
+    ///
+    /// # Returns
+    ///
+    /// A builder containing these limits.
     #[inline]
     #[must_use]
     pub fn into_builder(self) -> StructuredConversionLimitsBuilder {
@@ -103,6 +111,10 @@ impl StructuredConversionLimits {
     /// Built-in conversion sessions use this text limit on supported text
     /// paths; it is not a per-string limit for already materialized JSON
     /// values.
+    ///
+    /// # Returns
+    ///
+    /// A borrow of the configured structured text limits.
     #[inline]
     #[must_use]
     pub const fn text(&self) -> &StringLimits<ConversionResource> {
@@ -110,6 +122,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the structured text resource limit.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the structured text limit is not configured.
+    ///
+    /// # Returns
+    ///
+    /// The configured structured text resource limit.
     #[inline]
     #[must_use]
     pub fn max_text_bytes_limit(&self) -> &ResourceLimit<ConversionResource, u64> {
@@ -126,6 +146,10 @@ impl StructuredConversionLimits {
     /// structure limits and add cumulative node and payload budgets without
     /// applying its string-byte limit. It is not a snapshot of a session's
     /// effective budgets.
+    ///
+    /// # Returns
+    ///
+    /// A borrow of the reusable JSON value-limit template.
     #[inline]
     #[must_use]
     pub const fn value(&self) -> &JsonValueLimits<ConversionResource, u64> {
@@ -133,6 +157,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the configured maximum depth, counting the root value as one.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the structured depth limit is not configured.
+    ///
+    /// # Returns
+    ///
+    /// The inclusive maximum depth, counting the root as one.
     #[inline]
     #[must_use]
     pub fn max_depth(&self) -> u64 {
@@ -140,6 +172,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the depth resource limit.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the structured depth limit is not configured.
+    ///
+    /// # Returns
+    ///
+    /// The configured depth resource limit.
     #[inline]
     #[must_use]
     pub fn max_depth_limit(&self) -> ResourceLimit<ConversionResource, u64> {
@@ -151,6 +191,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the maximum number of direct items allowed in each sequence.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the structured sequence-item limit is not configured.
+    ///
+    /// # Returns
+    ///
+    /// The maximum number of direct items in each sequence.
     #[inline]
     #[must_use]
     pub fn max_sequence_items(&self) -> u64 {
@@ -160,6 +208,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the sequence item resource limit.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the structured sequence-item limit is not configured.
+    ///
+    /// # Returns
+    ///
+    /// The configured sequence item resource limit.
     #[inline]
     #[must_use]
     pub fn max_sequence_items_limit(&self) -> ResourceLimit<ConversionResource, u64> {
@@ -171,6 +227,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the maximum number of direct entries allowed in each map.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the structured map-entry limit is not configured.
+    ///
+    /// # Returns
+    ///
+    /// The maximum number of direct entries in each map.
     #[inline]
     #[must_use]
     pub fn max_map_entries(&self) -> u64 {
@@ -180,6 +244,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns the map entry resource limit.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the structured map-entry limit is not configured.
+    ///
+    /// # Returns
+    ///
+    /// The configured map entry resource limit.
     #[inline]
     #[must_use]
     pub fn max_map_entries_limit(&self) -> ResourceLimit<ConversionResource, u64> {
@@ -291,6 +363,23 @@ impl Default for StructuredConversionLimits {
 
 impl Serialize for StructuredConversionLimits {
     /// Serializes the configured limits through the private wire shape.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `S` - Serializer used to encode the wire representation.
+    ///
+    /// # Parameters
+    ///
+    /// * `serializer` - Serializer that receives the wire representation.
+    ///
+    /// # Returns
+    ///
+    /// The serializer's successful output.
+    ///
+    /// # Errors
+    ///
+    /// Returns the serializer's error if it cannot encode the wire
+    /// representation.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -307,6 +396,23 @@ impl Serialize for StructuredConversionLimits {
 
 impl<'de> Deserialize<'de> for StructuredConversionLimits {
     /// Deserializes limits from the private wire shape.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `D` - Deserializer used to decode the wire representation.
+    ///
+    /// # Parameters
+    ///
+    /// * `deserializer` - Deserializer providing the wire representation.
+    ///
+    /// # Returns
+    ///
+    /// The structured limits decoded from the input.
+    ///
+    /// # Errors
+    ///
+    /// Returns the deserializer's error if the input does not match the wire
+    /// representation or a field cannot be decoded.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,

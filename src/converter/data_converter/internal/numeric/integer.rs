@@ -54,6 +54,7 @@ pub(super) fn signed_magnitude(value: i128) -> (bool, u128) {
 /// # Returns
 ///
 /// The exact sign and magnitude for a supported scalar integer source.
+#[must_use]
 pub(super) fn scalar_integer_magnitude(source: &DataConverter<'_>) -> Option<(bool, u128)> {
     match source {
         DataConverter::Bool(value) => Some((false, u128::from(*value))),

@@ -166,7 +166,10 @@ fn test_instant_fraction_precision_boundary() {
                             if error.kind() == DataConversionErrorKind::InvalidValue
                                 && error.from_type() == Some(DataType::String)
                                 && error.to_type() == DataType::Instant
-                                && matches!(error.reason(), Some(InvalidValueReason::InvalidSyntax { .. }))
+                                && matches!(
+                                    error.reason(),
+                                    Some(InvalidValueReason::InvalidSyntax { .. })
+                                )
                     ),
                     "unexpected result for {text}: {result:?}"
                 );
@@ -519,9 +522,10 @@ fn test_data_converter_strict_chrono_targets_cover_success_and_errors() {
 fn test_data_converter_strict_big_integer_target() {
     let big_int = BigInt::from(18);
     assert_eq!(DataConverter::from(&big_int).to::<BigInt>(), Ok(big_int));
-    assert!(
-        matches!(DataConverter::Unset(DataType::BigInteger).to::<BigInt>(), Err(error) if error.kind() == DataConversionErrorKind::Missing)
-    );
+    assert!(matches!(
+        DataConverter::Unset(DataType::BigInteger).to::<BigInt>(),
+        Err(error) if error.kind() == DataConversionErrorKind::Missing
+    ));
     assert_eq!(DataConverter::from(1i32).to::<BigInt>(), Ok(BigInt::from(1)));
 }
 
@@ -530,9 +534,10 @@ fn test_data_converter_strict_big_integer_target() {
 fn test_data_converter_strict_big_decimal_target() {
     let value = BigDecimal::from(19);
     assert_eq!(DataConverter::from(&value).to::<BigDecimal>(), Ok(value));
-    assert!(
-        matches!(DataConverter::Unset(DataType::BigDecimal).to::<BigDecimal>(), Err(error) if error.kind() == DataConversionErrorKind::Missing)
-    );
+    assert!(matches!(
+        DataConverter::Unset(DataType::BigDecimal).to::<BigDecimal>(),
+        Err(error) if error.kind() == DataConversionErrorKind::Missing
+    ));
     assert_eq!(DataConverter::from(1i32).to::<BigDecimal>(), Ok(BigDecimal::from(1)));
 }
 
@@ -540,12 +545,14 @@ fn test_data_converter_strict_big_decimal_target() {
 fn test_data_converter_strict_string_map_target() {
     let map = HashMap::from([("k".to_owned(), "v".to_owned())]);
     assert_eq!(DataConverter::from(&map).to::<HashMap<String, String>>(), Ok(map));
-    assert!(
-        matches!(DataConverter::Unset(DataType::StringMap).to::<HashMap<String, String>>(), Err(error) if error.kind() == DataConversionErrorKind::Missing)
-    );
-    assert!(
-        matches!(DataConverter::from(1i32).to::<HashMap<String, String>>(), Err(error) if error.kind() == DataConversionErrorKind::Unsupported)
-    );
+    assert!(matches!(
+        DataConverter::Unset(DataType::StringMap).to::<HashMap<String, String>>(),
+        Err(error) if error.kind() == DataConversionErrorKind::Missing
+    ));
+    assert!(matches!(
+        DataConverter::from(1i32).to::<HashMap<String, String>>(),
+        Err(error) if error.kind() == DataConversionErrorKind::Unsupported
+    ));
 }
 
 /// Test temporal conversions with strict target behavior.

@@ -261,7 +261,8 @@ impl BuiltinDataConversionTarget for Duration {
 ///
 /// # Returns
 ///
-/// The unit count and, when enabled, its canonical unit suffix.
+/// The unit count and `Some` of its canonical unit suffix when suffix output is
+/// enabled, or `None` when suffix output is disabled.
 ///
 /// # Errors
 ///

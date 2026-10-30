@@ -94,6 +94,7 @@ impl DurationConversionPolicy {
     pub fn into_builder(self) -> DurationConversionPolicyBuilder {
         DurationConversionPolicyBuilder { policy: self }
     }
+
     /// Creates duration options for environment-variable input.
     ///
     /// The profile interprets suffixless integers as milliseconds and accepts
@@ -120,21 +121,6 @@ impl DurationConversionPolicy {
         self.numeric_input_unit
     }
 
-    /// Returns a copy with a different numeric input unit.
-    ///
-    /// # Parameters
-    ///
-    /// * `unit` - Unit assigned to integer sources converted to a Duration.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    #[inline]
-    pub(crate) fn with_numeric_input_unit(mut self, unit: DurationUnit) -> Self {
-        self.numeric_input_unit = unit;
-        self
-    }
-
     /// Returns the policy for Duration text without an explicit suffix.
     ///
     /// # Returns
@@ -143,21 +129,6 @@ impl DurationConversionPolicy {
     #[inline]
     pub const fn suffixless_string_policy(&self) -> SuffixlessDurationPolicy {
         self.suffixless_string_policy
-    }
-
-    /// Returns a copy with a different suffixless string policy.
-    ///
-    /// # Parameters
-    ///
-    /// * `policy` - Rule for Duration strings without a unit suffix.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    #[inline]
-    pub(crate) fn with_suffixless_string_policy(mut self, policy: SuffixlessDurationPolicy) -> Self {
-        self.suffixless_string_policy = policy;
-        self
     }
 
     /// Returns the strictness applied to explicit Duration unit symbols.
@@ -170,21 +141,6 @@ impl DurationConversionPolicy {
         self.unit_parse_mode
     }
 
-    /// Returns a copy with a different Duration unit parse mode.
-    ///
-    /// # Parameters
-    ///
-    /// * `unit_parse_mode` - New explicit-unit parse mode.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    #[inline]
-    pub(crate) const fn with_unit_parse_mode(mut self, unit_parse_mode: DurationUnitParseMode) -> Self {
-        self.unit_parse_mode = unit_parse_mode;
-        self
-    }
-
     /// Returns the unit used for Duration output.
     ///
     /// # Returns
@@ -193,22 +149,6 @@ impl DurationConversionPolicy {
     #[inline]
     pub const fn output_unit(&self) -> DurationUnit {
         self.output_unit
-    }
-
-    /// Returns a copy with a different Duration output unit.
-    ///
-    /// # Parameters
-    ///
-    /// * `unit` - Unit used for Duration-to-integer and Duration-to-string
-    ///   conversions.
-    ///
-    /// # Returns
-    ///
-    /// Updated options.
-    #[inline]
-    pub(crate) fn with_output_unit(mut self, unit: DurationUnit) -> Self {
-        self.output_unit = unit;
-        self
     }
 
     /// Returns whether formatted Duration text includes a unit suffix.
@@ -229,6 +169,77 @@ impl DurationConversionPolicy {
         self.append_unit_suffix
     }
 
+    /// Returns the Duration output rounding policy.
+    ///
+    /// # Returns
+    ///
+    /// The policy applied when output units have a remainder.
+    #[inline]
+    pub const fn rounding_policy(&self) -> DurationRoundingPolicy {
+        self.rounding_policy
+    }
+
+    /// Returns a copy with a different numeric input unit.
+    ///
+    /// # Parameters
+    ///
+    /// * `unit` - Unit assigned to integer sources converted to a Duration.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline]
+    pub(crate) fn with_numeric_input_unit(mut self, unit: DurationUnit) -> Self {
+        self.numeric_input_unit = unit;
+        self
+    }
+
+    /// Returns a copy with a different suffixless string policy.
+    ///
+    /// # Parameters
+    ///
+    /// * `policy` - Rule for Duration strings without a unit suffix.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline]
+    pub(crate) fn with_suffixless_string_policy(mut self, policy: SuffixlessDurationPolicy) -> Self {
+        self.suffixless_string_policy = policy;
+        self
+    }
+
+    /// Returns a copy with a different Duration unit parse mode.
+    ///
+    /// # Parameters
+    ///
+    /// * `unit_parse_mode` - New explicit-unit parse mode.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline]
+    pub(crate) const fn with_unit_parse_mode(mut self, unit_parse_mode: DurationUnitParseMode) -> Self {
+        self.unit_parse_mode = unit_parse_mode;
+        self
+    }
+
+    /// Returns a copy with a different Duration output unit.
+    ///
+    /// # Parameters
+    ///
+    /// * `unit` - Unit used for Duration-to-integer and Duration-to-string
+    ///   conversions.
+    ///
+    /// # Returns
+    ///
+    /// Updated options.
+    #[inline]
+    pub(crate) fn with_output_unit(mut self, unit: DurationUnit) -> Self {
+        self.output_unit = unit;
+        self
+    }
+
     /// Returns a copy with suffix formatting enabled or disabled.
     ///
     /// # Parameters
@@ -243,16 +254,6 @@ impl DurationConversionPolicy {
     pub(crate) fn with_append_unit_suffix(mut self, append_unit_suffix: bool) -> Self {
         self.append_unit_suffix = append_unit_suffix;
         self
-    }
-
-    /// Returns the Duration output rounding policy.
-    ///
-    /// # Returns
-    ///
-    /// The policy applied when output units have a remainder.
-    #[inline]
-    pub const fn rounding_policy(&self) -> DurationRoundingPolicy {
-        self.rounding_policy
     }
 
     /// Returns a copy with a different Duration output rounding policy.
