@@ -10,6 +10,8 @@
 mod big_number_tests;
 mod float_big_number_tests;
 mod float_tests;
+#[cfg(any(feature = "big-integer", feature = "big-decimal"))]
+mod float_text_oracle_tests;
 mod float_text_tests;
 mod integer_tests;
 mod parsed_number_tests;
