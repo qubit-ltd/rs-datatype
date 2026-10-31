@@ -1,6 +1,6 @@
 [package]
 name = "qubit-datatype"
-version = "0.15.0"
+version = "0.15.1"
 edition = "2024"
 rust-version = "1.94"
 authors = ["Haixing Hu <starfish.hu@gmail.com>"]
@@ -67,7 +67,7 @@ thiserror = "^2.0"
 url = { version = "^2.5", optional = true }
 
 qubit-budget = { version = "^0.10", features = ["json"], optional = true }
-qubit-json = { path = "../rs-json", version = "0.12", optional = true }
+qubit-json = { version = "^0.12", optional = true }
 
 [dev-dependencies]
 criterion = { version = "^0.8", default-features = false }
