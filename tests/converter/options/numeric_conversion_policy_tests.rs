@@ -42,7 +42,7 @@ fn test_numeric_conversion_policy_exact_wire_has_no_limits() {
         wire,
         concat!(
             r#"{"fractional_to_integer":"truncate","#,
-            r#"numeric_to_float":"nearest_even","text_to_float":"nearest_even"}"#,
+            r#""numeric_to_float":"nearest_even","text_to_float":"nearest_even"}"#,
         )
     );
     assert_eq!(
