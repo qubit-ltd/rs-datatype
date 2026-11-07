@@ -36,6 +36,11 @@ fn decimal_digit_lower_bound(bits: u64) -> u64 {
 /// The estimate reads the integer magnitude and leaves non-big-number sources
 /// unclassified so their existing conversion path can proceed unchanged.
 ///
+/// # Parameters
+///
+/// * `source` - Value whose variant determines whether a big-number estimate is
+///   available.
+///
 /// # Returns
 ///
 /// `Some` with the conservative digit lower bound for a big-number source, or

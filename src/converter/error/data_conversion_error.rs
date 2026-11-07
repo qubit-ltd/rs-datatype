@@ -52,7 +52,20 @@ pub struct DataConversionError {
     inner: DataConversionErrorInner,
 }
 
+/// Compares conversion errors by their stable public error context.
+///
+/// JSON diagnostic location metadata is intentionally excluded from equality,
+/// so equivalent invalid-value failures compare equal regardless of decoder
+/// location details.
 impl PartialEq for DataConversionError {
+    /// Compares the error kind and its stable conversion details.
+    ///
+    /// JSON diagnostic metadata is ignored for invalid-value errors.
+    ///
+    /// # Parameters
+    ///
+    /// * `self` - Error whose stable conversion details are compared.
+    /// * `other` - Error compared with `self`.
     fn eq(&self, other: &Self) -> bool {
         match (&self.inner, &other.inner) {
             (
@@ -456,6 +469,16 @@ impl DataConversionError {
     }
 
     /// Attaches value-free JSON decoder metadata to an invalid-value error.
+    ///
+    /// # Parameters
+    ///
+    /// * `diagnostic` - Stable error category and optional source location; it
+    ///   contains no source text.
+    ///
+    /// # Returns
+    ///
+    /// The same error with `diagnostic` attached when it is an invalid-value
+    /// error. Other error kinds are returned unchanged.
     #[cfg(feature = "json")]
     #[inline]
     pub(crate) fn with_json_diagnostic(mut self, diagnostic: JsonConversionDiagnostic) -> Self {

@@ -478,6 +478,21 @@ impl<'source> DataConverter<'source> {
 
     /// Charges textual input and supported structured values before a target
     /// parser can allocate or recurse.
+    ///
+    /// # Parameters
+    ///
+    /// * `target` - Requested target type used to report resource-limit errors.
+    /// * `session` - Conversion session whose cumulative input-byte budget is
+    ///   charged for strings and supported structured values.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` when the applicable input usage is within its limits.
+    ///
+    /// # Errors
+    ///
+    /// Returns a resource-limit error when charging the string or structured
+    /// input exceeds the session's configured limits.
     fn charge_input_for_target(
         &self,
         target: DataType,
@@ -508,6 +523,11 @@ impl<'source> DataConverter<'source> {
     }
 
     /// Reborrows heap-backed storage while copying only scalar values.
+    ///
+    /// # Returns
+    ///
+    /// Returns a converter borrowing the same heap-backed values for the
+    /// duration of the shorter borrow.
     #[inline]
     fn borrowed<'borrowed>(&'borrowed self) -> DataConverter<'borrowed>
     where

@@ -49,12 +49,30 @@ use super::json_conversion_error_category::JsonConversionErrorCategory;
 /// crate::converter::DataConversionError::json_diagnostic
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct JsonConversionDiagnostic {
+    /// Stable classification of the JSON decoding failure.
     category: JsonConversionErrorCategory,
+    /// Decoder-provided one-based line number, when available.
     line: Option<usize>,
+    /// Decoder-provided column number, when available.
     column: Option<usize>,
 }
 
 impl JsonConversionDiagnostic {
+    /// Creates a diagnostic from safe decoder metadata.
+    ///
+    /// # Parameters
+    ///
+    /// * `category` - Stable category assigned to the decoding failure.
+    /// * `line` - Optional one-based line reported by the decoder.
+    /// * `column` - Optional decoder-provided column; its convention depends on
+    ///   the failure category.
+    #[cfg(feature = "json")]
+    #[must_use]
+    #[inline]
+    pub(crate) const fn new(category: JsonConversionErrorCategory, line: Option<usize>, column: Option<usize>) -> Self {
+        Self { category, line, column }
+    }
+
     /// Returns the safe category of the decoding failure.
     #[must_use]
     #[inline]
@@ -63,7 +81,6 @@ impl JsonConversionDiagnostic {
     }
 
     /// Returns the one-based line, when the decoder provides one.
-    #[must_use]
     #[inline]
     pub const fn line(&self) -> Option<usize> {
         self.line
@@ -73,17 +90,8 @@ impl JsonConversionDiagnostic {
     ///
     /// Invalid JSON syntax reports a character column, while target
     /// deserialization reports a byte column.
-    #[must_use]
     #[inline]
     pub const fn column(&self) -> Option<usize> {
         self.column
-    }
-
-    /// Creates a diagnostic from safe decoder metadata.
-    #[cfg(feature = "json")]
-    #[must_use]
-    #[inline]
-    pub(crate) const fn new(category: JsonConversionErrorCategory, line: Option<usize>, column: Option<usize>) -> Self {
-        Self { category, line, column }
     }
 }

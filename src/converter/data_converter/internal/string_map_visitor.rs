@@ -20,6 +20,7 @@ use serde::de::Visitor;
 pub(in crate::converter::data_converter) struct StringMapVisitor;
 
 impl<'de> DeserializeSeed<'de> for StringMapVisitor {
+    /// The owned map produced by deserializing the JSON object.
     type Value = HashMap<String, String>;
 
     /// Deserializes exactly one JSON object with unique string keys and values.
@@ -48,6 +49,7 @@ impl<'de> DeserializeSeed<'de> for StringMapVisitor {
 }
 
 impl<'de> Visitor<'de> for StringMapVisitor {
+    /// The owned map produced after validating all object entries.
     type Value = HashMap<String, String>;
 
     /// Describes the accepted JSON shape.
@@ -58,7 +60,11 @@ impl<'de> Visitor<'de> for StringMapVisitor {
     ///
     /// # Returns
     ///
-    /// The formatter result after writing the JSON object requirement.
+    /// Returns `Ok(())` after writing the JSON object requirement.
+    ///
+    /// # Errors
+    ///
+    /// Returns the formatter error if it cannot write the expectation text.
     #[inline]
     fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a JSON object with unique keys and string values")

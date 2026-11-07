@@ -19,6 +19,7 @@ use super::super::duration_with_unit::parse;
 pub(in crate::serde_impl) struct DurationWithUnitVisitor;
 
 impl Visitor<'_> for DurationWithUnitVisitor {
+    /// The duration produced after valid unit-suffixed text is parsed.
     type Value = Duration;
 
     /// Describes the strict unit-suffixed string accepted by this visitor.

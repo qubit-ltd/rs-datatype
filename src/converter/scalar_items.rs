@@ -228,6 +228,8 @@ impl<'a> ScalarItems<'a> {
 }
 
 impl<'a> Iterator for ScalarItems<'a> {
+    /// Borrows each retained item from the original scalar input, or reports
+    /// an empty-item rejection or the first retained-item limit violation.
     type Item = Result<ScalarItem<'a>, ScalarItemError>;
 
     /// Returns the next retained item or the next lazily discovered error.

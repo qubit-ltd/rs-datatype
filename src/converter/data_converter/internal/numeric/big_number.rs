@@ -154,6 +154,7 @@ fn enforce_big_integer_digit_limit(
 ///
 /// Panics if `divisor` is zero.
 #[cfg(feature = "big-decimal")]
+#[must_use]
 fn coefficient_remainder(coefficient: &BigInt, divisor: u64) -> u64 {
     let divisor = u128::from(divisor);
     coefficient.iter_u64_digits().rev().fold(0_u128, |remainder, digit| {
@@ -233,6 +234,22 @@ fn precheck_positive_scale_integer(
 }
 
 /// Enforces coefficient and scale bounds before a decimal is consumed.
+///
+/// # Parameters
+///
+/// * `value` - Decimal value whose coefficient and scale are checked.
+/// * `limits` - Configured numeric conversion limits.
+/// * `from` - Source type retained in any conversion error.
+/// * `to` - Target type retained in any conversion error.
+///
+/// # Returns
+///
+/// `Ok(())` when the decimal satisfies the configured bounds.
+///
+/// # Errors
+///
+/// Returns a resource-limit error when a bound is exceeded, or a quantity
+/// error when a measured value cannot be represented by the budget quantity.
 #[cfg(feature = "big-decimal")]
 #[inline]
 pub(super) fn enforce_big_decimal_limits(

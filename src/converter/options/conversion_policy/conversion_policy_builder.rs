@@ -56,6 +56,10 @@ impl ConversionPolicyBuilder {
     }
 
     /// Configures numeric conversion policy.
+    ///
+    /// # Parameters
+    ///
+    /// - `policy`: Numeric conversion behavior to use.
     #[inline]
     #[must_use]
     pub fn numeric_policy(self, policy: NumericConversionPolicy) -> Self {
@@ -69,6 +73,10 @@ impl ConversionPolicyBuilder {
     /// This also replaces its blank-string setting. A later
     /// [`blank_string_policy`](Self::blank_string_policy) call overrides only
     /// that setting.
+    ///
+    /// # Parameters
+    ///
+    /// - `policy`: Complete string conversion policy group to use.
     #[inline]
     #[must_use]
     pub fn string_policy(self, policy: StringConversionPolicy) -> Self {
@@ -81,6 +89,10 @@ impl ConversionPolicyBuilder {
     ///
     /// A later [`string_policy`](Self::string_policy) call replaces the group
     /// and therefore its blank-string setting.
+    ///
+    /// # Parameters
+    ///
+    /// - `policy`: Blank-string handling to use in the current string group.
     #[inline]
     #[must_use]
     pub fn blank_string_policy(self, policy: BlankStringPolicy) -> Self {
@@ -90,6 +102,10 @@ impl ConversionPolicyBuilder {
     }
 
     /// Configures boolean conversion policy.
+    ///
+    /// # Parameters
+    ///
+    /// - `policy`: Boolean conversion behavior to use.
     #[inline]
     #[must_use]
     pub fn boolean_policy(self, policy: BooleanConversionPolicy) -> Self {
@@ -103,6 +119,10 @@ impl ConversionPolicyBuilder {
     /// This also replaces its empty-item setting. A later
     /// [`empty_item_policy`](Self::empty_item_policy) call overrides only that
     /// setting.
+    ///
+    /// # Parameters
+    ///
+    /// - `policy`: Complete collection conversion policy group to use.
     #[inline]
     #[must_use]
     pub fn collection_policy(self, policy: CollectionConversionPolicy) -> Self {
@@ -115,6 +135,10 @@ impl ConversionPolicyBuilder {
     ///
     /// A later [`collection_policy`](Self::collection_policy) call replaces
     /// the group and therefore its empty-item setting.
+    ///
+    /// # Parameters
+    ///
+    /// - `policy`: Empty-item handling to use in the current collection group.
     #[inline]
     #[must_use]
     pub fn empty_item_policy(self, policy: EmptyItemPolicy) -> Self {
@@ -124,6 +148,10 @@ impl ConversionPolicyBuilder {
     }
 
     /// Configures duration conversion policy.
+    ///
+    /// # Parameters
+    ///
+    /// - `policy`: Duration conversion behavior to use.
     #[inline]
     #[must_use]
     pub fn duration_policy(self, policy: DurationConversionPolicy) -> Self {

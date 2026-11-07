@@ -225,6 +225,10 @@ impl Default for ConversionOperationLimits {
 impl Serialize for ConversionOperationLimits {
     /// Serializes the configured limits through the private wire shape.
     ///
+    /// # Type Parameters
+    ///
+    /// * `S` - Serializer implementation that defines the output format.
+    ///
     /// # Parameters
     ///
     /// * `serializer` - Serializer that receives the five configured maxima.
@@ -254,6 +258,11 @@ impl Serialize for ConversionOperationLimits {
 
 impl<'de> Deserialize<'de> for ConversionOperationLimits {
     /// Deserializes limits from the private wire shape.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `'de` - Lifetime of the data borrowed by the deserializer.
+    /// * `D` - Deserializer implementation that provides the input format.
     ///
     /// # Parameters
     ///

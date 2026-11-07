@@ -249,6 +249,20 @@ impl<'session, 'policy> ConversionContext<'session, 'policy> {
     }
 
     /// Checks a minimum output-byte requirement without consuming capacity.
+    ///
+    /// # Parameters
+    ///
+    /// * `minimum` - Minimum number of output bytes that must fit in the
+    ///   remaining budget.
+    ///
+    /// # Returns
+    ///
+    /// `()` when the requested minimum is available.
+    ///
+    /// # Errors
+    ///
+    /// Returns an output resource error when the remaining budget is below
+    /// `minimum`.
     #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
     #[inline]
     pub(crate) fn check_output_bytes(&self, minimum: u64) -> Result<(), DataConversionError> {

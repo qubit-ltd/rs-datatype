@@ -60,6 +60,13 @@ pub struct AdmittedConversion<'session, 'policy, 'source> {
 impl<'session, 'policy, 'source> AdmittedConversion<'session, 'policy, 'source> {
     /// Creates an admitted conversion after framework-owned resource charging.
     ///
+    /// # Parameters
+    ///
+    /// * `source` - Source whose top-level admission charges have already been
+    ///   applied.
+    /// * `context` - Conversion context bound to the admitted source and active
+    ///   target.
+    ///
     /// # Returns
     ///
     /// An admitted conversion bound to the charged source and context.

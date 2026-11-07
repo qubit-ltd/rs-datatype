@@ -287,6 +287,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns a copy with a different depth maximum.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - New maximum depth, counting the root value as one.
+    ///
+    /// # Returns
+    ///
+    /// Updated limits.
     #[inline]
     pub(crate) fn with_max_depth(mut self, maximum: u64) -> Self {
         let structure = (*self.value.structure_limits())
@@ -298,6 +306,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns a copy with a different sequence item maximum.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - New maximum number of direct items in each sequence.
+    ///
+    /// # Returns
+    ///
+    /// Updated limits.
     #[inline]
     pub(crate) fn with_max_sequence_items(mut self, maximum: u64) -> Self {
         let structure = (*self.value.structure_limits())
@@ -309,6 +325,14 @@ impl StructuredConversionLimits {
     }
 
     /// Returns a copy with a different map entry maximum.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum` - New maximum number of direct entries in each map.
+    ///
+    /// # Returns
+    ///
+    /// Updated limits.
     #[inline]
     pub(crate) fn with_max_map_entries(mut self, maximum: u64) -> Self {
         let structure = (*self.value.structure_limits())

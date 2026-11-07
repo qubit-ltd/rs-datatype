@@ -37,6 +37,10 @@ pub(crate) struct ConversionBudget {
 
 impl ConversionBudget {
     /// Creates fresh accounting from immutable conversion limits.
+    ///
+    /// # Parameters
+    ///
+    /// * `limits` supplies the cumulative and structured resource limits.
     #[inline]
     pub(crate) fn new(limits: &ConversionLimits) -> Self {
         let structured = limits.structured();
@@ -70,6 +74,10 @@ impl ConversionBudget {
     }
 
     /// Consumes input bytes measured by Rust's native string length type.
+    ///
+    /// # Parameters
+    ///
+    /// * `amount` is the input byte count to charge against this operation.
     #[inline]
     pub(crate) fn consume_input_bytes_usize(
         &mut self,
@@ -79,6 +87,10 @@ impl ConversionBudget {
     }
 
     /// Consumes output bytes measured by Rust's native string length type.
+    ///
+    /// # Parameters
+    ///
+    /// * `amount` is the output byte count to charge against this operation.
     #[inline]
     pub(crate) fn consume_output_bytes_usize(
         &mut self,
@@ -88,6 +100,10 @@ impl ConversionBudget {
     }
 
     /// Checks a minimum output-byte requirement without consuming capacity.
+    ///
+    /// # Parameters
+    ///
+    /// * `minimum` is the output-byte capacity that must remain available.
     #[cfg(any(feature = "big-integer", feature = "big-decimal"))]
     #[inline]
     pub(crate) fn check_output_bytes(&self, minimum: u64) -> Result<(), BudgetError<ConversionResource, u64>> {
@@ -95,6 +111,15 @@ impl ConversionBudget {
     }
 
     /// Renders and commits one String payload transactionally.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `E` is the renderer's error type.
+    /// * `F` is the one-shot rendering callback type.
+    ///
+    /// # Parameters
+    ///
+    /// * `render` writes the payload into the budgeted writer.
     #[inline]
     pub(crate) fn try_write_string<E, F>(
         &mut self,

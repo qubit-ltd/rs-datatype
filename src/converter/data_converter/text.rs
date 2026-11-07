@@ -298,6 +298,12 @@ impl BuiltinDataConversionTarget for String {
     }
 
     /// Converts an owned source while reusing unchanged string storage.
+    ///
+    /// # Parameters
+    ///
+    /// * `source` - Runtime source representation consumed by this conversion.
+    /// * `context` - Shared conversion session supplying string policies and
+    ///   output budget for the target conversion.
     fn convert_owned(
         source: DataConverter<'_>,
         context: &mut ConversionContext<'_, '_>,

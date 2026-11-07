@@ -74,6 +74,25 @@ impl<T> DataConversionTarget for T
 where
     T: BuiltinDataConversionTarget,
 {
+    /// Converts an admitted source using the built-in target implementation.
+    ///
+    /// The target type must match the type bound to the admission context.
+    /// Unset values are delegated directly; other values are checked against
+    /// the supported-conversion matrix before the target conversion runs.
+    ///
+    /// # Parameters
+    ///
+    /// * `input` - The consumed source and its bound conversion context.
+    ///
+    /// # Returns
+    ///
+    /// The converted value of the implementing target type.
+    ///
+    /// # Errors
+    ///
+    /// Returns an unsupported-conversion error when the target does not match
+    /// the bound type or the source-target pair is not supported; otherwise,
+    /// returns any error produced by the target conversion.
     #[inline]
     fn convert(input: AdmittedConversion<'_, '_, '_>) -> Result<Self, DataConversionError> {
         if T::DATA_TYPE != input.to_type() {

@@ -335,6 +335,7 @@ impl Display for DataType {
 }
 
 impl FromStr for DataType {
+    /// Error returned when the input does not match a supported type name.
     type Err = DataTypeParseError;
 
     /// Parses a type name case-insensitively using the stable vocabulary.

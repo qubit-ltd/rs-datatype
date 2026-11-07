@@ -58,11 +58,15 @@ pub struct NumericConversionLimits {
     /// Maximum decimal digits materialized for a BigInt result.
     #[cfg(feature = "big-integer")]
     big_integer: BigIntegerLimits<ConversionResource>,
+    /// Maximum decimal digits materialized for a BigInt result when the
+    /// `big-integer` feature is disabled.
     #[cfg(not(feature = "big-integer"))]
     max_big_integer_digits: ResourceLimit<ConversionResource, u64>,
     /// Maximum decimal digits materialized for a BigDecimal coefficient.
     #[cfg(feature = "big-decimal")]
     big_decimal: BigDecimalLimits<ConversionResource>,
+    /// Maximum decimal digits materialized for a BigDecimal coefficient when
+    /// the `big-decimal` feature is disabled.
     #[cfg(not(feature = "big-decimal"))]
     max_big_decimal_coefficient_digits: ResourceLimit<ConversionResource, u64>,
     /// Maximum absolute BigDecimal scale.
@@ -420,6 +424,23 @@ impl Default for NumericConversionLimits {
 
 impl Serialize for NumericConversionLimits {
     /// Serializes the configured limits through the private wire shape.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `S` - Serializer that receives the wire representation.
+    ///
+    /// # Parameters
+    ///
+    /// * `serializer` - Serializer that encodes the configured limits.
+    ///
+    /// # Returns
+    ///
+    /// The serializer's successful output.
+    ///
+    /// # Errors
+    ///
+    /// Returns the serializer's error if it cannot encode the wire
+    /// representation.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -436,6 +457,23 @@ impl Serialize for NumericConversionLimits {
 
 impl<'de> Deserialize<'de> for NumericConversionLimits {
     /// Deserializes limits from the private wire shape.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `'de` - Lifetime of data borrowed from the deserializer input.
+    /// * `D` - Deserializer that provides the wire representation.
+    ///
+    /// # Parameters
+    ///
+    /// * `deserializer` - Deserializer supplying the configured limits.
+    ///
+    /// # Returns
+    ///
+    /// The reconstructed numeric conversion limits.
+    ///
+    /// # Errors
+    ///
+    /// Returns the deserializer's error if the wire representation is invalid.
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,

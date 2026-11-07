@@ -19,6 +19,7 @@ use super::super::duration_millis_with_unit::parse;
 pub(in crate::serde_impl) struct DurationMillisWithUnitVisitor;
 
 impl Visitor<'_> for DurationMillisWithUnitVisitor {
+    /// The parsed duration produced from fixed-millisecond text.
     type Value = Duration;
 
     /// Describes the fixed-millisecond string accepted by this visitor.

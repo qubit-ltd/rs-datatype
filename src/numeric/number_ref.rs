@@ -616,6 +616,10 @@ impl<'a> NumberRef<'a> {
 
     /// Compares a `BigInt` directly with a finite floating-point value when
     /// zero, sign, or highest-bit ordering determines the result.
+    ///
+    /// # Parameters
+    ///
+    /// * `right` - Right numeric operand.
     #[cfg(feature = "big-integer")]
     #[inline]
     fn compare_big_integer_float(self, right: NumberRef<'_>) -> Option<Ordering> {
