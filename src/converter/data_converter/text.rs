@@ -288,9 +288,19 @@ impl BuiltinDataConversionTarget for String {
                 })
             }
             #[cfg(feature = "json")]
-            DataConverter::StringMap(value) => context
-                .encode_json(&CanonicalStringMap { value })
-                .and_then(|bytes| json_bytes_to_string(source.data_type(), bytes)),
+            DataConverter::StringMap(value) => {
+                context
+                    .limits()
+                    .structured()
+                    .max_map_entries_limit()
+                    .check_usize(value.len())
+                    .map_err(|error| {
+                        DataConversionError::measured_limit(source.data_type(), DataType::String, error)
+                    })?;
+                context
+                    .encode_json(&CanonicalStringMap { value })
+                    .and_then(|bytes| json_bytes_to_string(source.data_type(), bytes))
+            }
             #[cfg(not(feature = "json"))]
             DataConverter::StringMap(_) => Err(source.unsupported(DataType::String)),
             _ => Err(source.unsupported(DataType::String)),

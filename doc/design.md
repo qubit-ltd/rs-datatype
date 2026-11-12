@@ -45,6 +45,14 @@ limit. `BooleanConversionPolicyBuilder` keeps unvalidated fields until
 `build()` validates their final combination, so its result does not depend on
 setter order.
 
+StringMap-to-String checks the known entry count against
+`max_map_entries_limit()` before JSON encoding collects or sorts entries. This
+length preflight is non-billable: it does not visit entries or change cumulative
+structure, input, or output usage. When this entry-count limit and another
+serialization limit would both reject the conversion, `MapEntries` takes
+precedence. A successful preflight continues through the existing transactional
+JSON encoder and retains canonical key ordering and its budget behavior.
+
 The public `AdmittedConversion::decode_json()` helper checks the exact bytes
 passed by the custom target against `max_text_bytes`, including whitespace,
 before decoding. It neither normalizes nor re-admits the source. A rejection

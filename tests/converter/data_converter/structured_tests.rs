@@ -308,7 +308,70 @@ fn test_data_converter_string_map_limit_precedes_serialization() {
         .expect_err("the map entry limit must reject the complete source size");
 
     assert_eq!(error.resource(), Some(ConversionResource::MapEntries));
+    assert_eq!(error.from_type(), Some(DataType::StringMap));
+    assert_eq!(error.to_type(), DataType::String);
     assert_eq!(session.structured_nodes_used(), 0);
+}
+
+/// Verifies StringMap length limits accept an empty map and exact boundary.
+#[cfg(feature = "json")]
+#[test]
+fn test_data_converter_string_map_limit_accepts_empty_and_exact_boundary() {
+    let policy = ConversionPolicy::default();
+    let empty_limits = ConversionLimits::builder()
+        .structured_limits(StructuredConversionLimits::builder().max_map_entries(0).build())
+        .build();
+    assert_eq!(
+        DataConverter::from(&HashMap::<String, String>::new())
+            .to_with::<String>(&policy, &empty_limits)
+            .expect("empty map fits a zero-entry limit"),
+        "{}",
+    );
+
+    let source = HashMap::from([("b".to_owned(), "2".to_owned()), ("a".to_owned(), "1".to_owned())]);
+    let limits = ConversionLimits::builder()
+        .structured_limits(StructuredConversionLimits::builder().max_map_entries(2).build())
+        .build();
+    assert_eq!(
+        DataConverter::from(&source)
+            .to_with::<String>(&policy, &limits)
+            .expect("map exactly at the entry limit should serialize"),
+        r#"{"a":"1","b":"2"}"#,
+    );
+}
+
+/// Verifies a known over-limit map keeps cumulative usage and source context.
+#[cfg(feature = "json")]
+#[test]
+fn test_data_converter_string_map_limit_rejects_owned_map_without_budget_changes() {
+    let policy = ConversionPolicy::default();
+    let limits = ConversionLimits::builder()
+        .structured_limits(StructuredConversionLimits::builder().max_map_entries(1).build())
+        .operation_limits(ConversionOperationLimits::builder().max_structured_nodes(8).build())
+        .build();
+    let mut session = ConversionSession::new(&policy, &limits);
+    DataConverter::from("null")
+        .to_in::<serde_json::Value>(&mut session)
+        .expect("seed conversion should consume one structured node");
+    DataConverter::from("seed")
+        .to_in::<String>(&mut session)
+        .expect("seed conversion should consume output bytes");
+    let initial_nodes = session.structured_nodes_used();
+    let initial_output = session.output_bytes_used();
+
+    let source = HashMap::from([
+        ("first".to_owned(), "1".to_owned()),
+        ("second".to_owned(), "2".to_owned()),
+    ]);
+    let error = DataConverter::from(source)
+        .into_target_in::<String>(&mut session)
+        .expect_err("owned map exceeds the configured entry limit");
+
+    assert_eq!(error.resource(), Some(ConversionResource::MapEntries));
+    assert_eq!(error.from_type(), Some(DataType::StringMap));
+    assert_eq!(error.to_type(), DataType::String);
+    assert_eq!(session.structured_nodes_used(), initial_nodes);
+    assert_eq!(session.output_bytes_used(), initial_output);
 }
 
 /// Tests that JSON text decoding consumes the shared structural node budget.

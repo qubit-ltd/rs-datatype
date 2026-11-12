@@ -34,6 +34,11 @@ context 还提供直接访问 `policy()`、`limits()` 和 JSON `decode_json_seed
 并叠加累计操作预算，不应用该字符串字节限额。`BooleanConversionPolicyBuilder` 会保留尚未验证的
 字段，直到 `build()` 时统一验证最终组合，因此构建结果不依赖 setter 顺序。
 
+StringMap 转换为 String 时，会在 JSON 编码收集或排序条目前，先用已知条目数检查
+`max_map_entries_limit()`。该长度预检不计费：不会遍历条目，也不会改变累计结构、输入或输出用量。
+当条目数限额和其他序列化限额同时拒绝转换时，优先报告 `MapEntries`。预检通过后仍沿用现有事务式
+JSON 编码器，保持规范键顺序和原有预算行为。
+
 公开的 `AdmittedConversion::decode_json()` helper 会在解码前，按自定义目标实际传入的字节长度
 检查 `max_text_bytes`，其中包括空白。它既不规范化，也不会再次准入来源。检查拒绝时，已扣除的
 条目和来源字节仍保留扣减，且不会新增结构或输出用量。内置文本转 JSON 路径仍会在解码前检查
